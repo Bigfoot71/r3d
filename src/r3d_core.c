@@ -1848,11 +1848,12 @@ void r3d_pass_post_bloom(void)
 
             // Set prefilter cutoff values
             float knee = R3D.env.bloomThreshold * R3D.env.bloomSoftThreshold;
-            Vector4 bloomPrefilter;
-            bloomPrefilter.x = R3D.env.bloomThreshold;
-            bloomPrefilter.y = bloomPrefilter.x - knee;
-            bloomPrefilter.z = 2.0f * knee;
-            bloomPrefilter.w = 0.25f / (knee + 0.00001f);
+            Vector4 bloomPrefilter = {
+                .x = R3D.env.bloomThreshold,
+                .y = bloomPrefilter.x - knee,
+                .z = 2.0f * knee,
+                .w = 0.25f / (knee + 0.00001f)
+            };
             r3d_shader_set_vec4(generate.downsampling, uPrefilter, bloomPrefilter);
 
             // Bind scene color (HDR color buffer) as initial texture input
