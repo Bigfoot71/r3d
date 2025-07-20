@@ -84,3 +84,27 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Compress build output (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        tar -czvf build.tar.gz -C ${{ steps.strings.outputs.build-output-dir }} .
+    
+    - name: Compress build output (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        powershell -command "Compress-Archive -Path '${{ steps.strings.outputs.build-output-dir }}\*' -DestinationPath build.zip"
+    
+    - name: Upload build artifact (Linux)
+      if: runner.os == 'Linux'
+      uses: actions/upload-artifact@v4
+      with:
+        name: r3d-build-${{ matrix.os }}-${{ matrix.c_compiler }}
+        path: build.tar.gz
+
+    - name: Upload build artifact (Windows)
+      if: runner.os == 'Windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: r3d-build-${{ matrix.os }}-${{ matrix.c_compiler }}
+        path: build.zip
