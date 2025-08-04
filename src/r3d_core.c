@@ -104,7 +104,8 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.env.backgroundColor = (Vector3) { 0.2f, 0.2f, 0.2f };
     R3D.env.ambientColor = (Vector3) { 0.2f, 0.2f, 0.2f };
     R3D.env.quatSky = QuaternionIdentity();
-    R3D.env.useSky = false;
+    R3D.env.useSkyIbl = false;
+    R3D.env.drawSky = false;
     R3D.env.skyBackgroundIntensity = 1.0f;
     R3D.env.skyAmbientIntensity = 1.0f;
     R3D.env.skyReflectIntensity = 1.0f;
@@ -1390,7 +1391,7 @@ void r3d_pass_deferred_ambient(void)
             r3d_stencil_disable();
         }
 
-        if (R3D.env.useSky)
+        if (R3D.env.useSkyIbl)
         {
             // Compute skybox IBL
             r3d_shader_enable(screen.ambientIbl);
@@ -1629,7 +1630,7 @@ void r3d_pass_scene_background(void)
     {
         glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
 
-        if (R3D.env.useSky && R3D.env.skyBackgroundIntensity > 0.0f)
+        if (R3D.env.drawSky)
         {
             // Setup projection matrix
             rlMatrixMode(RL_PROJECTION);
@@ -1973,7 +1974,7 @@ void r3d_pass_scene_forward(void)
             {
                 r3d_shader_bind_sampler2D(raster.forwardInst, uTexNoise, R3D.texture.blueNoise);
 
-                if (R3D.env.useSky) {
+                if (R3D.env.useSkyIbl) {
                     r3d_shader_bind_samplerCube(raster.forwardInst, uCubeIrradiance, R3D.env.sky.irradiance.id);
                     r3d_shader_bind_samplerCube(raster.forwardInst, uCubePrefilter, R3D.env.sky.prefilter.id);
                     r3d_shader_bind_sampler2D(raster.forwardInst, uTexBrdfLut, R3D.texture.iblBrdfLut);
@@ -1998,7 +1999,7 @@ void r3d_pass_scene_forward(void)
 
                 r3d_shader_unbind_sampler2D(raster.forwardInst, uTexNoise);
 
-                if (R3D.env.useSky) {
+                if (R3D.env.useSkyIbl) {
                     r3d_shader_unbind_samplerCube(raster.forwardInst, uCubeIrradiance);
                     r3d_shader_unbind_samplerCube(raster.forwardInst, uCubePrefilter);
                     r3d_shader_unbind_sampler2D(raster.forwardInst, uTexBrdfLut);
@@ -2018,7 +2019,7 @@ void r3d_pass_scene_forward(void)
             {
                 r3d_shader_bind_sampler2D(raster.forward, uTexNoise, R3D.texture.blueNoise);
 
-                if (R3D.env.useSky) {
+                if (R3D.env.useSkyIbl) {
                     r3d_shader_bind_samplerCube(raster.forward, uCubeIrradiance, R3D.env.sky.irradiance.id);
                     r3d_shader_bind_samplerCube(raster.forward, uCubePrefilter, R3D.env.sky.prefilter.id);
                     r3d_shader_bind_sampler2D(raster.forward, uTexBrdfLut, R3D.texture.iblBrdfLut);
@@ -2043,7 +2044,7 @@ void r3d_pass_scene_forward(void)
 
                 r3d_shader_unbind_sampler2D(raster.forward, uTexNoise);
 
-                if (R3D.env.useSky) {
+                if (R3D.env.useSkyIbl) {
                     r3d_shader_unbind_samplerCube(raster.forward, uCubeIrradiance);
                     r3d_shader_unbind_samplerCube(raster.forward, uCubePrefilter);
                     r3d_shader_unbind_sampler2D(raster.forward, uTexBrdfLut);

@@ -200,8 +200,9 @@ extern struct R3D_State {
                                         
         Quaternion quatSky;             // Rotation of the skybox (raster / light passes)
         R3D_Skybox sky;                 // Skybox textures (raster / light passes)
-        bool useSky;                    // Flag to indicate if skybox is enabled (light pass)
-        float skyBackgroundIntensity;   // Intensity of the visible background from the skybox (raster / light passes) 
+        bool useSkyIbl;                 // Flag to indicate if skybox IBL is enabled (light pass)
+        bool drawSky;                   // Flag to indicate if rendering the skybox is enabled (raster pass)
+        float skyBackgroundIntensity;   // Intensity of the visible background from the skybox (raster pass)
         float skyAmbientIntensity;      // Intensity of the ambient light from the skybox (light pass)
         float skyReflectIntensity;      // Intensity of reflections from the skybox (light pass)
                                         

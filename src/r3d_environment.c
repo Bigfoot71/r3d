@@ -39,12 +39,14 @@ void R3D_SetAmbientColor(Color color)
 void R3D_EnableSkybox(R3D_Skybox skybox)
 {
 	R3D.env.sky = skybox;
-	R3D.env.useSky = true;
+	R3D.env.useSkyIbl = true;
+	R3D.env.drawSky = (R3D.env.skyBackgroundIntensity > 0.0f) ? true : false;
 }
 
 void R3D_DisableSkybox(void)
 {
-	R3D.env.useSky = false;
+	R3D.env.useSkyIbl = false;
+	R3D.env.drawSky = false;
 }
 
 void R3D_SetSkyboxRotation(float pitch, float yaw, float roll)
@@ -62,6 +64,7 @@ void R3D_SetSkyboxIntensity(float background, float ambient, float reflection)
 	R3D.env.skyBackgroundIntensity = background;
 	R3D.env.skyAmbientIntensity = ambient;
 	R3D.env.skyReflectIntensity = reflection;
+	R3D.env.drawSky = (R3D.env.skyBackgroundIntensity > 0.0f) ? true : false;
 }
 
 void R3D_GetSkyboxIntensity(float* background, float* ambient, float* reflection)
