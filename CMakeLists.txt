@@ -20,7 +20,7 @@ endif()
 
 # Project configuration options
 
-option(R3D_BUILD_DOCS "Build the doxygen doc" ${R3D_IS_MAIN})
+option(R3D_BUILD_DOCS "Build the doxygen doc" OFF)
 option(R3D_BUILD_EXAMPLES "Build the examples" ${R3D_IS_MAIN})
 
 option(R3D_RAYLIB_VENDORED "Use vendored raylib from submodule" OFF)
@@ -273,19 +273,24 @@ endif()
 # Doxygen configuration
 
 if(R3D_BUILD_DOCS)
-    find_package(Doxygen REQUIRED)
+    find_package(Doxygen QUIET)
+	
+    if(Doxygen_FOUND)
+        set(DOXYGEN_IN ${R3D_ROOT_PATH}/Doxyfile.in)
+        set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-    set(DOXYGEN_IN ${R3D_ROOT_PATH}/Doxyfile.in)
-    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+        configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
 
-    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-
-    add_custom_target(docs
-        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM
-    )
+        add_custom_target(docs
+            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Generating API documentation with Doxygen"
+            VERBATIM
+        )
+    else()
+        message(FATAL_ERROR "System Doxygen not found.
+Make sure Doxygen is installed and discoverable by CMake (e.g. via CMAKE_PREFIX_PATH or pkg-config).")
+    endif()
 endif()
 
 # Example configuration
