@@ -2473,7 +2473,7 @@ R3DAPI float R3D_GetBloomIntensity(void);
  *
  * Default: 0
  */
- R3DAPI void R3D_SetBloomFilterRadius(int value);
+R3DAPI void R3D_SetBloomFilterRadius(int value);
 
  /**
   * @brief Gets the current bloom filter radius.
@@ -2483,7 +2483,7 @@ R3DAPI float R3D_GetBloomIntensity(void);
   *
   * @return The current bloom filter radius.
   */
- R3DAPI int R3D_GetBloomFilterRadius(void);
+R3DAPI int R3D_GetBloomFilterRadius(void);
 
 /**
  * @brief Sets the bloom brightness threshold.
