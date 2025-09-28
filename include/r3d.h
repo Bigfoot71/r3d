@@ -2469,7 +2469,7 @@ R3DAPI float R3D_GetBloomIntensity(void);
  * objects, creating a softer and more diffuse bloom. A value of 0 disables 
  * the filtering effect, preserving sharp bloom highlights.
  *
- * @param value The radius of the bloom filter (in pixels or arbitrary units depending on implementation).
+ * @param value The radius of the bloom filter (in pixels).
  *
  * Default: 0
  */
