@@ -84,11 +84,6 @@ void main()
     /* --- Get current depth and view-space position --- */
 
     float depth = texture(uTexDepth, vTexCoord).r;
-    if (depth > 0.9999) {
-        FragOcclusion = 1.0;
-        return;
-    }
-
     vec3 position = DepthToViewPosition(depth);
 
     /* --- Get and decode current normal, then transform to view space --- */
