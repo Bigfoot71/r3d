@@ -1612,7 +1612,6 @@ void r3d_shader_load_screen_ssao(void)
     r3d_shader_get_location(screen.ssao, uTexKernel);
     r3d_shader_get_location(screen.ssao, uTexNoise);
     r3d_shader_get_location(screen.ssao, uMatInvProj);
-    r3d_shader_get_location(screen.ssao, uMatInvView);
     r3d_shader_get_location(screen.ssao, uMatProj);
     r3d_shader_get_location(screen.ssao, uMatView);
     r3d_shader_get_location(screen.ssao, uResolution);

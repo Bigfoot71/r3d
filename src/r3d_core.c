@@ -1406,7 +1406,6 @@ void r3d_pass_ssao(void)
         r3d_shader_enable(screen.ssao);
         {
             r3d_shader_set_mat4(screen.ssao, uMatInvProj, R3D.state.transform.invProj);
-            r3d_shader_set_mat4(screen.ssao, uMatInvView, R3D.state.transform.invView);
             r3d_shader_set_mat4(screen.ssao, uMatProj, R3D.state.transform.proj);
             r3d_shader_set_mat4(screen.ssao, uMatView, R3D.state.transform.view);
 

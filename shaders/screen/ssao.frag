@@ -35,7 +35,6 @@ uniform sampler1D uTexKernel;
 uniform sampler2D uTexNoise;
 
 uniform mat4 uMatInvProj;
-uniform mat4 uMatInvView;
 uniform mat4 uMatProj;
 uniform mat4 uMatView;
 

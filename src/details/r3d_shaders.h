@@ -321,7 +321,6 @@ typedef struct {
     r3d_shader_uniform_sampler1D_t uTexKernel;
     r3d_shader_uniform_sampler2D_t uTexNoise;
     r3d_shader_uniform_mat4_t uMatInvProj;
-    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_vec2_t uResolution;
