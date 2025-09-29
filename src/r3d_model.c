@@ -2353,6 +2353,23 @@ static Image r3d_load_assimp_image(
     return image;
 }
 
+static r3d_apply_texture_filtering(Texture2D* texture)
+{
+    if (R3D.state.loading.textureFilter > TEXTURE_FILTER_BILINEAR) {
+        GenTextureMipmaps(texture);
+
+        // NOTE: Needed to set min and mag filter even when using anisotropic filtering
+        SetTextureFilter(*texture, TEXTURE_FILTER_TRILINEAR);
+
+        if (R3D.state.loading.textureFilter > TEXTURE_FILTER_TRILINEAR) {
+            SetTextureFilter(*texture, R3D.state.loading.textureFilter);
+        }
+    }
+    else {
+        SetTextureFilter(*texture, R3D.state.loading.textureFilter);
+    }
+}
+
 static Texture2D r3d_load_assimp_texture(
     const struct aiScene* scene, const struct aiMaterial* aiMat,
     enum aiTextureType textureType, unsigned int index,
@@ -2370,11 +2387,7 @@ static Texture2D r3d_load_assimp_texture(
     texture = LoadTextureFromImage(image);
     if (imgIsAllocted) UnloadImage(image);
 
-    if (R3D.state.loading.textureFilter > TEXTURE_FILTER_BILINEAR) {
-        GenTextureMipmaps(&texture);
-    }
-
-    SetTextureFilter(texture, R3D.state.loading.textureFilter);
+    r3d_apply_texture_filtering(&texture);
 
     return texture;
 }
@@ -2423,19 +2436,13 @@ static Texture2D r3d_load_assimp_orm_texture(
             if (ormImage.data) {
                 ormTexture = LoadTextureFromImage(ormImage);
                 UnloadImage(ormImage);
+            
+                r3d_apply_texture_filtering(&ormTexture);
             }
 
             // Cleanup
             if (gltfAllocated) UnloadImage(gltfImage);
             if (occlusionAllocated && occlusionImage.data) UnloadImage(occlusionImage);
-
-            // Apply filtering
-            if (ormTexture.id > 0) {
-                if (R3D.state.loading.textureFilter > TEXTURE_FILTER_BILINEAR) {
-                    GenTextureMipmaps(&ormTexture);
-                }
-                SetTextureFilter(ormTexture, R3D.state.loading.textureFilter);
-            }
 
             return ormTexture;
         }
@@ -2489,11 +2496,7 @@ static Texture2D r3d_load_assimp_orm_texture(
         ormTexture = LoadTextureFromImage(ormImage);
         UnloadImage(ormImage);
 
-        // Apply filtering
-        if (R3D.state.loading.textureFilter > TEXTURE_FILTER_BILINEAR) {
-            GenTextureMipmaps(&ormTexture);
-        }
-        SetTextureFilter(ormTexture, R3D.state.loading.textureFilter);
+        r3d_apply_texture_filtering(&ormTexture);
     }
 
     // Cleanup
