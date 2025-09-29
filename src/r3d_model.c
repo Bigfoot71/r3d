@@ -2353,7 +2353,7 @@ static Image r3d_load_assimp_image(
     return image;
 }
 
-static r3d_apply_texture_filtering(Texture2D* texture)
+static void r3d_apply_texture_filtering(Texture2D* texture)
 {
     if (R3D.state.loading.textureFilter > TEXTURE_FILTER_BILINEAR) {
         GenTextureMipmaps(texture);
