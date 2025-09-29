@@ -216,31 +216,6 @@ float Shadow(int i, float cNdotL)
     return shadow / float(SHADOW_SAMPLES);
 }
 
-/* === Helper functions === */
-
-vec2 OctahedronWrap(vec2 val)
-{
-    // Reference(s):
-    // - Octahedron normal vector encoding
-    //   https://web.archive.org/web/20191027010600/https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/comment-page-1/
-    return (1.0 - abs(val.yx)) * mix(vec2(-1.0), vec2(1.0), vec2(greaterThanEqual(val.xy, vec2(0.0))));
-}
-
-vec2 EncodeOctahedral(vec3 normal)
-{
-    normal /= abs(normal.x) + abs(normal.y) + abs(normal.z);
-    normal.xy = normal.z >= 0.0 ? normal.xy : OctahedronWrap(normal.xy);
-    normal.xy = normal.xy * 0.5 + 0.5;
-    return normal.xy;
-}
-
-vec3 NormalScale(vec3 normal, float scale)
-{
-    normal.xy *= scale;
-    normal.z = sqrt(1.0 - clamp(dot(normal.xy, normal.xy), 0.0, 1.0));
-    return normal;
-}
-
 /* === Main === */
 
 void main()
@@ -270,7 +245,7 @@ void main()
 
     /* Sample normal and compute view direction vector */
 
-    vec3 N = normalize(vTBN * NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    vec3 N = normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
     vec3 V = normalize(uViewPosition - vPosition);
 
     /* Compute the dot product of the normal and view direction */
@@ -426,6 +401,6 @@ void main()
     /* Output material data */
 
     FragAlbedo = vec4(albedo.rgb, 1.0);
-    FragNormal = vec4(EncodeOctahedral(N), vec2(1.0));
+    FragNormal = vec4(M_EncodeOctahedral(N), vec2(1.0));
     FragORM = vec4(occlusion, roughness, metalness, 1.0);
 }

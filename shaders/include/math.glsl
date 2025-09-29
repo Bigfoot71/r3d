@@ -29,3 +29,36 @@ mat3 M_OrthonormalBasis(vec3 N)
     }
     return mat3(T, B, N);
 }
+
+vec2 M_OctahedronWrap(vec2 val)
+{
+    // Reference(s):
+    // - Octahedron normal vector encoding
+    //   https://web.archive.org/web/20191027010600/https://knarkowicz.wordpress.com/2014/04/16/octahedron-normal-vector-encoding/comment-page-1/
+    return (1.0 - abs(val.yx)) * mix(vec2(-1.0), vec2(1.0), vec2(greaterThanEqual(val.xy, vec2(0.0))));
+}
+
+vec3 M_DecodeOctahedral(vec2 encoded)
+{
+    encoded = encoded * 2.0 - 1.0;
+
+    vec3 normal;
+    normal.z  = 1.0 - abs(encoded.x) - abs(encoded.y);
+    normal.xy = normal.z >= 0.0 ? encoded.xy : M_OctahedronWrap(encoded.xy);
+    return normalize(normal);
+}
+
+vec2 M_EncodeOctahedral(vec3 normal)
+{
+    normal /= abs(normal.x) + abs(normal.y) + abs(normal.z);
+    normal.xy = normal.z >= 0.0 ? normal.xy : M_OctahedronWrap(normal.xy);
+    normal.xy = normal.xy * 0.5 + 0.5;
+    return normal.xy;
+}
+
+vec3 M_NormalScale(vec3 normal, float scale)
+{
+    normal.xy *= scale;
+    normal.z = sqrt(1.0 - clamp(dot(normal.xy, normal.xy), 0.0, 1.0));
+    return normal;
+}

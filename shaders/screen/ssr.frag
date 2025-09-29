@@ -37,21 +37,6 @@ out vec4 FragColor;
 
 /* === Helper Functions === */
 
-vec2 OctahedronWrap(vec2 val)
-{
-    return (1.0 - abs(val.yx)) * mix(vec2(-1.0), vec2(1.0), 
-        vec2(greaterThanEqual(val.xy, vec2(0.0))));
-}
-
-vec3 DecodeOctahedral(vec2 encoded)
-{
-    encoded = encoded * 2.0 - 1.0;
-    vec3 normal;
-    normal.z = 1.0 - abs(encoded.x) - abs(encoded.y);
-    normal.xy = normal.z >= 0.0 ? encoded.xy : OctahedronWrap(encoded.xy);
-    return normalize(normal);
-}
-
 vec3 ReconstructViewPosition(vec2 texCoord, float depth)
 {
     vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
@@ -171,7 +156,7 @@ void main()
     float roughness = orm.g;
     float metallic = orm.b;
 
-    vec3 worldNormal = DecodeOctahedral(encodedNormal);
+    vec3 worldNormal = M_DecodeOctahedral(encodedNormal);
     vec3 worldPos = ReconstructWorldPosition(vTexCoord, depth);
 
     /* --- Calculating view and reflection directions --- */
