@@ -58,24 +58,23 @@ out float FragOcclusion;
 
 /* === Helper functions === */
 
-vec3 GetPositionFromDepth(float depth)
+vec3 DepthToViewPosition(float depth)
 {
     vec4 ndcPos = vec4(vTexCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 viewPos = uMatInvProj * ndcPos;
-    viewPos /= viewPos.w;
-    // Changed to keep position in view space for SSAO
-    return viewPos.xyz;
+    return viewPos.xyz / viewPos.w;
 }
 
-float LinearizeDepth(float depth)
+vec2 ViewPositionToScreenUV(vec3 viewPos)
 {
-    float z = depth * 2.0 - 1.0; // Back to NDC
-    return (2.0 * uNear * uFar) / (uFar + uNear - z * (uFar - uNear));
+    vec4 clipPos = uMatProj * vec4(viewPos, 1.0);
+    vec3 ndc = clipPos.xyz / clipPos.w;
+    return ndc.xy * 0.5 + 0.5;
 }
 
 vec3 SampleKernel(int index, int kernelSize)
 {
-    float texCoord = (float(index) + 0.5) / float(kernelSize); // Added + 0.5 for better sampling
+    float texCoord = (float(index) + 0.5) / float(kernelSize);
     return texture(uTexKernel, texCoord).rgb;
 }
 
@@ -83,52 +82,59 @@ vec3 SampleKernel(int index, int kernelSize)
 
 void main()
 {
-    // Get current depth and view-space position
+    /* --- Get current depth and view-space position --- */
+
     float depth = texture(uTexDepth, vTexCoord).r;
-    vec3 position = GetPositionFromDepth(depth);
-    
-    // Get and decode current normal, then transform to view space
+    if (depth > 0.9999) {
+        FragOcclusion = 1.0;
+        return;
+    }
+
+    vec3 position = DepthToViewPosition(depth);
+
+    /* --- Get and decode current normal, then transform to view space --- */
+
     vec3 normal = M_DecodeOctahedral(texture(uTexNormal, vTexCoord).rg);
     normal = normalize(mat3(uMatView) * normal);
-    
-    // Calculate screen-space noise scale
-    vec2 noiseScale = uResolution / float(NOISE_TEXTURE_SIZE);
-    vec3 randomVec = normalize(texture(uTexNoise, vTexCoord * noiseScale).xyz * 2.0 - 1.0);
-    
-    // Generate tangent space basis
+
+    /* --- Calculate screen-space noise scale --- */
+
+    vec2 noiseCoord = gl_FragCoord.xy / float(NOISE_TEXTURE_SIZE);
+    vec3 randomVec = normalize(texture(uTexNoise, noiseCoord).xyz * 2.0 - 1.0);
+
+    /* --- Generate tangent space basis --- */
+
     vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
     vec3 bitangent = cross(normal, tangent);
     mat3 TBN = mat3(tangent, bitangent, normal);
 
+    /* --- Accumulates occlusion by sampling the neighborhood randomly --- */
+
     float occlusion = 0.0;
     for (int i = 0; i < KERNEL_SIZE; i++)
     {
-        // Get sample position
-        vec3 samplePos = TBN * SampleKernel(i, KERNEL_SIZE);
-        
-        // Scale sample based on distance from center
-        float scale = float(i) / float(KERNEL_SIZE);
-        scale = mix(0.1, 1.0, scale * scale);
-        samplePos = position + samplePos * uRadius * scale;
-        
-        // Project sample position to screen space
-        vec4 offset = uMatProj * vec4(samplePos, 1.0);
-        offset.xyz /= offset.w;
-        offset.xyz = offset.xyz * 0.5 + 0.5;
-        
-        // Ensure sample is within screen bounds
-        if (offset.x >= 0.0 && offset.x <= 1.0 && 
-            offset.y >= 0.0 && offset.y <= 1.0) {
-            
+        /* --- Get sample position --- */
+
+        vec3 samplePos = SampleKernel(i, KERNEL_SIZE);
+        samplePos = position + (TBN * samplePos) * uRadius;
+
+        /* --- Project sample position to screen space --- */
+
+        vec2 offset = ViewPositionToScreenUV(samplePos);
+
+        /* --- Ensure sample is within screen bounds --- */
+
+        if (all(greaterThanEqual(offset, vec2(0.0))) && all(lessThanEqual(offset, vec2(1.0))))
+        {
             // Get sample depth and position
-            float sampleDepth = texture(uTexDepth, offset.xy).r;
-            vec3 sampleViewPos = GetPositionFromDepth(sampleDepth);
-            
+            float sampleDepth = texture(uTexDepth, offset).r;
+            vec3 sampleViewPos = DepthToViewPosition(sampleDepth);
+
             // Range and depth checks
             float rangeCheck = 1.0 - smoothstep(0.0, uRadius, abs(position.z - sampleViewPos.z));
             occlusion += (sampleViewPos.z >= samplePos.z + uBias) ? rangeCheck : 0.0;
         }
     }
-    
-    FragOcclusion = 1.0 - ((occlusion / float(KERNEL_SIZE)) * uIntensity);
+
+    FragOcclusion = 1.0 - (occlusion / float(KERNEL_SIZE)) * uIntensity;
 }
