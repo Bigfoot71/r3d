@@ -1941,11 +1941,12 @@ void r3d_pass_scene_forward(void)
 
         r3d_stencil_enable_geometry_write();
 
-        glDrawBuffers(4, (GLenum[]) {
+        glDrawBuffers(5, (GLenum[]) {
             GL_COLOR_ATTACHMENT0,       //< Scene
             GL_COLOR_ATTACHMENT1,       //< Albedo
             GL_COLOR_ATTACHMENT2,       //< Normal
-            GL_COLOR_ATTACHMENT3        //< ORM
+            GL_COLOR_ATTACHMENT3,       //< ORM
+            GL_COLOR_ATTACHMENT4        //< Ambient
         });
 
         /* --- Process all draw calls --- */
