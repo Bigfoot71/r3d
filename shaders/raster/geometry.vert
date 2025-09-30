@@ -98,7 +98,7 @@ void main()
     }
 
     if (uInstancing) {
-        matModel = iMatModel * matModel;
+        matModel = transpose(iMatModel) * matModel;
         matNormal = mat3(transpose(inverse(iMatModel))) * matNormal;
     }
 

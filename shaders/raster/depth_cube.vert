@@ -92,7 +92,7 @@ void main()
     }
 
     if (uInstancing) {
-        matModel = iMatModel * matModel;
+        matModel = transpose(iMatModel) * matModel;
     }
 
     switch(uBillboard) {
