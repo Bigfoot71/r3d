@@ -3381,7 +3381,7 @@ R3DAPI void R3D_DrawBufferAmbient(float x, float y, float w, float h);
 /**
  * @brief Renders the internal diffuse buffer to the screen.
  *
- * This function displays the ambient buffer, which contains diffuse lighting data.
+ * This function displays the diffuse buffer, which contains diffuse lighting data.
  * It must be called outside of `R3D_Begin` and `R3D_End`.
  *
  * @param x X position to draw the buffer.
