@@ -625,13 +625,6 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
         break;
     }
 
-    // WARNING: Always use the same attribute locations in shaders for instance matrices and colors.
-    // If attribute locations differ between shaders (e.g., between the depth shader and the geometry shader),
-    // it will break the rendering. This is because the vertex attributes are assigned based on specific 
-    // attribute locations, and if those locations are not consistent across shaders, the attributes 
-    // for instance transforms and colors will not be correctly bound. 
-    // This results in undefined or incorrect behavior, such as missing or incorrectly transformed meshes.
-
     unsigned int vboTransforms = 0;
     unsigned int vboColors = 0;
 
@@ -646,18 +639,6 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
             rlEnableVertexAttribute(locInstanceModel + i);
         }
     }
-    else if (locInstanceModel >= 0) {
-        const float defaultTransform[4 * 4] = {
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        };
-        for (int i = 0; i < 4; i++) {
-            glVertexAttrib4fv(locInstanceModel + i, defaultTransform + i * 4);
-            rlDisableVertexAttribute(locInstanceModel + i);
-        }
-    }
 
     // Handle per-instance colors if available
     if (locInstanceColor >= 0 && call->instanced.colors) {
@@ -667,11 +648,6 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
         rlSetVertexAttribute(locInstanceColor, 4, RL_UNSIGNED_BYTE, true, (int)call->instanced.colStride, 0);
         rlSetVertexAttributeDivisor(locInstanceColor, 1);
         rlEnableVertexAttribute(locInstanceColor);
-    }
-    else if (locInstanceColor >= 0) {
-        const float defaultColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glVertexAttrib4fv(locInstanceColor, defaultColor);
-        rlDisableVertexAttribute(locInstanceColor);
     }
 
     // Draw the geometry
