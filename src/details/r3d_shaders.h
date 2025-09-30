@@ -88,47 +88,28 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
+    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatMVP;
-    r3d_shader_uniform_vec2_t uTexCoordOffset;
-    r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_sampler2D_t uTexAlbedo;
-    r3d_shader_uniform_sampler2D_t uTexNormal;
-    r3d_shader_uniform_sampler2D_t uTexEmission;
-    r3d_shader_uniform_sampler2D_t uTexORM;
-    r3d_shader_uniform_float_t uEmissionEnergy;
-    r3d_shader_uniform_float_t uNormalScale;
-    r3d_shader_uniform_float_t uOcclusion;
-    r3d_shader_uniform_float_t uRoughness;
-    r3d_shader_uniform_float_t uMetalness;
-    r3d_shader_uniform_vec3_t uAlbedoColor;
-    r3d_shader_uniform_vec3_t uEmissionColor;
-} r3d_shader_raster_geometry_t;
-
-typedef struct {
-    unsigned int id;
-    r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
-    r3d_shader_uniform_mat4_t uMatInvView;
-    r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_vec4_t uAlbedoColor;
+    r3d_shader_uniform_float_t uEmissionEnergy;
+    r3d_shader_uniform_vec3_t uEmissionColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_int_t uBillboardMode;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
+    r3d_shader_uniform_int_t uBillboard;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_sampler2D_t uTexEmission;
     r3d_shader_uniform_sampler2D_t uTexORM;
-    r3d_shader_uniform_float_t uEmissionEnergy;
+    r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
-    r3d_shader_uniform_vec3_t uAlbedoColor;
-    r3d_shader_uniform_vec3_t uEmissionColor;
-} r3d_shader_raster_geometry_inst_t;
+} r3d_shader_raster_geometry_t;
 
 typedef struct {
     unsigned int id;
@@ -147,11 +128,15 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
-    r3d_shader_uniform_mat4_t uMatMVP;
+    r3d_shader_uniform_mat4_t uMatInvView;
+    r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatVP;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_float_t uAlpha;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
+    r3d_shader_uniform_int_t uBillboard;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_float_t uAlphaCutoff;
 } r3d_shader_raster_depth_t;
@@ -159,80 +144,35 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatVP;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_int_t uBillboardMode;
     r3d_shader_uniform_float_t uAlpha;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
+    r3d_shader_uniform_int_t uBillboard;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_float_t uAlphaCutoff;
-} r3d_shader_raster_depth_inst_t;
-
-typedef struct {
-    unsigned int id;
-    r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
     r3d_shader_uniform_vec3_t uViewPosition;
-    r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatMVP;
-    r3d_shader_uniform_vec2_t uTexCoordOffset;
-    r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_float_t uFar;
-    r3d_shader_uniform_float_t uAlpha;
-    r3d_shader_uniform_sampler2D_t uTexAlbedo;
-    r3d_shader_uniform_float_t uAlphaCutoff;
 } r3d_shader_raster_depth_cube_t;
 
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
-    r3d_shader_uniform_vec3_t uViewPosition;
-    r3d_shader_uniform_mat4_t uMatInvView;
-    r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatVP;
-    r3d_shader_uniform_vec2_t uTexCoordOffset;
-    r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_float_t uFar;
-    r3d_shader_uniform_int_t uBillboardMode;
-    r3d_shader_uniform_float_t uAlpha;
-    r3d_shader_uniform_sampler2D_t uTexAlbedo;
-    r3d_shader_uniform_float_t uAlphaCutoff;
-} r3d_shader_raster_depth_cube_inst_t;
-
-typedef struct {
-    unsigned int id;
-    struct {
-        r3d_shader_uniform_vec3_t color;
-        r3d_shader_uniform_vec3_t position;
-        r3d_shader_uniform_vec3_t direction;
-        r3d_shader_uniform_float_t specular;
-        r3d_shader_uniform_float_t energy;
-        r3d_shader_uniform_float_t range;
-        r3d_shader_uniform_float_t near;
-        r3d_shader_uniform_float_t far;
-        r3d_shader_uniform_float_t attenuation;
-        r3d_shader_uniform_float_t innerCutOff;
-        r3d_shader_uniform_float_t outerCutOff;
-        r3d_shader_uniform_float_t shadowSoftness;
-        r3d_shader_uniform_float_t shadowMapTxlSz;
-        r3d_shader_uniform_float_t shadowDepthBias;
-        r3d_shader_uniform_float_t shadowSlopeBias;
-        r3d_shader_uniform_int_t type;
-        r3d_shader_uniform_int_t enabled;
-        r3d_shader_uniform_int_t shadow;
-    } uLights[R3D_SHADER_FORWARD_NUM_LIGHTS];
-    r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
     r3d_shader_uniform_mat4_t uMatLightVP[R3D_SHADER_FORWARD_NUM_LIGHTS];
+    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatMVP;
+    r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
+    r3d_shader_uniform_int_t uBillboard;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_sampler2D_t uTexEmission;
     r3d_shader_uniform_sampler2D_t uTexNormal;
@@ -245,7 +185,6 @@ typedef struct {
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
     r3d_shader_uniform_vec3_t uAmbientColor;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec3_t uEmissionColor;
     r3d_shader_uniform_samplerCube_t uCubeIrradiance;
     r3d_shader_uniform_samplerCube_t uCubePrefilter;
@@ -254,12 +193,6 @@ typedef struct {
     r3d_shader_uniform_int_t uHasSkybox;
     r3d_shader_uniform_float_t uSkyboxAmbientIntensity;
     r3d_shader_uniform_float_t uSkyboxReflectIntensity;
-    r3d_shader_uniform_float_t uAlphaCutoff;
-    r3d_shader_uniform_vec3_t uViewPosition;
-} r3d_shader_raster_forward_t;
-
-typedef struct {
-    unsigned int id;
     struct {
         r3d_shader_uniform_vec3_t color;
         r3d_shader_uniform_vec3_t position;
@@ -280,39 +213,10 @@ typedef struct {
         r3d_shader_uniform_int_t enabled;
         r3d_shader_uniform_int_t shadow;
     } uLights[R3D_SHADER_FORWARD_NUM_LIGHTS];
-    r3d_shader_uniform_sampler1D_t uTexBoneMatrices;
-    r3d_shader_uniform_int_t uUseSkinning;
-    r3d_shader_uniform_mat4_t uMatLightVP[R3D_SHADER_FORWARD_NUM_LIGHTS];
-    r3d_shader_uniform_mat4_t uMatInvView;
-    r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatVP;
-    r3d_shader_uniform_vec2_t uTexCoordOffset;
-    r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_int_t uBillboardMode;
-    r3d_shader_uniform_sampler2D_t uTexAlbedo;
-    r3d_shader_uniform_sampler2D_t uTexEmission;
-    r3d_shader_uniform_sampler2D_t uTexNormal;
-    r3d_shader_uniform_sampler2D_t uTexORM;
-    r3d_shader_uniform_samplerCube_t uShadowMapCube[R3D_SHADER_FORWARD_NUM_LIGHTS];
-    r3d_shader_uniform_sampler2D_t uShadowMap2D[R3D_SHADER_FORWARD_NUM_LIGHTS];
-    r3d_shader_uniform_float_t uEmissionEnergy;
-    r3d_shader_uniform_float_t uNormalScale;
-    r3d_shader_uniform_float_t uOcclusion;
-    r3d_shader_uniform_float_t uRoughness;
-    r3d_shader_uniform_float_t uMetalness;
-    r3d_shader_uniform_vec3_t uAmbientColor;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
-    r3d_shader_uniform_vec3_t uEmissionColor;
-    r3d_shader_uniform_samplerCube_t uCubeIrradiance;
-    r3d_shader_uniform_samplerCube_t uCubePrefilter;
-    r3d_shader_uniform_sampler2D_t uTexBrdfLut;
-    r3d_shader_uniform_vec4_t uQuatSkybox;
-    r3d_shader_uniform_int_t uHasSkybox;
-    r3d_shader_uniform_float_t uSkyboxAmbientIntensity;
-    r3d_shader_uniform_float_t uSkyboxReflectIntensity;
     r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_vec3_t uViewPosition;
-} r3d_shader_raster_forward_inst_t;
+    r3d_shader_uniform_float_t uFar;
+} r3d_shader_raster_forward_t;
 
 typedef struct {
     unsigned int id;

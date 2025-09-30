@@ -38,10 +38,8 @@
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap.vert.h>
 #include <shaders/depth_cube.frag.h>
-#include <shaders/depth_cube_instanced.vert.h>
 #include <shaders/depth_cube.vert.h>
 #include <shaders/depth.frag.h>
-#include <shaders/depth_instanced.vert.h>
 #include <shaders/depth.vert.h>
 #include <shaders/depth_volume.frag.h>
 #include <shaders/depth_volume.vert.h>
@@ -49,12 +47,10 @@
 #include <shaders/downsampling.frag.h>
 #include <shaders/fog.frag.h>
 #include <shaders/forward.frag.h>
-#include <shaders/forward_instanced.vert.h>
 #include <shaders/forward.vert.h>
 #include <shaders/fxaa.frag.h>
 #include <shaders/gaussian_blur_dual_pass.frag.h>
 #include <shaders/geometry.frag.h>
-#include <shaders/geometry_instanced.vert.h>
 #include <shaders/geometry.vert.h>
 #include <shaders/irradiance_convolution.frag.h>
 #include <shaders/lighting.frag.h>
@@ -594,15 +590,11 @@ void r3d_shaders_load(void)
     /* --- Scene shader passes --- */
 
     r3d_shader_load_raster_geometry();
-    r3d_shader_load_raster_geometry_inst();
     r3d_shader_load_raster_forward();
-    r3d_shader_load_raster_forward_inst();
     r3d_shader_load_raster_skybox();
     r3d_shader_load_raster_depth_volume();
     r3d_shader_load_raster_depth();
-    r3d_shader_load_raster_depth_inst();
     r3d_shader_load_raster_depth_cube();
-    r3d_shader_load_raster_depth_cube_inst();
 
     /* --- Screen shader passes --- */
 
@@ -655,15 +647,11 @@ void r3d_shaders_unload(void)
 
     // Unload raster shaders
     rlUnloadShaderProgram(R3D.shader.raster.geometry.id);
-    rlUnloadShaderProgram(R3D.shader.raster.geometryInst.id);
     rlUnloadShaderProgram(R3D.shader.raster.forward.id);
-    rlUnloadShaderProgram(R3D.shader.raster.forwardInst.id);
     rlUnloadShaderProgram(R3D.shader.raster.skybox.id);
     rlUnloadShaderProgram(R3D.shader.raster.depthVolume.id);
     rlUnloadShaderProgram(R3D.shader.raster.depth.id);
-    rlUnloadShaderProgram(R3D.shader.raster.depthInst.id);
     rlUnloadShaderProgram(R3D.shader.raster.depthCube.id);
-    rlUnloadShaderProgram(R3D.shader.raster.depthCubeInst.id);
 
     // Unload screen shaders
     rlUnloadShaderProgram(R3D.shader.screen.ambientIbl.id);
@@ -1239,23 +1227,27 @@ void r3d_shader_load_raster_geometry(void)
     R3D_SHADER_VALIDATION(raster.geometry);
 
     r3d_shader_get_location(raster.geometry, uTexBoneMatrices);
-    r3d_shader_get_location(raster.geometry, uUseSkinning);
+    r3d_shader_get_location(raster.geometry, uMatInvView);
     r3d_shader_get_location(raster.geometry, uMatNormal);
     r3d_shader_get_location(raster.geometry, uMatModel);
-    r3d_shader_get_location(raster.geometry, uMatMVP);
+    r3d_shader_get_location(raster.geometry, uMatVP);
+    r3d_shader_get_location(raster.geometry, uAlbedoColor);
+    r3d_shader_get_location(raster.geometry, uEmissionEnergy);
+    r3d_shader_get_location(raster.geometry, uEmissionColor);
     r3d_shader_get_location(raster.geometry, uTexCoordOffset);
     r3d_shader_get_location(raster.geometry, uTexCoordScale);
+    r3d_shader_get_location(raster.geometry, uInstancing);
+    r3d_shader_get_location(raster.geometry, uSkinning);
+    r3d_shader_get_location(raster.geometry, uBillboard);
     r3d_shader_get_location(raster.geometry, uTexAlbedo);
     r3d_shader_get_location(raster.geometry, uTexNormal);
     r3d_shader_get_location(raster.geometry, uTexEmission);
     r3d_shader_get_location(raster.geometry, uTexORM);
-    r3d_shader_get_location(raster.geometry, uEmissionEnergy);
+    r3d_shader_get_location(raster.geometry, uAlphaCutoff);
     r3d_shader_get_location(raster.geometry, uNormalScale);
     r3d_shader_get_location(raster.geometry, uOcclusion);
     r3d_shader_get_location(raster.geometry, uRoughness);
     r3d_shader_get_location(raster.geometry, uMetalness);
-    r3d_shader_get_location(raster.geometry, uAlbedoColor);
-    r3d_shader_get_location(raster.geometry, uEmissionColor);
 
     r3d_shader_enable(raster.geometry);
     r3d_shader_set_sampler1D_slot(raster.geometry, uTexBoneMatrices, 0);
@@ -1263,43 +1255,6 @@ void r3d_shader_load_raster_geometry(void)
     r3d_shader_set_sampler2D_slot(raster.geometry, uTexNormal, 2);
     r3d_shader_set_sampler2D_slot(raster.geometry, uTexEmission, 3);
     r3d_shader_set_sampler2D_slot(raster.geometry, uTexORM, 4);
-    r3d_shader_disable();
-}
-
-void r3d_shader_load_raster_geometry_inst(void)
-{
-    R3D.shader.raster.geometryInst.id = rlLoadShaderCode(
-        GEOMETRY_INSTANCED_VERT, GEOMETRY_FRAG
-    );
-
-    R3D_SHADER_VALIDATION(raster.geometryInst);
-
-    r3d_shader_get_location(raster.geometryInst, uTexBoneMatrices);
-    r3d_shader_get_location(raster.geometryInst, uUseSkinning);
-    r3d_shader_get_location(raster.geometryInst, uMatInvView);
-    r3d_shader_get_location(raster.geometryInst, uMatModel);
-    r3d_shader_get_location(raster.geometryInst, uMatVP);
-    r3d_shader_get_location(raster.geometryInst, uTexCoordOffset);
-    r3d_shader_get_location(raster.geometryInst, uTexCoordScale);
-    r3d_shader_get_location(raster.geometryInst, uBillboardMode);
-    r3d_shader_get_location(raster.geometryInst, uTexAlbedo);
-    r3d_shader_get_location(raster.geometryInst, uTexNormal);
-    r3d_shader_get_location(raster.geometryInst, uTexEmission);
-    r3d_shader_get_location(raster.geometryInst, uTexORM);
-    r3d_shader_get_location(raster.geometryInst, uEmissionEnergy);
-    r3d_shader_get_location(raster.geometryInst, uNormalScale);
-    r3d_shader_get_location(raster.geometryInst, uOcclusion);
-    r3d_shader_get_location(raster.geometryInst, uRoughness);
-    r3d_shader_get_location(raster.geometryInst, uMetalness);
-    r3d_shader_get_location(raster.geometryInst, uAlbedoColor);
-    r3d_shader_get_location(raster.geometryInst, uEmissionColor);
-
-    r3d_shader_enable(raster.geometryInst);
-    r3d_shader_set_sampler1D_slot(raster.geometryInst, uTexBoneMatrices, 0);
-    r3d_shader_set_sampler2D_slot(raster.geometryInst, uTexAlbedo, 1);
-    r3d_shader_set_sampler2D_slot(raster.geometryInst, uTexNormal, 2);
-    r3d_shader_set_sampler2D_slot(raster.geometryInst, uTexEmission, 3);
-    r3d_shader_set_sampler2D_slot(raster.geometryInst, uTexORM, 4);
     r3d_shader_disable();
 }
 
@@ -1314,12 +1269,16 @@ void r3d_shader_load_raster_forward(void)
     r3d_shader_raster_forward_t* shader = &R3D.shader.raster.forward;
 
     r3d_shader_get_location(raster.forward, uTexBoneMatrices);
-    r3d_shader_get_location(raster.forward, uUseSkinning);
+    r3d_shader_get_location(raster.forward, uMatInvView);
     r3d_shader_get_location(raster.forward, uMatNormal);
     r3d_shader_get_location(raster.forward, uMatModel);
-    r3d_shader_get_location(raster.forward, uMatMVP);
+    r3d_shader_get_location(raster.forward, uMatVP);
+    r3d_shader_get_location(raster.forward, uAlbedoColor);
     r3d_shader_get_location(raster.forward, uTexCoordOffset);
     r3d_shader_get_location(raster.forward, uTexCoordScale);
+    r3d_shader_get_location(raster.forward, uInstancing);
+    r3d_shader_get_location(raster.forward, uSkinning);
+    r3d_shader_get_location(raster.forward, uBillboard);
     r3d_shader_get_location(raster.forward, uTexAlbedo);
     r3d_shader_get_location(raster.forward, uTexEmission);
     r3d_shader_get_location(raster.forward, uTexNormal);
@@ -1330,7 +1289,6 @@ void r3d_shader_load_raster_forward(void)
     r3d_shader_get_location(raster.forward, uRoughness);
     r3d_shader_get_location(raster.forward, uMetalness);
     r3d_shader_get_location(raster.forward, uAmbientColor);
-    r3d_shader_get_location(raster.forward, uAlbedoColor);
     r3d_shader_get_location(raster.forward, uEmissionColor);
     r3d_shader_get_location(raster.forward, uCubeIrradiance);
     r3d_shader_get_location(raster.forward, uCubePrefilter);
@@ -1341,6 +1299,7 @@ void r3d_shader_load_raster_forward(void)
     r3d_shader_get_location(raster.forward, uSkyboxReflectIntensity);
     r3d_shader_get_location(raster.forward, uAlphaCutoff);
     r3d_shader_get_location(raster.forward, uViewPosition);
+    r3d_shader_get_location(raster.forward, uFar);
 
     r3d_shader_enable(raster.forward);
 
@@ -1379,88 +1338,6 @@ void r3d_shader_load_raster_forward(void)
 
         r3d_shader_set_samplerCube_slot(raster.forward, uShadowMapCube[i], shadowMapSlot++);
         r3d_shader_set_sampler2D_slot(raster.forward, uShadowMap2D[i], shadowMapSlot++);
-    }
-
-    r3d_shader_disable();
-}
-
-void r3d_shader_load_raster_forward_inst(void)
-{
-    R3D.shader.raster.forwardInst.id = rlLoadShaderCode(
-        FORWARD_INSTANCED_VERT, FORWARD_FRAG
-    );
-
-    R3D_SHADER_VALIDATION(raster.forwardInst);
-
-    r3d_shader_raster_forward_inst_t* shader = &R3D.shader.raster.forwardInst;
-
-    r3d_shader_get_location(raster.forwardInst, uTexBoneMatrices);
-    r3d_shader_get_location(raster.forwardInst, uUseSkinning);
-    r3d_shader_get_location(raster.forwardInst, uMatInvView);
-    r3d_shader_get_location(raster.forwardInst, uMatModel);
-    r3d_shader_get_location(raster.forwardInst, uMatVP);
-    r3d_shader_get_location(raster.forwardInst, uTexCoordOffset);
-    r3d_shader_get_location(raster.forwardInst, uTexCoordScale);
-    r3d_shader_get_location(raster.forwardInst, uBillboardMode);
-    r3d_shader_get_location(raster.forwardInst, uTexAlbedo);
-    r3d_shader_get_location(raster.forwardInst, uTexEmission);
-    r3d_shader_get_location(raster.forwardInst, uTexNormal);
-    r3d_shader_get_location(raster.forwardInst, uTexORM);
-    r3d_shader_get_location(raster.forwardInst, uEmissionEnergy);
-    r3d_shader_get_location(raster.forwardInst, uNormalScale);
-    r3d_shader_get_location(raster.forwardInst, uOcclusion);
-    r3d_shader_get_location(raster.forwardInst, uRoughness);
-    r3d_shader_get_location(raster.forwardInst, uMetalness);
-    r3d_shader_get_location(raster.forwardInst, uAmbientColor);
-    r3d_shader_get_location(raster.forwardInst, uAlbedoColor);
-    r3d_shader_get_location(raster.forwardInst, uEmissionColor);
-    r3d_shader_get_location(raster.forwardInst, uCubeIrradiance);
-    r3d_shader_get_location(raster.forwardInst, uCubePrefilter);
-    r3d_shader_get_location(raster.forwardInst, uTexBrdfLut);
-    r3d_shader_get_location(raster.forwardInst, uQuatSkybox);
-    r3d_shader_get_location(raster.forwardInst, uHasSkybox);
-    r3d_shader_get_location(raster.forwardInst, uSkyboxAmbientIntensity);
-    r3d_shader_get_location(raster.forwardInst, uSkyboxReflectIntensity);
-    r3d_shader_get_location(raster.forwardInst, uAlphaCutoff);
-    r3d_shader_get_location(raster.forwardInst, uViewPosition);
-
-    r3d_shader_enable(raster.forwardInst);
-
-    r3d_shader_set_sampler1D_slot(raster.forwardInst, uTexBoneMatrices, 0);
-    r3d_shader_set_sampler2D_slot(raster.forwardInst, uTexAlbedo, 1);
-    r3d_shader_set_sampler2D_slot(raster.forwardInst, uTexEmission, 2);
-    r3d_shader_set_sampler2D_slot(raster.forwardInst, uTexNormal, 3);
-    r3d_shader_set_sampler2D_slot(raster.forwardInst, uTexORM, 4);
-    r3d_shader_set_samplerCube_slot(raster.forwardInst, uCubeIrradiance, 5);
-    r3d_shader_set_samplerCube_slot(raster.forwardInst, uCubePrefilter, 6);
-    r3d_shader_set_sampler2D_slot(raster.forwardInst, uTexBrdfLut, 7);
-
-    int shadowMapSlot = 10;
-    for (int i = 0; i < R3D_SHADER_FORWARD_NUM_LIGHTS; i++) {
-        shader->uMatLightVP[i].loc = rlGetLocationUniform(shader->id, TextFormat("uMatLightVP[%i]", i));
-        shader->uShadowMapCube[i].loc = rlGetLocationUniform(shader->id, TextFormat("uShadowMapCube[%i]", i));
-        shader->uShadowMap2D[i].loc = rlGetLocationUniform(shader->id, TextFormat("uShadowMap2D[%i]", i));
-        shader->uLights[i].color.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].color", i));
-        shader->uLights[i].position.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].position", i));
-        shader->uLights[i].direction.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].direction", i));
-        shader->uLights[i].specular.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].specular", i));
-        shader->uLights[i].energy.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].energy", i));
-        shader->uLights[i].range.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].range", i));
-        shader->uLights[i].near.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].near", i));
-        shader->uLights[i].far.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].far", i));
-        shader->uLights[i].attenuation.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].attenuation", i));
-        shader->uLights[i].innerCutOff.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].innerCutOff", i));
-        shader->uLights[i].outerCutOff.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].outerCutOff", i));
-        shader->uLights[i].shadowSoftness.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].shadowSoftness", i));
-        shader->uLights[i].shadowMapTxlSz.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].shadowMapTxlSz", i));
-        shader->uLights[i].shadowDepthBias.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].shadowDepthBias", i));
-        shader->uLights[i].shadowSlopeBias.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].shadowSlopeBias", i));
-        shader->uLights[i].type.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].type", i));
-        shader->uLights[i].enabled.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].enabled", i));
-        shader->uLights[i].shadow.loc = rlGetLocationUniform(shader->id, TextFormat("uLights[%i].shadow", i));
-
-        r3d_shader_set_samplerCube_slot(raster.forwardInst, uShadowMapCube[i], shadowMapSlot++);
-        r3d_shader_set_sampler2D_slot(raster.forwardInst, uShadowMap2D[i], shadowMapSlot++);
     }
 
     r3d_shader_disable();
@@ -1505,43 +1382,21 @@ void r3d_shader_load_raster_depth(void)
     R3D_SHADER_VALIDATION(raster.depth);
 
     r3d_shader_get_location(raster.depth, uTexBoneMatrices);
-    r3d_shader_get_location(raster.depth, uUseSkinning);
-    r3d_shader_get_location(raster.depth, uMatMVP);
+    r3d_shader_get_location(raster.depth, uMatInvView);
+    r3d_shader_get_location(raster.depth, uMatModel);
+    r3d_shader_get_location(raster.depth, uMatVP);
     r3d_shader_get_location(raster.depth, uTexCoordOffset);
     r3d_shader_get_location(raster.depth, uTexCoordScale);
     r3d_shader_get_location(raster.depth, uAlpha);
+    r3d_shader_get_location(raster.depth, uInstancing);
+    r3d_shader_get_location(raster.depth, uSkinning);
+    r3d_shader_get_location(raster.depth, uBillboard);
     r3d_shader_get_location(raster.depth, uTexAlbedo);
     r3d_shader_get_location(raster.depth, uAlphaCutoff);
 
     r3d_shader_enable(raster.depth);
     r3d_shader_set_sampler1D_slot(raster.depth, uTexBoneMatrices, 0);
     r3d_shader_set_sampler2D_slot(raster.depth, uTexAlbedo, 1);
-    r3d_shader_disable();
-}
-
-void r3d_shader_load_raster_depth_inst(void)
-{
-    R3D.shader.raster.depthInst.id = rlLoadShaderCode(
-        DEPTH_INSTANCED_VERT, DEPTH_FRAG
-    );
-
-    R3D_SHADER_VALIDATION(raster.depthInst);
-
-    r3d_shader_get_location(raster.depthInst, uTexBoneMatrices);
-    r3d_shader_get_location(raster.depthInst, uUseSkinning);
-    r3d_shader_get_location(raster.depthInst, uMatInvView);
-    r3d_shader_get_location(raster.depthInst, uMatModel);
-    r3d_shader_get_location(raster.depthInst, uMatVP);
-    r3d_shader_get_location(raster.depthInst, uTexCoordOffset);
-    r3d_shader_get_location(raster.depthInst, uTexCoordScale);
-    r3d_shader_get_location(raster.depthInst, uBillboardMode);
-    r3d_shader_get_location(raster.depthInst, uAlpha);
-    r3d_shader_get_location(raster.depthInst, uTexAlbedo);
-    r3d_shader_get_location(raster.depthInst, uAlphaCutoff);
-
-    r3d_shader_enable(raster.depthInst);
-    r3d_shader_set_sampler1D_slot(raster.depthInst, uTexBoneMatrices, 0);
-    r3d_shader_set_sampler2D_slot(raster.depthInst, uTexAlbedo, 1);
     r3d_shader_disable();
 }
 
@@ -1554,48 +1409,23 @@ void r3d_shader_load_raster_depth_cube(void)
     R3D_SHADER_VALIDATION(raster.depthCube);
 
     r3d_shader_get_location(raster.depthCube, uTexBoneMatrices);
-    r3d_shader_get_location(raster.depthCube, uUseSkinning);
-    r3d_shader_get_location(raster.depthCube, uViewPosition);
+    r3d_shader_get_location(raster.depthCube, uMatInvView);
     r3d_shader_get_location(raster.depthCube, uMatModel);
-    r3d_shader_get_location(raster.depthCube, uMatMVP);
+    r3d_shader_get_location(raster.depthCube, uMatVP);
     r3d_shader_get_location(raster.depthCube, uTexCoordOffset);
     r3d_shader_get_location(raster.depthCube, uTexCoordScale);
-    r3d_shader_get_location(raster.depthCube, uFar);
     r3d_shader_get_location(raster.depthCube, uAlpha);
+    r3d_shader_get_location(raster.depthCube, uInstancing);
+    r3d_shader_get_location(raster.depthCube, uSkinning);
+    r3d_shader_get_location(raster.depthCube, uBillboard);
     r3d_shader_get_location(raster.depthCube, uTexAlbedo);
     r3d_shader_get_location(raster.depthCube, uAlphaCutoff);
+    r3d_shader_get_location(raster.depthCube, uViewPosition);
+    r3d_shader_get_location(raster.depthCube, uFar);
 
     r3d_shader_enable(raster.depthCube);
     r3d_shader_set_sampler1D_slot(raster.depthCube, uTexBoneMatrices, 0);
     r3d_shader_set_sampler2D_slot(raster.depthCube, uTexAlbedo, 1);
-    r3d_shader_disable();
-}
-
-void r3d_shader_load_raster_depth_cube_inst(void)
-{
-    R3D.shader.raster.depthCubeInst.id = rlLoadShaderCode(
-        DEPTH_CUBE_INSTANCED_VERT, DEPTH_CUBE_FRAG
-    );
-
-    R3D_SHADER_VALIDATION(raster.depthCubeInst);
-
-    r3d_shader_get_location(raster.depthCubeInst, uTexBoneMatrices);
-    r3d_shader_get_location(raster.depthCubeInst, uUseSkinning);
-    r3d_shader_get_location(raster.depthCubeInst, uViewPosition);
-    r3d_shader_get_location(raster.depthCubeInst, uMatInvView);
-    r3d_shader_get_location(raster.depthCubeInst, uMatModel);
-    r3d_shader_get_location(raster.depthCubeInst, uMatVP);
-    r3d_shader_get_location(raster.depthCubeInst, uTexCoordOffset);
-    r3d_shader_get_location(raster.depthCubeInst, uTexCoordScale);
-    r3d_shader_get_location(raster.depthCubeInst, uFar);
-    r3d_shader_get_location(raster.depthCubeInst, uBillboardMode);
-    r3d_shader_get_location(raster.depthCubeInst, uAlpha);
-    r3d_shader_get_location(raster.depthCubeInst, uTexAlbedo);
-    r3d_shader_get_location(raster.depthCubeInst, uAlphaCutoff);
-
-    r3d_shader_enable(raster.depthCubeInst);
-    r3d_shader_set_sampler1D_slot(raster.depthCubeInst, uTexBoneMatrices, 0);
-    r3d_shader_set_sampler2D_slot(raster.depthCubeInst, uTexAlbedo, 1);
     r3d_shader_disable();
 }
 

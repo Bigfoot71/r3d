@@ -3,7 +3,7 @@
 
 /* === Defines === */
 
-#define FORWARD_LIGHT_COUNT 8
+#define LIGHT_FORWARD_COUNT 8
 
 #define LIGHT_DIR   0
 #define LIGHT_SPOT  1
