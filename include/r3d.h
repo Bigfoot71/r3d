@@ -3366,6 +3366,32 @@ R3DAPI Matrix R3D_GetMatrixInvProjection(void);
 // --------------------------------------------
 
 /**
+ * @brief Renders the internal ambient buffer to the screen.
+ *
+ * This function displays the ambient buffer, which contains ambient lighting data.
+ * It must be called outside of `R3D_Begin` and `R3D_End`.
+ *
+ * @param x X position to draw the buffer.
+ * @param y Y position to draw the buffer.
+ * @param w Width of the drawn buffer.
+ * @param h Height of the drawn buffer.
+ */
+R3DAPI void R3D_DrawBufferAmbient(float x, float y, float w, float h);
+
+/**
+ * @brief Renders the internal diffuse buffer to the screen.
+ *
+ * This function displays the ambient buffer, which contains diffuse lighting data.
+ * It must be called outside of `R3D_Begin` and `R3D_End`.
+ *
+ * @param x X position to draw the buffer.
+ * @param y Y position to draw the buffer.
+ * @param w Width of the drawn buffer.
+ * @param h Height of the drawn buffer.
+ */
+R3DAPI void R3D_DrawBufferDiffuse(float x, float y, float w, float h);
+
+/**
  * @brief Renders the internal albedo buffer to the screen.
  *
  * This function displays the albedo (diffuse) buffer as a 2D texture.
