@@ -32,7 +32,6 @@
 #include "./r3d_state.h"
 #include "./details/r3d_light.h"
 #include "./details/r3d_drawcall.h"
-#include "./details/r3d_billboard.h"
 #include "./details/r3d_primitives.h"
 #include "./details/containers/r3d_array.h"
 #include "./details/containers/r3d_registry.h"
@@ -493,17 +492,6 @@ void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix tra
 
     r3d_drawcall_t drawCall = { 0 };
 
-    switch (material->billboardMode) {
-    case R3D_BILLBOARD_FRONT:
-        r3d_transform_to_billboard_front(&transform, &R3D.state.transform.invView);
-        break;
-    case R3D_BILLBOARD_Y_AXIS:
-        r3d_transform_to_billboard_y(&transform, &R3D.state.transform.invView);
-        break;
-    default:
-        break;
-    }
-
     drawCall.transform = transform;
     drawCall.material = material ? *material : R3D_GetDefaultMaterial();
     drawCall.shadowCastMode = mesh->shadowCastMode;
@@ -608,17 +596,6 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
         r3d_drawcall_t drawCall = { 0 };
 
         const R3D_Material* material = &model->materials[model->meshMaterials[i]];
-
-        switch (material->billboardMode) {
-        case R3D_BILLBOARD_FRONT:
-            r3d_transform_to_billboard_front(&transform, &R3D.state.transform.invView);
-            break;
-        case R3D_BILLBOARD_Y_AXIS:
-            r3d_transform_to_billboard_y(&transform, &R3D.state.transform.invView);
-            break;
-        default:
-            break;
-        }
 
         drawCall.transform = transform;
         drawCall.material = material ? *material : R3D_GetDefaultMaterial();
@@ -752,19 +729,6 @@ void R3D_DrawSpritePro(const R3D_Sprite* sprite, Vector3 position, Vector2 size,
         },
         &position
     );
-
-    /* --- Applying transformation to billboard --- */
-
-    switch (sprite->material.billboardMode) {
-    case R3D_BILLBOARD_FRONT:
-        r3d_transform_to_billboard_front(&matTransform, &R3D.state.transform.invView);
-        break;
-    case R3D_BILLBOARD_Y_AXIS:
-        r3d_transform_to_billboard_y(&matTransform, &R3D.state.transform.invView);
-        break;
-    default:
-        break;
-    }
 
     /* --- Calculation of the representation of the quad in space --- */
 
