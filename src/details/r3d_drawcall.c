@@ -361,7 +361,7 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
     r3d_shader_set_int(raster.geometry, uInstancing, instancing);
 
     if (instancing) {
-        r3d_drawcall_instanced(call, 10, -1);
+        r3d_drawcall_instanced(call, 10, 14);
     }
     else {
         r3d_drawcall(call);
@@ -455,7 +455,7 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
     r3d_shader_set_int(raster.forward, uInstancing, instancing);
 
     if (instancing) {
-        r3d_drawcall_instanced(call, 10, -1);
+        r3d_drawcall_instanced(call, 10, 14);
     }
     else {
         r3d_drawcall(call);
