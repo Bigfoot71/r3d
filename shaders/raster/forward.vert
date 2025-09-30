@@ -19,9 +19,10 @@
 
 #version 330 core
 
-/* === Defines === */
+/* === Includes === */
 
-#define FORWARD_LIGHT_COUNT 8
+#include "../include/billboard.glsl"
+#include "../include/light.glsl"
 
 /* === Attributes === */
 
@@ -33,21 +34,26 @@ layout(location = 4) in vec4 aTangent;
 layout(location = 5) in ivec4 aBoneIDs;
 layout(location = 6) in vec4 aWeights;
 
+layout(location = 10) in mat4 iMatModel;
+layout(location = 14) in vec4 iColor;
+
 /* === Uniforms === */
 
+uniform sampler1D uTexBoneMatrices;
+
+uniform mat4 uMatLightVP[LIGHT_FORWARD_COUNT];
+uniform mat4 uMatInvView;       ///< Only for billboard modes
 uniform mat4 uMatNormal;
 uniform mat4 uMatModel;
-uniform mat4 uMatMVP;
-
-uniform mat4 uMatLightVP[FORWARD_LIGHT_COUNT];
+uniform mat4 uMatVP;
 
 uniform vec4 uAlbedoColor;
-
 uniform vec2 uTexCoordOffset;
 uniform vec2 uTexCoordScale;
 
-uniform sampler1D uTexBoneMatrices;
-uniform bool uUseSkinning;
+uniform bool uInstancing;
+uniform bool uSkinning;
+uniform int uBillboard;
 
 /* === Varyings === */
 
@@ -56,11 +62,11 @@ out vec2 vTexCoord;
 out vec4 vColor;
 out mat3 vTBN;
 
-out vec4 vPosLightSpace[FORWARD_LIGHT_COUNT];
+out vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
 
 /* === Helper Functions === */
 
-mat4 GetBoneMatrix(int boneID)
+mat4 BoneMatrix(int boneID)
 {
     int baseIndex = 4 * boneID;
 
@@ -72,41 +78,55 @@ mat4 GetBoneMatrix(int boneID)
     return transpose(mat4(row0, row1, row2, row3));
 }
 
+mat4 SkinMatrix(ivec4 boneIDs, vec4 weights)
+{
+    return weights.x * BoneMatrix(boneIDs.x) +
+           weights.y * BoneMatrix(boneIDs.y) +
+           weights.z * BoneMatrix(boneIDs.z) +
+           weights.w * BoneMatrix(boneIDs.w);
+}
+
 /* === Main program === */
 
 void main()
 {
-    vec3 skinnedPosition = aPosition;
-    vec3 skinnedNormal = aNormal;
-    vec3 skinnedTangent = aTangent.xyz;
+    mat4 matModel = uMatModel;
+    mat3 matNormal = mat3(uMatNormal);
 
-    if (uUseSkinning)
-    {
-        mat4 skinMatrix = 
-            aWeights.x * GetBoneMatrix(aBoneIDs.x) +
-            aWeights.y * GetBoneMatrix(aBoneIDs.y) +
-            aWeights.z * GetBoneMatrix(aBoneIDs.z) +
-            aWeights.w * GetBoneMatrix(aBoneIDs.w);
-
-        skinnedPosition = vec3(skinMatrix * vec4(aPosition, 1.0));
-        skinnedNormal   = mat3(skinMatrix) * aNormal;
-        skinnedTangent  = mat3(skinMatrix) * aTangent.xyz;
+    if (uSkinning) {
+        mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
+        matModel = sMatModel * matModel;
+        matNormal = mat3(transpose(inverse(sMatModel))) * matNormal;
     }
 
-    vec4 worldPosition = uMatModel * vec4(skinnedPosition, 1.0);
-    vPosition = worldPosition.xyz;
-    vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
-    vColor = aColor * uAlbedoColor;
+    if (uInstancing) {
+        matModel = transpose(iMatModel) * matModel;
+        matNormal = mat3(transpose(inverse(iMatModel))) * matNormal;
+    }
 
-    vec3 T = normalize(vec3(uMatModel * vec4(skinnedTangent, 0.0)));
-    vec3 N = normalize(vec3(uMatNormal * vec4(skinnedNormal, 1.0)));
-    vec3 B = normalize(cross(N, T)) * aTangent.w;
+    switch(uBillboard) {
+    case BILLBOARD_NONE:
+        break;
+    case BILLBOARD_FRONT:
+        BillboardFront(matModel, matNormal, uMatInvView);
+        break;
+    case BILLBOARD_Y_AXIS:
+        BillboardYAxis(matModel, matNormal, uMatInvView);
+        break;
+    }
+
+    vec3 T = normalize(matNormal * aTangent.xyz);
+    vec3 N = normalize(matNormal * aNormal);
+    vec3 B = normalize(cross(N, T) * aTangent.w);
+
+    vPosition = vec3(matModel * vec4(aPosition, 1.0));
+    vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
+    vColor = aColor * iColor * uAlbedoColor;
     vTBN = mat3(T, B, N);
 
-    for (int i = 0; i < FORWARD_LIGHT_COUNT; i++)
-    {
-        vPosLightSpace[i] = uMatLightVP[i] * worldPosition;
+    for (int i = 0; i < LIGHT_FORWARD_COUNT; i++) {
+        vPosLightSpace[i] = uMatLightVP[i] * vec4(vPosition, 1.0);
     }
 
-    gl_Position = uMatMVP * vec4(skinnedPosition, 1.0);
+    gl_Position = uMatVP * vec4(vPosition, 1.0);
 }

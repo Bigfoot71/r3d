@@ -57,7 +57,7 @@ in vec2 vTexCoord;
 in vec4 vColor;
 in mat3 vTBN;
 
-in vec4 vPosLightSpace[FORWARD_LIGHT_COUNT];
+in vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
 
 /* === Uniforms === */
 
@@ -66,8 +66,8 @@ uniform sampler2D uTexEmission;
 uniform sampler2D uTexNormal;
 uniform sampler2D uTexORM;
 
-uniform samplerCube uShadowMapCube[FORWARD_LIGHT_COUNT];
-uniform sampler2D uShadowMap2D[FORWARD_LIGHT_COUNT];
+uniform samplerCube uShadowMapCube[LIGHT_FORWARD_COUNT];
+uniform sampler2D uShadowMap2D[LIGHT_FORWARD_COUNT];
 
 uniform float uEmissionEnergy;
 uniform float uNormalScale;
@@ -86,7 +86,7 @@ uniform bool uHasSkybox;
 uniform float uSkyboxAmbientIntensity;
 uniform float uSkyboxReflectIntensity;
 
-uniform Light uLights[FORWARD_LIGHT_COUNT];
+uniform Light uLights[LIGHT_FORWARD_COUNT];
 
 uniform float uAlphaCutoff;
 uniform vec3 uViewPosition;
@@ -223,8 +223,6 @@ void main()
     /* Sample albedo texture */
 
     vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
-
-    // TODO: Alpha scissor is unnecessary after a depth pre-pass
     if (albedo.a < uAlphaCutoff) discard;
 
     /* Sample emission texture */
@@ -258,7 +256,7 @@ void main()
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
 
-    for (int i = 0; i < FORWARD_LIGHT_COUNT; i++)
+    for (int i = 0; i < LIGHT_FORWARD_COUNT; i++)
     {
         if (!uLights[i].enabled) {
             continue;

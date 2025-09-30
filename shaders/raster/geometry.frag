@@ -27,7 +27,7 @@
 
 flat in vec3 vEmission;
 in vec2 vTexCoord;
-in vec3 vColor;
+in vec4 vColor;
 in mat3 vTBN;
 
 /* === Uniforms === */
@@ -37,6 +37,7 @@ uniform sampler2D uTexNormal;
 uniform sampler2D uTexEmission;
 uniform sampler2D uTexORM;
 
+uniform float uAlphaCutoff;
 uniform float uNormalScale;
 uniform float uOcclusion;
 uniform float uRoughness;
@@ -53,7 +54,10 @@ layout(location = 3) out vec3 FragORM;
 
 void main()
 {
-    FragAlbedo = vColor * texture(uTexAlbedo, vTexCoord).rgb;
+    vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
+    if (albedo.a < uAlphaCutoff) discard;
+
+    FragAlbedo = albedo.rgb;
     FragEmission = vEmission * texture(uTexEmission, vTexCoord).rgb;
     FragNormal = M_EncodeOctahedral(normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale)));
 

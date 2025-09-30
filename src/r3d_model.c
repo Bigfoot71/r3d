@@ -1798,6 +1798,15 @@ bool R3D_UploadMesh(R3D_Mesh* mesh, bool dynamic)
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
 
+    // Default matrix instance (mat4)
+    glVertexAttrib4f(10, 1.0f, 0.0f, 0.0f, 0.0f);
+    glVertexAttrib4f(11, 0.0f, 1.0f, 0.0f, 0.0f);
+    glVertexAttrib4f(12, 0.0f, 0.0f, 1.0f, 0.0f);
+    glVertexAttrib4f(13, 0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Default color instance (vec4)
+    glVertexAttrib4f(14, 1.0f, 1.0f, 1.0f, 1.0f);
+
     // EBO if indices present
     if (mesh->indexCount > 0 && mesh->indices) {
         glGenBuffers(1, &mesh->ebo);
