@@ -98,6 +98,7 @@ extern struct R3D_State {
         GLuint normal;              ///< RG[16|16] (8-bit if R3D_FLAGS_8_BIT_NORMALS or 16F not supported)
         GLuint orm;                 ///< RGB[8|8|8]
         GLuint depthStencil;        ///< DS[24|8] -> Stencil: Last bit is a true/false geometry and others bits are for the rest
+        GLuint ambient;             ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Ambient contribution
         GLuint diffuse;             ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Diffuse contribution
         GLuint specular;            ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Specular contribution
         GLuint ssaoPpHs[2];         ///< R[8] -> Used for initial SSAO rendering + blur effect
@@ -140,6 +141,7 @@ extern struct R3D_State {
                               *  [1] = albedo
                               *  [2] = normal
                               *  [3] = orm
+                              *  [4] = ambient
                               *  [_] = depthStencil
                               */
 

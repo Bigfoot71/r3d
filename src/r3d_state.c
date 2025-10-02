@@ -515,6 +515,9 @@ void r3d_framebuffers_unload(void)
     if (R3D.target.orm > 0) {
         glDeleteTextures(1, &R3D.target.orm);
     }
+    if (R3D.target.ambient > 0) {
+        glDeleteTextures(1, &R3D.target.ambient);
+    }
     if (R3D.target.depthStencil > 0) {
         glDeleteTextures(1, &R3D.target.depthStencil);
     }
@@ -788,6 +791,28 @@ static void r3d_target_load_depth_stencil(int width, int height)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+static void r3d_target_load_ambient(int width, int height)
+{
+    assert(R3D.target.ambient == 0);
+
+    GLenum internalFormat;
+    if (R3D.state.flags & R3D_FLAG_LOW_PRECISION_BUFFERS) {
+        internalFormat = r3d_support_get_internal_format(GL_R11F_G11F_B10F, true);
+    }
+    else {
+        internalFormat = r3d_support_get_internal_format(GL_RGB16F, true);
+    }
+
+    glGenTextures(1, &R3D.target.ambient);
+    glBindTexture(GL_TEXTURE_2D, R3D.target.ambient);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 static void r3d_target_load_diffuse(int width, int height)
 {
     assert(R3D.target.diffuse == 0);
@@ -1028,7 +1053,7 @@ void r3d_framebuffer_load_deferred(int width, int height)
 
     glDrawBuffers(2, (GLenum[]) {
         GL_COLOR_ATTACHMENT0,
-        GL_COLOR_ATTACHMENT1,
+        GL_COLOR_ATTACHMENT1
     });
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, R3D.target.diffuse, 0);
@@ -1078,6 +1103,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     if (!R3D.target.albedo)         r3d_target_load_albedo(width, height);
     if (!R3D.target.normal)         r3d_target_load_normal(width, height);
     if (!R3D.target.orm)            r3d_target_load_orm(width, height);
+    if (!R3D.target.ambient)        r3d_target_load_ambient(width, height);
     if (!R3D.target.depthStencil)   r3d_target_load_depth_stencil(width, height);
 
     /* --- Create and configure the framebuffer --- */
@@ -1086,7 +1112,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.scene);
 
     // By default, only attachment 0 (the ping-pong buffer) is enabled.
-    // The additional attachments 'normal' and 'orm' will only be enabled
+    // The additional attachments 'normal','orm' and 'ambient' will only be enabled
     // when needed, for example during forward rendering.
     glDrawBuffers(1, (GLenum[]) {
         GL_COLOR_ATTACHMENT0
@@ -1096,6 +1122,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, R3D.target.albedo, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, R3D.target.normal, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, R3D.target.orm, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, R3D.target.ambient, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
