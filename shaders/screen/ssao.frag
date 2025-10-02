@@ -27,10 +27,6 @@ uniform mat4 uMatInvProj;
 uniform mat4 uMatProj;
 uniform mat4 uMatView;
 
-uniform vec2 uResolution;
-uniform float uNear;
-uniform float uFar;
-
 uniform float uRadius;
 uniform float uBias;
 uniform float uIntensity;

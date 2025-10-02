@@ -1362,14 +1362,6 @@ void r3d_pass_ssao(void)
             r3d_shader_set_mat4(screen.ssao, uMatProj, R3D.state.transform.proj);
             r3d_shader_set_mat4(screen.ssao, uMatView, R3D.state.transform.view);
 
-            r3d_shader_set_vec2(screen.ssao, uResolution, (Vector2) {
-                (float)R3D.state.resolution.width / 2,
-                (float)R3D.state.resolution.height / 2
-            });
-
-            r3d_shader_set_float(screen.ssao, uNear, (float)rlGetCullDistanceNear());
-            r3d_shader_set_float(screen.ssao, uFar, (float)rlGetCullDistanceFar());
-
             r3d_shader_set_float(screen.ssao, uRadius, R3D.env.ssaoRadius);
             r3d_shader_set_float(screen.ssao, uBias, R3D.env.ssaoBias);
             r3d_shader_set_float(screen.ssao, uIntensity, R3D.env.ssaoIntensity);

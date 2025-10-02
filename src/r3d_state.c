@@ -1444,9 +1444,6 @@ void r3d_shader_load_screen_ssao(void)
     r3d_shader_get_location(screen.ssao, uMatInvProj);
     r3d_shader_get_location(screen.ssao, uMatProj);
     r3d_shader_get_location(screen.ssao, uMatView);
-    r3d_shader_get_location(screen.ssao, uResolution);
-    r3d_shader_get_location(screen.ssao, uNear);
-    r3d_shader_get_location(screen.ssao, uFar);
     r3d_shader_get_location(screen.ssao, uRadius);
     r3d_shader_get_location(screen.ssao, uBias);
     r3d_shader_get_location(screen.ssao, uIntensity);

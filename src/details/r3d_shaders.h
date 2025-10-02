@@ -227,9 +227,6 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatInvProj;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
-    r3d_shader_uniform_vec2_t uResolution;
-    r3d_shader_uniform_float_t uNear;
-    r3d_shader_uniform_float_t uFar;
     r3d_shader_uniform_float_t uRadius;
     r3d_shader_uniform_float_t uBias;
     r3d_shader_uniform_float_t uIntensity;
