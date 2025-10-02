@@ -1,4 +1,19 @@
-// reference impl. from SmashHit iOS game dev blog (https://blog.voxagon.se/2018/05/04/bokeh-depth-of-field-in-single-pass.html)
+/* dof.frag -- Fragment shader implementing a depth of field effect
+ *
+ * Originally written by Dennis Gustafsson.
+ * Feature adaptation and extension by Jens Roth.
+ *
+ * Provides a post-processing effect that simulates camera focus,
+ * blending sharp and blurred regions according to scene depth.
+ *
+ * Copyright (c) 2025 Victor Le Juez, Jens Roth
+ *
+ * This software is distributed under the terms of the accompanying LICENSE file.
+ * It is provided "as-is", without any express or implied warranty.
+ */
+
+// reference impl. from SmashHit iOS game dev blog
+// see: https://blog.voxagon.se/2018/05/04/bokeh-depth-of-field-in-single-pass.html
 
 #version 330 core
 

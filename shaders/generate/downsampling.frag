@@ -1,3 +1,15 @@
+/* downsampling.frag -- Custom 36-tap bilinear downsampling shader for bloom generation
+ *
+ * Original implementation by Jorge Jiménez, presented at SIGGRAPH 2014
+ * (used in Call of Duty: Advanced Warfare)
+ *
+ * Copyright (c) 2014 Jorge Jiménez
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
 // This shader performs downsampling on a texture,
 // as taken from Call Of Duty method, presented at ACM Siggraph 2014.
 // This particular method was customly designed to eliminate

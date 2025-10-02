@@ -1,3 +1,15 @@
+/* upsampling.frag -- Custom upsampling fragment shader used for bloom generation
+ *
+ * Original implementation by Jorge Jiménez, presented at SIGGRAPH 2014
+ * (used in Call of Duty: Advanced Warfare)
+ *
+ * Copyright (c) 2014 Jorge Jiménez
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
 // This shader performs upsampling on a texture,
 // as taken from Call Of Duty method, presented at ACM Siggraph 2014.
 
