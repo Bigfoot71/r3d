@@ -261,7 +261,8 @@ void main()
 
         /* Compute the dot product of the normal and light direction */
 
-        float NdotL = max(dot(N, L), 0.0);
+        float NdotL = dot(N, L);
+        if (NdotL <= 0.0) continue;
         float cNdotL = min(NdotL, 1.0); // clamped NdotL
 
         /* Compute the halfway vector between the view and light directions */
@@ -269,7 +270,7 @@ void main()
         vec3 H = normalize(V + L);
 
         float LdotH = max(dot(L, H), 0.0);
-        float cLdotH = min(dot(L, H), 1.0);
+        float cLdotH = min(LdotH, 1.0);
 
         float NdotH = max(dot(N, H), 0.0);
         float cNdotH = min(NdotH, 1.0);
