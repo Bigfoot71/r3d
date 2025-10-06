@@ -39,7 +39,6 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexNormal;
 uniform sampler2D uTexDepth;
-uniform sampler2D uTexSSAO;
 uniform sampler2D uTexORM;
 
 uniform samplerCube uCubeIrradiance;
@@ -48,7 +47,6 @@ uniform sampler2D uTexBrdfLut;
 uniform vec4 uQuatSkybox;
 uniform float uSkyboxAmbientIntensity;
 uniform float uSkyboxReflectIntensity;
-uniform float uSSAOPower;
 
 uniform vec3 uViewPosition;
 uniform mat4 uMatInvProj;
@@ -58,6 +56,7 @@ uniform mat4 uMatInvView;
 
 layout(location = 0) out vec3 FragDiffuse;
 layout(location = 1) out vec3 FragSpecular;
+layout(location = 2) out vec3 FragAmbient;
 
 /* === Misc functions === */
 
@@ -81,16 +80,6 @@ void main()
     float occlusion = orm.r;
     float roughness = orm.g;
     float metalness = orm.b;
-
-    /* Sample SSAO buffer and modulate occlusion value */
-
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-
-    if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-
-    occlusion *= ssao;
 
     /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
 
@@ -118,6 +107,8 @@ void main()
     vec3 Nr = M_Rotate3D(N, uQuatSkybox);
     FragDiffuse = kD * texture(uCubeIrradiance, Nr).rgb;
     FragDiffuse *= occlusion * uSkyboxAmbientIntensity;
+	
+	FragAmbient = FragDiffuse * albedo;
 
     /* Skybox reflection - IBL specular amélioré */
 
@@ -147,14 +138,13 @@ noperspective in vec2 vTexCoord;
 /* === Uniforms === */
 
 uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexSSAO;
 uniform sampler2D uTexORM;
 uniform vec3 uAmbientColor;
-uniform float uSSAOPower;
 
 /* === Fragments === */
 
-layout(location = 0) out vec4 FragDiffuse;
+layout(location = 0) out vec3 FragDiffuse;
+layout(location = 1) out vec3 FragAmbient;
 
 /* === Main === */
 
@@ -169,16 +159,6 @@ void main()
     float roughness = orm.g;
     float metalness = orm.b;
 
-    /* --- Ambient occlusion (SSAO) --- */
-
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-
-	if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-
-	occlusion *= ssao;
-
     /* --- Ambient lighting --- */
 
     // Simplified calculation of diffuse as if NdotV is equal to 1.0 (view facing normal)
@@ -190,11 +170,12 @@ void main()
     vec3 kD = (1.0 - F0) * (1.0 - metalness);
     vec3 ambient = kD * uAmbientColor;
     ambient += F0 * uAmbientColor;
-    ambient *= albedo * occlusion;
+    ambient *= occlusion;
 
     /* --- Output --- */
 
-    FragDiffuse = vec4(ambient, 1.0);
+    FragDiffuse = ambient;
+	FragAmbient = albedo * ambient;
 }
 
 #endif

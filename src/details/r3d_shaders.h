@@ -237,10 +237,17 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_sampler2D_t uTexColor;
+    r3d_shader_uniform_sampler2D_t uTexAmbient;
+    r3d_shader_uniform_sampler2D_t uTexSSAO;
+    r3d_shader_uniform_float_t uSSAOPower;
+} r3d_shader_screen_ssao_apply_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_sampler2D_t uTexDepth;
-    r3d_shader_uniform_sampler2D_t uTexSSAO;
     r3d_shader_uniform_sampler2D_t uTexORM;
     r3d_shader_uniform_samplerCube_t uCubeIrradiance;
     r3d_shader_uniform_samplerCube_t uCubePrefilter;
@@ -248,7 +255,6 @@ typedef struct {
     r3d_shader_uniform_vec4_t uQuatSkybox;
     r3d_shader_uniform_float_t uSkyboxAmbientIntensity;
     r3d_shader_uniform_float_t uSkyboxReflectIntensity;
-    r3d_shader_uniform_float_t uSSAOPower;
     r3d_shader_uniform_vec3_t uViewPosition;
     r3d_shader_uniform_mat4_t uMatInvProj;
     r3d_shader_uniform_mat4_t uMatInvView;
@@ -257,9 +263,7 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
-    r3d_shader_uniform_sampler2D_t uTexSSAO;
     r3d_shader_uniform_sampler2D_t uTexORM;
-    r3d_shader_uniform_float_t uSSAOPower;
     r3d_shader_uniform_vec3_t uAmbientColor;
 } r3d_shader_screen_ambient_t;
 
@@ -302,9 +306,6 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uTexEmission;
     r3d_shader_uniform_sampler2D_t uTexDiffuse;
     r3d_shader_uniform_sampler2D_t uTexSpecular;
-    r3d_shader_uniform_sampler2D_t uTexSSAO;
-    r3d_shader_uniform_float_t uSSAOPower;
-    r3d_shader_uniform_float_t uSSAOLightAffect;
 } r3d_shader_screen_scene_t;
 
 typedef struct {

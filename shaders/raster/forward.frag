@@ -400,7 +400,8 @@ void main()
     /* Output material data */
 
     FragAlbedo = vec4(albedo.rgb, 1.0);
-	FragAmbient = ambient;
     FragNormal = vec4(M_EncodeOctahedral(N), vec2(1.0));
     FragORM = vec4(occlusion, roughness, metalness, 1.0);
+	
+	FragAmbient = albedo.rgb * ambient;
 }

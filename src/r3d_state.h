@@ -131,6 +131,7 @@ extern struct R3D_State {
 
         GLuint deferred;    /**< [0] = diffuse
                              *   [1] = specular
+                             *   [2] = ambient
                              *   [_] = depthStencil
                              */
 
@@ -190,6 +191,7 @@ extern struct R3D_State {
         // Screen shaders
         struct {
             r3d_shader_screen_ssao_t ssao;
+            r3d_shader_screen_ssao_apply_t ssao_apply;
             r3d_shader_screen_ambient_ibl_t ambientIbl;
             r3d_shader_screen_ambient_t ambient;
             r3d_shader_screen_lighting_t lighting;
@@ -395,6 +397,7 @@ void r3d_shader_load_raster_depth_volume(void);
 void r3d_shader_load_raster_depth(void);
 void r3d_shader_load_raster_depth_cube(void);
 void r3d_shader_load_screen_ssao(void);
+void r3d_shader_load_screen_ssao_apply(void);
 void r3d_shader_load_screen_ambient_ibl(void);
 void r3d_shader_load_screen_ambient(void);
 void r3d_shader_load_screen_lighting(void);

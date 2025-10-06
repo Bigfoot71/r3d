@@ -90,6 +90,7 @@ void R3D_SetSSAO(bool enabled)
 		}
 		if (R3D.shader.screen.ssao.id == 0) {
 			r3d_shader_load_screen_ssao();
+			r3d_shader_load_screen_ssao_apply();
 		}
 		if (R3D.shader.generate.gaussianBlurDualPass.id == 0) {
 			r3d_shader_load_generate_gaussian_blur_dual_pass();

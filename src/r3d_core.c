@@ -71,6 +71,7 @@ static void r3d_prepare_sort_drawcalls(void);
 static void r3d_prepare_anim_drawcalls(void);
 
 static void r3d_clear_gbuffer(bool bindFramebuffer, bool clearColor, bool clearDepth, bool clearStencil);
+static void r3d_clear_additional_buffers(void);
 
 static void r3d_pass_shadow_maps(void);
 static void r3d_pass_gbuffer(void);
@@ -84,6 +85,7 @@ static void r3d_pass_scene_deferred(void);
 static void r3d_pass_scene_forward(void);
 
 static void r3d_pass_post_setup(void);
+static void r3d_pass_post_ssao_apply(void);
 static void r3d_pass_post_ssr(void);
 static void r3d_pass_post_fog(void);
 static void r3d_pass_post_dof(void);
@@ -419,17 +421,14 @@ void R3D_End(void)
 
     /* --- Rasterizing Geometries in G-Buffer --- */
 
+    // TODO: Temporary solution, decide where to store and clear buffers not in the gbuffer
+    r3d_clear_additional_buffers();
+
     if (r3d_has_deferred_calls()) {
         r3d_pass_gbuffer(); //< This pass also clear the gbuffer...
     }
     else {
         r3d_clear_gbuffer(true, false, true, true);
-    }
-
-    /* --- Calculates ambient occlusion for opaque objects --- */
-
-    if (R3D.env.ssaoEnabled) {
-        r3d_pass_ssao();
     }
 
     /* --- Accumulation of deferred lighting --- */
@@ -454,6 +453,11 @@ void R3D_End(void)
     /* --- Applying effects over the scene and final blit --- */
 
     r3d_pass_post_setup();
+
+    if (R3D.env.ssaoEnabled) {
+        r3d_pass_ssao();
+        r3d_pass_post_ssao_apply();
+    }
 
     if (R3D.env.ssrEnabled) {
         r3d_pass_post_ssr();
@@ -1299,6 +1303,15 @@ void r3d_clear_gbuffer(bool bindFramebuffer, bool clearColor, bool clearDepth, b
     glClear(bitfield);
 }
 
+void r3d_clear_additional_buffers(void)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.scene);
+    glDrawBuffer(GL_COLOR_ATTACHMENT4); // Ambient
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawBuffer(GL_COLOR_ATTACHMENT0); // Scene
+}
+
 void r3d_pass_gbuffer(void)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.gBuffer);
@@ -1429,8 +1442,8 @@ void r3d_pass_deferred_ambient(void)
         glDisable(GL_DEPTH_TEST);
         glDepthMask(GL_FALSE);
         glDisable(GL_BLEND);
-
-        /* --- Clear color targets only (diffuse/specular) --- */
+        
+        /* --- Clear color targets only --- */
 
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -1452,13 +1465,6 @@ void r3d_pass_deferred_ambient(void)
                 r3d_shader_bind_sampler2D(screen.ambientIbl, uTexDepth, R3D.target.depthStencil);
                 r3d_shader_bind_sampler2D(screen.ambientIbl, uTexORM, R3D.target.orm);
 
-                if (R3D.env.ssaoEnabled) {
-                    r3d_shader_bind_sampler2D(screen.ambientIbl, uTexSSAO, R3D.target.ssaoPpHs[1]);
-                }
-                else {
-                    r3d_shader_bind_sampler2D(screen.ambientIbl, uTexSSAO, R3D.texture.white);
-                }
-
                 r3d_shader_bind_samplerCube(screen.ambientIbl, uCubeIrradiance, R3D.env.sky.irradiance.id);
                 r3d_shader_bind_samplerCube(screen.ambientIbl, uCubePrefilter, R3D.env.sky.prefilter.id);
                 r3d_shader_bind_sampler2D(screen.ambientIbl, uTexBrdfLut, R3D.texture.iblBrdfLut);
@@ -1469,14 +1475,12 @@ void r3d_pass_deferred_ambient(void)
                 r3d_shader_set_vec4(screen.ambientIbl, uQuatSkybox, R3D.env.quatSky);
                 r3d_shader_set_float(screen.ambientIbl, uSkyboxAmbientIntensity, R3D.env.skyAmbientIntensity);
                 r3d_shader_set_float(screen.ambientIbl, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
-                r3d_shader_set_float(screen.ambientIbl, uSSAOPower, R3D.env.ssaoPower);
 
                 r3d_primitive_bind_and_draw_screen();
 
                 r3d_shader_unbind_sampler2D(screen.ambientIbl, uTexAlbedo);
                 r3d_shader_unbind_sampler2D(screen.ambientIbl, uTexNormal);
                 r3d_shader_unbind_sampler2D(screen.ambientIbl, uTexDepth);
-                r3d_shader_unbind_sampler2D(screen.ambientIbl, uTexSSAO);
                 r3d_shader_unbind_sampler2D(screen.ambientIbl, uTexORM);
 
                 r3d_shader_unbind_samplerCube(screen.ambientIbl, uCubeIrradiance);
@@ -1490,37 +1494,33 @@ void r3d_pass_deferred_ambient(void)
 
         else
         {
-            // Here we only enable the first attachment (diffuse)
-            // and disable the second one, which is the specular,
-            // as it should not be written to in this case
-            rlActiveDrawBuffers(1);
+            // Here we only enable the needed attachments and disable
+            // specular, as it should not be written to in this case
+            glDrawBuffers(2, (GLenum[]) {
+                GL_COLOR_ATTACHMENT0,       //< Diffuse
+                GL_COLOR_ATTACHMENT2,       //< Ambient
+            });
 
             r3d_shader_enable(screen.ambient);
             {
                 r3d_shader_bind_sampler2D(screen.ambient, uTexAlbedo, R3D.target.albedo);
                 r3d_shader_bind_sampler2D(screen.ambient, uTexORM, R3D.target.orm);
 
-                if (R3D.env.ssaoEnabled) {
-                    r3d_shader_bind_sampler2D(screen.ambient, uTexSSAO, R3D.target.ssaoPpHs[1]);
-                }
-                else {
-                    r3d_shader_bind_sampler2D(screen.ambient, uTexSSAO, R3D.texture.white);
-                }
-
                 r3d_shader_set_vec3(screen.ambient, uAmbientColor, R3D.env.ambientColor);
-                r3d_shader_set_float(screen.ambient, uSSAOPower, R3D.env.ssaoPower);
 
                 r3d_primitive_bind_and_draw_screen();
 
                 r3d_shader_unbind_sampler2D(screen.ambient, uTexAlbedo);
-                r3d_shader_unbind_sampler2D(screen.ambient, uTexSSAO);
                 r3d_shader_unbind_sampler2D(screen.ambient, uTexORM);
             }
             r3d_shader_disable();
 
-            // We now re-enable both attachments,
-            // diffuse and specular, for future writes
-            rlActiveDrawBuffers(2);
+            // We now re-enable all color targets for future writes
+            glDrawBuffers(3, (GLenum[]) {
+                GL_COLOR_ATTACHMENT0,       //< Diffuse
+                GL_COLOR_ATTACHMENT1,       //< Specular
+                GL_COLOR_ATTACHMENT2        //< Ambient
+            });
         }
 
         /* --- Disable stencil test --- */
@@ -1745,23 +1745,12 @@ void r3d_pass_scene_deferred(void)
             r3d_shader_bind_sampler2D(screen.scene, uTexDiffuse, R3D.target.diffuse);
             r3d_shader_bind_sampler2D(screen.scene, uTexSpecular, R3D.target.specular);
 
-            if (R3D.env.ssaoEnabled) {
-                r3d_shader_bind_sampler2D(screen.scene, uTexSSAO, R3D.target.ssaoPpHs[1]);
-            }
-            else {
-                r3d_shader_bind_sampler2D(screen.scene, uTexSSAO, R3D.texture.white);
-            }
-
-            r3d_shader_set_float(screen.scene, uSSAOPower, R3D.env.ssaoPower);
-            r3d_shader_set_float(screen.scene, uSSAOLightAffect, R3D.env.ssaoLightAffect);
-
             r3d_primitive_bind_and_draw_screen();
 
             r3d_shader_unbind_sampler2D(screen.scene, uTexAlbedo);
             r3d_shader_unbind_sampler2D(screen.scene, uTexEmission);
             r3d_shader_unbind_sampler2D(screen.scene, uTexDiffuse);
             r3d_shader_unbind_sampler2D(screen.scene, uTexSpecular);
-            r3d_shader_unbind_sampler2D(screen.scene, uTexSSAO);
         }
         r3d_shader_disable();
 
@@ -1937,7 +1926,7 @@ void r3d_pass_scene_forward(void)
         glEnable(GL_DEPTH_TEST);
         glDepthMask(GL_TRUE);
 
-        /* --- Enable stencil wrtie and materials output --- */
+        /* --- Enable stencil write and materials output --- */
 
         r3d_stencil_enable_geometry_write();
 
@@ -2002,9 +1991,7 @@ void r3d_pass_scene_forward(void)
 
         r3d_stencil_disable();
 
-        glDrawBuffers(1, (GLenum[]) {
-            GL_COLOR_ATTACHMENT0 //< Scene
-        });
+        glDrawBuffer(GL_COLOR_ATTACHMENT0); //< Scene
     }
 }
 
@@ -2024,6 +2011,32 @@ void r3d_pass_post_setup(void)
 
     glDepthMask(GL_FALSE);
     glStencilMask(0x00);
+}
+
+void r3d_pass_post_ssao_apply(void)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.scene);
+    {
+        glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
+
+        r3d_shader_enable(screen.ssao_apply);
+        {
+            r3d_shader_bind_sampler2D(screen.ssao_apply, uTexColor, R3D.target.scenePp[1]);
+            r3d_shader_bind_sampler2D(screen.ssao_apply, uTexAmbient, R3D.target.ambient);
+            r3d_shader_bind_sampler2D(screen.ssao_apply, uTexSSAO, R3D.target.ssaoPpHs[1]);
+
+            r3d_shader_set_float(screen.ssao_apply, uSSAOPower, R3D.env.ssaoPower);
+
+            r3d_primitive_bind_and_draw_screen();
+
+            r3d_shader_unbind_sampler2D(screen.ssao_apply, uTexColor);
+            r3d_shader_unbind_sampler2D(screen.ssao_apply, uTexAmbient);
+            r3d_shader_unbind_sampler2D(screen.ssao_apply, uTexSSAO);
+        }
+        r3d_shader_disable();
+
+        r3d_target_swap_pingpong(R3D.target.scenePp);
+    }
 }
 
 void r3d_pass_post_ssr(void)

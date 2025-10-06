@@ -31,11 +31,6 @@ uniform sampler2D uTexEmission;
 uniform sampler2D uTexDiffuse;
 uniform sampler2D uTexSpecular;
 
-uniform sampler2D uTexSSAO;
-
-uniform float uSSAOPower;
-uniform float uSSAOLightAffect;
-
 /* === Fragments === */
 
 layout(location = 0) out vec3 FragColor;
@@ -52,15 +47,6 @@ void main()
     vec3 diffuse = texture(uTexDiffuse, vTexCoord).rgb;
     vec3 specular = texture(uTexSpecular, vTexCoord).rgb;
 	
-	/* Apply SSAO to diffuse lighting */
-    float ssao = mix(1.0, texture(uTexSSAO, vTexCoord).r, uSSAOLightAffect);
-
-    if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-	
-	diffuse *= ssao;
-
     /* Combine all lighting contributions */
 
     FragColor = (albedo * diffuse) + specular + emission;
