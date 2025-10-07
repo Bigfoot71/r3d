@@ -35,8 +35,8 @@ void main()
     }
 	
 	// Attenuate SSAO
-	vec3 ssaoColor = vec3(1.0 - ssao) * ambient;
+	vec3 ssaoColor = (1.0 - ssao) * ambient;
 	
     // Final color output
-	FragColor = color - ssaoColor;
+	FragColor = max(color - ssaoColor, vec3(0.0));
 }
