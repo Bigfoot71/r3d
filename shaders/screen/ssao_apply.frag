@@ -32,11 +32,12 @@ void main()
 	// Apply power factor to SSAO
     if (uSSAOPower != 1.0) {
         ssao = pow(ssao, uSSAOPower);
+        ssao = min(ssao, 1.0);
     }
 	
 	// Attenuate SSAO
 	vec3 ssaoColor = (1.0 - ssao) * ambient;
 	
     // Final color output
-	FragColor = max(color - ssaoColor, vec3(0.0));
+	FragColor = color - ssaoColor;
 }
