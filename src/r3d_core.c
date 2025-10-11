@@ -1498,7 +1498,7 @@ void r3d_pass_deferred_ambient(void)
             // specular, as it should not be written to in this case
             glDrawBuffers(2, (GLenum[]) {
                 GL_COLOR_ATTACHMENT0,       //< Diffuse
-                GL_COLOR_ATTACHMENT2,       //< Ambient
+                GL_COLOR_ATTACHMENT2        //< Ambient
             });
 
             r3d_shader_enable(screen.ambient);
