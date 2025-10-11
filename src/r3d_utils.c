@@ -108,12 +108,60 @@ Matrix R3D_GetMatrixInvProjection(void)
     return R3D.state.transform.invProj;
 }
 
+void R3D_DrawBufferAmbient(float x, float y, float w, float h)
+{
+    Texture2D tex = {
+        .id = R3D.target.ambient,
+        .width = R3D.state.resolution.width,
+        .height = R3D.state.resolution.height
+    };
+
+    DrawTexturePro(
+        tex, (Rectangle) { 0, 0, (float)tex.width, (float)-tex.height },
+        (Rectangle) {
+        x, y, w, h
+    }, (Vector2) { 0 }, 0, WHITE
+            );
+
+    DrawRectangleLines(
+        (int)(x + 0.5f), (int)(y + 0.5f),
+        (int)(w + 0.5f), (int)(h + 0.5f),
+        (Color) {
+        255, 0, 0, 255
+    }
+    );
+}
+
+void R3D_DrawBufferDiffuse(float x, float y, float w, float h)
+{
+    Texture2D tex = {
+        .id = R3D.target.diffuse,
+        .width = R3D.state.resolution.width,
+        .height = R3D.state.resolution.height
+    };
+
+    DrawTexturePro(
+        tex, (Rectangle) { 0, 0, (float)tex.width, (float)-tex.height },
+        (Rectangle) {
+        x, y, w, h
+    }, (Vector2) { 0 }, 0, WHITE
+            );
+
+    DrawRectangleLines(
+        (int)(x + 0.5f), (int)(y + 0.5f),
+        (int)(w + 0.5f), (int)(h + 0.5f),
+        (Color) {
+        255, 0, 0, 255
+    }
+    );
+}
+
 void R3D_DrawBufferAlbedo(float x, float y, float w, float h)
 {
     Texture2D tex = {
         .id = R3D.target.albedo,
         .width = R3D.state.resolution.width,
-        .height = R3D.state.resolution.width
+        .height = R3D.state.resolution.height
     };
 
     DrawTexturePro(

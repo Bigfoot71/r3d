@@ -110,6 +110,7 @@ layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 FragAlbedo;
 layout(location = 2) out vec4 FragNormal;
 layout(location = 3) out vec4 FragORM;
+layout(location = 4) out vec3 FragAmbient;
 
 /* === Shadow functions === */
 
@@ -391,4 +392,6 @@ void main()
     FragAlbedo = vec4(albedo.rgb, 1.0);
     FragNormal = vec4(M_EncodeOctahedral(N), vec2(1.0));
     FragORM = vec4(occlusion, roughness, metalness, 1.0);
+	
+	FragAmbient = albedo.rgb * ambient;
 }

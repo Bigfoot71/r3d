@@ -61,6 +61,7 @@
 #include <shaders/skybox.frag.h>
 #include <shaders/skybox.vert.h>
 #include <shaders/ssao.frag.h>
+#include <shaders/ssao_apply.frag.h>
 #include <shaders/ssr.frag.h>
 #include <shaders/upsampling.frag.h>
 
@@ -515,6 +516,9 @@ void r3d_framebuffers_unload(void)
     if (R3D.target.orm > 0) {
         glDeleteTextures(1, &R3D.target.orm);
     }
+    if (R3D.target.ambient > 0) {
+        glDeleteTextures(1, &R3D.target.ambient);
+    }
     if (R3D.target.depthStencil > 0) {
         glDeleteTextures(1, &R3D.target.depthStencil);
     }
@@ -617,6 +621,7 @@ void r3d_shaders_load(void)
     if (R3D.env.ssaoEnabled) {
         r3d_shader_load_generate_gaussian_blur_dual_pass();
         r3d_shader_load_screen_ssao();
+        r3d_shader_load_screen_ssao_apply();
     }
     if (R3D.env.bloomMode != R3D_BLOOM_DISABLED) {
         r3d_shader_load_generate_downsampling();
@@ -667,6 +672,9 @@ void r3d_shaders_unload(void)
 
     if (R3D.shader.screen.ssao.id != 0) {
         rlUnloadShaderProgram(R3D.shader.screen.ssao.id);
+    }
+    if (R3D.shader.screen.ssao_apply.id != 0) {
+        rlUnloadShaderProgram(R3D.shader.screen.ssao_apply.id);
     }
     if (R3D.shader.screen.bloom.id != 0) {
         rlUnloadShaderProgram(R3D.shader.screen.bloom.id);
@@ -781,6 +789,28 @@ static void r3d_target_load_depth_stencil(int width, int height)
     glGenTextures(1, &R3D.target.depthStencil);
     glBindTexture(GL_TEXTURE_2D, R3D.target.depthStencil);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+static void r3d_target_load_ambient(int width, int height)
+{
+    assert(R3D.target.ambient == 0);
+
+    GLenum internalFormat;
+    if (R3D.state.flags & R3D_FLAG_LOW_PRECISION_BUFFERS) {
+        internalFormat = r3d_support_get_internal_format(GL_R11F_G11F_B10F, true);
+    }
+    else {
+        internalFormat = r3d_support_get_internal_format(GL_RGB16F, true);
+    }
+
+    glGenTextures(1, &R3D.target.ambient);
+    glBindTexture(GL_TEXTURE_2D, R3D.target.ambient);
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGB, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -1019,6 +1049,7 @@ void r3d_framebuffer_load_deferred(int width, int height)
 
     if (!R3D.target.diffuse)        r3d_target_load_diffuse(width, height);
     if (!R3D.target.specular)       r3d_target_load_specular(width, height);
+    if (!R3D.target.ambient)        r3d_target_load_ambient(width, height);
     if (!R3D.target.depthStencil)   r3d_target_load_depth_stencil(width, height);
 
     /* --- Create and configure the framebuffer --- */
@@ -1026,13 +1057,15 @@ void r3d_framebuffer_load_deferred(int width, int height)
     glGenFramebuffers(1, &R3D.framebuffer.deferred);
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.deferred);
 
-    glDrawBuffers(2, (GLenum[]) {
+    glDrawBuffers(3, (GLenum[]) {
         GL_COLOR_ATTACHMENT0,
         GL_COLOR_ATTACHMENT1,
+        GL_COLOR_ATTACHMENT2
     });
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, R3D.target.diffuse, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, R3D.target.specular, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, R3D.target.ambient, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -1078,6 +1111,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     if (!R3D.target.albedo)         r3d_target_load_albedo(width, height);
     if (!R3D.target.normal)         r3d_target_load_normal(width, height);
     if (!R3D.target.orm)            r3d_target_load_orm(width, height);
+    if (!R3D.target.ambient)        r3d_target_load_ambient(width, height);
     if (!R3D.target.depthStencil)   r3d_target_load_depth_stencil(width, height);
 
     /* --- Create and configure the framebuffer --- */
@@ -1086,7 +1120,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.scene);
 
     // By default, only attachment 0 (the ping-pong buffer) is enabled.
-    // The additional attachments 'normal' and 'orm' will only be enabled
+    // The additional attachments 'normal','orm' and 'ambient' will only be enabled
     // when needed, for example during forward rendering.
     glDrawBuffers(1, (GLenum[]) {
         GL_COLOR_ATTACHMENT0
@@ -1096,6 +1130,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, R3D.target.albedo, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, R3D.target.normal, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, R3D.target.orm, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, R3D.target.ambient, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -1471,7 +1506,6 @@ void r3d_shader_load_screen_ambient_ibl(void)
     r3d_shader_get_location(screen.ambientIbl, uTexAlbedo);
     r3d_shader_get_location(screen.ambientIbl, uTexNormal);
     r3d_shader_get_location(screen.ambientIbl, uTexDepth);
-    r3d_shader_get_location(screen.ambientIbl, uTexSSAO);
     r3d_shader_get_location(screen.ambientIbl, uTexORM);
     r3d_shader_get_location(screen.ambientIbl, uCubeIrradiance);
     r3d_shader_get_location(screen.ambientIbl, uCubePrefilter);
@@ -1482,19 +1516,17 @@ void r3d_shader_load_screen_ambient_ibl(void)
     r3d_shader_get_location(screen.ambientIbl, uViewPosition);
     r3d_shader_get_location(screen.ambientIbl, uMatInvProj);
     r3d_shader_get_location(screen.ambientIbl, uMatInvView);
-    r3d_shader_get_location(screen.ambientIbl, uSSAOPower);
 
     r3d_shader_enable(screen.ambientIbl);
 
     r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexAlbedo, 0);
     r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexNormal, 1);
     r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexDepth, 2);
-    r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexSSAO, 3);
-    r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexORM, 4);
+    r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexORM, 3);
 
-    r3d_shader_set_samplerCube_slot(screen.ambientIbl, uCubeIrradiance, 5);
-    r3d_shader_set_samplerCube_slot(screen.ambientIbl, uCubePrefilter, 6);
-    r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexBrdfLut, 7);
+    r3d_shader_set_samplerCube_slot(screen.ambientIbl, uCubeIrradiance, 4);
+    r3d_shader_set_samplerCube_slot(screen.ambientIbl, uCubePrefilter, 5);
+    r3d_shader_set_sampler2D_slot(screen.ambientIbl, uTexBrdfLut, 6);
 
     r3d_shader_disable();
 }
@@ -1508,15 +1540,12 @@ void r3d_shader_load_screen_ambient(void)
     R3D_SHADER_VALIDATION(screen.ambient);
 
     r3d_shader_get_location(screen.ambient, uTexAlbedo);
-    r3d_shader_get_location(screen.ambient, uTexSSAO);
     r3d_shader_get_location(screen.ambient, uTexORM);
     r3d_shader_get_location(screen.ambient, uAmbientColor);
-    r3d_shader_get_location(screen.ambient, uSSAOPower);
 
     r3d_shader_enable(screen.ambient);
     r3d_shader_set_sampler2D_slot(screen.ambient, uTexAlbedo, 0);
-    r3d_shader_set_sampler2D_slot(screen.ambient, uTexSSAO, 1);
-    r3d_shader_set_sampler2D_slot(screen.ambient, uTexORM, 2);
+    r3d_shader_set_sampler2D_slot(screen.ambient, uTexORM, 1);
     r3d_shader_disable();
 }
 
@@ -1582,9 +1611,6 @@ void r3d_shader_load_screen_scene(void)
     r3d_shader_get_location(screen.scene, uTexEmission);
     r3d_shader_get_location(screen.scene, uTexDiffuse);
     r3d_shader_get_location(screen.scene, uTexSpecular);
-    r3d_shader_get_location(screen.scene, uTexSSAO);
-    r3d_shader_get_location(screen.scene, uSSAOPower);
-    r3d_shader_get_location(screen.scene, uSSAOLightAffect);
 
     r3d_shader_enable(screen.scene);
 
@@ -1593,8 +1619,26 @@ void r3d_shader_load_screen_scene(void)
     r3d_shader_set_sampler2D_slot(screen.scene, uTexDiffuse, 2);
     r3d_shader_set_sampler2D_slot(screen.scene, uTexSpecular, 3);
 
-    r3d_shader_set_sampler2D_slot(screen.scene, uTexSSAO, 4);
+    r3d_shader_disable();
+}
 
+void r3d_shader_load_screen_ssao_apply(void)
+{
+    R3D.shader.screen.ssao_apply.id = rlLoadShaderCode(
+        SCREEN_VERT, SSAO_APPLY_FRAG
+    );
+
+    R3D_SHADER_VALIDATION(screen.ssao_apply);
+
+    r3d_shader_get_location(screen.ssao_apply, uTexColor);
+    r3d_shader_get_location(screen.ssao_apply, uTexAmbient);
+    r3d_shader_get_location(screen.ssao_apply, uTexSSAO);
+    r3d_shader_get_location(screen.ssao_apply, uSSAOPower);
+
+    r3d_shader_enable(screen.ssao_apply);
+    r3d_shader_set_sampler2D_slot(screen.ssao_apply, uTexColor, 0);
+    r3d_shader_set_sampler2D_slot(screen.ssao_apply, uTexAmbient, 1);
+    r3d_shader_set_sampler2D_slot(screen.ssao_apply, uTexSSAO, 2);
     r3d_shader_disable();
 }
 
