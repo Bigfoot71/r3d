@@ -17,7 +17,7 @@
 
 #!/usr/bin/env python3
 
-import sys, re
+import sys, re, zlib, struct, argparse
 from pathlib import Path
 
 # === Processing Passes === #
@@ -74,11 +74,16 @@ def normalize_spaces(shader_content):
     lines = shader_content.split('\n')
     processed_lines = []
 
-    symbols = [',', '.', '(', ')', '{', '}', ';', ':', '+', '-', '*', '/', '=']
+    symbols = [
+        ',', '.', '(', ')', '{', '}', ';', ':',
+        '+', '-', '*', '/', '=', '<', '>',
+        '!', '?', '|', '&'
+    ]
 
     for line in lines:
         if line.lstrip().startswith('#'):
-            # Preserve preprocessor directives as is
+            line = re.sub(r'^\s*#', '#', line)      # Remove spaces before the '#'
+            line = re.sub(r'[ \t]+', ' ', line)     # Replace consecutive spaces to one
             processed_lines.append(line)
         else:
             # Apply normalization to other lines
@@ -92,6 +97,12 @@ def normalize_spaces(shader_content):
             processed_lines.append(processed_line)
 
     return '\n'.join(processed_lines)
+
+def optimize_float_literals(shader_content):
+    """Optimize float literal notation"""
+    shader_content = re.sub(r'\b(\d+)\.0+(?!\d)', r'\1.', shader_content)   # 1.000 -> 1.
+    shader_content = re.sub(r'\b0\.([1-9]\d*)\b', r'.\1', shader_content)   # 0.5 -> .5  (but no 0.0 -> .0)
+    return shader_content
 
 # === Main === #
 
@@ -113,29 +124,42 @@ def process_shader(filepath):
     shader_content = remove_comments(shader_content)
     shader_content = remove_newlines(shader_content)
     shader_content = normalize_spaces(shader_content)
+    shader_content = optimize_float_literals(shader_content)
 
     return shader_content
 
+def compress_shader(shader_content):
+    """Compresses the content with zlib (DEFLATE) then encodes in base64"""
+    shader_bytes = shader_content.encode('utf-8')
+    uncompressed_size = len(shader_bytes)
+    shader_compressed = zlib.compress(shader_bytes)
+    header = struct.pack('<Q', uncompressed_size)
+    return header + shader_compressed
+
 def main():
-    if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print("Usage: python glsl_processor.py <shader_path> [output_file]", file=sys.stderr)
-        print("  If output_file is not specified, output goes to stdout", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Process and optionally compress a GLSL shader file.")
+    parser.add_argument("shader_path", help="Path to the input shader file")
+    parser.add_argument("output_file", nargs="?", help="Output file path (optional, defaults to stdout)")
+    parser.add_argument("--compress", "-c", action="store_true", help="Compress the shader output (binary mode)")
+    args = parser.parse_args()
 
-    input_file = sys.argv[1]
-    output_file = sys.argv[2] if len(sys.argv) == 3 else None
+    if args.compress and not args.output_file:
+        sys.exit("Error: Cannot output compressed data to stdout. Please specify an output file.")
 
-    formatted_shader = process_shader(input_file)
+    formatted_shader = process_shader(args.shader_path)
 
-    if output_file:
-        try:
-            with open(output_file, 'w', encoding='utf-8') as f:
+    if args.compress:
+        formatted_shader = compress_shader(formatted_shader)
+
+    try:
+        if args.output_file:
+            mode = 'wb' if args.compress else 'w'
+            with open(args.output_file, mode, encoding=None if args.compress else 'utf-8') as f:
                 f.write(formatted_shader)
-        except Exception as e:
-            print(f"Error writing to output file: {e}", file=sys.stderr)
-            sys.exit(1)
-    else:
-        print(formatted_shader, end="")
+        else:
+            print(formatted_shader, end="")
+    except OSError as e:
+        sys.exit(f"Error writing to output: {e}")
 
 if __name__ == "__main__":
     main()
