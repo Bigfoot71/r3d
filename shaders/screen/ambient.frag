@@ -179,7 +179,7 @@ void main()
     vec3 kD = (1.0 - F0) * (1.0 - metalness);
     vec3 ambient = kD * uAmbientColor;
     ambient += F0 * uAmbientColor;
-    ambient *= albedo * occlusion;
+    ambient *= occlusion;
 
     /* --- Output --- */
 
