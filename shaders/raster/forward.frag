@@ -233,6 +233,8 @@ void main()
     /* Sample normal and compute view direction vector */
 
     vec3 N = normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    if (!gl_FrontFacing) N = -N; // Flip for back facing triangles with double sided meshes
+
     vec3 V = normalize(uViewPosition - vPosition);
 
     /* Compute the dot product of the normal and view direction */
