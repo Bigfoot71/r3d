@@ -77,7 +77,7 @@ void main()
 
     if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
-        matModel = sMatModel * matModel;
+        matModel = matModel * sMatModel;
     }
 
     if (uInstancing) {
