@@ -76,7 +76,6 @@ typedef struct {
 
 void r3d_drawcall_sort_front_to_back(r3d_drawcall_t* calls, size_t count);
 void r3d_drawcall_sort_back_to_front(r3d_drawcall_t* calls, size_t count);
-void r3d_drawcall_sort_mixed_forward(r3d_drawcall_t* calls, size_t count);
 
 bool r3d_drawcall_geometry_is_visible(const r3d_drawcall_t* call);
 bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call);

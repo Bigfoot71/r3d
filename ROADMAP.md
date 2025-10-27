@@ -5,20 +5,10 @@
 * [x] **Create Shader Include System**
   Implement an internal shader include system to reduce code duplication in built-in shaders. This could be integrated during the compilation phase, either in `glsl_minifier` or a dedicated pre-processing script.
 
-* [ ] **Revamp Forward Rendering**
-  The forward rendering pipeline needs to be revised, particularly to support SSAO. For SSAO, we need at least depth and normals **before lighting**.
-  The best approach is to compute normals (and other material values by the way) during the **depth pre-pass**, which also provides the depth. After the depth pre-pass, we can compute SSAO and then apply it during the lighting pass, using the normals and material values generated in the pre-pass.
-
-  However, the pre-pass only applies to **opaque rendering**, so we will need a slightly different version of the forward shader for objects that are not pre-passed. This shader will compute normals and material values directly instead of extracting them from the pre-pass like with opaque objects.
-
-  This make the **depth pre-pass mandatory** for opaque forward rendering.
-
-* [ ] **Better SSAO Support**
-  Refactor `R3D_End` so that in *forced forward* mode, SSAO can also be applied to opaque objects stored in the forward draw calls array.
-
-* [ ] **Add ‘Light Affect’ Factor for Ambient Occlusion**
-  Currently, occlusion (from ORM or SSAO) only affects ambient light (simulated or IBL). Add a factor to control how much direct lighting is influenced too. While this is less physically accurate, it allows better artistic control.
-  *Note: Consider splitting this into two separate factors: one per material and another for SSAO globally.*
+* [x] **Simplify forward rendering**
+  Support for opaque rendering in forward mode will be removed and it will only be used for semi-transparency.
+  The goal is to simplify r3d as much as possible and drop the idea of supporting OpenGL ES.
+  If that’s something you were expecting, know that I’m working on another project similar to r3d which already supports OpenGL ES 3.2.
 
 * [x] **Better Shadow Quality and Performance**
   Shadow rendering can currently be easily simplified and improved
@@ -49,12 +39,7 @@
 * [ ] **Make a Wiki**
   Add wiki pages to the Github repository.
 
-*Note: v0.7 features are still incomplete.*
-
-## **v0.8**
-
-* [ ] **Support for OpenGL ES**
-  Likely add support for OpenGL ES.
+*Note: v0.7 features are still unsure and incomplete.*
 
 ## **Ideas (Not Planned Yet)**
 

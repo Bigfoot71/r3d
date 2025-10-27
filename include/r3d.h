@@ -65,11 +65,10 @@ typedef unsigned int R3D_Flags;
 #define R3D_FLAG_ASPECT_KEEP            (1 << 2)    /**< Maintains the aspect ratio of the internal resolution when blitting the final image */
 #define R3D_FLAG_STENCIL_TEST           (1 << 3)    /**< Performs a stencil test on each rendering pass affecting geometry */
 #define R3D_FLAG_8_BIT_NORMALS          (1 << 4)    /**< Use 8-bit precision for the normals buffer (deferred); default is 16-bit float */
-#define R3D_FLAG_FORCE_FORWARD          (1 << 5)    /**< Used to force forward rendering for opaque objects, useful for tile-based devices. Be careful, this flag should not be set when rendering, or you may get incorrect sorting of draw calls. */
-#define R3D_FLAG_NO_FRUSTUM_CULLING     (1 << 6)    /**< Disables internal frustum culling. Manual culling is allowed, but may break shadow visibility if objects casting shadows are skipped. */
-#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 7)    /**< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments. Be careful, in 'force forward' mode this flag will also sort opaque objects in 'near-to-far' but in the same sorting pass. */
-#define R3D_FLAG_OPAQUE_SORTING         (1 << 8)    /**< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting. Please note, in 'force forward' mode this flag has no effect, see transparent sorting. */
-#define R3D_FLAG_LOW_PRECISION_BUFFERS  (1 << 9)    /**< Use 32-bit HDR formats like R11G11B10F for intermediate color buffers instead of full 16-bit floats. Saves memory and bandwidth. */
+#define R3D_FLAG_NO_FRUSTUM_CULLING     (1 << 5)    /**< Disables internal frustum culling. Manual culling is allowed, but may break shadow visibility if objects casting shadows are skipped. */
+#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 6)    /**< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments. Be careful, in 'force forward' mode this flag will also sort opaque objects in 'near-to-far' but in the same sorting pass. */
+#define R3D_FLAG_OPAQUE_SORTING         (1 << 7)    /**< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting. Please note, in 'force forward' mode this flag has no effect, see transparent sorting. */
+#define R3D_FLAG_LOW_PRECISION_BUFFERS  (1 << 8)    /**< Use 32-bit HDR formats like R11G11B10F for intermediate color buffers instead of full 16-bit floats. Saves memory and bandwidth. */
 
 /**
  * @brief Bitfield type used to specify rendering layers for 3D objects.

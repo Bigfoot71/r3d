@@ -47,7 +47,6 @@ static void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceMo
 // Comparison functions for sorting draw calls in the arrays
 static int r3d_drawcall_compare_front_to_back(const void* a, const void* b);
 static int r3d_drawcall_compare_back_to_front(const void* a, const void* b);
-static int r3d_drawcall_compare_mixed_forward(const void* a, const void* b);
 
 // Upload matrices function
 static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call);
@@ -62,12 +61,6 @@ void r3d_drawcall_sort_front_to_back(r3d_drawcall_t* calls, size_t count)
 void r3d_drawcall_sort_back_to_front(r3d_drawcall_t* calls, size_t count)
 {
     qsort(calls, count, sizeof(r3d_drawcall_t), r3d_drawcall_compare_back_to_front);
-}
-
-void r3d_drawcall_sort_mixed_forward(r3d_drawcall_t* calls, size_t count)
-{
-    // Sort objects forward in case the array can contain both opaque and transparent objects
-    qsort(calls, count, sizeof(r3d_drawcall_t), r3d_drawcall_compare_mixed_forward);
 }
 
 bool r3d_drawcall_geometry_is_visible(const r3d_drawcall_t* call)
@@ -761,30 +754,6 @@ int r3d_drawcall_compare_back_to_front(const void* a, const void* b)
     float maxDistB = r3d_drawcall_calculate_max_distance_to_camera(drawCallB);
 
     return (maxDistA < maxDistB) - (maxDistA > maxDistB);
-}
-
-// Comparison function for forward objects (opaque/transparent mixed, front-to-back or back-to-front)
-int r3d_drawcall_compare_mixed_forward(const void* a, const void* b)
-{
-    const r3d_drawcall_t* drawCallA = a;
-    const r3d_drawcall_t* drawCallB = b;
-
-    // Assume there's a way to check if a drawcall is opaque
-    // You'll need to implement this based on your blend mode system
-    bool isOpaqueA = (drawCallA->material.blendMode == R3D_BLEND_OPAQUE);
-    bool isOpaqueB = (drawCallB->material.blendMode == R3D_BLEND_OPAQUE);
-
-    // If one is opaque and the other is not, opaque comes first
-    if (isOpaqueA && !isOpaqueB) return -1;
-    if (!isOpaqueA && isOpaqueB) return +1;
-
-    // If both are opaque, sort front-to-back
-    if (isOpaqueA && isOpaqueB) {
-        return r3d_drawcall_compare_front_to_back(a, b);
-    }
-
-    // If both are transparent, sort back-to-front
-    return r3d_drawcall_compare_back_to_front(a, b);
 }
 
 // Upload matrices function
