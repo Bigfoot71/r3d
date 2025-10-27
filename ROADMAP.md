@@ -6,12 +6,19 @@
   Implement an internal shader include system to reduce code duplication in built-in shaders. This could be integrated during the compilation phase, either in `glsl_minifier` or a dedicated pre-processing script.
 
 * [x] **Simplify forward rendering**
-  Support for opaque rendering in forward mode will be removed and it will only be used for semi-transparency.
-  The goal is to simplify r3d as much as possible and drop the idea of supporting OpenGL ES.
-  If that’s something you were expecting, know that I’m working on another project similar to r3d which already supports OpenGL ES 3.2.
+  Forward rendering will now be limited to semi-transparent objects.
+  This change simplifies r3d and drops OpenGL ES support.
+  If you need OpenGL ES 3.2, I'm developing another project that already supports it.
+  See: https://github.com/Bigfoot71/Nexium/
 
 * [x] **Better Shadow Quality and Performance**
   Shadow rendering can currently be easily simplified and improved
+
+* [ ] **Revise the model loading system**
+  The model loading system needs a review, which could take inspiration from Nexium.
+  In particular, the mesh loading process needs to be fixed, and the correct bind pose should be loaded separately.
+  See: https://github.com/Bigfoot71/Nexium/tree/master/source/Render/Core/Importer
+  See: https://github.com/Bigfoot71/r3d/issues/98
 
 ## **v0.6**
 
