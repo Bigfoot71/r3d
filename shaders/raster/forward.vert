@@ -84,8 +84,8 @@ void main()
 
     if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
-        matModel = sMatModel * matModel;
-        matNormal = mat3(transpose(inverse(sMatModel))) * matNormal;
+        matModel = matModel * sMatModel;
+        matNormal = matNormal * mat3(transpose(inverse(sMatModel)));
     }
 
     if (uInstancing) {
