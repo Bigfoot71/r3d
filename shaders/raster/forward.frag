@@ -83,25 +83,17 @@ uniform float uFar;
 
 /* === Constants === */
 
-#define SHADOW_SAMPLES 16
+#define SHADOW_SAMPLES 8
 
-const vec2 POISSON_DISK[16] = vec2[](
-    vec2(-0.94201624, -0.39906216),
-    vec2(0.94558609, -0.76890725),
-    vec2(-0.094184101, -0.92938870),
-    vec2(0.34495938, 0.29387760),
-    vec2(-0.91588581, 0.45771432),
-    vec2(-0.81544232, -0.87912464),
-    vec2(-0.38277543, 0.27676845),
-    vec2(0.97484398, 0.75648379),
-    vec2(0.44323325, -0.97511554),
-    vec2(0.53742981, -0.47373420),
-    vec2(-0.26496911, -0.41893023),
-    vec2(0.79197514, 0.19090188),
-    vec2(-0.24188840, 0.99706507),
-    vec2(-0.81409955, 0.91437590),
-    vec2(0.19984126, 0.78641367),
-    vec2(0.14383161, -0.14100790)
+const vec2 VOGEL_DISK[8] = vec2[8](
+    vec2(0.250000, 0.000000),
+    vec2(-0.319290, 0.292496),
+    vec2(0.048872, -0.556877),
+    vec2(0.402444, 0.524918),
+    vec2(-0.738535, -0.130636),
+    vec2(0.699605, -0.445031),
+    vec2(-0.234004, 0.870484),
+    vec2(-0.446271, -0.859268)
 );
 
 /* === Fragments === */
@@ -144,7 +136,7 @@ float ShadowOmni(int i, float cNdotL)
 
     float shadow = 0.0;
     for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 diskOffset = diskRot * POISSON_DISK[j] * light.shadowSoftness;
+        vec2 diskOffset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
         vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
         float sampleDepth = texture(uShadowMapCube[i], sampleDir).r * light.far;
         shadow += step(currentDepth, sampleDepth);
@@ -189,7 +181,7 @@ float Shadow(int i, float cNdotL)
 
     float shadow = 0.0;
     for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 offset = diskRot * POISSON_DISK[j] * light.shadowSoftness;
+        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
         shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
     }
 
