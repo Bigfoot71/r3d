@@ -10,7 +10,7 @@ static R3D_Mesh ground = { 0 };
 static R3D_Material groundMat = { 0 };
 static R3D_Skybox skybox = { 0 };
 static Camera3D camera = { 0 };
-static bool showSkybox = true;
+static bool showSkybox = false;
 
 /* === Example === */
 
