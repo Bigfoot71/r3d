@@ -46,9 +46,12 @@ void main()
     vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
+    vec3 N = normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    if (!gl_FrontFacing) N = -N; // Flip for back facing triangles with double sided meshes
+
     FragAlbedo = albedo.rgb;
     FragEmission = vEmission * texture(uTexEmission, vTexCoord).rgb;
-    FragNormal = M_EncodeOctahedral(normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale)));
+    FragNormal = M_EncodeOctahedral(N);
 
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
