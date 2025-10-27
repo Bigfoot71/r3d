@@ -111,7 +111,7 @@ float ShadowOmni(vec3 position, float cNdotL)
 
     /* --- Build orthonormal basis for perturbation --- */
 
-    mat3 TBN = M_OrthonormalBasis(direction);
+    mat3 OBN = M_OrthonormalBasis(direction);
 
     /* --- Generate an additional debanding rotation for the poisson disk --- */
 
@@ -125,7 +125,7 @@ float ShadowOmni(vec3 position, float cNdotL)
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 diskOffset = diskRot * POISSON_DISK[i] * uLight.shadowSoftness;
-        vec3 sampleDir = normalize(TBN * vec3(diskOffset.xy, 1.0));
+        vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
         float sampleDepth = texture(uLight.shadowCubemap, sampleDir).r * uLight.far;
         shadow += step(currentDepth, sampleDepth);
     }
