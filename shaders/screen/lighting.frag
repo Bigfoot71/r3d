@@ -88,13 +88,6 @@ const vec2 POISSON_DISK[16] = vec2[](
 
 /* === Shadow functions === */
 
-float InterleavedGradientNoise(vec2 pos)
-{
-    // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
-	const vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
-	return fract(magic.z * fract(dot(pos, magic.xy)));
-}
-
 float ShadowOmni(vec3 position, float cNdotL)
 {
     /* --- Light Vector and Distance Calculation --- */
@@ -115,7 +108,7 @@ float ShadowOmni(vec3 position, float cNdotL)
 
     /* --- Generate an additional debanding rotation for the poisson disk --- */
 
-    float r = M_TAU * InterleavedGradientNoise(gl_FragCoord.xy);
+    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
     float sr = sin(r);
     float cr = cos(r);
     mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
@@ -157,7 +150,7 @@ float Shadow(vec3 position, float cNdotL)
 
     /* --- Generate an additional debanding rotation for the poisson disk --- */
 
-    float r = M_TAU * InterleavedGradientNoise(gl_FragCoord.xy);
+    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
     float sr = sin(r);
     float cr = cos(r);
     mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));

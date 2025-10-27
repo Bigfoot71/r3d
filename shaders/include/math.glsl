@@ -71,3 +71,10 @@ vec3 M_NormalScale(vec3 normal, float scale)
     normal.z = sqrt(1.0 - clamp(dot(normal.xy, normal.xy), 0.0, 1.0));
     return normal;
 }
+
+float M_HashIGN(vec2 pos)
+{
+    // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
+    const vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(pos, magic.xy)));
+}
