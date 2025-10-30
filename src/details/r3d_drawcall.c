@@ -94,6 +94,20 @@ bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call)
 
 void r3d_drawcall_update_model_animation(const r3d_drawcall_t* call)
 {
+    if (call->geometryType != R3D_DRAWCALL_GEOMETRY_MODEL || call->geometry.model.anim == NULL) {
+        return;
+    }
+
+    // skip animation update if custom is being used
+    if (call->geometry.model.boneOverride != NULL) {
+        return;
+    }
+
+    if (call->geometry.model.mesh->boneMatrices == NULL) {
+        // Only meshes belonging to a model with bones have a boneMatrices cache
+        TraceLog(LOG_WARNING, "Attempting to play animation on mesh without bone matrix cache");
+    }
+
     int frame = call->geometry.model.frame;
     if (frame >= call->geometry.model.anim->frameCount) {
         frame = frame % call->geometry.model.anim->frameCount;
