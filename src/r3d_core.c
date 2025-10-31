@@ -500,7 +500,7 @@ void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix tra
     drawCall.renderMode = R3D_DRAWCALL_RENDER_DEFERRED;
     
     r3d_array_t* arr = &R3D.container.aDrawDeferred;
-    if (material->blendMode != R3D_BLEND_OPAQUE) {
+    if (drawCall.material.blendMode != R3D_BLEND_OPAQUE) {
         drawCall.renderMode = R3D_DRAWCALL_RENDER_FORWARD;
         arr = &R3D.container.aDrawForward;
     }
@@ -551,7 +551,7 @@ void R3D_DrawMeshInstancedPro(const R3D_Mesh* mesh, const R3D_Material* material
     drawCall.instanced.count = instanceCount;
 
     r3d_array_t* arr = &R3D.container.aDrawDeferredInst;
-    if (material->blendMode != R3D_BLEND_OPAQUE) {
+    if (drawCall.material.blendMode != R3D_BLEND_OPAQUE) {
         drawCall.renderMode = R3D_DRAWCALL_RENDER_FORWARD;
         arr = &R3D.container.aDrawForwardInst;
     }
@@ -613,7 +613,7 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
             drawCall.geometry.model.boneOverride = NULL;
 
         r3d_array_t* arr = &R3D.container.aDrawDeferred;
-        if (material->blendMode != R3D_BLEND_OPAQUE) {
+        if (drawCall.material.blendMode != R3D_BLEND_OPAQUE) {
             drawCall.renderMode = R3D_DRAWCALL_RENDER_FORWARD;
             arr = &R3D.container.aDrawForward;
         }
