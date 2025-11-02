@@ -68,8 +68,7 @@ static void r3d_stencil_disable(void);
 static void r3d_prepare_process_lights_and_batch(void);
 static void r3d_prepare_cull_drawcalls(void);
 static void r3d_prepare_sort_drawcalls(void);
-static void r3d_prepare_anim_drawcalls(void);
-
+    
 static void r3d_clear_gbuffer(bool bindFramebuffer, bool clearColor, bool clearDepth, bool clearStencil);
 
 static void r3d_pass_shadow_maps(void);
@@ -415,7 +414,6 @@ void R3D_End(void)
 
     r3d_prepare_cull_drawcalls();
     r3d_prepare_sort_drawcalls();
-    r3d_prepare_anim_drawcalls();
 
     /* --- Rasterizing Geometries in G-Buffer --- */
 
@@ -1065,45 +1063,6 @@ void r3d_prepare_sort_drawcalls(void)
     }
 }
 
-void r3d_prepare_anim_drawcalls(void)
-{
-    // TODO: Measures should be implemented to avoid updating the matrices multiple times for the same mesh,
-    //       because currently the same mesh could appear multiple times in the same array,
-    //       or in different arrays. As a result, the set would be updated multiple times.
-
-    const r3d_array_t* arrays[4] = {
-        &R3D.container.aDrawDeferredInst,
-        &R3D.container.aDrawForwardInst,
-        &R3D.container.aDrawDeferred,
-        &R3D.container.aDrawForward,
-    };
-
-    for (int i = 0; i < sizeof(arrays) / sizeof(uintptr_t); i++)
-    {
-        const r3d_drawcall_t* calls = arrays[i]->data;
-        int count = (int)arrays[i]->count;
-
-        for (int j = 0; j < count; j++)
-        {
-            const r3d_drawcall_t* call = &calls[j];
-
-            if (call->geometryType != R3D_DRAWCALL_GEOMETRY_MODEL || call->geometry.model.anim == NULL) {
-                continue;
-            }
-
-            if (call->geometry.model.mesh->boneMatrices == NULL) {
-                // Only meshes belonging to a model with bones have a boneMatrices cache
-                TraceLog(LOG_WARNING, "Attempting to play animation on mesh without bone matrix cache");
-            }
-
-            // skip animation update if custom is being used
-            if (call->geometry.model.boneOverride == NULL) {
-                r3d_drawcall_update_model_animation(call);
-            }
-        }
-    }
-}
-
 void r3d_pass_shadow_maps(void)
 {
     /* --- Config context state --- */
@@ -1311,11 +1270,15 @@ void r3d_pass_gbuffer(void)
         r3d_shader_enable(raster.geometry);
         {
             for (size_t i = 0; i < R3D.container.aDrawDeferredInst.count; i++) {
-                r3d_drawcall_raster_geometry((r3d_drawcall_t*)R3D.container.aDrawDeferredInst.data + i, &R3D.state.transform.viewProj);
+                const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferredInst, i);
+                r3d_drawcall_update_model_animation(call);
+                r3d_drawcall_raster_geometry(call, &R3D.state.transform.viewProj);
             }
 
             for (size_t i = 0; i < R3D.container.aDrawDeferred.count; i++) {
-                r3d_drawcall_raster_geometry((r3d_drawcall_t*)R3D.container.aDrawDeferred.data + i, &R3D.state.transform.viewProj);
+                const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferred, i);
+                r3d_drawcall_update_model_animation(call);
+                r3d_drawcall_raster_geometry(call, &R3D.state.transform.viewProj);
             }
 
             // NOTE: The storage texture of the matrices may have been bind during drawcalls
@@ -1951,13 +1914,15 @@ void r3d_pass_scene_forward(void)
             r3d_shader_set_vec3(raster.forward, uViewPosition, R3D.state.transform.viewPos);
 
             for (int i = 0; i < R3D.container.aDrawForwardInst.count; i++) {
-                r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForwardInst, i);
+                const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForwardInst, i);
+                r3d_drawcall_update_model_animation(call);
                 r3d_pass_scene_forward_instanced_filter_and_send_lights(call);
                 r3d_drawcall_raster_forward(call, &R3D.state.transform.viewProj);
             }
 
             for (int i = 0; i < R3D.container.aDrawForward.count; i++) {
-                r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForward, i);
+                const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForward, i);
+                r3d_drawcall_update_model_animation(call);
                 r3d_pass_scene_forward_filter_and_send_lights(call);
                 r3d_drawcall_raster_forward(call, &R3D.state.transform.viewProj);
             }
