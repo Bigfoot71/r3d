@@ -68,8 +68,7 @@ static void r3d_stencil_disable(void);
 static void r3d_prepare_process_lights_and_batch(void);
 static void r3d_prepare_cull_drawcalls(void);
 static void r3d_prepare_sort_drawcalls(void);
-static void r3d_prepare_anim_drawcalls(void);
-
+    
 static void r3d_clear_gbuffer(bool bindFramebuffer, bool clearColor, bool clearDepth, bool clearStencil);
 
 static void r3d_pass_shadow_maps(void);
