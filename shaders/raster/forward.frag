@@ -64,7 +64,7 @@ uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
 
-uniform vec3 uAmbientColor;
+uniform vec3 uAmbientLight;
 uniform vec3 uEmissionColor;
 
 uniform samplerCube uCubeIrradiance;
@@ -314,7 +314,7 @@ void main()
 
     /* Compute ambient - (IBL diffuse) */
 
-    vec3 ambient = uAmbientColor;
+    vec3 ambient = uAmbientLight;
 
     if (uHasSkybox)
     {
@@ -332,7 +332,7 @@ void main()
         //       but it's to at least simulate some specularity, otherwise the 
         //       result would look poor for metals...
         ambient = (1.0 - F0) * (1.0 - metalness) * ambient;
-        ambient += F0 * uAmbientColor;
+        ambient += F0 * uAmbientLight;
     }
 
     /* Compute ambient occlusion map */

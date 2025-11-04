@@ -2164,6 +2164,16 @@ R3DAPI void R3D_SetBackgroundColor(Color color);
 R3DAPI void R3D_SetAmbientColor(Color color);
 
 /**
+ * @brief Sets the energy level for ambient light when no skybox is enabled.
+ *
+ * This function defines the ambient light energy to be used when no skybox is active.
+ * Applied multiplicatively to the base ambient color.
+ *
+ * @param energy The energy to set for ambient light.
+ */
+R3DAPI void R3D_SetAmbientEnergy(float energy);
+
+/**
  * @brief Enables a skybox for the scene.
  *
  * This function enables a skybox in the scene, replacing the default background with

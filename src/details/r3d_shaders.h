@@ -184,7 +184,7 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
-    r3d_shader_uniform_vec3_t uAmbientColor;
+    r3d_shader_uniform_vec3_t uAmbientLight;
     r3d_shader_uniform_vec3_t uEmissionColor;
     r3d_shader_uniform_samplerCube_t uCubeIrradiance;
     r3d_shader_uniform_samplerCube_t uCubePrefilter;
@@ -257,7 +257,7 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uTexSSAO;
     r3d_shader_uniform_sampler2D_t uTexORM;
     r3d_shader_uniform_float_t uSSAOPower;
-    r3d_shader_uniform_vec3_t uAmbientColor;
+    r3d_shader_uniform_vec3_t uAmbientLight;
 } r3d_shader_screen_ambient_t;
 
 typedef struct {
