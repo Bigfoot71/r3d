@@ -93,7 +93,7 @@ extern struct R3D_State {
          * @suffix: 'Hs' indicates that the target is half-sized
          */
 
-        GLuint albedo;              ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks)
+        GLuint albedo;              ///< RGB[8|8|8]
         GLuint emission;            ///< RGB[11|11|10] (or fallbacks)
         GLuint normal;              ///< RG[16|16] (8-bit if R3D_FLAGS_8_BIT_NORMALS or 16F not supported)
         GLuint orm;                 ///< RGB[8|8|8]

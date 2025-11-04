@@ -713,17 +713,9 @@ static void r3d_target_load_albedo(int width, int height)
 {
     assert(R3D.target.albedo == 0);
 
-    GLenum internalFormat;
-    if (R3D.state.flags & R3D_FLAG_LOW_PRECISION_BUFFERS) {
-        internalFormat = r3d_support_get_internal_format(GL_R11F_G11F_B10F, true);
-    }
-    else {
-        internalFormat = r3d_support_get_internal_format(GL_RGB16F, true);
-    }
-
     glGenTextures(1, &R3D.target.albedo);
     glBindTexture(GL_TEXTURE_2D, R3D.target.albedo);
-    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
