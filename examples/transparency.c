@@ -62,6 +62,8 @@ const char* Init(void)
 
     /* --- Configure lighting --- */
 
+    R3D_SetAmbientColor((Color) { 10, 10, 10, 255 });
+
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
     {
         R3D_LightLookAt(light, (Vector3) { 0, 10, 5 }, (Vector3) { 0 });
