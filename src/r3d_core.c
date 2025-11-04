@@ -117,7 +117,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     // Environment data
     R3D.env.backgroundColor = (Vector3) { 0.2f, 0.2f, 0.2f };
     R3D.env.ambientColor = (Color){ 0, 0, 0, 255 };
-    R3D.env.ambientEnergy = 3.0f;
+    R3D.env.ambientEnergy = 1.0f;
     R3D.env.ambientLight = (Vector3){ 0.0f, 0.0f, 0.0f };
     R3D.env.quatSky = QuaternionIdentity();
     R3D.env.useSky = false;
