@@ -39,6 +39,8 @@ const char* Init(void)
 
     /* --- Setup the scene lighting --- */
 
+    R3D_SetAmbientColor((Color) { 10, 10, 10, 255 });
+
     R3D_SetSceneBounds(
         (BoundingBox) {
             .min = { -100, -1, -100 },

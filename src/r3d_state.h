@@ -206,7 +206,10 @@ extern struct R3D_State {
     struct {
 
         Vector3 backgroundColor;        // Used as default albedo color when skybox is disabled (raster pass)
-        Vector3 ambientColor;           // Used as default ambient light when skybox is disabled (light pass)
+
+        Color ambientColor;             // Base color of ambient light used when skybox is disabled (light pass)
+        float ambientEnergy;            // Multiplicative energy for ambient light when skybox is disabled (light pass)
+        Vector3 ambientLight;           // Total ambient light contribution when skybox is disabled (light pass)
                                         
         Quaternion quatSky;             // Rotation of the skybox (raster / light passes)
         R3D_Skybox sky;                 // Skybox textures (raster / light passes)

@@ -31,9 +31,18 @@ void R3D_SetBackgroundColor(Color color)
 
 void R3D_SetAmbientColor(Color color)
 {
-	R3D.env.ambientColor.x = (float)color.r / 255;
-	R3D.env.ambientColor.y = (float)color.g / 255;
-	R3D.env.ambientColor.z = (float)color.b / 255;
+	R3D.env.ambientColor = color;
+	R3D.env.ambientLight.x = (float)color.r / 255 * R3D.env.ambientEnergy;
+	R3D.env.ambientLight.y = (float)color.g / 255 * R3D.env.ambientEnergy;
+	R3D.env.ambientLight.z = (float)color.b / 255 * R3D.env.ambientEnergy;
+}
+
+void R3D_SetAmbientEnergy(float energy)
+{
+	R3D.env.ambientEnergy = energy;
+	R3D.env.ambientLight.x = (float)R3D.env.ambientColor.r / 255 * energy;
+	R3D.env.ambientLight.y = (float)R3D.env.ambientColor.g / 255 * energy;
+	R3D.env.ambientLight.z = (float)R3D.env.ambientColor.b / 255 * energy;
 }
 
 void R3D_EnableSkybox(R3D_Skybox skybox)
