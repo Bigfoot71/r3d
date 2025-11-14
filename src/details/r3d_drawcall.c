@@ -36,6 +36,7 @@
 /* === Internal functions === */
 
 // Functions applying OpenGL states defined by the material but unrelated to shaders
+static void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode);
 static void r3d_drawcall_apply_cull_mode(R3D_CullMode mode);
 static void r3d_drawcall_apply_blend_mode(R3D_BlendMode mode);
 static void r3d_drawcall_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
@@ -478,6 +479,25 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
 
 /* === Internal functions === */
 
+void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode)
+{
+    switch (mode)
+    {
+    case R3D_DEPTH_DISABLED:
+        glDisable(GL_DEPTH_TEST);
+        break;
+    case R3D_DEPTH_READ_ONLY:
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        break;
+    default:
+    case R3D_DEPTH_READ_WRITE:
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        break;
+    }
+}
+
 void r3d_drawcall_apply_cull_mode(R3D_CullMode mode)
 {
     switch (mode)
@@ -514,6 +534,10 @@ void r3d_drawcall_apply_blend_mode(R3D_BlendMode mode)
     case R3D_BLEND_MULTIPLY:
         glEnable(GL_BLEND);
         glBlendFunc(GL_DST_COLOR, GL_ZERO);
+        break;
+    case R3D_BLEND_PREMULTIPLIED_ALPHA:
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         break;
     default:
         break;
@@ -605,6 +629,7 @@ void r3d_drawcall(const r3d_drawcall_t* call)
 {
     if (call->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
         r3d_drawcall_bind_geometry_mesh(call->geometry.model.mesh);
+        r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
         if (call->geometry.model.mesh->indices == NULL) {
             glDrawArrays(GL_TRIANGLES, 0, call->geometry.model.mesh->vertexCount);
         }
@@ -631,6 +656,7 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
         r3d_primitive_bind(&R3D.primitive.quad);
         break;
     }
+    r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
 
     unsigned int vboTransforms = 0;
     unsigned int vboColors = 0;
