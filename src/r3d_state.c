@@ -1288,7 +1288,7 @@ void r3d_shader_load_raster_forward(void)
     r3d_shader_get_location(raster.forward, uOcclusion);
     r3d_shader_get_location(raster.forward, uRoughness);
     r3d_shader_get_location(raster.forward, uMetalness);
-    r3d_shader_get_location(raster.forward, uAmbientColor);
+    r3d_shader_get_location(raster.forward, uAmbientLight);
     r3d_shader_get_location(raster.forward, uEmissionColor);
     r3d_shader_get_location(raster.forward, uCubeIrradiance);
     r3d_shader_get_location(raster.forward, uCubePrefilter);
@@ -1510,7 +1510,7 @@ void r3d_shader_load_screen_ambient(void)
     r3d_shader_get_location(screen.ambient, uTexAlbedo);
     r3d_shader_get_location(screen.ambient, uTexSSAO);
     r3d_shader_get_location(screen.ambient, uTexORM);
-    r3d_shader_get_location(screen.ambient, uAmbientColor);
+    r3d_shader_get_location(screen.ambient, uAmbientLight);
     r3d_shader_get_location(screen.ambient, uSSAOPower);
 
     r3d_shader_enable(screen.ambient);

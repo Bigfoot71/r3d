@@ -113,10 +113,11 @@ typedef unsigned int R3D_Layer;
  * @note The blend mode is applied only if you are in forward rendering mode or auto-detect mode.
  */
 typedef enum R3D_BlendMode {
-    R3D_BLEND_OPAQUE,          ///< No blending, the source color fully replaces the destination color.
-    R3D_BLEND_ALPHA,           ///< Alpha blending: source color is blended with the destination based on alpha value.
-    R3D_BLEND_ADDITIVE,        ///< Additive blending: source color is added to the destination, making bright effects.
-    R3D_BLEND_MULTIPLY         ///< Multiply blending: source color is multiplied with the destination, darkening the image.
+    R3D_BLEND_OPAQUE,               ///< No blending, the source color fully replaces the destination color.
+    R3D_BLEND_ALPHA,                ///< Alpha blending: source color is blended with the destination based on alpha value.
+    R3D_BLEND_ADDITIVE,             ///< Additive blending: source color is added to the destination, making bright effects.
+    R3D_BLEND_MULTIPLY,             ///< Multiply blending: source color is multiplied with the destination, darkening the image.
+    R3D_BLEND_PREMULTIPLIED_ALPHA   ///< Premultiplied alpha blending: source color is blended with the destination assuming the source color is already multiplied by its alpha.
 } R3D_BlendMode;
 
 /**
@@ -148,6 +149,12 @@ typedef enum R3D_ShadowCastMode {
     R3D_SHADOW_CAST_ONLY_BACK_SIDE,     ///< The object only casts shadows with only back faces, culling front faces.
     R3D_SHADOW_CAST_DISABLED            ///< The object does not cast shadows at all.
 } R3D_ShadowCastMode;
+
+typedef enum R3D_DepthMode {
+    R3D_DEPTH_READ_WRITE,       ///< Enable depth testing and writing to the depth buffer.
+    R3D_DEPTH_READ_ONLY,        ///< Enable depth testing but disable writing to the depth buffer.
+    R3D_DEPTH_DISABLED          ///< Disable depth testing and writing to the depth buffer.
+} R3D_DepthMode;
 
 /**
  * @brief Defines billboard modes for 3D objects.
@@ -282,6 +289,7 @@ typedef struct R3D_Mesh {
     int boneCount;                        /**< Number of bones (and matrices) that affect the mesh. */
 
     R3D_ShadowCastMode shadowCastMode;    /**< Shadow casting mode for the mesh. */
+    R3D_DepthMode depthMode;              /**< Depth testing mode for the mesh. */
 
     BoundingBox aabb;                     /**< Axis-Aligned Bounding Box in local space. */
 
@@ -2162,6 +2170,16 @@ R3DAPI void R3D_SetBackgroundColor(Color color);
  * @param color The color to set for ambient light.
  */
 R3DAPI void R3D_SetAmbientColor(Color color);
+
+/**
+ * @brief Sets the energy level for ambient light when no skybox is enabled.
+ *
+ * This function defines the ambient light energy to be used when no skybox is active.
+ * Applied multiplicatively to the base ambient color.
+ *
+ * @param energy The energy to set for ambient light.
+ */
+R3DAPI void R3D_SetAmbientEnergy(float energy);
 
 /**
  * @brief Enables a skybox for the scene.

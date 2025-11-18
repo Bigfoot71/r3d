@@ -116,7 +116,9 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
 
     // Environment data
     R3D.env.backgroundColor = (Vector3) { 0.2f, 0.2f, 0.2f };
-    R3D.env.ambientColor = (Vector3) { 0.2f, 0.2f, 0.2f };
+    R3D.env.ambientColor = (Color){ 0, 0, 0, 255 };
+    R3D.env.ambientEnergy = 1.0f;
+    R3D.env.ambientLight = (Vector3){ 0.0f, 0.0f, 0.0f };
     R3D.env.quatSky = QuaternionIdentity();
     R3D.env.useSky = false;
     R3D.env.skyBackgroundIntensity = 1.0f;
@@ -1451,7 +1453,7 @@ void r3d_pass_deferred_ambient(void)
                     r3d_shader_bind_sampler2D(screen.ambient, uTexSSAO, R3D.texture.white);
                 }
 
-                r3d_shader_set_vec3(screen.ambient, uAmbientColor, R3D.env.ambientColor);
+                r3d_shader_set_vec3(screen.ambient, uAmbientLight, R3D.env.ambientLight);
                 r3d_shader_set_float(screen.ambient, uSSAOPower, R3D.env.ssaoPower);
 
                 r3d_primitive_bind_and_draw_screen();
@@ -1907,7 +1909,7 @@ void r3d_pass_scene_forward(void)
                 r3d_shader_set_float(raster.forward, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
             }
             else {
-                r3d_shader_set_vec3(raster.forward, uAmbientColor, R3D.env.ambientColor);
+                r3d_shader_set_vec3(raster.forward, uAmbientLight, R3D.env.ambientLight);
                 r3d_shader_set_int(raster.forward, uHasSkybox, false);
             }
 
