@@ -37,6 +37,8 @@
 #include <shaders/bloom.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap.vert.h>
+#include <shaders/decal.vert.h>
+#include <shaders/decal.frag.h>
 #include <shaders/depth_cube.frag.h>
 #include <shaders/depth_cube.vert.h>
 #include <shaders/depth.frag.h>
@@ -591,6 +593,7 @@ void r3d_shaders_load(void)
 
     r3d_shader_load_raster_geometry();
     r3d_shader_load_raster_forward();
+    r3d_shader_load_raster_decal();
     r3d_shader_load_raster_skybox();
     r3d_shader_load_raster_depth_volume();
     r3d_shader_load_raster_depth();
@@ -648,6 +651,7 @@ void r3d_shaders_unload(void)
     // Unload raster shaders
     rlUnloadShaderProgram(R3D.shader.raster.geometry.id);
     rlUnloadShaderProgram(R3D.shader.raster.forward.id);
+    rlUnloadShaderProgram(R3D.shader.raster.decal.id);
     rlUnloadShaderProgram(R3D.shader.raster.skybox.id);
     rlUnloadShaderProgram(R3D.shader.raster.depthVolume.id);
     rlUnloadShaderProgram(R3D.shader.raster.depth.id);
@@ -1426,6 +1430,46 @@ void r3d_shader_load_raster_depth_cube(void)
     r3d_shader_enable(raster.depthCube);
     r3d_shader_set_sampler1D_slot(raster.depthCube, uTexBoneMatrices, 0);
     r3d_shader_set_sampler2D_slot(raster.depthCube, uTexAlbedo, 1);
+    r3d_shader_disable();
+}
+
+void r3d_shader_load_raster_decal(void)
+{
+    R3D.shader.raster.decal.id = rlLoadShaderCode(
+        DECAL_VERT, DECAL_FRAG
+    );
+
+    R3D_SHADER_VALIDATION(raster.decal);
+    r3d_shader_get_location(raster.decal, uMatInvProj);
+    r3d_shader_get_location(raster.decal, uMatProj);
+    r3d_shader_get_location(raster.decal, uMatInvView);
+    r3d_shader_get_location(raster.decal, uMatNormal);
+    r3d_shader_get_location(raster.decal, uMatModel);
+    r3d_shader_get_location(raster.decal, uMatVP);
+    r3d_shader_get_location(raster.decal, uViewportSize);
+    r3d_shader_get_location(raster.decal, uAlbedoColor);
+    r3d_shader_get_location(raster.decal, uEmissionEnergy);
+    r3d_shader_get_location(raster.decal, uEmissionColor);
+    r3d_shader_get_location(raster.decal, uTexCoordOffset);
+    r3d_shader_get_location(raster.decal, uTexCoordScale);
+    r3d_shader_get_location(raster.decal, uInstancing);
+    r3d_shader_get_location(raster.decal, uTexAlbedo);
+    r3d_shader_get_location(raster.decal, uTexNormal);
+    r3d_shader_get_location(raster.decal, uTexEmission);
+    r3d_shader_get_location(raster.decal, uTexORM);
+    r3d_shader_get_location(raster.decal, uTexDepth);
+    r3d_shader_get_location(raster.decal, uAlphaCutoff);
+    r3d_shader_get_location(raster.decal, uNormalScale);
+    r3d_shader_get_location(raster.decal, uOcclusion);
+    r3d_shader_get_location(raster.decal, uRoughness);
+    r3d_shader_get_location(raster.decal, uMetalness);
+
+    r3d_shader_enable(raster.decal);
+    r3d_shader_set_sampler2D_slot(raster.decal, uTexAlbedo, 0);
+    r3d_shader_set_sampler2D_slot(raster.decal, uTexNormal, 1);
+    r3d_shader_set_sampler2D_slot(raster.decal, uTexEmission, 2);
+    r3d_shader_set_sampler2D_slot(raster.decal, uTexORM, 3);
+    r3d_shader_set_sampler2D_slot(raster.decal, uTexDepth, 4);
     r3d_shader_disable();
 }
 

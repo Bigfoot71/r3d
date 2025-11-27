@@ -157,6 +157,8 @@ extern struct R3D_State {
         r3d_array_t aDrawForward;           //< Contains all forward draw calls
         r3d_array_t aDrawForwardInst;       //< Contains all forward instanced draw calls
 
+        r3d_array_t aDrawDecals;            //< Contains all decal draw calls
+
         r3d_registry_t rLights;             //< Contains all created lights
         r3d_array_t aLightBatch;            //< Contains all lights visible on screen
 
@@ -183,6 +185,7 @@ extern struct R3D_State {
             r3d_shader_raster_depth_volume_t depthVolume;
             r3d_shader_raster_depth_t depth;
             r3d_shader_raster_depth_cube_t depthCube;
+            r3d_shader_raster_decal_t decal;
         } raster;
 
         // Screen shaders
@@ -335,6 +338,7 @@ extern struct R3D_State {
     // Misc data
     struct {
         Matrix matCubeViews[6];
+        R3D_Mesh meshDecalCube;     //< Unit cube used for decal projection
     } misc;
 
 } R3D;
@@ -395,6 +399,7 @@ void r3d_shader_load_raster_skybox(void);
 void r3d_shader_load_raster_depth_volume(void);
 void r3d_shader_load_raster_depth(void);
 void r3d_shader_load_raster_depth_cube(void);
+void r3d_shader_load_raster_decal(void);
 void r3d_shader_load_screen_ssao(void);
 void r3d_shader_load_screen_ambient_ibl(void);
 void r3d_shader_load_screen_ambient(void);

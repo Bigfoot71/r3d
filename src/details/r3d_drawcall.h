@@ -57,8 +57,12 @@ typedef struct {
         } model;
 
         struct {
-            Vector3 quad[4];    //< Used only to represent the sprite in world space
+            Vector3 quad[4];                    //< Used only to represent the sprite in world space
         } sprite;
+
+        struct {
+            const R3D_Mesh* mesh;               //< Bounding mesh for the R3D_Decal
+        } decal;
 
     } geometry;
 
@@ -88,5 +92,6 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
 
 void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matVP);
 void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP);
+void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP);
 
 #endif // R3D_DETAILS_DRAWCALL_H
