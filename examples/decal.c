@@ -1,29 +1,22 @@
 #include "./common.h"
 #include "r3d.h"
 
-#include "raymath.h"
-
 #define MAXDECALS 64
 
 /* === Resources === */
 
 static R3D_Mesh meshPlane;
-
 static R3D_Material materialWalls = { 0 };
-static R3D_Material materialDecal = { 0 };
-
-static Camera3D camera = { 0 };
-
 static Texture2D texture = { 0 };
-
 static R3D_Decal decal = { 0 };
+static Camera3D camera = { 0 };
+static R3D_Light light = { 0 };
 
 /* === Data === */
 
 float roomSize = 32.0f;
 Matrix matRoom[6];
 
-Vector3 decalPosition = { 0 };
 Vector3 decalScale = { 3.0f, 3.0f, 3.0f };
 Matrix targetDecalTransform = { 0 };
 
@@ -131,10 +124,8 @@ const char* Init(void)
     materialWalls = R3D_GetDefaultMaterial();
     materialWalls.albedo.color = DARKGRAY;
 
-    materialDecal = R3D_GetDefaultMaterial();
-    materialDecal.albedo.texture = texture;
-
-    decal.material = materialDecal;
+    decal.material = R3D_GetDefaultMaterial();
+    decal.material.albedo.texture = texture;
     decal.material.blendMode = R3D_BLEND_ALPHA;
 
     /* --- Create a plane along with the transformation matrices to place them to represent a room --- */
@@ -150,19 +141,15 @@ const char* Init(void)
 
     /* --- Setup the scene lighting --- */
 
-    R3D_Light light = R3D_CreateLight(R3D_LIGHT_OMNI);
-    {
-        R3D_SetLightEnergy(light, 1.5f);
-        R3D_LightLookAt(light, (Vector3) { 0, 10, 5 }, (Vector3) { 0 });
-        R3D_SetLightActive(light, true);
-    }
+    light = R3D_CreateLight(R3D_LIGHT_OMNI);
+    R3D_SetLightActive(light, true);
 
     /* --- Setup the camera --- */
 
     camera = (Camera3D){
-        .position = (Vector3) { 0, 2, -2 },
-        .target = (Vector3) { 0, 0, 0 },
-        .up = (Vector3) { 0, 1, 0 },
+        .position = (Vector3) { 0.0f, 0.0f, 0.0f },
+        .target = (Vector3) { roomSize / 2.0f, 0.0f, 0.0f },
+        .up = (Vector3) { 0.0f, 1.0f, 0.0f },
         .fovy = 70,
     };
 
@@ -177,7 +164,10 @@ void Update(float delta)
 
     /* --- Find intersection point of camera target on cube --- */
 
-    Ray hitRay = { camera.position, Vector3Normalize(Vector3Subtract(camera.target, camera.position)) };
+    Ray hitRay = {
+        .position = camera.position,
+        .direction = Vector3Normalize(Vector3Subtract(camera.target, camera.position))
+    };
 
     Vector3 hitPoint = { 0 };
     Vector3 hitNormal = { 0 };
@@ -207,7 +197,7 @@ void Update(float delta)
 
     targetDecalTransform = MatrixMultiply(MatrixMultiply(scaling, rotation), translation);
 
-    // Input
+    /* --- Input --- */
 
     if (IsMouseButtonPressed(0)) {
         decalTransforms[decalIndex] = targetDecalTransform;
