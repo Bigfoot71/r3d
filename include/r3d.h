@@ -910,6 +910,18 @@ R3DAPI void R3D_DrawModelInstancedPro(const R3D_Model* model,
 R3DAPI void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform);
 
 /**
+ * @brief Draws a decal with instancing support.
+ *
+ * This function renders a decal multiple times with different transformation matrices
+ * for each instance.
+ *
+ * @param decal A pointer to the decal to render. Cannot be NULL.
+ * @param instanceTransforms Array of transformation matrices for each instance. Cannot be NULL.
+ * @param instanceCount The number of instances to render. Must be greater than 0.
+ */
+R3DAPI void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransforms, int instanceCount);
+
+/**
  * @brief Draws a sprite at a specified position.
  *
  * This function renders a sprite in 3D space at the given position.

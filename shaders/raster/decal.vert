@@ -18,7 +18,6 @@ layout(location = 3) in vec4 aColor;
 layout(location = 4) in vec4 aTangent;
 
 layout(location = 10) in mat4 iMatModel;
-layout(location = 14) in vec4 iColor;
 
 /* === Uniforms === */
 
@@ -35,16 +34,13 @@ uniform vec2 uTexCoordScale;
 
 uniform bool uInstancing;
 
-uniform vec2 viewportSize;
-
 /* === Varyings === */
 
+out mat4 vFinalMatModel;
 flat out vec3 vEmission;
 out vec2 vTexCoord;
 out vec4 vColor;
 out mat3 vTBN;
-
-out vec3 vNormal;
 
 /* === Main program === */
 
@@ -58,6 +54,8 @@ void main()
         matNormal = mat3(transpose(inverse(iMatModel))) * matNormal;
     }
 
+    vFinalMatModel = matModel;
+
     vec3 T = normalize(matNormal * aTangent.xyz);
     vec3 N = normalize(matNormal * aNormal);
     vec3 B = normalize(cross(N, T) * aTangent.w);
@@ -65,10 +63,8 @@ void main()
     vec3 position = vec3(matModel * vec4(aPosition, 1.0));
     vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
     vEmission = uEmissionColor * uEmissionEnergy;
-    vColor = aColor * iColor * uAlbedoColor;
+    vColor = aColor * uAlbedoColor;
     vTBN = mat3(T, B, N);
-
-    vNormal = N;
 
     gl_Position = uMatVP * vec4(position, 1.0);
 }

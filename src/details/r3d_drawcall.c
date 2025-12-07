@@ -349,7 +349,15 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    r3d_drawcall(call);
+    bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
+    r3d_shader_set_int(raster.decal, uInstancing, instancing);
+
+    if (instancing) {
+        r3d_drawcall_instanced(call, 10, -1);
+    }
+    else {
+        r3d_drawcall(call);
+    }
 
     /* --- Unbind all bound texture maps --- */
 
@@ -721,12 +729,12 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
     switch (call->geometryType) {
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         r3d_drawcall_bind_geometry_mesh(call->geometry.model.mesh);
+        r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
         break;
     case R3D_DRAWCALL_GEOMETRY_SPRITE:
         r3d_primitive_bind(&R3D.primitive.quad);
         break;
     }
-    r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
 
     unsigned int vboTransforms = 0;
     unsigned int vboColors = 0;

@@ -60,10 +60,6 @@ typedef struct {
             Vector3 quad[4];                    //< Used only to represent the sprite in world space
         } sprite;
 
-        struct {
-            const R3D_Mesh* mesh;               //< Bounding mesh for the R3D_Decal
-        } decal;
-
     } geometry;
 
     struct {

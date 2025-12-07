@@ -15,12 +15,11 @@
 
 /* === Varyings === */
 
+in mat4 vFinalMatModel;
 flat in vec3 vEmission;
 in vec2 vTexCoord;
 in vec4 vColor;
 in mat3 vTBN;
-
-in vec3 vNormal;
 
 /* === Uniforms === */
 
@@ -32,7 +31,6 @@ uniform sampler2D uTexDepth;
 
 uniform mat4 uMatInvView;
 uniform mat4 uMatNormal;
-uniform mat4 uMatModel;
 uniform mat4 uMatVP;
 uniform mat4 uMatInvProj;
 uniform mat4 uMatProj;
@@ -75,7 +73,7 @@ void main()
     vec3 scenePosView = ReconstructViewPosition(fragTexCoord, textureDepth);
 	
     // Convert from world space to decal projector's model space
-    vec4 objectPosition = inverse(uMatModel) * uMatInvView * vec4(scenePosView, 1.0);
+    vec4 objectPosition = inverse(vFinalMatModel) * uMatInvView * vec4(scenePosView, 1.0);
 	
     // Perform bounds check.
     if (abs(objectPosition.x) > 0.5 || abs(objectPosition.y) > 0.5 || abs(objectPosition.z) > 0.5) {

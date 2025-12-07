@@ -111,6 +111,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.container.aDrawForwardInst = r3d_array_create(8, sizeof(r3d_drawcall_t));
     R3D.container.aDrawDeferredInst = r3d_array_create(8, sizeof(r3d_drawcall_t));
     R3D.container.aDrawDecals = r3d_array_create(128, sizeof(r3d_drawcall_t));
+    R3D.container.aDrawDecalsInst = r3d_array_create(128, sizeof(r3d_drawcall_t));
 
     // Load lights registry
     R3D.container.rLights = r3d_registry_create(8, sizeof(r3d_light_t));
@@ -198,8 +199,8 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.misc.matCubeViews[4] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f,  1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
     R3D.misc.matCubeViews[5] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f, -1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
 
-    R3D.misc.meshDecalCube = R3D_GenMeshCube(1.0f, 1.0f, 1.0f, true);
-    R3D.misc.meshDecalCube.depthMode = R3D_DEPTH_DISABLED;
+    R3D.misc.meshDecalBounds = R3D_GenMeshCube(1.0f, 1.0f, 1.0f, true);
+    R3D.misc.meshDecalBounds.depthMode = R3D_DEPTH_DISABLED;
 
     // Load GL Objects - framebuffers, textures, shaders...
     // NOTE: The initialization of these resources is based
@@ -227,6 +228,7 @@ void R3D_Close(void)
     r3d_array_destroy(&R3D.container.aDrawForwardInst);
     r3d_array_destroy(&R3D.container.aDrawDeferredInst);
     r3d_array_destroy(&R3D.container.aDrawDecals);
+    r3d_array_destroy(&R3D.container.aDrawDecalsInst);
 
     r3d_registry_destroy(&R3D.container.rLights);
     r3d_array_destroy(&R3D.container.aLightBatch);
@@ -352,6 +354,7 @@ void R3D_BeginEx(Camera3D camera, const RenderTexture* target)
     r3d_array_clear(&R3D.container.aDrawForwardInst);
     r3d_array_clear(&R3D.container.aDrawDeferredInst);
     r3d_array_clear(&R3D.container.aDrawDecals);
+    r3d_array_clear(&R3D.container.aDrawDecalsInst);
 
     /* --- Store camera position --- */
 
@@ -713,11 +716,45 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
     drawCall.transform = transform;
     drawCall.material = decal->material;
     drawCall.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
-    drawCall.geometry.decal.mesh = &R3D.misc.meshDecalCube;
+    drawCall.geometry.model.mesh = &R3D.misc.meshDecalBounds;
     drawCall.geometryType = R3D_DRAWCALL_GEOMETRY_MODEL;
     drawCall.renderMode = R3D_DRAWCALL_RENDER_DEFERRED;
+    drawCall.depthMode = R3D_DEPTH_READ_ONLY;
 
     r3d_array_t* arr = &R3D.container.aDrawDecals;
+
+    r3d_array_push_back(arr, &drawCall);
+}
+
+void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransforms, int instanceCount)
+{
+    r3d_drawcall_t drawCall = { 0 };
+
+    drawCall.transform = MatrixIdentity();
+    drawCall.material = decal->material;
+    drawCall.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
+    drawCall.geometry.model.mesh = &R3D.misc.meshDecalBounds;
+    drawCall.geometryType = R3D_DRAWCALL_GEOMETRY_MODEL;
+    drawCall.renderMode = R3D_DRAWCALL_RENDER_DEFERRED;
+    drawCall.depthMode = R3D_DEPTH_READ_ONLY;
+
+    drawCall.geometry.model.anim = NULL;
+    drawCall.geometry.model.frame = 0;
+    drawCall.geometry.model.boneOffsets = NULL;
+
+    // TODO: Move aabb evaluation to potential Pro version of this function
+    drawCall.instanced.allAabb = (BoundingBox) {
+            { -FLT_MAX, -FLT_MAX, -FLT_MAX },
+            { +FLT_MAX, +FLT_MAX, +FLT_MAX }
+    };
+
+    drawCall.instanced.transforms = instanceTransforms;
+    drawCall.instanced.transStride = 0;
+    drawCall.instanced.colStride = 0;
+    drawCall.instanced.colors = NULL;
+    drawCall.instanced.count = instanceCount;
+
+    r3d_array_t* arr = &R3D.container.aDrawDecalsInst;
 
     r3d_array_push_back(arr, &drawCall);
 }
@@ -1350,6 +1387,11 @@ void r3d_pass_decals(void)
         glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
 
         r3d_shader_enable(raster.decal);
+
+        for (size_t i = 0; i < R3D.container.aDrawDecalsInst.count; i++) {
+            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecalsInst, i);
+            r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
+        }
 
         for (size_t i = 0; i < R3D.container.aDrawDecals.count; i++) {
             const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecals, i);

@@ -1,7 +1,7 @@
 #include "./common.h"
 #include "r3d.h"
 
-#define MAXDECALS 64
+#define MAXDECALS 256
 
 /* === Resources === */
 
@@ -217,8 +217,8 @@ void Draw(void)
     }
 
     /* --- Draw applied decals --- */
-    for (int i = 0; i < decalCount; i++) {
-        R3D_DrawDecal(&decal, decalTransforms[i]);
+    if (decalCount > 0) {
+        R3D_DrawDecalInstanced(&decal, decalTransforms, decalCount);
     }
 
     /* --- Draw targeting decal --- */

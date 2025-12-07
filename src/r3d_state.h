@@ -158,6 +158,7 @@ extern struct R3D_State {
         r3d_array_t aDrawForwardInst;       //< Contains all forward instanced draw calls
 
         r3d_array_t aDrawDecals;            //< Contains all decal draw calls
+        r3d_array_t aDrawDecalsInst;        //< Contains all instanced decal draw calls
 
         r3d_registry_t rLights;             //< Contains all created lights
         r3d_array_t aLightBatch;            //< Contains all lights visible on screen
@@ -338,7 +339,7 @@ extern struct R3D_State {
     // Misc data
     struct {
         Matrix matCubeViews[6];
-        R3D_Mesh meshDecalCube;     //< Unit cube used for decal projection
+        R3D_Mesh meshDecalBounds;     //< Unit cube used for decal projection
     } misc;
 
 } R3D;
