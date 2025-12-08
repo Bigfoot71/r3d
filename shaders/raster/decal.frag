@@ -9,28 +9,23 @@
 
 #version 330 core
 
-/* === Includes === */
-
-#include "../include/math.glsl"
-
 /* === Varyings === */
 
 in mat4 vFinalMatModel;
 flat in vec3 vEmission;
-in vec2 vTexCoord;
 in vec4 vColor;
-in mat3 vTBN;
+in mat3 vTBN; // Unused - placeholder for future implementation
 
 /* === Uniforms === */
 
 uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexNormal;
+uniform sampler2D uTexNormal; // Unused - placeholder for future implementation
 uniform sampler2D uTexEmission;
 uniform sampler2D uTexORM;
 uniform sampler2D uTexDepth;
 
 uniform mat4 uMatInvView;
-uniform mat4 uMatNormal;
+uniform mat4 uMatNormal; // Unused - placeholder for future implementation
 uniform mat4 uMatVP;
 uniform mat4 uMatInvProj;
 uniform mat4 uMatProj;
@@ -38,21 +33,24 @@ uniform mat4 uMatProj;
 uniform vec2 uViewportSize;
 
 uniform float uAlphaCutoff;
-uniform float uNormalScale;
+uniform float uNormalScale; // Unused - placeholder for future implementation
 uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
+
+uniform vec2 uTexCoordOffset;
+uniform vec2 uTexCoordScale;
 
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragAlbedo;
 layout(location = 1) out vec4 FragEmission;
-layout(location = 2) out vec2 FragNormal;
+layout(location = 2) out vec2 FragNormal; // Unused - normal output placeholder
 layout(location = 3) out vec3 FragORM;
 
 /* === Helper Functions === */
 
-vec3 ReconstructViewPosition(vec2 texCoord, float depth)
+vec3 DepthToViewPosition(vec2 texCoord, float depth)
 {
     vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 viewPos = uMatInvProj * ndcPos;
@@ -69,30 +67,33 @@ void main()
     // Retrieve the depth from the depth texture
     float textureDepth = texture(uTexDepth, fragTexCoord).r;
 
-    // Calculate original view position from sampled depth
-    vec3 scenePosView = ReconstructViewPosition(fragTexCoord, textureDepth);
-	
+    // Reconstruct position in view space
+    vec3 positionViewSpace = DepthToViewPosition(fragTexCoord, textureDepth);
+
     // Convert from world space to decal projector's model space
-    vec4 objectPosition = inverse(vFinalMatModel) * uMatInvView * vec4(scenePosView, 1.0);
-	
-    // Perform bounds check.
-    if (abs(objectPosition.x) > 0.5 || abs(objectPosition.y) > 0.5 || abs(objectPosition.z) > 0.5) {
-        discard; // Anything outside of of our decal projector does not intersect.
+    vec4 positionModelSpace = inverse(vFinalMatModel) * uMatInvView * vec4(positionViewSpace, 1.0);
+
+    // Discard fragments that are outside the bounds of the decal projector
+    if (abs(positionModelSpace.x) > 0.5 || 
+        abs(positionModelSpace.y) > 0.5 || 
+        abs(positionModelSpace.z) > 0.5) 
+    {
+        discard;
     }
 
 	// Offset positional coordinates from [-0.5, 0.5] range to [0, 1] range for decal texture UV
-    vec2 decalTexCoord = objectPosition.xz + 0.5;
-	
-	// Apply decal material values
+    vec2 decalTexCoord = uTexCoordOffset + (positionModelSpace.xz + 0.5) * uTexCoordScale;
+
+    // Sample albedo texture and discard if below alpha cutoff
     vec4 albedo = vColor * texture(uTexAlbedo, decalTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
-	FragAlbedo = albedo;	
-	FragEmission = vec4(vEmission, 1.0) * texture(uTexEmission, decalTexCoord);
+	// Apply material values
+    FragAlbedo = albedo;	
+    FragEmission = vec4(vEmission, 1.0) * texture(uTexEmission, decalTexCoord);
 
     vec3 orm = texture(uTexORM, decalTexCoord).xyz;
     FragORM.x = uOcclusion * orm.x;
     FragORM.y = uRoughness * orm.y;
     FragORM.z = uMetalness * orm.z;
-
 }

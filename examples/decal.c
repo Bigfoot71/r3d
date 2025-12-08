@@ -142,6 +142,7 @@ const char* Init(void)
     /* --- Setup the scene lighting --- */
 
     light = R3D_CreateLight(R3D_LIGHT_OMNI);
+    R3D_SetLightEnergy(light, 2.0f);
     R3D_SetLightActive(light, true);
 
     /* --- Setup the camera --- */

@@ -21,16 +21,13 @@ layout(location = 10) in mat4 iMatModel;
 
 /* === Uniforms === */
 
-uniform mat4 uMatInvView;
-uniform mat4 uMatNormal;
+uniform mat4 uMatNormal; // Unused - placeholder for future implementation
 uniform mat4 uMatModel;
 uniform mat4 uMatVP;
 
 uniform vec4 uAlbedoColor;
 uniform float uEmissionEnergy;
 uniform vec3 uEmissionColor;
-uniform vec2 uTexCoordOffset;
-uniform vec2 uTexCoordScale;
 
 uniform bool uInstancing;
 
@@ -38,7 +35,6 @@ uniform bool uInstancing;
 
 out mat4 vFinalMatModel;
 flat out vec3 vEmission;
-out vec2 vTexCoord;
 out vec4 vColor;
 out mat3 vTBN;
 
@@ -61,7 +57,6 @@ void main()
     vec3 B = normalize(cross(N, T) * aTangent.w);
 
     vec3 position = vec3(matModel * vec4(aPosition, 1.0));
-    vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
     vEmission = uEmissionColor * uEmissionEnergy;
     vColor = aColor * uAlbedoColor;
     vTBN = mat3(T, B, N);
