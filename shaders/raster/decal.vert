@@ -36,7 +36,6 @@ uniform bool uInstancing;
 out mat4 vFinalMatModel;
 flat out vec3 vEmission;
 out vec4 vColor;
-out mat3 vTBN;
 out vec4 vClipPos;
 
 /* === Main program === */
@@ -53,15 +52,10 @@ void main()
 
     vFinalMatModel = matModel;
 
-    vec3 T = normalize(matNormal * aTangent.xyz);
-    vec3 N = normalize(matNormal * aNormal);
-    vec3 B = normalize(cross(N, T) * aTangent.w);
+    vColor = aColor * uAlbedoColor;
+    vEmission = uEmissionColor * uEmissionEnergy;
 
     vec3 position = vec3(matModel * vec4(aPosition, 1.0));
-    vEmission = uEmissionColor * uEmissionEnergy;
-    vColor = aColor * uAlbedoColor;
-    vTBN = mat3(T, B, N);
-
     gl_Position = uMatVP * vec4(position, 1.0);
     vClipPos  = gl_Position;
 }

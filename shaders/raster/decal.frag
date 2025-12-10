@@ -14,7 +14,6 @@
 in mat4 vFinalMatModel;
 flat in vec3 vEmission;
 in vec4 vColor;
-in mat3 vTBN; // Unused - placeholder for future implementation
 in vec4 vClipPos;
 
 /* === Uniforms === */
