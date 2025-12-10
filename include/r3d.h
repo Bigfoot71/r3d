@@ -402,7 +402,7 @@ typedef struct R3D_Model {
  * This structure defines a decal that can be projected onto geometry that has already been rendered.
  *
  * @note Decals are drawn using deferred screen space rendering and do not interact with any
- * foward rendered or non-opaque objects.
+ * forward rendered or non-opaque objects.
  */
 typedef struct R3D_Decal {
     R3D_Material material;         /**< The material used for rendering the decal. */

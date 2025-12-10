@@ -1446,7 +1446,6 @@ void r3d_shader_load_raster_decal(void)
     r3d_shader_get_location(raster.decal, uMatNormal);
     r3d_shader_get_location(raster.decal, uMatModel);
     r3d_shader_get_location(raster.decal, uMatVP);
-    r3d_shader_get_location(raster.decal, uViewportSize);
     r3d_shader_get_location(raster.decal, uAlbedoColor);
     r3d_shader_get_location(raster.decal, uEmissionEnergy);
     r3d_shader_get_location(raster.decal, uEmissionColor);

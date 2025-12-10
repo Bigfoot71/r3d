@@ -316,10 +316,6 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
 
     r3d_shader_set_float(raster.decal, uAlphaCutoff, call->material.alphaCutoff);
 
-    /* --- Set viewport size --- */
-
-    r3d_shader_set_vec2(raster.decal, uViewportSize, (Vector2) { R3D.state.resolution.width, R3D.state.resolution.height });
-
     /* --- Set texcoord offset/scale --- */
 
     r3d_shader_set_vec2(raster.decal, uTexCoordOffset, call->material.uvOffset);

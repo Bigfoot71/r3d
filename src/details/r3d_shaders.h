@@ -224,7 +224,6 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatVP;
-    r3d_shader_uniform_vec2_t uViewportSize;
     r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_float_t uEmissionEnergy;
     r3d_shader_uniform_vec3_t uEmissionColor;

@@ -37,6 +37,7 @@ out mat4 vFinalMatModel;
 flat out vec3 vEmission;
 out vec4 vColor;
 out mat3 vTBN;
+out vec4 vClipPos;
 
 /* === Main program === */
 
@@ -62,4 +63,5 @@ void main()
     vTBN = mat3(T, B, N);
 
     gl_Position = uMatVP * vec4(position, 1.0);
+    vClipPos  = gl_Position;
 }

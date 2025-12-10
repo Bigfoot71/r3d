@@ -721,9 +721,7 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
     drawCall.renderMode = R3D_DRAWCALL_RENDER_DEFERRED;
     drawCall.depthMode = R3D_DEPTH_READ_ONLY;
 
-    r3d_array_t* arr = &R3D.container.aDrawDecals;
-
-    r3d_array_push_back(arr, &drawCall);
+    r3d_array_push_back(&R3D.container.aDrawDecals, &drawCall);
 }
 
 void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransforms, int instanceCount)
@@ -754,9 +752,7 @@ void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransf
     drawCall.instanced.colors = NULL;
     drawCall.instanced.count = instanceCount;
 
-    r3d_array_t* arr = &R3D.container.aDrawDecalsInst;
-
-    r3d_array_push_back(arr, &drawCall);
+    r3d_array_push_back(&R3D.container.aDrawDecalsInst, &drawCall);
 }
 
 void R3D_DrawSprite(const R3D_Sprite* sprite, Vector3 position)

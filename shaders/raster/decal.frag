@@ -15,6 +15,7 @@ in mat4 vFinalMatModel;
 flat in vec3 vEmission;
 in vec4 vColor;
 in mat3 vTBN; // Unused - placeholder for future implementation
+in vec4 vClipPos;
 
 /* === Uniforms === */
 
@@ -29,8 +30,6 @@ uniform mat4 uMatNormal; // Unused - placeholder for future implementation
 uniform mat4 uMatVP;
 uniform mat4 uMatInvProj;
 uniform mat4 uMatProj;
-
-uniform vec2 uViewportSize;
 
 uniform float uAlphaCutoff;
 uniform float uNormalScale; // Unused - placeholder for future implementation
@@ -61,8 +60,9 @@ vec3 DepthToViewPosition(vec2 texCoord, float depth)
 
 void main()
 {
-    // Get the screen position normalized to [0, 1]
-    vec2 fragTexCoord = gl_FragCoord.xy / uViewportSize;
+    // Normalize screen position to [0, 1]
+    vec2 screenPos = vClipPos.xy / vClipPos.w;
+    vec2 fragTexCoord = screenPos * 0.5 + 0.5;
 
     // Retrieve the depth from the depth texture
     float textureDepth = texture(uTexDepth, fragTexCoord).r;
