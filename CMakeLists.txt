@@ -220,6 +220,8 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/raster/depth.frag"
     "${R3D_ROOT_PATH}/shaders/raster/depth_cube.vert"
     "${R3D_ROOT_PATH}/shaders/raster/depth_cube.frag"
+    "${R3D_ROOT_PATH}/shaders/raster/decal.vert"
+    "${R3D_ROOT_PATH}/shaders/raster/decal.frag"
     "${R3D_ROOT_PATH}/shaders/screen/ssao.frag"
     "${R3D_ROOT_PATH}/shaders/screen/ambient.frag"
     "${R3D_ROOT_PATH}/shaders/screen/lighting.frag"

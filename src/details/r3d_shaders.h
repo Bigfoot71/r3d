@@ -220,6 +220,34 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_mat4_t uMatInvView;
+    r3d_shader_uniform_mat4_t uMatNormal;
+    r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_vec4_t uAlbedoColor;
+    r3d_shader_uniform_float_t uEmissionEnergy;
+    r3d_shader_uniform_vec3_t uEmissionColor;
+    r3d_shader_uniform_vec2_t uTexCoordOffset;
+    r3d_shader_uniform_vec2_t uTexCoordScale;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_sampler2D_t uTexAlbedo;
+    r3d_shader_uniform_sampler2D_t uTexNormal;
+    r3d_shader_uniform_sampler2D_t uTexEmission;
+    r3d_shader_uniform_sampler2D_t uTexORM;
+    r3d_shader_uniform_sampler2D_t uTexDepth;
+    r3d_shader_uniform_float_t uAlphaCutoff;
+    r3d_shader_uniform_float_t uNormalScale;
+    r3d_shader_uniform_float_t uOcclusion;
+    r3d_shader_uniform_float_t uRoughness;
+    r3d_shader_uniform_float_t uMetalness;
+
+    r3d_shader_uniform_mat4_t uMatInvProj;
+    r3d_shader_uniform_mat4_t uMatProj;
+
+} r3d_shader_raster_decal_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexDepth;
     r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_sampler1D_t uTexKernel;

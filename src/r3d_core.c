@@ -68,11 +68,12 @@ static void r3d_stencil_disable(void);
 static void r3d_prepare_process_lights_and_batch(void);
 static void r3d_prepare_cull_drawcalls(void);
 static void r3d_prepare_sort_drawcalls(void);
-    
+
 static void r3d_clear_gbuffer(bool bindFramebuffer, bool clearColor, bool clearDepth, bool clearStencil);
 
 static void r3d_pass_shadow_maps(void);
 static void r3d_pass_gbuffer(void);
+static void r3d_pass_decals(void);
 static void r3d_pass_ssao(void);
 
 static void r3d_pass_deferred_ambient(void);
@@ -109,6 +110,8 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.container.aDrawDeferred = r3d_array_create(128, sizeof(r3d_drawcall_t));
     R3D.container.aDrawForwardInst = r3d_array_create(8, sizeof(r3d_drawcall_t));
     R3D.container.aDrawDeferredInst = r3d_array_create(8, sizeof(r3d_drawcall_t));
+    R3D.container.aDrawDecals = r3d_array_create(128, sizeof(r3d_drawcall_t));
+    R3D.container.aDrawDecalsInst = r3d_array_create(128, sizeof(r3d_drawcall_t));
 
     // Load lights registry
     R3D.container.rLights = r3d_registry_create(8, sizeof(r3d_light_t));
@@ -196,6 +199,9 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.misc.matCubeViews[4] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f,  1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
     R3D.misc.matCubeViews[5] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f, -1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
 
+    R3D.misc.meshDecalBounds = R3D_GenMeshCube(1.0f, 1.0f, 1.0f, true);
+    R3D.misc.meshDecalBounds.depthMode = R3D_DEPTH_DISABLED;
+
     // Load GL Objects - framebuffers, textures, shaders...
     // NOTE: The initialization of these resources is based
     //       on the global state and should be performed last.
@@ -221,6 +227,8 @@ void R3D_Close(void)
     r3d_array_destroy(&R3D.container.aDrawDeferred);
     r3d_array_destroy(&R3D.container.aDrawForwardInst);
     r3d_array_destroy(&R3D.container.aDrawDeferredInst);
+    r3d_array_destroy(&R3D.container.aDrawDecals);
+    r3d_array_destroy(&R3D.container.aDrawDecalsInst);
 
     r3d_registry_destroy(&R3D.container.rLights);
     r3d_array_destroy(&R3D.container.aLightBatch);
@@ -345,6 +353,8 @@ void R3D_BeginEx(Camera3D camera, const RenderTexture* target)
     r3d_array_clear(&R3D.container.aDrawDeferred);
     r3d_array_clear(&R3D.container.aDrawForwardInst);
     r3d_array_clear(&R3D.container.aDrawDeferredInst);
+    r3d_array_clear(&R3D.container.aDrawDecals);
+    r3d_array_clear(&R3D.container.aDrawDecalsInst);
 
     /* --- Store camera position --- */
 
@@ -412,7 +422,7 @@ void R3D_End(void)
     r3d_prepare_process_lights_and_batch();
     r3d_pass_shadow_maps();
 
-    /* --- Prcoess all draw calls before rendering --- */
+    /* --- Process all draw calls before rendering --- */
 
     r3d_prepare_cull_drawcalls();
     r3d_prepare_sort_drawcalls();
@@ -425,6 +435,10 @@ void R3D_End(void)
     else {
         r3d_clear_gbuffer(true, false, true, true);
     }
+
+    /* -- Rasterizing decals in G-Buffer */
+
+    r3d_pass_decals();
 
     /* --- Calculates ambient occlusion for opaque objects --- */
 
@@ -693,6 +707,52 @@ void R3D_DrawModelInstancedPro(const R3D_Model* model,
             r3d_array_push_back(deferredArr, &drawCall);
         }
     }
+}
+
+void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
+{
+    r3d_drawcall_t drawCall = { 0 };
+
+    drawCall.transform = transform;
+    drawCall.material = decal->material;
+    drawCall.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
+    drawCall.geometry.model.mesh = &R3D.misc.meshDecalBounds;
+    drawCall.geometryType = R3D_DRAWCALL_GEOMETRY_MODEL;
+    drawCall.renderMode = R3D_DRAWCALL_RENDER_DEFERRED;
+    drawCall.depthMode = R3D_DEPTH_READ_ONLY;
+
+    r3d_array_push_back(&R3D.container.aDrawDecals, &drawCall);
+}
+
+void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransforms, int instanceCount)
+{
+    r3d_drawcall_t drawCall = { 0 };
+
+    drawCall.transform = MatrixIdentity();
+    drawCall.material = decal->material;
+    drawCall.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
+    drawCall.geometry.model.mesh = &R3D.misc.meshDecalBounds;
+    drawCall.geometryType = R3D_DRAWCALL_GEOMETRY_MODEL;
+    drawCall.renderMode = R3D_DRAWCALL_RENDER_DEFERRED;
+    drawCall.depthMode = R3D_DEPTH_READ_ONLY;
+
+    drawCall.geometry.model.anim = NULL;
+    drawCall.geometry.model.frame = 0;
+    drawCall.geometry.model.boneOffsets = NULL;
+
+    // TODO: Move aabb evaluation to potential Pro version of this function
+    drawCall.instanced.allAabb = (BoundingBox) {
+            { -FLT_MAX, -FLT_MAX, -FLT_MAX },
+            { +FLT_MAX, +FLT_MAX, +FLT_MAX }
+    };
+
+    drawCall.instanced.transforms = instanceTransforms;
+    drawCall.instanced.transStride = 0;
+    drawCall.instanced.colStride = 0;
+    drawCall.instanced.colors = NULL;
+    drawCall.instanced.count = instanceCount;
+
+    r3d_array_push_back(&R3D.container.aDrawDecalsInst, &drawCall);
 }
 
 void R3D_DrawSprite(const R3D_Sprite* sprite, Vector3 position)
@@ -985,6 +1045,22 @@ void r3d_prepare_cull_drawcalls(void)
 
     R3D.container.aDrawDeferred.count = count;
 
+    /* --- Frustum culling of deferred decal objects --- */
+
+    calls = (r3d_drawcall_t*)R3D.container.aDrawDecals.data;
+    count = (int)R3D.container.aDrawDecals.count;
+
+    for (int i = count - 1; i >= 0; i--) {
+        if (!(R3D.state.flags & R3D_FLAG_NO_FRUSTUM_CULLING)) {
+            if (!r3d_drawcall_geometry_is_visible(&calls[i])) {
+                calls[i] = calls[--count];
+                continue;
+            }
+        }
+    }
+
+    R3D.container.aDrawDecals.count = count;
+
     /* --- Frustum culling of forward objects --- */
 
     calls = (r3d_drawcall_t*)R3D.container.aDrawForward.data;
@@ -1006,7 +1082,7 @@ void r3d_prepare_cull_drawcalls(void)
     R3D.container.aDrawForward.count = count;
 
     /* --- Frustum culling of deferred instanced objects --- */
-
+    
     calls = (r3d_drawcall_t*)R3D.container.aDrawDeferredInst.data;
     count = (int)R3D.container.aDrawDeferredInst.count;
 
@@ -1022,7 +1098,7 @@ void r3d_prepare_cull_drawcalls(void)
             }
         }
     }
-
+    
     R3D.container.aDrawDeferredInst.count = count;
 
     /* --- Frustum culling of forward instanced objects --- */
@@ -1055,6 +1131,12 @@ void r3d_prepare_sort_drawcalls(void)
             R3D.container.aDrawDeferred.count
         );
     }
+
+    // Sort back-to-front for deferred decal rendering
+    r3d_drawcall_sort_back_to_front(
+        (r3d_drawcall_t*)R3D.container.aDrawDecals.data,
+        R3D.container.aDrawDecals.count
+    );
 
     // Sort back-to-front for forward rendering
     if (R3D.state.flags & R3D_FLAG_TRANSPARENT_SORTING) {
@@ -1291,6 +1373,28 @@ void r3d_pass_gbuffer(void)
         /* --- Disable stencil --- */
 
         r3d_stencil_disable();
+    }
+}
+
+void r3d_pass_decals(void)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.gBuffer);
+    {
+        glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
+
+        r3d_shader_enable(raster.decal);
+
+        for (size_t i = 0; i < R3D.container.aDrawDecalsInst.count; i++) {
+            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecalsInst, i);
+            r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
+        }
+
+        for (size_t i = 0; i < R3D.container.aDrawDecals.count; i++) {
+            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecals, i);
+            r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
+        }
+
+        r3d_shader_disable();
     }
 }
 

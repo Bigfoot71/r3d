@@ -290,6 +290,80 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     r3d_shader_unbind_sampler2D(raster.depthCube, uTexAlbedo);
 }
 
+void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
+{
+    /* --- Set additional matrix uniforms --- */
+
+    Matrix matNormal = r3d_matrix_normal(&call->transform);
+
+    r3d_shader_set_mat4(raster.decal, uMatModel, call->transform);
+    r3d_shader_set_mat4(raster.decal, uMatNormal, matNormal);
+    r3d_shader_set_mat4(raster.decal, uMatVP, *matVP);
+
+    r3d_shader_set_mat4(raster.decal, uMatInvView, R3D.state.transform.invView);
+    r3d_shader_set_mat4(raster.decal, uMatInvProj, R3D.state.transform.invProj);
+    r3d_shader_set_mat4(raster.decal, uMatProj, R3D.state.transform.proj);
+
+    /* --- Set factor material maps --- */
+
+    r3d_shader_set_float(raster.decal, uEmissionEnergy, call->material.emission.energy);
+    r3d_shader_set_float(raster.decal, uNormalScale, call->material.normal.scale);
+    r3d_shader_set_float(raster.decal, uOcclusion, call->material.orm.occlusion);
+    r3d_shader_set_float(raster.decal, uRoughness, call->material.orm.roughness);
+    r3d_shader_set_float(raster.decal, uMetalness, call->material.orm.metalness);
+
+    /* --- Set misc material values --- */
+
+    r3d_shader_set_float(raster.decal, uAlphaCutoff, call->material.alphaCutoff);
+
+    /* --- Set texcoord offset/scale --- */
+
+    r3d_shader_set_vec2(raster.decal, uTexCoordOffset, call->material.uvOffset);
+    r3d_shader_set_vec2(raster.decal, uTexCoordScale, call->material.uvScale);
+
+    /* --- Set color material maps --- */
+
+    r3d_shader_set_col4(raster.decal, uAlbedoColor, call->material.albedo.color);
+    r3d_shader_set_col3(raster.decal, uEmissionColor, call->material.emission.color);
+
+    /* --- Bind active texture maps --- */
+
+    r3d_shader_bind_sampler2D_opt(raster.decal, uTexAlbedo, call->material.albedo.texture.id, white);
+    r3d_shader_bind_sampler2D_opt(raster.decal, uTexNormal, call->material.normal.texture.id, normal);
+    r3d_shader_bind_sampler2D_opt(raster.decal, uTexEmission, call->material.emission.texture.id, black);
+    r3d_shader_bind_sampler2D_opt(raster.decal, uTexORM, call->material.orm.texture.id, white);
+    r3d_shader_bind_sampler2D(raster.decal, uTexDepth, R3D.target.depthStencil);
+
+    /* --- Applying material parameters that are independent of shaders --- */
+
+    r3d_drawcall_apply_blend_mode(call->material.blendMode);
+
+    /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
+    // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
+
+    glDisable(GL_CULL_FACE);
+
+    /* --- Rendering the object corresponding to the draw call --- */
+
+    bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
+    r3d_shader_set_int(raster.decal, uInstancing, instancing);
+
+    if (instancing) {
+        r3d_drawcall_instanced(call, 10, -1);
+    }
+    else {
+        r3d_drawcall(call);
+    }
+
+    /* --- Unbind all bound texture maps --- */
+
+    r3d_shader_unbind_sampler2D(raster.decal, uTexAlbedo);
+    r3d_shader_unbind_sampler2D(raster.decal, uTexNormal);
+    r3d_shader_unbind_sampler2D(raster.decal, uTexEmission);
+    r3d_shader_unbind_sampler2D(raster.decal, uTexORM);
+    r3d_shader_unbind_sampler2D(raster.decal, uTexDepth);
+}
+
 void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matVP)
 {
     /* --- Set additional matrix uniforms --- */
@@ -651,12 +725,12 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
     switch (call->geometryType) {
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         r3d_drawcall_bind_geometry_mesh(call->geometry.model.mesh);
+        r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
         break;
     case R3D_DRAWCALL_GEOMETRY_SPRITE:
         r3d_primitive_bind(&R3D.primitive.quad);
         break;
     }
-    r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
 
     unsigned int vboTransforms = 0;
     unsigned int vboColors = 0;
