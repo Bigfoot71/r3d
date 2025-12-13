@@ -22,7 +22,6 @@
 
 #include <raylib.h>
 
-
 // --------------------------------------------
 //                   DEFINES
 // --------------------------------------------
@@ -45,8 +44,6 @@
 #ifndef R3DAPI
 #   define R3DAPI extern
 #endif
-
-
 
 // --------------------------------------------
 //                   ENUMS
@@ -105,6 +102,19 @@ typedef unsigned int R3D_Layer;
 #define R3D_LAYER_14    (1 << 13)
 #define R3D_LAYER_15    (1 << 14)
 #define R3D_LAYER_16    (1 << 15)
+
+/**
+ * @brief Defines the geometric primitive type.
+ */
+typedef enum R3D_PrimitiveType {
+    R3D_PRIMITIVE_POINTS,           ///< Each vertex represents a single point.
+    R3D_PRIMITIVE_LINES,            ///< Each pair of vertices forms an independent line segment.
+    R3D_PRIMITIVE_LINE_STRIP,       ///< Connected series of line segments sharing vertices.
+    R3D_PRIMITIVE_LINE_LOOP,        ///< Closed loop of connected line segments.
+    R3D_PRIMITIVE_TRIANGLES,        ///< Each set of three vertices forms an independent triangle.
+    R3D_PRIMITIVE_TRIANGLE_STRIP,   ///< Connected strip of triangles sharing vertices.
+    R3D_PRIMITIVE_TRIANGLE_FAN      ///< Fan of triangles sharing the first vertex.
+} R3D_PrimitiveType;
 
 /**
  * @brief Blend modes for rendering.
@@ -269,33 +279,33 @@ typedef struct R3D_Vertex {
 } R3D_Vertex;
 
 /**
- * @brief Represents a mesh with its geometry data and GPU buffers.
+ * @brief Represents a mesh stored in CPU memory.
  *
- * Contains vertex/index data, GPU buffer handles, and bounding volume.
+ * R3D_MeshData is the CPU-side container of a mesh. It stores vertex and index data,
+ * and provides utility functions to generate, transform, and process geometry before
+ * uploading it to the GPU as an R3D_Mesh.
+ *
+ * Think of it as a toolbox for procedural or dynamic mesh generation on the CPU.
+ */
+typedef struct R3D_MeshData {
+    R3D_Vertex* vertices;       ///< Pointer to vertex data in CPU memory.
+    unsigned int* indices;      ///< Pointer to index data in CPU memory.
+    int vertexCount;            ///< Number of vertices.
+    int indexCount;             ///< Number of indices.
+} R3D_MeshData;
+
+/**
+ * @brief Represents a 3D mesh.
+ *
+ * Stores vertex and index data, shadow casting settings, bounding box, and layer information.
+ * Can represent a static or skinned mesh.
  */
 typedef struct R3D_Mesh {
-
-    R3D_Vertex* vertices;                 /**< Pointer to the array of vertices. */
-    unsigned int* indices;                /**< Pointer to the array of indices. */
-
-    int vertexCount;                      /**< Number of vertices. */
-    int indexCount;                       /**< Number of indices. */
-
-    unsigned int vbo;                     /**< Vertex Buffer Object (GPU handle). */
-    unsigned int ebo;                     /**< Element Buffer Object (GPU handle). */
-    unsigned int vao;                     /**< Vertex Array Object (GPU handle). */
-
-    Matrix* boneMatrices;                 /**< Cached animation matrices for all passes. */
-    int boneCount;                        /**< Number of bones (and matrices) that affect the mesh. */
-
-    R3D_ShadowCastMode shadowCastMode;    /**< Shadow casting mode for the mesh. */
-    R3D_DepthMode depthMode;              /**< Depth testing mode for the mesh. */
-
-    BoundingBox aabb;                     /**< Axis-Aligned Bounding Box in local space. */
-
-    R3D_Layer layers;                     /**< Bitfield indicating the rendering layer(s) this object belongs to. 
-                                               A value of 0 means the object is always rendered. */
-
+    unsigned int vao, vbo, ebo;          ///< OpenGL objects handles.
+    R3D_ShadowCastMode shadowCastMode;   ///< Shadow casting mode for the mesh.
+    R3D_PrimitiveType primitiveType;     ///< Type of primitive that constitutes the vertices.
+    R3D_Layer layerMask;                 ///< Bitfield indicating the rendering layer(s) of this mesh.
+    BoundingBox aabb;                    ///< Axis-Aligned Bounding Box in local space.
 } R3D_Mesh;
 
 /**
@@ -348,51 +358,143 @@ typedef struct R3D_Material {
 } R3D_Material;
 
 /**
+ * @brief Stores bone information for skeletal animation.
+ *
+ * Contains the bone name and the index of its parent bone.
+ */
+typedef struct R3D_BoneInfo {
+    char name[32];   ///< Bone name (max 31 characters + null terminator).
+    int parent;      ///< Index of the parent bone (-1 if root).
+} R3D_BoneInfo;
+
+/**
+ * @brief Represents a skeletal hierarchy used for skinning.
+ *
+ * Defines the bone structure, reference poses, and inverse bind matrices
+ * required for skeletal animation. The skeleton provides both local and
+ * global bind poses used during skinning and animation playback.
+ */
+typedef struct R3D_Skeleton {
+
+    R3D_BoneInfo* bones;       ///< Array of bone descriptors defining the hierarchy and names.
+    int boneCount;            ///< Total number of bones in the skeleton.
+
+    Matrix* boneOffsets;     ///< Inverse bind matrices, one per bone. Transform vertices from mesh space to bone space (used in skinning).
+    Matrix* bindLocal;       ///< Bind pose transforms in local bone space (relative to parent).
+    Matrix* bindPose;        ///< Bind pose transforms in model space (global). Used as the default pose when not animated.
+
+} R3D_Skeleton;
+
+/**
+ * @brief Represents a single 3D vector keyframe used in animation.
+ *
+ * Stores a position or scale value and the time at which it occurs
+ * in the animation timeline.
+ */
+typedef struct R3D_KeyVector3 {
+    Vector3 value;  ///< Keyframe value (position or scale) in local space.
+    float time;     ///< Time of the keyframe, in animation ticks.
+} R3D_KeyVector3;
+
+/**
+ * @brief Represents a quaternion rotation keyframe used in animation.
+ *
+ * Stores a rotation value and the time at which it occurs.
+ */
+typedef struct R3D_KeyQuaternion {
+    Quaternion value;   ///< Keyframe value representing a bone rotation.
+    float time;         ///< Time of the keyframe, in animation ticks.
+} R3D_KeyQuaternion;
+
+/**
+ * @brief Animation channel describing how a single bone transforms over time.
+ *
+ * Each channel contains position, rotation, and scale keyframes for one bone.
+ * During playback, these keys are interpolated to compute the bone's local transform.
+ */
+typedef struct R3D_AnimationChannel {
+    R3D_KeyVector3* positionKeys;       ///< Array of translation keyframes.
+    R3D_KeyQuaternion* rotationKeys;    ///< Array of rotation keyframes.
+    R3D_KeyVector3* scaleKeys;          ///< Array of scaling keyframes.
+    int positionKeyCount;               ///< Number of translation keyframes.
+    int rotationKeyCount;               ///< Number of rotation keyframes.
+    int scaleKeyCount;                  ///< Number of scaling keyframes.
+    int boneIndex;                      ///< Index of the bone affected by this channel.
+} R3D_AnimationChannel;
+
+/**
  * @brief Represents a skeletal animation for a model.
  *
- * This structure holds the animation data for a skinned model,
- * including per-frame bone transformation poses.
+ * Contains all animation channels required to animate a skeleton.
+ * Each channel corresponds to one bone and defines its transformation
+ * (translation, rotation, scale) over time.
  */
-typedef struct R3D_ModelAnimation {
+typedef struct R3D_Animation {
+    R3D_AnimationChannel* channels;     ///< Array of animation channels, one per animated bone.
+    int channelCount;                   ///< Total number of channels in this animation.
+    float ticksPerSecond;               ///< Playback rate; number of animation ticks per second.
+    float duration;                     ///< Total length of the animation, in ticks.
+    int boneCount;                      ///< Number of bones in the target skeleton.
+    char name[32];                      ///< Animation name (null-terminated string).
+} R3D_Animation;
 
-    int boneCount;                  /**< Number of bones in the skeleton affected by this animation. */
-    int frameCount;                 /**< Total number of frames in the animation sequence. */
+/**
+ * @brief Represents a collection of skeletal animations sharing the same skeleton.
+ *
+ * Holds multiple animations that can be applied to compatible models or skeletons.
+ * Typically loaded together from a single 3D model file (e.g., GLTF, FBX) containing several animation clips.
+ */
+typedef struct R3D_AnimationLib {
+    R3D_Animation* animations;          ///< Array of animations included in this library.
+    int count;                          ///< Number of animations contained in the library.
+} R3D_AnimationLib;
 
-    BoneInfo* bones;                /**< Array of bone metadata (name, parent index, etc.) defining the skeleton hierarchy. */
+/**
+ * @brief Describes the playback state of a single animation.
+ *
+ * Each state tracks the current playback time, blending weight,
+ * and looping behavior for one animation within a player.
+ */
+typedef struct R3D_AnimationState {
+    float currentTime;  ///< Current playback time in animation ticks.
+    float weight;       ///< Blending weight of this animation (0.0-1.0).
+    bool loop;          ///< True to enable looping playback.
+} R3D_AnimationState;
 
-    Matrix** frameGlobalPoses;      /**< 2D array [frame][bone]. Global bone matrices (relative to model space). */
-    Transform** frameLocalPoses;    /**< 2D array [frame][bone]. Local bone transforms (TRS relative to parent). */
-
-    char name[32];                  /**< Name identifier for the animation (e.g., "Walk", "Jump"). */
-
-} R3D_ModelAnimation;
+/**
+ * @brief Controls playback and blending of animations for a skeleton.
+ *
+ * The animation player manages multiple animation states from a given
+ * animation library and computes the blended pose for the associated skeleton.
+ * On each update, it advances internal timers, interpolates keyframes,
+ * blends active animations according to their weights, and updates the
+ * current skeleton pose.
+ */
+typedef struct R3D_AnimationPlayer {
+    const R3D_AnimationLib* animLib;    ///< Animation library providing available animations.
+    const R3D_Skeleton* skeleton;       ///< Target skeleton to animate.
+    R3D_AnimationState* states;         ///< Array of active animation states.
+    Matrix* currentPose;                ///< Array of bone transforms representing the blended pose.
+} R3D_AnimationPlayer;
 
 /**
  * @brief Represents a complete 3D model with meshes and materials.
  *
- * Contains multiple meshes and their associated materials, along with bounding information.
+ * Contains multiple meshes and their associated materials, along with animation and bounding information.
  */
 typedef struct R3D_Model {
 
-    R3D_Mesh* meshes;               /**< Array of meshes composing the model. */
-    R3D_Material* materials;        /**< Array of materials used by the model. */
-    int* meshMaterials;             /**< Array of material indices, one per mesh. */
+    R3D_Mesh** meshes;                  ///< Array of meshes composing the model.
+    R3D_Material* materials;            ///< Array of materials used by the model.
+    int* meshMaterials;                 ///< Array of material indices, one per mesh.
 
-    int meshCount;                  /**< Number of meshes. */
-    int materialCount;              /**< Number of materials. */
+    int meshCount;                      ///< Number of meshes.
+    int materialCount;                  ///< Number of materials.
 
-    BoundingBox aabb;               /**< Axis-Aligned Bounding Box encompassing the whole model. */
+    BoundingBox aabb;                   ///< Axis-Aligned Bounding Box encompassing the whole model.
+    R3D_Skeleton* skeleton;             ///< Skeleton hierarchy and bind pose used for skinning (NULL if non-skinned).
 
-    Matrix* boneOffsets;            /**< Array of offset (inverse bind) matrices, one per bone.
-                                         Transforms mesh-space vertices to bone space. Used in skinning. */
-    R3D_AnimMode animationMode;
-    Matrix* boneOverride;           /**< Array of Matrices we'll use if we have it instead of internal calculations, Used in skinning. */
-
-    BoneInfo* bones;                /**< Bones information (skeleton). Defines the hierarchy and names of bones. */
-    int boneCount;                  /**< Number of bones. */
-
-    const R3D_ModelAnimation* anim; /**< Pointer to the currently assigned animation for this model (optional). */
-    int animFrame;                  /**< Current animation frame index. Used for sampling bone poses from the animation. */
+    R3D_AnimationPlayer* player;        ///< Animation player controlling the skeleton. If NULL the model uses its bind pose.
 
 } R3D_Model;
 
@@ -1045,13 +1147,122 @@ R3DAPI void R3D_DrawParticleSystemEx(const R3D_ParticleSystem* system, const R3D
 /** @} */ // end of Core
 
 /**
- * @defgroup Model Model Functions
+ * @defgroup Mesh Mesh Functions
  * @{
  */
 
 // --------------------------------------------
-// MODEL: Mesh Functions
+// MESH: Mesh Data Functions
 // --------------------------------------------
+
+/**
+ * @brief Creates an empty mesh data container.
+ * @param vertexCount Number of vertices to allocate.
+ * @param indexCount Number of indices to allocate.
+ * @return A new R3D_MeshData instance with allocated memory.
+ */
+R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
+
+/**
+ * @brief Releases memory used by a mesh data container.
+ * @param meshData Pointer to the R3D_MeshData to destroy.
+ */
+R3DAPI void R3D_DestroyMeshData(R3D_MeshData* meshData);
+
+/**
+ * @brief Creates a deep copy of an existing mesh data container.
+ * @param meshData Source mesh data to duplicate.
+ * @return A new R3D_MeshData containing a copy of the source data.
+ */
+R3DAPI R3D_MeshData R3D_DuplicateMeshData(const R3D_MeshData* meshData);
+
+/**
+ * @brief Merges two mesh data containers into a single one.
+ * @param a First mesh data.
+ * @param b Second mesh data.
+ * @return A new R3D_MeshData containing the merged geometry.
+ */
+R3DAPI R3D_MeshData R3D_MergeMeshData(const R3D_MeshData* a, const R3D_MeshData* b);
+
+/**
+ * @brief Translates all vertices by a given offset.
+ * @param meshData Mesh data to modify.
+ * @param translation Offset to apply to all vertex positions.
+ */
+R3DAPI void R3D_TranslateMeshData(R3D_MeshData* meshData, Vector3 translation);
+
+/**
+ * @brief Rotates all vertices using a quaternion.
+ * @param meshData Mesh data to modify.
+ * @param rotation Quaternion representing the rotation.
+ */
+R3DAPI void R3D_RotateMeshData(R3D_MeshData* meshData, Quaternion rotation);
+
+/**
+ * @brief Scales all vertices by given factors.
+ * @param meshData Mesh data to modify.
+ * @param scale Scaling factors for each axis.
+ */
+R3DAPI void R3D_ScaleMeshData(R3D_MeshData* meshData, Vector3 scale);
+
+/**
+ * @brief Generates planar UV coordinates.
+ * @param meshData Mesh data to modify.
+ * @param uvScale Scaling factors for UV coordinates.
+ * @param axis Axis along which to project the planar mapping.
+ */
+R3DAPI void R3D_GenMeshDataUVsPlanar(R3D_MeshData* meshData, Vector2 uvScale, Vector3 axis);
+
+/**
+ * @brief Generates spherical UV coordinates.
+ * @param meshData Mesh data to modify.
+ */
+R3DAPI void R3D_GenMeshDataUVsSpherical(R3D_MeshData* meshData);
+
+/**
+ * @brief Generates cylindrical UV coordinates.
+ * @param meshData Mesh data to modify.
+ */
+R3DAPI void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData);
+
+/**
+ * @brief Computes vertex normals from triangle geometry.
+ * @param meshData Mesh data to modify.
+ */
+R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData);
+
+/**
+ * @brief Computes vertex tangents based on existing normals and UVs.
+ * @param meshData Mesh data to modify.
+ */
+R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData);
+
+/**
+ * @brief Calculates the axis-aligned bounding box of the mesh.
+ * @param meshData Mesh data to analyze.
+ * @return The computed bounding box.
+ */
+R3DAPI BoundingBox R3D_CalculateMeshDataBoundingBox(const R3D_MeshData* meshData);
+
+// --------------------------------------------
+// MESH: Mesh Functions
+// --------------------------------------------
+
+/**
+ * @brief Creates a 3D mesh from CPU-side mesh data.
+ * @param type Primitive type used to interpret vertex data.
+ * @param meshData Pointer to the R3D_MeshData containing vertices and indices (cannot be NULL).
+ * @param aabb Optional pointer to a bounding box. If NULL, it will be computed automatically.
+ * @return Pointer to a newly created R3D_Mesh.
+ * @note The function copies all vertex and index data into GPU buffers.
+ */
+R3DAPI R3D_Mesh* R3D_CreateMesh(R3D_PrimitiveType type, const R3D_MeshData* meshData, const BoundingBox* aabb);
+
+/**
+ * @brief Destroys a 3D mesh and frees its resources.
+ * @param mesh Pointer to the R3D_Mesh to destroy.
+ */
+R3DAPI void R3D_DestroyMesh(R3D_Mesh* mesh);
 
 /**
  * @brief Generate a polygon mesh with specified number of sides.
@@ -1232,51 +1443,25 @@ R3DAPI R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize, bool uploa
 R3DAPI void R3D_UnloadMesh(const R3D_Mesh* mesh);
 
 /**
- * @brief Upload a mesh to GPU memory.
+ * @brief Upload a mesh data on the GPU.
  *
- * This function uploads a mesh's vertex and (optional) index data to the GPU.
- * It creates and configures a VAO, VBO, and optionally an EBO if indices are provided.
- * All vertex attributes are interleaved in a single VBO.
+ * This function uploads a mesh's vertex and optional index data to the GPU.
  *
- * This function must only be called once per mesh. For updates, use R3D_UpdateMesh().
+ * If `aabb` is provided, it will be used as the mesh's bounding box; if null,
+ * the bounding box is automatically recalculated from the vertex data.
  *
- * @param mesh Pointer to the mesh structure containing vertex and index data.
- * @param dynamic If true, allocates buffers with GL_DYNAMIC_DRAW for later updates.
- * If false, uses GL_STATIC_DRAW for optimized static meshes.
- *
- * @return true if upload succeeded, false on error (e.g. invalid input or already uploaded).
+ * @param mesh Pointer to the mesh structure to upload or update.
+ * @param data Pointer to the mesh data (vertices and indices) to upload.
+ * @param aabb Optional bounding box; if null, it is recalculated automatically.
  */
-R3DAPI bool R3D_UploadMesh(R3D_Mesh* mesh, bool dynamic);
+R3DAPI void R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb);
+
+/** @} */ // end of Mesh
 
 /**
- * @brief Update an already uploaded mesh on the GPU.
- *
- * This function updates the GPU-side data of a mesh previously uploaded with R3D_UploadMesh().
- * It replaces the vertex buffer contents using glBufferSubData.
- * If index data is present, it also updates or creates the index buffer (EBO).
- *
- * This function assumes the mesh was uploaded with the `dynamic` flag set to true.
- *
- * @param mesh Pointer to the mesh structure with updated vertex and/or index data.
- *
- * @return true if update succeeded, false on error (e.g. mesh not uploaded or invalid data).
+ * @defgroup Material Material Functions
+ * @{
  */
-R3DAPI bool R3D_UpdateMesh(R3D_Mesh* mesh);
-
-/**
- * @brief Recalculate the bounding box of a mesh.
- *
- * Computes and updates the axis-aligned bounding box (AABB) of the mesh
- * by examining all vertex positions. This is useful after mesh deformation
- * or when the bounding box needs to be refreshed.
- *
- * @param mesh Pointer to the mesh structure whose bounding box will be updated.
- */
-R3DAPI void R3D_UpdateMeshBoundingBox(R3D_Mesh* mesh);
-
-// --------------------------------------------
-// MODEL: Material Functions
-// --------------------------------------------
 
 /**
  * @brief Get the default material configuration.
@@ -1302,9 +1487,137 @@ R3DAPI R3D_Material R3D_GetDefaultMaterial(void);
  */
 R3DAPI void R3D_UnloadMaterial(const R3D_Material* material);
 
+/** @} */ // end of Material
+
+/**
+ * @defgroup Skeleton Skeleton Functions
+ * @{
+ */
+
+/**
+ * @brief Loads a skeleton hierarchy from a 3D model file.
+ *
+ * Skeletons are automatically loaded when importing a model,
+ * but can be loaded manually for advanced use cases.
+ *
+ * @param filePath Path to the model file containing the skeleton data.
+ * @return Pointer to a newly loaded R3D_Skeleton, or NULL on failure.
+ */
+R3DAPI R3D_Skeleton* R3D_LoadSkeleton(const char* filePath);
+
+/**
+ * @brief Loads a skeleton hierarchy from memory data.
+ *
+ * Allows manual loading of skeletons directly from a memory buffer.
+ * Typically used for advanced or custom asset loading workflows.
+ *
+ * @param data Pointer to the memory buffer containing skeleton data.
+ * @param size Size of the memory buffer in bytes.
+ * @param hint Optional format hint (can be NULL).
+ * @return Pointer to a newly loaded R3D_Skeleton, or NULL on failure.
+ */
+R3DAPI R3D_Skeleton* R3D_LoadSkeletonFromData(const void* data, unsigned int size, const char* hint);
+
+/**
+ * @brief Frees the memory allocated for a skeleton.
+ *
+ * @param skeleton Pointer to the R3D_Skeleton to destroy.
+ */
+R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton* skeleton);
+
+/** @} */ // end of Skeleton
+
+/**
+ * @defgroup Animation Animation Functions
+ * @{
+ */
+
 // --------------------------------------------
-// MODEL: Model Functions
+// ANIMATION: Animation Library Functions
 // --------------------------------------------
+
+/**
+ * @brief Loads animations from a model file.
+ * @param filePath Path to the model file containing animations.
+ * @param targetFrameRate Desired frame rate (FPS) for sampling the animations.
+ * @return Pointer to an array of R3D_Animation, or NULL on failure.
+ * @note Free the returned array using R3D_UnloadAnimationLib().
+ */
+R3DAPI R3D_AnimationLib* R3D_LoadAnimationLib(const char* filePath);
+
+/**
+ * @brief Loads animations from memory data.
+ * @param data Pointer to memory buffer containing model animation data.
+ * @param size Size of the buffer in bytes.
+ * @param hint Hint on the model format (can be NULL).
+ * @param targetFrameRate Desired frame rate (FPS) for sampling the animations.
+ * @return Pointer to an array of R3D_Animation, or NULL on failure.
+ * @note Free the returned array using R3D_UnloadAnimationLib().
+ */
+R3DAPI R3D_AnimationLib* R3D_LoadAnimationLibFromData(const void* data, unsigned int size, const char* hint);
+
+/**
+ * @brief Frees memory allocated for model animations.
+ * @param animLib Pointer to the animation library to free.
+ */
+R3DAPI void R3D_UnloadAnimationLib(R3D_AnimationLib* animLib);
+
+/**
+ * @brief Retrieves the index of a named animation within an animation library.
+ * @param animLib Pointer to the animation library.
+ * @param name Name of the animation to look for (case-sensitive).
+ * @return Zero-based index of the matching animation, or -1 if not found.
+ */
+R3DAPI int R3D_GetAnimationIndex(const R3D_AnimationLib* animLib, const char* name);
+
+/**
+ * @brief Finds a named animation in an array of animations.
+ * @param animLib Pointer to the animation library.
+ * @param name Name of the animation to find (case-sensitive).
+ * @return Pointer to the matching animation, or NULL if not found.
+ */
+R3DAPI R3D_Animation* R3D_GetAnimation(const R3D_AnimationLib* animLib, const char* name);
+
+// --------------------------------------------
+// ANIMATION: Animation Player Functions
+// --------------------------------------------
+
+/**
+ * @brief Creates a new animation player for a skeleton and animation library.
+ *
+ * Allocates internal structures for managing animation states and poses.
+ *
+ * @param skeleton Pointer to the target skeleton.
+ * @param animLib Pointer to the animation library containing available animations.
+ * @return Pointer to a newly created animation player, or NULL on failure.
+ */
+R3DAPI R3D_AnimationPlayer* R3D_CreateAnimationPlayer(const R3D_Skeleton* skeleton, const R3D_AnimationLib* animLib);
+
+/**
+ * @brief Destroys an animation player and frees its allocated resources.
+ *
+ * @param player Pointer to the animation player to destroy.
+ */
+R3DAPI void R3D_DestroyAnimationPlayer(R3D_AnimationPlayer* player);
+
+/**
+ * @brief Updates the animation player by advancing time and blending animations.
+ *
+ * This function interpolates keyframes, blends all active animation states,
+ * and updates the current skeleton pose. The time step `dt` can be scaled
+ * to modify playback speed.
+ *
+ * @param player Pointer to the animation player.
+ * @param dt Delta time since the last update, in seconds.
+ */
+R3DAPI void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt);
+
+/** @} */ // end of Animation
+
+/**
+ * @defgroup Model Model Functions
+ * @{
+ */
 
 /**
  * @brief Load a 3D model from a file.
@@ -1374,77 +1687,6 @@ R3DAPI void R3D_UnloadModel(const R3D_Model* model, bool unloadMaterials);
  * individual mesh within the model before calculating the model's overall bounding box.
  */
 R3DAPI void R3D_UpdateModelBoundingBox(R3D_Model* model, bool updateMeshBoundingBoxes);
-
-/**
- * @brief Loads model animations from a supported file format (e.g., GLTF, IQM).
- *
- * This function parses animation data from the given model file and returns an array
- * of R3D_ModelAnimation structs. The caller is responsible for freeing the returned data
- * using R3D_UnloadModelAnimations().
- *
- * @param filePath Path to the model file containing animation(s).
- * @param animCount Pointer to an integer that will receive the number of animations loaded.
- * @param targetFrameRate Desired frame rate (FPS) to sample the animation at. For example, 30 or 60.
- * @return Pointer to a dynamically allocated array of R3D_ModelAnimation. NULL on failure.
- */
-R3DAPI R3D_ModelAnimation* R3D_LoadModelAnimations(const char* filePath, int* animCount, int targetFrameRate);
-
-/**
- * @brief Loads model animations from memory data in a supported format (e.g., GLTF, IQM).
- *
- * This function parses animation data from the given memory buffer and returns an array
- * of R3D_ModelAnimation structs. The caller is responsible for freeing the returned data
- * using R3D_UnloadModelAnimations().
- *
- * @param data Pointer to the model data in memory.
- * @param size Size of the data buffer in bytes.
- * @param animCount Pointer to an integer that will receive the number of animations loaded.
- * @param targetFrameRate Desired frame rate (FPS) to sample the animation at. For example, 30 or 60.
- * @return Pointer to a dynamically allocated array of R3D_ModelAnimation. NULL on failure.
- */
-R3DAPI R3D_ModelAnimation* R3D_LoadModelAnimationsFromMemory(const void* data, unsigned int size, int* animCount, int targetFrameRate);
-
-/**
- * @brief Frees memory allocated for model animations.
- *
- * This should be called after you're done using animations loaded via R3D_LoadModelAnimations().
- *
- * @param animations Pointer to the animation array to free.
- * @param animCount Number of animations in the array.
- */
-R3DAPI void R3D_UnloadModelAnimations(R3D_ModelAnimation* animations, int animCount);
-
-/**
- * @brief Finds and returns a pointer to a named animation within the array.
- *
- * Searches the given array of animations for one that matches the specified name.
- *
- * @param animations Array of animations to search.
- * @param animCount Number of animations in the array.
- * @param name Name of the animation to find (case-sensitive).
- * @return Pointer to the matching animation, or NULL if not found.
- */
-R3DAPI R3D_ModelAnimation* R3D_GetModelAnimation(R3D_ModelAnimation* animations, int animCount, const char* name);
-
-/**
- * @brief Logs the names of all animations in the array (for debugging or inspection).
- *
- * Prints the animation names (and possibly other info) to the standard output or debug console.
- *
- * @param animations Array of animations to list.
- * @param animCount Number of animations in the array.
- */
-R3DAPI void R3D_ListModelAnimations(R3D_ModelAnimation* animations, int animCount);
-
-/**
- * @brief Sets the scaling factor applied to models on loading.
- *
- * The functions sets the scaling factor to be used when loading models. This value
- * is only applied to models loaded after this value is set.
- *
- * @param value Scaling factor to be used (i.e. 0.01 for meters to centimeters).
- */
-R3DAPI void R3D_SetModelImportScale(float value);
 
 /** @} */ // end of Model
 
