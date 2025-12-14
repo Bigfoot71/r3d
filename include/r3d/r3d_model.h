@@ -83,8 +83,7 @@ R3DAPI R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size);
  * This is useful for procedurally generated meshes or simple geometry.
  *
  * @warning The model's bounding box calculation assumes that the mesh's
- * bounding box has already been computed. Call R3D_UpdateMeshBoundingBox()
- * on the mesh before using this function if needed.
+ * bounding boxes has already been computed.
  *
  * @param mesh Pointer to the mesh to be wrapped in a model structure.
  *
