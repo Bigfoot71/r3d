@@ -1,0 +1,174 @@
+/* r3d_mesh.h -- R3D Mesh Module.
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
+#include <r3d/r3d_mesh_data.h>
+#include <r3d/r3d_mesh.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <glad.h>
+
+// ========================================
+// PUBLIC API
+// ========================================
+
+R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const BoundingBox* aabb, R3D_MeshUsage usage)
+{
+    R3D_Mesh mesh = { 0 };
+
+    if (data == NULL || data->vertexCount <= 0 || !data->vertices) {
+        TraceLog(LOG_WARNING, "R3D: Invalid mesh data passed to R3D_UpdateMesh");
+        return mesh;
+    }
+
+    GLenum glUsage = GL_STATIC_DRAW;
+    switch (usage) {
+    case R3D_STATIC_MESH: glUsage = GL_STATIC_DRAW; break;
+    case R3D_DYNAMIC_MESH: glUsage = GL_DYNAMIC_DRAW; break;
+    case R3D_STREAMED_MESH: glUsage = GL_STREAM_DRAW; break;
+    default:
+        TraceLog(LOG_WARNING, "R3D: Invalid mesh usage; R3D_STATIC_MESH will be used");
+        break;
+    }
+
+    // Creation of the VAO
+    glGenVertexArrays(1, &mesh.vao);
+    glBindVertexArray(mesh.vao);
+
+    // Creation of the VBO
+    glGenBuffers(1, &mesh.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+    glBufferData(GL_ARRAY_BUFFER, data->vertexCount * sizeof(R3D_Vertex), data->vertices, glUsage);
+
+    // position (vec3)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
+
+    // texcoord (vec2)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
+
+    // normal (vec3)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
+
+    // color (vec4)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
+
+    // tangent (vec4)
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
+
+    // boneIds (ivec4)
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
+
+    // weights (vec4)
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
+
+    // Default matrix instance (mat4)
+    glVertexAttrib4f(10, 1.0f, 0.0f, 0.0f, 0.0f);
+    glVertexAttrib4f(11, 0.0f, 1.0f, 0.0f, 0.0f);
+    glVertexAttrib4f(12, 0.0f, 0.0f, 1.0f, 0.0f);
+    glVertexAttrib4f(13, 0.0f, 0.0f, 0.0f, 1.0f);
+
+    // Default color instance (vec4)
+    glVertexAttrib4f(14, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    // EBO if indices present
+    if (data->indexCount > 0 && data->indices) {
+        glGenBuffers(1, &mesh.ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indexCount * sizeof(uint32_t), data->indices, glUsage);
+    }
+    else {
+        mesh.ebo = 0;
+    }
+
+    // Cleaning
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    // Fill mesh infos
+    mesh.vertexCount = mesh.allocVertexCount = data->vertexCount;
+    mesh.indexCount = mesh.allocIndexCount = data->indexCount;
+    mesh.shadowCastMode = R3D_SHADOW_CAST_ON_AUTO;
+    mesh.primitiveType = R3D_PRIMITIVE_TRIANGLES;
+    mesh.layerMask = R3D_LAYER_01;
+    mesh.usage = usage;
+
+    // Compute the bounding box, if needed
+    mesh.aabb = (aabb != NULL) ? *aabb
+        : R3D_CalculateMeshDataBoundingBox(data);
+
+    return mesh;
+}
+
+void R3D_UnloadMesh(R3D_Mesh* mesh)
+{
+    if (mesh->vao != 0) glDeleteVertexArrays(1, &mesh->vao);
+    if (mesh->vbo != 0) glDeleteBuffers(1, &mesh->vbo);
+    if (mesh->ebo != 0) glDeleteBuffers(1, &mesh->ebo);
+}
+
+bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb)
+{
+    if (!mesh || mesh->vao == 0 || mesh->vbo == 0) {
+        TraceLog(LOG_WARNING, "R3D: Cannot update mesh; Invalid mesh instance");
+        return false;
+    }
+
+    if (!data || data->vertexCount <= 0 || !data->vertices) {
+        TraceLog(LOG_WARNING, "R3D: Invalid mesh data given to R3D_UpdateMesh");
+        return false;
+    }
+
+    GLenum glUsage = GL_STATIC_DRAW;
+    switch (mesh->usage) {
+    case R3D_STATIC_MESH: glUsage = GL_STATIC_DRAW; break;
+    case R3D_DYNAMIC_MESH: glUsage = GL_DYNAMIC_DRAW; break;
+    case R3D_STREAMED_MESH: glUsage = GL_STREAM_DRAW; break;
+    default:
+        TraceLog(LOG_WARNING, "R3D: Invalid mesh usage; R3D_STATIC_MESH will be used");
+        break;
+    }
+
+    glBindVertexArray(mesh->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
+
+    if (mesh->allocVertexCount < data->vertexCount) {
+        glBufferData(GL_ARRAY_BUFFER, mesh->vertexCount * sizeof(R3D_Vertex), data->vertices, glUsage);
+        mesh->allocVertexCount = data->vertexCount;
+    }
+    else {
+        glBufferSubData(GL_ARRAY_BUFFER, 0, mesh->vertexCount * sizeof(R3D_Vertex), data->vertices);
+    }
+
+    if (data->indexCount > 0) {
+        if (mesh->allocIndexCount < data->indexCount) {
+            if (mesh->ebo == 0) glGenBuffers(1, &mesh->ebo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indexCount * sizeof(uint32_t), data->indices, glUsage);
+            mesh->allocIndexCount = data->indexCount;
+        }
+        else {
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, mesh->indexCount * sizeof(uint32_t), data->indices);
+        }
+    }
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+    mesh->vertexCount = data->vertexCount;
+    mesh->indexCount = data->indexCount;
+
+    return true;
+}

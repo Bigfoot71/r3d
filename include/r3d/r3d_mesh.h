@@ -24,6 +24,15 @@
 // ========================================
 
 /**
+ * @brief Hint on how a mesh will be used.
+ */
+typedef enum R3D_MeshUsage {
+    R3D_STATIC_MESH,            ///< Will never be updated.
+    R3D_DYNAMIC_MESH,           ///< Will be updated occasionally.
+    R3D_STREAMED_MESH           ///< Will be update on each frame.
+} R3D_MeshUsage;
+
+/**
  * @brief Defines the geometric primitive type.
  */
 typedef enum R3D_PrimitiveType {
@@ -75,11 +84,14 @@ typedef enum R3D_ShadowCastMode {
  * Can represent a static or skinned mesh.
  */
 typedef struct R3D_Mesh {
-    unsigned int vao, vbo, ebo;          ///< OpenGL objects handles.
-    R3D_ShadowCastMode shadowCastMode;   ///< Shadow casting mode for the mesh.
-    R3D_PrimitiveType primitiveType;     ///< Type of primitive that constitutes the vertices.
-    R3D_Layer layerMask;                 ///< Bitfield indicating the rendering layer(s) of this mesh.
-    BoundingBox aabb;                    ///< Axis-Aligned Bounding Box in local space.
+    uint32_t vao, vbo, ebo;                 ///< OpenGL objects handles.
+    int vertexCount, indexCount;            ///< Number of vertices and indices currently in use.
+    int allocVertexCount, allocIndexCount;  ///< Number of vertices and indices allocated in GPU buffers.
+    R3D_ShadowCastMode shadowCastMode;      ///< Shadow casting mode for the mesh.
+    R3D_PrimitiveType primitiveType;        ///< Type of primitive that constitutes the vertices.
+    R3D_MeshUsage usage;                    ///< Hint about the usage of the mesh, retained in case of update if there is a reallocation.
+    R3D_Layer layerMask;                    ///< Bitfield indicating the rendering layer(s) of this mesh.
+    BoundingBox aabb;                       ///< Axis-Aligned Bounding Box in local space.
 } R3D_Mesh;
 
 // ========================================
@@ -89,196 +101,19 @@ typedef struct R3D_Mesh {
 /**
  * @brief Creates a 3D mesh from CPU-side mesh data.
  * @param type Primitive type used to interpret vertex data.
- * @param meshData Pointer to the R3D_MeshData containing vertices and indices (cannot be NULL).
+ * @param data Pointer to the R3D_MeshData containing vertices and indices (cannot be NULL).
  * @param aabb Optional pointer to a bounding box. If NULL, it will be computed automatically.
- * @return Pointer to a newly created R3D_Mesh.
+ * @param usage Hint on how the mesh will be used.
+ * @return Created R3D_Mesh.
  * @note The function copies all vertex and index data into GPU buffers.
  */
-R3DAPI R3D_Mesh* R3D_CreateMesh(R3D_PrimitiveType type, const R3D_MeshData* meshData, const BoundingBox* aabb);
+R3DAPI R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const BoundingBox* aabb, R3D_MeshUsage usage);
 
 /**
  * @brief Destroys a 3D mesh and frees its resources.
  * @param mesh Pointer to the R3D_Mesh to destroy.
  */
-R3DAPI void R3D_DestroyMesh(R3D_Mesh* mesh);
-
-/**
- * @brief Generate a polygon mesh with specified number of sides.
- *
- * Creates a regular polygon mesh centered at the origin in the XY plane.
- * The polygon is generated with vertices evenly distributed around a circle.
- *
- * @param sides Number of sides for the polygon (minimum 3).
- * @param radius Radius of the circumscribed circle.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated polygon mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius, bool upload);
-
-/**
- * @brief Generate a plane mesh with specified dimensions and resolution.
- *
- * Creates a flat plane mesh in the XZ plane, centered at the origin.
- * The mesh can be subdivided for higher resolution or displacement mapping.
- *
- * @param width Width of the plane along the X axis.
- * @param length Length of the plane along the Z axis.
- * @param resX Number of subdivisions along the X axis.
- * @param resZ Number of subdivisions along the Z axis.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated plane mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ, bool upload);
-
-/**
- * @brief Generate a cube mesh with specified dimensions.
- *
- * Creates a cube mesh centered at the origin with the specified width, height, and length.
- * Each face consists of two triangles with proper normals and texture coordinates.
- *
- * @param width Width of the cube along the X axis.
- * @param height Height of the cube along the Y axis.
- * @param length Length of the cube along the Z axis.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated cube mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshCube(float width, float height, float length, bool upload);
-
-/**
- * @brief Generate a sphere mesh with specified parameters.
- *
- * Creates a UV sphere mesh centered at the origin using latitude-longitude subdivision.
- * Higher ring and slice counts produce smoother spheres but with more vertices.
- *
- * @param radius Radius of the sphere.
- * @param rings Number of horizontal rings (latitude divisions).
- * @param slices Number of vertical slices (longitude divisions).
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated sphere mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshSphere(float radius, int rings, int slices, bool upload);
-
-/**
- * @brief Generate a hemisphere mesh with specified parameters.
- *
- * Creates a half-sphere mesh (dome) centered at the origin, extending upward in the Y axis.
- * Uses the same UV sphere generation technique as R3D_GenMeshSphere but only the upper half.
- *
- * @param radius Radius of the hemisphere.
- * @param rings Number of horizontal rings (latitude divisions).
- * @param slices Number of vertical slices (longitude divisions).
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated hemisphere mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices, bool upload);
-
-/**
- * @brief Generate a cylinder mesh with specified parameters.
- *
- * Creates a cylinder mesh centered at the origin, extending along the Y axis.
- * The cylinder includes both top and bottom caps and smooth side surfaces.
- *
- * @param radius Radius of the cylinder base.
- * @param height Height of the cylinder along the Y axis.
- * @param slices Number of radial subdivisions around the cylinder.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated cylinder mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices, bool upload);
-
-/**
- * @brief Generate a cone mesh with specified parameters.
- *
- * Creates a cone mesh with its base centered at the origin and apex pointing upward along the Y axis.
- * The cone includes a circular base and smooth tapered sides.
- *
- * @param radius Radius of the cone base.
- * @param height Height of the cone along the Y axis.
- * @param slices Number of radial subdivisions around the cone base.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated cone mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshCone(float radius, float height, int slices, bool upload);
-
-/**
- * @brief Generate a torus mesh with specified parameters.
- *
- * Creates a torus (donut shape) mesh centered at the origin in the XZ plane.
- * The torus is defined by a major radius (distance from center to tube center)
- * and a minor radius (tube thickness).
- *
- * @param radius Major radius of the torus (distance from center to tube center).
- * @param size Minor radius of the torus (tube thickness/radius).
- * @param radSeg Number of segments around the major radius.
- * @param sides Number of sides around the tube cross-section.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated torus mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshTorus(float radius, float size, int radSeg, int sides, bool upload);
-
-/**
- * @brief Generate a trefoil knot mesh with specified parameters.
- *
- * Creates a trefoil knot mesh, which is a mathematical knot shape.
- * Similar to a torus but with a twisted, knotted topology.
- *
- * @param radius Major radius of the knot.
- * @param size Minor radius (tube thickness) of the knot.
- * @param radSeg Number of segments around the major radius.
- * @param sides Number of sides around the tube cross-section.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated trefoil knot mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshKnot(float radius, float size, int radSeg, int sides, bool upload);
-
-/**
- * @brief Generate a terrain mesh from a heightmap image.
- *
- * Creates a terrain mesh by interpreting the brightness values of a heightmap image
- * as height values. The resulting mesh represents a 3D terrain surface.
- *
- * @param heightmap Image containing height data (grayscale values represent elevation).
- * @param size 3D vector defining the terrain dimensions (width, max height, depth).
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated heightmap terrain mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshHeightmap(Image heightmap, Vector3 size, bool upload);
-
-/**
- * @brief Generate a voxel-style mesh from a cubicmap image.
- *
- * Creates a mesh composed of cubes based on a cubicmap image, where each pixel
- * represents the presence or absence of a cube at that position. Useful for
- * creating voxel-based or block-based geometry.
- *
- * @param cubicmap Image where pixel values determine cube placement.
- * @param cubeSize 3D vector defining the size of each individual cube.
- * @param upload If true, automatically uploads the mesh to GPU memory.
- *
- * @return Generated cubicmap mesh structure.
- */
-R3DAPI R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize, bool upload);
-
-/**
- * @brief Free mesh data from both RAM and VRAM.
- *
- * Releases all memory associated with a mesh, including vertex data in RAM
- * and GPU buffers (VAO, VBO, EBO) if the mesh was uploaded to VRAM.
- * After calling this function, the mesh should not be used.
- *
- * @param mesh Pointer to the mesh structure to be freed.
- */
-R3DAPI void R3D_UnloadMesh(const R3D_Mesh* mesh);
+R3DAPI void R3D_UnloadMesh(R3D_Mesh* mesh);
 
 /**
  * @brief Upload a mesh data on the GPU.
@@ -291,8 +126,9 @@ R3DAPI void R3D_UnloadMesh(const R3D_Mesh* mesh);
  * @param mesh Pointer to the mesh structure to upload or update.
  * @param data Pointer to the mesh data (vertices and indices) to upload.
  * @param aabb Optional bounding box; if null, it is recalculated automatically.
+ * @return Returns true if the update is successful, false otherwise.
  */
-R3DAPI void R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb);
+R3DAPI bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb);
 
 /** @} */ // end of Mesh
 
