@@ -100,8 +100,8 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     mesh.vertexCount = mesh.allocVertexCount = data->vertexCount;
     mesh.indexCount = mesh.allocIndexCount = data->indexCount;
     mesh.shadowCastMode = R3D_SHADOW_CAST_ON_AUTO;
-    mesh.primitiveType = R3D_PRIMITIVE_TRIANGLES;
     mesh.layerMask = R3D_LAYER_01;
+    mesh.primitiveType = type;
     mesh.usage = usage;
 
     // Compute the bounding box, if needed
