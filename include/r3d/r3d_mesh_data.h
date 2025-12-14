@@ -31,7 +31,7 @@ typedef struct R3D_Vertex {
     Vector3 normal;         /**< The normal vector used for lighting calculations. */
     Color color;            /**< Vertex color, in RGBA32. */
     Vector4 tangent;        /**< The tangent vector, used in normal mapping (often with a handedness in w). */
-    int boneIds[4];         /**< Indices of up to 4 bones that influence this vertex (for GPU skinning). */
+    int boneIds[4];         /**< Indices of up to 4 bones that influence this vertex (for skinning). */
     float weights[4];       /**< Corresponding bone weights (should sum to 1.0). Defines the influence of each bone. */
 } R3D_Vertex;
 
@@ -67,7 +67,163 @@ R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
  * @brief Releases memory used by a mesh data container.
  * @param meshData Pointer to the R3D_MeshData to destroy.
  */
-R3DAPI void R3D_DestroyMeshData(R3D_MeshData* meshData);
+R3DAPI void R3D_UnloadMeshData(R3D_MeshData* meshData);
+
+/**
+ * @brief Generate a polygon mesh with specified number of sides.
+ *
+ * Creates a regular polygon mesh centered at the origin in the XY plane.
+ * The polygon is generated with vertices evenly distributed around a circle.
+ *
+ * @param sides Number of sides for the polygon (minimum 3).
+ * @param radius Radius of the circumscribed circle.
+ *
+ * @return Generated polygon mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius);
+
+/**
+ * @brief Generate a plane mesh with specified dimensions and resolution.
+ *
+ * Creates a flat plane mesh in the XZ plane, centered at the origin.
+ * The mesh can be subdivided for higher resolution or displacement mapping.
+ *
+ * @param width Width of the plane along the X axis.
+ * @param length Length of the plane along the Z axis.
+ * @param resX Number of subdivisions along the X axis.
+ * @param resZ Number of subdivisions along the Z axis.
+ *
+ * @return Generated plane mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, int resZ);
+
+/**
+ * @brief Generate a cube mesh with specified dimensions.
+ *
+ * Creates a cube mesh centered at the origin with the specified width, height, and length.
+ * Each face consists of two triangles with proper normals and texture coordinates.
+ *
+ * @param width Width of the cube along the X axis.
+ * @param height Height of the cube along the Y axis.
+ * @param length Length of the cube along the Z axis.
+ *
+ * @return Generated cube mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length);
+
+/**
+ * @brief Generate a sphere mesh with specified parameters.
+ *
+ * Creates a UV sphere mesh centered at the origin using latitude-longitude subdivision.
+ * Higher ring and slice counts produce smoother spheres but with more vertices.
+ *
+ * @param radius Radius of the sphere.
+ * @param rings Number of horizontal rings (latitude divisions).
+ * @param slices Number of vertical slices (longitude divisions).
+ *
+ * @return Generated sphere mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices);
+
+/**
+ * @brief Generate a hemisphere mesh with specified parameters.
+ *
+ * Creates a half-sphere mesh (dome) centered at the origin, extending upward in the Y axis.
+ * Uses the same UV sphere generation technique as R3D_GenMeshSphere but only the upper half.
+ *
+ * @param radius Radius of the hemisphere.
+ * @param rings Number of horizontal rings (latitude divisions).
+ * @param slices Number of vertical slices (longitude divisions).
+ *
+ * @return Generated hemisphere mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices);
+
+/**
+ * @brief Generate a cylinder mesh with specified parameters.
+ *
+ * Creates a cylinder mesh centered at the origin, extending along the Y axis.
+ * The cylinder includes both top and bottom caps and smooth side surfaces.
+ *
+ * @param radius Radius of the cylinder base.
+ * @param height Height of the cylinder along the Y axis.
+ * @param slices Number of radial subdivisions around the cylinder.
+ *
+ * @return Generated cylinder mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices);
+
+/**
+ * @brief Generate a cone mesh with specified parameters.
+ *
+ * Creates a cone mesh with its base centered at the origin and apex pointing upward along the Y axis.
+ * The cone includes a circular base and smooth tapered sides.
+ *
+ * @param radius Radius of the cone base.
+ * @param height Height of the cone along the Y axis.
+ * @param slices Number of radial subdivisions around the cone base.
+ *
+ * @return Generated cone mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices);
+
+/**
+ * @brief Generate a torus mesh with specified parameters.
+ *
+ * Creates a torus (donut shape) mesh centered at the origin in the XZ plane.
+ * The torus is defined by a major radius (distance from center to tube center)
+ * and a minor radius (tube thickness).
+ *
+ * @param radius Major radius of the torus (distance from center to tube center).
+ * @param size Minor radius of the torus (tube thickness/radius).
+ * @param radSeg Number of segments around the major radius.
+ * @param sides Number of sides around the tube cross-section.
+ *
+ * @return Generated torus mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataTorus(float radius, float size, int radSeg, int sides);
+
+/**
+ * @brief Generate a trefoil knot mesh with specified parameters.
+ *
+ * Creates a trefoil knot mesh, which is a mathematical knot shape.
+ * Similar to a torus but with a twisted, knotted topology.
+ *
+ * @param radius Major radius of the knot.
+ * @param size Minor radius (tube thickness) of the knot.
+ * @param radSeg Number of segments around the major radius.
+ * @param sides Number of sides around the tube cross-section.
+ *
+ * @return Generated trefoil knot mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataKnot(float radius, float size, int radSeg, int sides);
+
+/**
+ * @brief Generate a terrain mesh from a heightmap image.
+ *
+ * Creates a terrain mesh by interpreting the brightness values of a heightmap image
+ * as height values. The resulting mesh represents a 3D terrain surface.
+ *
+ * @param heightmap Image containing height data (grayscale values represent elevation).
+ * @param size 3D vector defining the terrain dimensions (width, max height, depth).
+ *
+ * @return Generated heightmap terrain mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size);
+
+/**
+ * @brief Generate a voxel-style mesh from a cubicmap image.
+ *
+ * Creates a mesh composed of cubes based on a cubicmap image, where each pixel
+ * represents the presence or absence of a cube at that position. Useful for
+ * creating voxel-based or block-based geometry.
+ *
+ * @param cubicmap Image where pixel values determine cube placement.
+ * @param cubeSize 3D vector defining the size of each individual cube.
+ *
+ * @return Generated cubicmap mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize);
 
 /**
  * @brief Creates a deep copy of an existing mesh data container.
