@@ -70,6 +70,17 @@ R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
 R3DAPI void R3D_UnloadMeshData(R3D_MeshData* meshData);
 
 /**
+ * @brief Check if mesh data is valid.
+ * 
+ * Returns true if the mesh data contains at least one vertex buffer
+ * with a positive number of vertices.
+ *
+ * @param meshData Pointer to the mesh data to check.
+ * @return true if valid, false otherwise.
+ */
+R3DAPI bool R3D_IsMeshDataValid(const R3D_MeshData* meshData);
+
+/**
  * @brief Generate a polygon mesh with specified number of sides.
  *
  * Creates a regular polygon mesh centered at the origin in the XY plane.

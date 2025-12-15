@@ -62,6 +62,11 @@ void R3D_UnloadMeshData(R3D_MeshData* meshData)
     RL_FREE(meshData->indices);
 }
 
+bool R3D_IsMeshDataValid(const R3D_MeshData* meshData)
+{
+    return (meshData->vertices != NULL) && (meshData->vertexCount > 0);
+}
+
 R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
 {
     R3D_MeshData meshData = {0};

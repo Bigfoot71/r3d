@@ -118,6 +118,209 @@ void R3D_UnloadMesh(R3D_Mesh* mesh)
     if (mesh->ebo != 0) glDeleteBuffers(1, &mesh->ebo);
 }
 
+bool R3D_IsMeshValid(const R3D_Mesh* mesh)
+{
+    return (mesh->vao != 0) && (mesh->vbo != 0);
+}
+
+R3D_Mesh R3D_GenMeshPoly(int sides, float radius)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataPoly(sides, radius);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius, 0.0f, -radius},
+        { radius, 0.0f,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataPlane(width, length, resX, resZ);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-width * 0.5f, 0.0f, -length * 0.5f},
+        { width * 0.5f, 0.0f,  length * 0.5f}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshCube(float width, float height, float length)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataCube(width, height, length);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-width * 0.5f, -height * 0.5f, -length * 0.5f},
+        { width * 0.5f,  height * 0.5f,  length * 0.5f}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshSphere(float radius, int rings, int slices)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataSphere(radius, rings, slices);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius, -radius, -radius},
+        { radius,  radius,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataHemiSphere(radius, rings, slices);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius,   0.0f, -radius},
+        { radius, radius,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataCylinder(radius, height, slices);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius,   0.0f, -radius},
+        { radius, height,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshCone(float radius, float height, int slices)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataCone(radius, height, slices);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius,   0.0f, -radius},
+        { radius, height,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshTorus(float radius, float size, int radSeg, int sides)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataTorus(radius, size, radSeg, sides);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius - size, -size, -radius - size},
+        { radius + size,  size,  radius + size}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshKnot(float radius, float size, int radSeg, int sides)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataKnot(radius, size, radSeg, sides);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius - size, -size, -radius - size},
+        { radius + size,  size,  radius + size}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshHeightmap(Image heightmap, Vector3 size)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataHeightmap(heightmap, size);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-size.x * 0.5f,   0.0f, -size.z * 0.5f},
+        { size.x * 0.5f, size.y,  size.z * 0.5f}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataCubicmap(cubicmap, cubeSize);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {0.0f, 0.0f, 0.0f},
+        {cubicmap.width * cubeSize.x, cubeSize.y, cubicmap.height * cubeSize.z}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
 bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb)
 {
     if (!mesh || mesh->vao == 0 || mesh->vbo == 0) {

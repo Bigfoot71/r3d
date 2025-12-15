@@ -116,6 +116,126 @@ R3DAPI R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, c
 R3DAPI void R3D_UnloadMesh(R3D_Mesh* mesh);
 
 /**
+ * @brief Check if a mesh is valid for rendering.
+ * 
+ * Returns true if the mesh has a valid VAO and VBO.
+ *
+ * @param mesh Pointer to the mesh to check.
+ * @return true if valid, false otherwise.
+ */
+R3DAPI bool R3D_IsMeshValid(const R3D_Mesh* mesh);
+
+/**
+ * @brief Generate a polygon mesh.
+ * @param sides Number of sides (min 3).
+ * @param radius Radius of the polygon.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataPoly
+ */
+R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius);
+
+/**
+ * @brief Generate a plane mesh.
+ * @param width Width along X axis.
+ * @param length Length along Z axis.
+ * @param resX Subdivisions along X axis.
+ * @param resZ Subdivisions along Z axis.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataPlane
+ */
+R3DAPI R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ);
+
+/**
+ * @brief Generate a cube mesh.
+ * @param width Width along X axis.
+ * @param height Height along Y axis.
+ * @param length Length along Z axis.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCube
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCube(float width, float height, float length);
+
+/**
+ * @brief Generate a sphere mesh.
+ * @param radius Sphere radius.
+ * @param rings Number of latitude divisions.
+ * @param slices Number of longitude divisions.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataSphere
+ */
+R3DAPI R3D_Mesh R3D_GenMeshSphere(float radius, int rings, int slices);
+
+/**
+ * @brief Generate a hemisphere mesh.
+ * @param radius Hemisphere radius.
+ * @param rings Number of latitude divisions.
+ * @param slices Number of longitude divisions.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataHemiSphere
+ */
+R3DAPI R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices);
+
+/**
+ * @brief Generate a cylinder mesh.
+ * @param radius Cylinder base radius.
+ * @param height Height along Y axis.
+ * @param slices Radial subdivisions.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCylinder
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices);
+
+/**
+ * @brief Generate a cone mesh.
+ * @param radius Cone base radius.
+ * @param height Height along Y axis.
+ * @param slices Radial subdivisions.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCone
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCone(float radius, float height, int slices);
+
+/**
+ * @brief Generate a torus mesh.
+ * @param radius Major radius (center to tube).
+ * @param size Minor radius (tube thickness).
+ * @param radSeg Segments around major radius.
+ * @param sides Sides around tube cross-section.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataTorus
+ */
+R3DAPI R3D_Mesh R3D_GenMeshTorus(float radius, float size, int radSeg, int sides);
+
+/**
+ * @brief Generate a trefoil knot mesh.
+ * @param radius Major radius.
+ * @param size Minor radius.
+ * @param radSeg Segments around major radius.
+ * @param sides Sides around tube cross-section.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataKnot
+ */
+R3DAPI R3D_Mesh R3D_GenMeshKnot(float radius, float size, int radSeg, int sides);
+
+/**
+ * @brief Generate a heightmap terrain mesh.
+ * @param heightmap Heightmap image.
+ * @param size 3D dimensions of terrain.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataHeightmap
+ */
+R3DAPI R3D_Mesh R3D_GenMeshHeightmap(Image heightmap, Vector3 size);
+
+/**
+ * @brief Generate a cubicmap voxel mesh.
+ * @param cubicmap Cubicmap image.
+ * @param cubeSize Size of each cube.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCubicmap
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize);
+
+/**
  * @brief Upload a mesh data on the GPU.
  *
  * This function uploads a mesh's vertex and optional index data to the GPU.
