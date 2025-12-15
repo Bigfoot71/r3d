@@ -22,40 +22,28 @@
 // ========================================
 
 /**
- * @brief Represents a single 3D vector keyframe used in animation.
+ * @brief Animation track storing keyframe times and values.
  *
- * Stores a position or scale value and the time at which it occurs
- * in the animation timeline.
+ * Represents a single animated property (translation, rotation or scale).
+ * Keys are sampled by time and interpolated at runtime.
  */
-typedef struct R3D_KeyVector3 {
-    Vector3 value;  ///< Keyframe value (position or scale) in local space.
-    float time;     ///< Time of the keyframe, in animation ticks.
-} R3D_KeyVector3;
+typedef struct R3D_AnimationTrack {
+    const float* times;   ///< Keyframe times (sorted, in animation ticks).
+    const void*  values;  ///< Keyframe values (Vector3 or Quaternion).
+    int          count;   ///< Number of keyframes.
+} R3D_AnimationTrack;
 
 /**
- * @brief Represents a quaternion rotation keyframe used in animation.
+ * @brief Animation channel controlling a single bone.
  *
- * Stores a rotation value and the time at which it occurs.
- */
-typedef struct R3D_KeyQuaternion {
-    Quaternion value;   ///< Keyframe value representing a bone rotation.
-    float time;         ///< Time of the keyframe, in animation ticks.
-} R3D_KeyQuaternion;
-
-/**
- * @brief Animation channel describing how a single bone transforms over time.
- *
- * Each channel contains position, rotation, and scale keyframes for one bone.
- * During playback, these keys are interpolated to compute the bone's local transform.
+ * Contains animation tracks for translation, rotation and scale.
+ * The sampled tracks are combined to produce the bone local transform.
  */
 typedef struct R3D_AnimationChannel {
-    R3D_KeyVector3* positionKeys;       ///< Array of translation keyframes.
-    R3D_KeyQuaternion* rotationKeys;    ///< Array of rotation keyframes.
-    R3D_KeyVector3* scaleKeys;          ///< Array of scaling keyframes.
-    int positionKeyCount;               ///< Number of translation keyframes.
-    int rotationKeyCount;               ///< Number of rotation keyframes.
-    int scaleKeyCount;                  ///< Number of scaling keyframes.
-    int boneIndex;                      ///< Index of the bone affected by this channel.
+    R3D_AnimationTrack translation; ///< Translation track (Vector3).
+    R3D_AnimationTrack rotation;    ///< Rotation track (Quaternion).
+    R3D_AnimationTrack scale;       ///< Scale track (Vector3).
+    int boneIndex;                  ///< Index of the affected bone.
 } R3D_AnimationChannel;
 
 /**
@@ -128,7 +116,7 @@ typedef struct R3D_AnimationPlayer {
  * @return Pointer to an array of R3D_Animation, or NULL on failure.
  * @note Free the returned array using R3D_UnloadAnimationLib().
  */
-R3DAPI R3D_AnimationLib* R3D_LoadAnimationLib(const char* filePath);
+R3DAPI R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath);
 
 /**
  * @brief Loads animations from memory data.
@@ -139,7 +127,7 @@ R3DAPI R3D_AnimationLib* R3D_LoadAnimationLib(const char* filePath);
  * @return Pointer to an array of R3D_Animation, or NULL on failure.
  * @note Free the returned array using R3D_UnloadAnimationLib().
  */
-R3DAPI R3D_AnimationLib* R3D_LoadAnimationLibFromData(const void* data, unsigned int size, const char* hint);
+R3DAPI R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int size, const char* hint);
 
 /**
  * @brief Frees memory allocated for model animations.
@@ -176,14 +164,14 @@ R3DAPI R3D_Animation* R3D_GetAnimation(const R3D_AnimationLib* animLib, const ch
  * @param animLib Pointer to the animation library containing available animations.
  * @return Pointer to a newly created animation player, or NULL on failure.
  */
-R3DAPI R3D_AnimationPlayer* R3D_CreateAnimationPlayer(const R3D_Skeleton* skeleton, const R3D_AnimationLib* animLib);
+R3DAPI R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton, const R3D_AnimationLib* animLib);
 
 /**
  * @brief Destroys an animation player and frees its allocated resources.
  *
  * @param player Pointer to the animation player to destroy.
  */
-R3DAPI void R3D_DestroyAnimationPlayer(R3D_AnimationPlayer* player);
+R3DAPI void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player);
 
 /**
  * @brief Updates the animation player by advancing time and blending animations.
