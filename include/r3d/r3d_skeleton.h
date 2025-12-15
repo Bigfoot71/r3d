@@ -40,12 +40,12 @@ typedef struct R3D_BoneInfo {
  */
 typedef struct R3D_Skeleton {
 
-    R3D_BoneInfo* bones;       ///< Array of bone descriptors defining the hierarchy and names.
-    int boneCount;            ///< Total number of bones in the skeleton.
+    R3D_BoneInfo* bones;    ///< Array of bone descriptors defining the hierarchy and names.
+    int boneCount;          ///< Total number of bones in the skeleton.
 
-    Matrix* boneOffsets;     ///< Inverse bind matrices, one per bone. Transform vertices from mesh space to bone space (used in skinning).
-    Matrix* bindLocal;       ///< Bind pose transforms in local bone space (relative to parent).
-    Matrix* bindPose;        ///< Bind pose transforms in model space (global). Used as the default pose when not animated.
+    Matrix* boneOffsets;    ///< Inverse bind matrices, one per bone. Transform vertices from mesh space to bone space (used in skinning).
+    Matrix* bindLocal;      ///< Bind pose transforms in local bone space (relative to parent).
+    Matrix* bindPose;       ///< Bind pose transforms in model space (global). Used as the default pose when not animated.
 
 } R3D_Skeleton;
 
