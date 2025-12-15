@@ -60,9 +60,9 @@ typedef struct R3D_Skeleton {
  * but can be loaded manually for advanced use cases.
  *
  * @param filePath Path to the model file containing the skeleton data.
- * @return Pointer to a newly loaded R3D_Skeleton, or NULL on failure.
+ * @return Return the loaded R3D_Skeleton.
  */
-R3DAPI R3D_Skeleton* R3D_LoadSkeleton(const char* filePath);
+R3DAPI R3D_Skeleton R3D_LoadSkeleton(const char* filePath);
 
 /**
  * @brief Loads a skeleton hierarchy from memory data.
@@ -73,9 +73,9 @@ R3DAPI R3D_Skeleton* R3D_LoadSkeleton(const char* filePath);
  * @param data Pointer to the memory buffer containing skeleton data.
  * @param size Size of the memory buffer in bytes.
  * @param hint Optional format hint (can be NULL).
- * @return Pointer to a newly loaded R3D_Skeleton, or NULL on failure.
+ * @return Return the loaded R3D_Skeleton.
  */
-R3DAPI R3D_Skeleton* R3D_LoadSkeletonFromData(const void* data, unsigned int size, const char* hint);
+R3DAPI R3D_Skeleton R3D_LoadSkeletonFromData(const void* data, unsigned int size, const char* hint);
 
 /**
  * @brief Frees the memory allocated for a skeleton.
@@ -83,6 +83,17 @@ R3DAPI R3D_Skeleton* R3D_LoadSkeletonFromData(const void* data, unsigned int siz
  * @param skeleton Pointer to the R3D_Skeleton to destroy.
  */
 R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton* skeleton);
+
+/**
+ * @brief Check if a skeleton is valid.
+ * 
+ * Returns true if the skeleton has bones, offsets, bind local matrices,
+ * and bind pose matrices properly initialized.
+ *
+ * @param skeleton Pointer to the skeleton to check.
+ * @return true if valid, false otherwise.
+ */
+R3DAPI bool R3D_IsSkeletonValid(const R3D_Skeleton* skeleton);
 
 /** @} */ // end of Skeleton
 
