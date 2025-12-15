@@ -1,6 +1,11 @@
 ﻿cmake_minimum_required(VERSION 3.8)
 project(r3d VERSION 0.4.0 LANGUAGES C CXX)
 
+# Defines the used C standard
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 # This section configures MSVC (Visual Studio) to enable "Edit and Continue" debugging
 
 if(POLICY CMP0141)
