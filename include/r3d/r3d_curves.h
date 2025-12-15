@@ -10,6 +10,7 @@
 #define R3D_CURVES_H
 
 #include "./r3d_api.h"
+#include <raylib.h>
 
 /**
  * @defgroup Curves Curve Functions
