@@ -174,14 +174,46 @@ R3DAPI R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton
 R3DAPI void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player);
 
 /**
- * @brief Updates the animation player by advancing time and blending animations.
+ * @brief Advances the animation player's time for all active animation states.
  *
- * This function interpolates keyframes, blends all active animation states,
- * and updates the current skeleton pose. The time step `dt` can be scaled
- * to modify playback speed.
+ * This function updates the `currentTicks` of all internal animation states 
+ * in a synchronized manner, using the provided delta time and any playback speed modifiers.
+ * It does not recalculate the skeleton pose. For finer control, individual animation 
+ * states can be updated manually.
  *
  * @param player Pointer to the animation player.
- * @param dt Delta time since the last update, in seconds.
+ * @param dt Delta time to advance, in seconds.
+ */
+R3DAPI void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt);
+
+/**
+ * @brief Calculates the current skeleton pose from active animations.
+ *
+ * This function interpolates keyframes and blends all active animation states
+ * to produce the resulting skeleton pose. It does not advance animation time.
+ *
+ * @note If the sum of animation state weights is less than or equal to 0.0,
+ *       the bind pose will be used as the current pose.
+ * @note The total sum of animation state weights is the responsibility of the user.
+ *
+ * @param player Pointer to the animation player.
+ */
+R3DAPI void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player);
+
+/**
+ * @brief Calculates the current skeleton pose, then advances the animation player's time.
+ *
+ * This function first calculates the pose by blending active animation states,
+ * then advances the `currentTicks` of all internal animation states by the given delta time.
+ * It is equivalent to calling `R3D_CalculateAnimationPlayerPose` followed by
+ * `R3D_AdvanceAnimationPlayerTime`.
+ *
+ * @note If the sum of animation state weights is less than or equal to 0.0,
+ *       the bind pose will be used as the current pose.
+ * @note The total sum of animation state weights is the responsibility of the user.
+ *
+ * @param player Pointer to the animation player.
+ * @param dt Delta time to advance, in seconds.
  */
 R3DAPI void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt);
 

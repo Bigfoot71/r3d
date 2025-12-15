@@ -119,30 +119,10 @@ void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player)
     RL_FREE(player->states);
 }
 
-static inline void find_key_frames(const float* times, uint32_t count, float time, uint32_t* outIdx0, uint32_t* outIdx1, float* outT);
-static Transform interpolate_channel(const R3D_AnimationChannel* channel, float time);
-static const R3D_AnimationChannel* find_channel_for_bone(const R3D_Animation* anim, int iBone);
-static void compute_pose(R3D_AnimationPlayer* player, float totalWeight);
-
-void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt)
+void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt)
 {
-    const int boneCount = player->skeleton->boneCount;
     const int animCount = player->animLib->count;
-
     R3D_AnimationState* states = player->states;
-    Matrix* pose = player->currentPose;
-
-    float totalWeight = 0.0f;
-    for (int iAnim = 0; iAnim < animCount; iAnim++) {
-        totalWeight += states[iAnim].weight;
-    }
-
-    if (totalWeight <= 0.0f) {
-        memcpy(pose, player->skeleton->bindPose, boneCount * sizeof(Matrix));
-    }
-    else {
-        compute_pose(player, totalWeight);
-    }
 
     for (int iAnim = 0; iAnim < animCount; iAnim++)
     {
@@ -161,11 +141,40 @@ void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt)
     }
 }
 
+static void compute_pose(R3D_AnimationPlayer* player, float totalWeight);
+
+void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
+{
+    const int boneCount = player->skeleton->boneCount;
+    const int animCount = player->animLib->count;
+
+    R3D_AnimationState* states = player->states;
+    Matrix* pose = player->currentPose;
+
+    float totalWeight = 0.0f;
+    for (int iAnim = 0; iAnim < animCount; iAnim++) {
+        totalWeight += states[iAnim].weight;
+    }
+
+    if (totalWeight <= 0.0f) {
+        memcpy(pose, player->skeleton->bindPose, boneCount * sizeof(Matrix));
+    }
+    else {
+        compute_pose(player, totalWeight);
+    }
+}
+
+void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt)
+{
+    R3D_CalculateAnimationPlayerPose(player);
+    R3D_AdvanceAnimationPlayerTime(player, dt);
+}
+
 // ============================================================================
 // INTERNAL FUNCTIONS
 // ============================================================================
 
-static inline void find_key_frames(
+static void find_key_frames(
     const float* times, uint32_t count, float time,
     uint32_t* outIdx0, uint32_t* outIdx1, float* outT)
 {
@@ -210,7 +219,7 @@ static inline void find_key_frames(
     *outT = (dt > 0.0f) ? (time - t0) / dt : 0.0f;
 }
 
-Transform interpolate_channel(const R3D_AnimationChannel* channel, float time)
+static Transform interpolate_channel(const R3D_AnimationChannel* channel, float time)
 {
     Transform result = {
         .translation = { 0.0f, 0.0f, 0.0f },
@@ -269,8 +278,7 @@ Transform interpolate_channel(const R3D_AnimationChannel* channel, float time)
     return result;
 }
 
-
-const R3D_AnimationChannel* find_channel_for_bone(const R3D_Animation* anim, int iBone)
+static const R3D_AnimationChannel* find_channel_for_bone(const R3D_Animation* anim, int iBone)
 {
     for (int i = 0; i < anim->channelCount; i++) {
         if (anim->channels[i].boneIndex == iBone) {
