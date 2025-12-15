@@ -1,7 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -30,7 +27,7 @@ const char* Init(void)
 
     /* --- Generate a large plane to act as the ground --- */
 
-    plane = R3D_GenMeshPlane(200, 200, 1, 1, true);
+    plane = R3D_GenMeshPlane(200, 200, 1, 1);
     material = R3D_GetDefaultMaterial();
     material.albedo.color = GREEN;
 

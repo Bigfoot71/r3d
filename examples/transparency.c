@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 
 /* === Resources === */
 
@@ -21,7 +20,7 @@ const char* Init(void)
 
     R3D_Mesh mesh = { 0 };
 
-    mesh = R3D_GenMeshCube(1, 1, 1, true);
+    mesh = R3D_GenMeshCube(1, 1, 1);
     cube = R3D_LoadModelFromMesh(&mesh);
 
     cube.meshes[0].shadowCastMode = R3D_SHADOW_CAST_DISABLED;
@@ -35,7 +34,7 @@ const char* Init(void)
 
     /* --- Load plane model --- */
 
-    mesh = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
+    mesh = R3D_GenMeshPlane(1000, 1000, 1, 1);
     plane = R3D_LoadModelFromMesh(&mesh);
 
     plane.materials[0].orm.occlusion = 1.0f;
@@ -44,7 +43,7 @@ const char* Init(void)
 
     /* --- Load sphere model --- */
 
-    mesh = R3D_GenMeshSphere(0.5f, 64, 64, true);
+    mesh = R3D_GenMeshSphere(0.5f, 64, 64);
     sphere = R3D_LoadModelFromMesh(&mesh);
 
     sphere.materials[0].orm.occlusion = 1.0f;

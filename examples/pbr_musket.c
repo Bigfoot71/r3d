@@ -1,7 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -29,7 +26,6 @@ const char* Init(void)
 
     /* --- Load model --- */
 
-    R3D_SetModelImportScale(0.01f);
     R3D_SetTextureFilter(TEXTURE_FILTER_TRILINEAR);	//< Automatically generate mipmaps when set
 
     model = R3D_LoadModel(RESOURCES_PATH "pbr/musket.glb");

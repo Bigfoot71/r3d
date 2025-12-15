@@ -1,6 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include <rlgl.h>
 
 /* === Resources === */
 
@@ -23,7 +21,7 @@ const char* Init(void)
 
     /* --- Generate a sphere mesh and configure its material --- */
 
-    sphere = R3D_GenMeshSphere(0.5f, 64, 64, true);
+    sphere = R3D_GenMeshSphere(0.5f, 64, 64);
 
     for (int i = 0; i < 5; i++) {
         materials[i] = R3D_GetDefaultMaterial();
@@ -77,11 +75,9 @@ void Draw(void)
     }
 
     R3D_Begin(camera);
-        rlPushMatrix();
         for (int i = 0; i < 5; i++) {
             R3D_DrawMesh(&sphere, &materials[i], MatrixTranslate(i - 2, 0, 0));
         }
-        rlPopMatrix();
     R3D_End();
 
     DrawText(TextFormat("Resize mode: %s", keep ? "KEEP" : "EXPAND"), 10, 10, 20, BLACK);

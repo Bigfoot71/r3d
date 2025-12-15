@@ -1,6 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include <raylib.h>
 
 /* === Resources === */
 
@@ -22,8 +20,8 @@ const char* Init(void)
 
     /* --- Generates a plane and sphere meshes and a default material to render them --- */
 
-    plane = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
-    sphere = R3D_GenMeshSphere(0.35f, 16, 16, true);
+    plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
+    sphere = R3D_GenMeshSphere(0.35f, 16, 16);
     material = R3D_GetDefaultMaterial();
 
     /* --- Calculation of transformation matrices for all spheres instances --- */

@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 
 /* === Resources === */
 
@@ -20,7 +19,7 @@ const char* Init(void)
 
     /* --- Generate a sphere mesh --- */
 
-    sphere = R3D_GenMeshSphere(0.5f, 64, 64, true);
+    sphere = R3D_GenMeshSphere(0.5f, 64, 64);
 
     /* --- Create a grid of materials with varying metalness and roughness --- */
 

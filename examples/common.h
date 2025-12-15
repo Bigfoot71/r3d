@@ -1,7 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <r3d.h>
+#include <r3d/r3d.h>
 #include <raylib.h>
 #include <raymath.h>
 

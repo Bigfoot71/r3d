@@ -1,6 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include <rlgl.h>
 
 /* === Resources === */
 

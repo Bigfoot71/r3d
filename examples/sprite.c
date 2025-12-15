@@ -1,6 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -28,7 +26,7 @@ const char* Init(void)
 
     /* --- Generate a large plane to act as the ground --- */
 
-    plane = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
+    plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
     material = R3D_GetDefaultMaterial();
 
     /* --- Load a sprite sheet texture and set its filter --- */

@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 
 /* === Resources === */
 
@@ -19,8 +18,8 @@ const char* Init(void)
 
     /* --- Load gen a plane and sphere meshes and a default material to render them --- */
 
-    plane = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
-    sphere = R3D_GenMeshSphere(0.5f, 64, 64, true);
+    plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
+    sphere = R3D_GenMeshSphere(0.5f, 64, 64);
     material = R3D_GetDefaultMaterial();
 
     /* --- Setup the scene lighting --- */

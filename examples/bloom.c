@@ -44,7 +44,7 @@ const char* Init(void)
 
     /* --- Load a cube mesh and setup its material --- */
 
-    cube = R3D_GenMeshCube(1.0f, 1.0f, 1.0f, true);
+    cube = R3D_GenMeshCube(1.0f, 1.0f, 1.0f);
     material = R3D_GetDefaultMaterial();
 
     material.emission.color = ColorFromHSV(hueCube, 1.0f, 1.0f);
