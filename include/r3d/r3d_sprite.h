@@ -37,7 +37,7 @@ typedef struct R3D_Sprite {
     Vector2 frameSize;                     ///< The size of a single animation frame, in texture coordinates (width and height).
     int xFrameCount;                       ///< The number of frames along the horizontal (X) axis of the texture.
     int yFrameCount;                       ///< The number of frames along the vertical (Y) axis of the texture.
-    R3D_Layer layers;                      /**< Bitfield indicating the rendering layer(s) this object belongs to. 
+    R3D_Layer layerMask;                   /**< Bitfield indicating the rendering layer(s) this object belongs to. 
                                                 A value of 0 means the object is always rendered. */
 } R3D_Sprite;
 

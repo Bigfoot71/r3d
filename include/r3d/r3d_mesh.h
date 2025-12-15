@@ -46,15 +46,6 @@ typedef enum R3D_PrimitiveType {
 } R3D_PrimitiveType;
 
 /**
- * @brief Defines the depth mode used to render the mesh.
- */
-typedef enum R3D_DepthMode {
-    R3D_DEPTH_READ_WRITE,       ///< Enable depth testing and writing to the depth buffer.
-    R3D_DEPTH_READ_ONLY,        ///< Enable depth testing but disable writing to the depth buffer.
-    R3D_DEPTH_DISABLED          ///< Disable depth testing and writing to the depth buffer.
-} R3D_DepthMode;
-
-/**
  * @brief Shadow casting modes for objects.
  *
  * Controls how an object interacts with the shadow mapping system.

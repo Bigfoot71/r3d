@@ -30,7 +30,7 @@
  */
 typedef struct R3D_Model {
 
-    R3D_Mesh** meshes;                  ///< Array of meshes composing the model.
+    R3D_Mesh* meshes;                   ///< Array of meshes composing the model.
     R3D_Material* materials;            ///< Array of materials used by the model.
     int* meshMaterials;                 ///< Array of material indices, one per mesh.
 
@@ -38,7 +38,7 @@ typedef struct R3D_Model {
     int materialCount;                  ///< Number of materials.
 
     BoundingBox aabb;                   ///< Axis-Aligned Bounding Box encompassing the whole model.
-    R3D_Skeleton* skeleton;             ///< Skeleton hierarchy and bind pose used for skinning (NULL if non-skinned).
+    R3D_Skeleton skeleton;              ///< Skeleton hierarchy and bind pose used for skinning (NULL if non-skinned). TODO: Should be a pointer to a skeleton...
 
     R3D_AnimationPlayer* player;        ///< Animation player controlling the skeleton. If NULL the model uses its bind pose.
 
@@ -68,13 +68,14 @@ R3DAPI R3D_Model R3D_LoadModel(const char* filePath);
  *
  * @param data Pointer to the memory buffer containing the model data.
  * @param size Size of the data buffer in bytes.
+ * @param hint Hint on the model format (can be NULL).
  *
  * @return Loaded model structure containing meshes and materials.
  *
  * @note External dependencies (e.g., textures or linked resources) are not supported.
  *       The model data must be fully self-contained. Use embedded formats like .glb to ensure compatibility.
  */
-R3DAPI R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size);
+R3DAPI R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size, const char* hint);
 
 /**
  * @brief Create a model from a single mesh.
@@ -101,20 +102,7 @@ R3DAPI R3D_Model R3D_LoadModelFromMesh(const R3D_Mesh* mesh);
  * @param unloadMaterials If true, also unloads all materials associated with the model.
  * Set to false if textures are still being used elsewhere to avoid freeing shared resources.
  */
-R3DAPI void R3D_UnloadModel(const R3D_Model* model, bool unloadMaterials);
-
-/**
- * @brief Update the bounding box of a model.
- *
- * Recalculates the axis-aligned bounding box (AABB) of the entire model
- * by examining all meshes within the model. Optionally updates individual
- * mesh bounding boxes as well.
- *
- * @param model Pointer to the model structure whose bounding box will be updated.
- * @param updateMeshBoundingBoxes If true, also updates the bounding box of each
- * individual mesh within the model before calculating the model's overall bounding box.
- */
-R3DAPI void R3D_UpdateModelBoundingBox(R3D_Model* model, bool updateMeshBoundingBoxes);
+R3DAPI void R3D_UnloadModel(R3D_Model* model, bool unloadMaterials);
 
 /** @} */ // end of Model
 

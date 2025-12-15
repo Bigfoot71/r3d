@@ -36,6 +36,15 @@ typedef enum R3D_BlendMode {
 } R3D_BlendMode;
 
 /**
+ * @brief Defines the depth mode used to render the mesh.
+ */
+typedef enum R3D_DepthMode {
+    R3D_DEPTH_READ_WRITE,       ///< Enable depth testing and writing to the depth buffer.
+    R3D_DEPTH_READ_ONLY,        ///< Enable depth testing but disable writing to the depth buffer.
+    R3D_DEPTH_DISABLED          ///< Disable depth testing and writing to the depth buffer.
+} R3D_DepthMode;
+
+/**
  * @brief Face culling modes for a mesh.
  *
  * Specifies which faces of a geometry are discarded during rendering based on their winding order.
@@ -94,6 +103,7 @@ typedef struct R3D_Material {
     } orm;
 
     R3D_BlendMode blendMode;              ///< Blend mode used for rendering the material.
+    R3D_DepthMode depthMode;              ///< Depth mode used for rendering the material. Not taken into account for decals.
     R3D_CullMode cullMode;                ///< Face culling mode used for the material.
 
     R3D_BillboardMode billboardMode;      ///< Billboard mode applied to the object.

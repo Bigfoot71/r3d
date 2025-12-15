@@ -1,6 +1,16 @@
-#include "r3d.h"
+/* r3d_culling.h -- R3D Culling Module.
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
 
 #include "./r3d_state.h"
+
+// ========================================
+// PUBLIC API
+// ========================================
 
 bool R3D_IsPointInFrustum(Vector3 position)
 {

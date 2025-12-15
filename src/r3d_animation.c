@@ -104,8 +104,8 @@ R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton, const
 {
     R3D_AnimationPlayer* player = RL_MALLOC(sizeof(R3D_AnimationPlayer));
 
-    player->skeleton = skeleton;
-    player->animLib = animLib;
+    player->skeleton = *skeleton;
+    player->animLib = *animLib;
 
     player->states = RL_CALLOC(animLib->count, sizeof(R3D_AnimationState));
     player->currentPose = RL_CALLOC(skeleton->boneCount, sizeof(Matrix));
@@ -121,12 +121,12 @@ void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player)
 
 void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt)
 {
-    const int animCount = player->animLib->count;
+    const int animCount = player->animLib.count;
     R3D_AnimationState* states = player->states;
 
     for (int iAnim = 0; iAnim < animCount; iAnim++)
     {
-        const R3D_Animation* anim = &player->animLib->animations[iAnim];
+        const R3D_Animation* anim = &player->animLib.animations[iAnim];
         R3D_AnimationState* state = &states[iAnim];
 
         state->currentTime += dt;
@@ -145,8 +145,8 @@ static void compute_pose(R3D_AnimationPlayer* player, float totalWeight);
 
 void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
 {
-    const int boneCount = player->skeleton->boneCount;
-    const int animCount = player->animLib->count;
+    const int boneCount = player->skeleton.boneCount;
+    const int animCount = player->animLib.count;
 
     R3D_AnimationState* states = player->states;
     Matrix* pose = player->currentPose;
@@ -157,7 +157,7 @@ void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
     }
 
     if (totalWeight <= 0.0f) {
-        memcpy(pose, player->skeleton->bindPose, boneCount * sizeof(Matrix));
+        memcpy(pose, player->skeleton.bindPose, boneCount * sizeof(Matrix));
     }
     else {
         compute_pose(player, totalWeight);
@@ -290,8 +290,8 @@ static const R3D_AnimationChannel* find_channel_for_bone(const R3D_Animation* an
 
 void compute_pose(R3D_AnimationPlayer* player, float totalWeight)
 {
-    const int boneCount = player->skeleton->boneCount;
-    const int animCount = player->animLib->count;
+    const int boneCount = player->skeleton.boneCount;
+    const int animCount = player->animLib.count;
     R3D_AnimationState* states = player->states;
 
     for (int iBone = 0; iBone < boneCount; iBone++)
@@ -301,7 +301,7 @@ void compute_pose(R3D_AnimationPlayer* player, float totalWeight)
 
         for (int iAnim = 0; iAnim < animCount; iAnim++)
         {
-            const R3D_Animation* anim = &player->animLib->animations[iAnim];
+            const R3D_Animation* anim = &player->animLib.animations[iAnim];
             const R3D_AnimationState* state = &states[iAnim];
             if (state->weight <= 0.0f) continue;
 
@@ -322,16 +322,16 @@ void compute_pose(R3D_AnimationPlayer* player, float totalWeight)
             player->currentPose[iBone] = r3d_matrix_scale_rotq_translate(blended.translation, blended.rotation, blended.scale);
         }
         else {
-            player->currentPose[iBone] = player->skeleton->bindLocal[iBone];
+            player->currentPose[iBone] = player->skeleton.bindLocal[iBone];
         }
 
-        int parentIdx = player->skeleton->bones[iBone].parent;
+        int parentIdx = player->skeleton.bones[iBone].parent;
         if (parentIdx >= 0) {
             player->currentPose[iBone] = r3d_matrix_multiply(&player->currentPose[iBone], &player->currentPose[parentIdx]);
         }
         else {
-            Matrix invLocalBind = MatrixInvert(player->skeleton->bindLocal[iBone]);
-            Matrix parentGlobalScene = r3d_matrix_multiply(&invLocalBind, &player->skeleton->bindPose[iBone]);
+            Matrix invLocalBind = MatrixInvert(player->skeleton.bindLocal[iBone]);
+            Matrix parentGlobalScene = r3d_matrix_multiply(&invLocalBind, &player->skeleton.bindPose[iBone]);
             player->currentPose[iBone] = r3d_matrix_multiply(&player->currentPose[iBone], &parentGlobalScene);
         }
     }

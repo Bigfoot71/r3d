@@ -1,13 +1,21 @@
-#include "details/r3d_math.h"
-#include "r3d.h"
+/* r3d_particles.h -- R3D Particles Module.
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
 
-#include <math.h>
-#include <float.h>
-#include <limits.h>
+#include <r3d/r3d_particles.h>
+
+#include <raymath.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <raylib.h>
-#include <raymath.h>
+#include <limits.h>
+#include <float.h>
+#include <math.h>
+
+#include "./details/r3d_math.h"
 
 /* Helper functions */
 
@@ -157,7 +165,7 @@ bool R3D_EmitParticle(R3D_ParticleSystem* system)
     );
 
     particle.transform = r3d_matrix_scale_rotxyz_translate(
-        &particle.scale, &particle.rotation, &particle.position
+        particle.scale, particle.rotation, particle.position
     );
 
     particle.velocity = particle.baseVelocity = (Vector3){
@@ -243,7 +251,7 @@ void R3D_UpdateParticleSystem(R3D_ParticleSystem* system, float deltaTime)
         particle->position.z += particle->velocity.z * deltaTime;
 
         particle->transform = r3d_matrix_scale_rotxyz_translate(
-            &particle->scale, &particle->rotation, &particle->position
+            particle->scale, particle->rotation, particle->position
         );
 
         particle->velocity.x += system->gravity.x * deltaTime;

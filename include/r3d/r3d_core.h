@@ -11,6 +11,7 @@
 
 #include "./r3d_api.h"
 #include <raylib.h>
+#include <stdint.h>
 
 /**
  * @defgroup Core Core Functions
@@ -50,13 +51,11 @@ typedef unsigned int R3D_Flags;
  * - void R3D_DisableLayers(R3D_Layer bitfield);
  *
  * A mesh or sprite will be rendered if at least one of its assigned layers is active.
- * Assigning a value of 0 to an object's layer (the default) means the object
- * will always be rendered on screen.
  *
  * For simplicity, 16 layers are defined in this header, but the maximum number
- * of layers depends on the number of bits in `unsigned int` on the target platform.
+ * of layers is 32 for an uint32_t.
  */
-typedef unsigned int R3D_Layer;
+typedef uint32_t R3D_Layer;
 
 #define R3D_LAYER_01    (1 << 0)
 #define R3D_LAYER_02    (1 << 1)
@@ -74,6 +73,8 @@ typedef unsigned int R3D_Layer;
 #define R3D_LAYER_14    (1 << 13)
 #define R3D_LAYER_15    (1 << 14)
 #define R3D_LAYER_16    (1 << 15)
+
+#define R3D_LAYER_ALL   0xFFFFFFFF
 
 // ========================================
 // PUBLIC API

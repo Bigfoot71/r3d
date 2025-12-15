@@ -17,19 +17,17 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-// TODO: Avoid to create RBO/FBO at each calls of generation functions
-
-#include "r3d.h"
-
-#include "./r3d_state.h"
-
-#include <assert.h>
-#include <raylib.h>
+#include <r3d/r3d_skybox.h>
 #include <raymath.h>
+#include <assert.h>
 #include <rlgl.h>
 #include <glad.h>
 
-/* === Internal functions === */
+#include "./r3d_state.h"
+
+// ========================================
+// INTERNAL FUNCTIONS
+// ========================================
 
 static TextureCubemap r3d_skybox_load_cubemap_from_layout(const Image* image, CubemapLayout layout)
 {
@@ -413,8 +411,9 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
     return prefilter;
 }
 
-
-/* === Public functions === */
+// ========================================
+// PUBLIC API
+// ========================================
 
 R3D_Skybox R3D_LoadSkybox(const char* filePath, CubemapLayout layout)
 {

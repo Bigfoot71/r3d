@@ -20,8 +20,8 @@
 #ifndef R3D_LIGHT_H
 #define R3D_LIGHT_H
 
+#include <r3d/r3d_lighting.h>
 #include <raylib.h>
-#include <r3d.h>
 
 /* === Types === */
 

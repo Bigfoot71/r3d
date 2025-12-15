@@ -181,22 +181,34 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 add_library(${PROJECT_NAME}
-    "${R3D_ROOT_PATH}/src/details/r3d_primitives.c"
+    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_animation.c"
+    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer.c"
+    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_material.c"
+    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_mesh.c"
+    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_skeleton.c"
+    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_texture.c"
     "${R3D_ROOT_PATH}/src/details/r3d_drawcall.c"
     "${R3D_ROOT_PATH}/src/details/r3d_frustum.c"
-    "${R3D_ROOT_PATH}/src/details/r3d_light.c"
     "${R3D_ROOT_PATH}/src/details/r3d_image.c"
-    "${R3D_ROOT_PATH}/src/r3d_environment.c"
-    "${R3D_ROOT_PATH}/src/r3d_particles.c"
-    "${R3D_ROOT_PATH}/src/r3d_lighting.c"
-    "${R3D_ROOT_PATH}/src/r3d_culling.c"
-    "${R3D_ROOT_PATH}/src/r3d_skybox.c"
-    "${R3D_ROOT_PATH}/src/r3d_curves.c"
-    "${R3D_ROOT_PATH}/src/r3d_sprite.c"
-    "${R3D_ROOT_PATH}/src/r3d_model.c"
-    "${R3D_ROOT_PATH}/src/r3d_utils.c"
-    "${R3D_ROOT_PATH}/src/r3d_state.c"
+    "${R3D_ROOT_PATH}/src/details/r3d_light.c"
+    "${R3D_ROOT_PATH}/src/details/r3d_primitives.c"
+    "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
+    "${R3D_ROOT_PATH}/src/r3d_culling.c"
+    "${R3D_ROOT_PATH}/src/r3d_curves.c"
+    "${R3D_ROOT_PATH}/src/r3d_draw.c"
+    "${R3D_ROOT_PATH}/src/r3d_environment.c"
+    "${R3D_ROOT_PATH}/src/r3d_lighting.c"
+    "${R3D_ROOT_PATH}/src/r3d_material.c"
+    "${R3D_ROOT_PATH}/src/r3d_mesh.c"
+    "${R3D_ROOT_PATH}/src/r3d_mesh_data.c"
+    "${R3D_ROOT_PATH}/src/r3d_model.c"
+    "${R3D_ROOT_PATH}/src/r3d_particles.c"
+    "${R3D_ROOT_PATH}/src/r3d_skeleton.c"
+    "${R3D_ROOT_PATH}/src/r3d_skybox.c"
+    "${R3D_ROOT_PATH}/src/r3d_sprite.c"
+    "${R3D_ROOT_PATH}/src/r3d_state.c"
+    "${R3D_ROOT_PATH}/src/r3d_utils.c"
 )
 
 embed_shaders(${PROJECT_NAME}
@@ -255,6 +267,7 @@ endif()
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
+        "${R3D_ROOT_PATH}/external/uthash/src"
         "${R3D_ROOT_PATH}/external/glad"
         "${R3D_ROOT_PATH}/include"
         "${R3D_RAYLIB_INC_PATH}"

@@ -95,9 +95,12 @@ typedef struct R3D_AnimationState {
  * current skeleton pose.
  */
 typedef struct R3D_AnimationPlayer {
-    const R3D_AnimationLib* animLib;    ///< Animation library providing available animations.
-    const R3D_Skeleton* skeleton;       ///< Target skeleton to animate.
-    R3D_AnimationState* states;         ///< Array of active animation states.
+    R3D_AnimationState* states;         ///< Array of active animation states (for each animation).
+
+    // TODO: Should be const pointers but it's not safe for now...
+    R3D_AnimationLib animLib;           ///< Animation library providing available animations.
+    R3D_Skeleton skeleton;              ///< Target skeleton to animate.
+
     Matrix* currentPose;                ///< Array of bone transforms representing the blended pose.
 } R3D_AnimationPlayer;
 
