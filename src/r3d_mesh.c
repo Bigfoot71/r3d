@@ -85,10 +85,7 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     if (data->indexCount > 0 && data->indices) {
         glGenBuffers(1, &mesh.ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indexCount * sizeof(uint32_t), data->indices, glUsage);
-    }
-    else {
-        mesh.ebo = 0;
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data->indexCount * sizeof(uint32_t), data->indices, glUsage);
     }
 
     // Cleaning
