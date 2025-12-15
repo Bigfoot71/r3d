@@ -13,14 +13,6 @@
 #include <float.h>
 
 // ========================================
-// CONSTANTS - DEFAULT ATTRIBUTES
-// ========================================
-
-#define R3D_MESH_DATA_DEFAULT_COLOR WHITE
-#define R3D_MESH_DATA_DEFAULT_NORMAL ((Vector3) {0.0f, 0.0f, 1.0f})
-#define R3D_MESH_DATA_DEFAULT_TANGENT ((Vector4) {1.0f, 0.0f, 0.0f, 1.0f})
-
-// ========================================
 // PUBLIC API
 // ========================================
 
@@ -95,9 +87,9 @@ R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
     meshData.vertices[0] = (R3D_Vertex){
         .position = {0.0f, 0.0f, 0.0f},
         .texcoord = {0.5f, 0.5f},
-        .normal = R3D_MESH_DATA_DEFAULT_NORMAL,
-        .color = R3D_MESH_DATA_DEFAULT_COLOR,
-        .tangent = R3D_MESH_DATA_DEFAULT_TANGENT
+        .normal = {0.0f, 1.0f, 0.0f},
+        .color = {255, 255, 255, 255},
+        .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
     };
 
     for (int i = 0; i < sides; i++) {
@@ -116,8 +108,8 @@ R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
                 0.5f + 0.5f * cosAngle, // Circular UV mapping
                 0.5f + 0.5f * sinAngle
             },
-            .normal = R3D_MESH_DATA_DEFAULT_NORMAL,
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .normal = {0.0f, 1.0f, 0.0f},
+            .color = {255, 255, 255, 255},
             .tangent = {-sinAngle, cosAngle, 0.0f, 1.0f} // Tangent perpendicular to the radius
         };
 
@@ -175,9 +167,9 @@ R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, int resZ)
             meshData.vertices[vertexIndex] = (R3D_Vertex){
                 .position = {posX, 0.0f, posZ},
                 .texcoord = {uvX, uvZ},
-                .normal = R3D_MESH_DATA_DEFAULT_NORMAL,
-                .color = R3D_MESH_DATA_DEFAULT_COLOR,
-                .tangent = R3D_MESH_DATA_DEFAULT_TANGENT
+                .normal = {0.0f, 1.0f, 0.0f},
+                .color = {255, 255, 255, 255},
+                .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
             };
             vertexIndex++;
         }
@@ -239,7 +231,8 @@ R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length)
 
     // Standard UV coordinates for each face
     const Vector2 uvs[4] = {
-        {0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}
+        {0.0f, 0.0f}, {1.0f, 0.0f},
+        {1.0f, 1.0f}, {0.0f, 1.0f}
     };
 
     // Generation of the 6 faces of the cube
@@ -249,55 +242,55 @@ R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length)
     // Back face (+Z)
     const Vector3 frontNormal = {0.0f, 0.0f, 1.0f};
     const Vector4 frontTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[0], frontNormal, R3D_MESH_DATA_DEFAULT_COLOR, frontTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[1], frontNormal, R3D_MESH_DATA_DEFAULT_COLOR, frontTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[2], frontNormal, R3D_MESH_DATA_DEFAULT_COLOR, frontTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[3], frontNormal, R3D_MESH_DATA_DEFAULT_COLOR, frontTangent};
+    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[0], frontNormal, {255, 255, 255, 255}, frontTangent};
+    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[1], frontNormal, {255, 255, 255, 255}, frontTangent};
+    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[2], frontNormal, {255, 255, 255, 255}, frontTangent};
+    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[3], frontNormal, {255, 255, 255, 255}, frontTangent};
     vertexOffset += 4;
 
     // Front face (-Z)
     const Vector3 backNormal = {0.0f, 0.0f, -1.0f};
     const Vector4 backTangent = {-1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[0], backNormal, R3D_MESH_DATA_DEFAULT_COLOR, backTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[1], backNormal, R3D_MESH_DATA_DEFAULT_COLOR, backTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[2], backNormal, R3D_MESH_DATA_DEFAULT_COLOR, backTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[3], backNormal, R3D_MESH_DATA_DEFAULT_COLOR, backTangent};
+    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[0], backNormal, {255, 255, 255, 255}, backTangent};
+    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[1], backNormal, {255, 255, 255, 255}, backTangent};
+    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[2], backNormal, {255, 255, 255, 255}, backTangent};
+    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[3], backNormal, {255, 255, 255, 255}, backTangent};
     vertexOffset += 4;
 
     // Right face (+X)
     const Vector3 rightNormal = {1.0f, 0.0f, 0.0f};
     const Vector4 rightTangent = {0.0f, 0.0f, -1.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[0], rightNormal, R3D_MESH_DATA_DEFAULT_COLOR, rightTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], rightNormal, R3D_MESH_DATA_DEFAULT_COLOR, rightTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], rightNormal, R3D_MESH_DATA_DEFAULT_COLOR, rightTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[3], rightNormal, R3D_MESH_DATA_DEFAULT_COLOR, rightTangent};
+    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[0], rightNormal, {255, 255, 255, 255}, rightTangent};
+    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], rightNormal, {255, 255, 255, 255}, rightTangent};
+    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], rightNormal, {255, 255, 255, 255}, rightTangent};
+    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[3], rightNormal, {255, 255, 255, 255}, rightTangent};
     vertexOffset += 4;
 
     // Left face (-X)
     const Vector3 leftNormal = {-1.0f, 0.0f, 0.0f};
     const Vector4 leftTangent = {0.0f, 0.0f, 1.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], leftNormal, R3D_MESH_DATA_DEFAULT_COLOR, leftTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[1], leftNormal, R3D_MESH_DATA_DEFAULT_COLOR, leftTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[2], leftNormal, R3D_MESH_DATA_DEFAULT_COLOR, leftTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], leftNormal, R3D_MESH_DATA_DEFAULT_COLOR, leftTangent};
+    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], leftNormal, {255, 255, 255, 255}, leftTangent};
+    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[1], leftNormal, {255, 255, 255, 255}, leftTangent};
+    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[2], leftNormal, {255, 255, 255, 255}, leftTangent};
+    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], leftNormal, {255, 255, 255, 255}, leftTangent};
     vertexOffset += 4;
 
     // Face up (+Y)
     const Vector3 topNormal = {0.0f, 1.0f, 0.0f};
     const Vector4 topTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[0], topNormal, R3D_MESH_DATA_DEFAULT_COLOR, topTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[1], topNormal, R3D_MESH_DATA_DEFAULT_COLOR, topTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], topNormal, R3D_MESH_DATA_DEFAULT_COLOR, topTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], topNormal, R3D_MESH_DATA_DEFAULT_COLOR, topTangent};
+    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[0], topNormal, {255, 255, 255, 255}, topTangent};
+    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[1], topNormal, {255, 255, 255, 255}, topTangent};
+    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], topNormal, {255, 255, 255, 255}, topTangent};
+    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], topNormal, {255, 255, 255, 255}, topTangent};
     vertexOffset += 4;
 
     // Face down (-Y)
     const Vector3 bottomNormal = {0.0f, -1.0f, 0.0f};
     const Vector4 bottomTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], bottomNormal, R3D_MESH_DATA_DEFAULT_COLOR, bottomTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], bottomNormal, R3D_MESH_DATA_DEFAULT_COLOR, bottomTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[2], bottomNormal, R3D_MESH_DATA_DEFAULT_COLOR, bottomTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[3], bottomNormal, R3D_MESH_DATA_DEFAULT_COLOR, bottomTangent};
+    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], bottomNormal, {255, 255, 255, 255}, bottomTangent};
+    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], bottomNormal, {255, 255, 255, 255}, bottomTangent};
+    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[2], bottomNormal, {255, 255, 255, 255}, bottomTangent};
+    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[3], bottomNormal, {255, 255, 255, 255}, bottomTangent};
 
     // Generation of indices (same pattern for each face)
     for (int face = 0; face < 6; face++) {
@@ -379,7 +372,7 @@ R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices)
                 .position = {x, y, z},
                 .texcoord = {u, v},
                 .normal = normal,
-                .color = R3D_MESH_DATA_DEFAULT_COLOR,
+                .color = {255, 255, 255, 255},
                 .tangent = tangent
             };
         }
@@ -484,7 +477,7 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
                 .position = {x, y, z},
                 .texcoord = {u, v},
                 .normal = normal,
-                .color = R3D_MESH_DATA_DEFAULT_COLOR,
+                .color = {255, 255, 255, 255},
                 .tangent = tangent
             };
         }
@@ -498,7 +491,7 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
         .position = {0.0f, 0.0f, 0.0f},
         .texcoord = {0.5f, 0.5f}, // Center of UV map
         .normal = {0.0f, -1.0f, 0.0f}, // Normal pointing downwards
-        .color = R3D_MESH_DATA_DEFAULT_COLOR,
+        .color = {255, 255, 255, 255},
         .tangent = {1.0f, 0.0f, 0.0f, 1.0f} // Arbitrary tangent for a flat surface
     };
 
@@ -521,7 +514,7 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
             .position = {x, 0.0f, z},
             .texcoord = {u, v},
             .normal = {0.0f, -1.0f, 0.0f}, // Normal pointing downwards
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = {1.0f, 0.0f, 0.0f, 1.0f} // Tangent for flat base
         };
     }
@@ -634,7 +627,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
             .position = {x, -halfHeight, z},
             .texcoord = {u, v},
             .normal = normal,
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = tangent
         };
         vertexIndex++;
@@ -659,7 +652,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
             .position = {x, halfHeight, z},
             .texcoord = {u, v},
             .normal = normal,
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = tangent
         };
         vertexIndex++;
@@ -676,7 +669,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
         .position = {0.0f, -halfHeight, 0.0f},
         .texcoord = {0.5f, 0.5f}, // Center of UV space
         .normal = bottomNormal,
-        .color = R3D_MESH_DATA_DEFAULT_COLOR,
+        .color = {255, 255, 255, 255},
         .tangent = bottomTangent
     };
     const int bottomCenterIndex = vertexIndex;
@@ -696,7 +689,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
             .position = {x, -halfHeight, z},
             .texcoord = {u, v},
             .normal = bottomNormal,
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = bottomTangent
         };
         vertexIndex++;
@@ -713,7 +706,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
         .position = {0.0f, halfHeight, 0.0f},
         .texcoord = {0.5f, 0.5f},
         .normal = topNormal,
-        .color = R3D_MESH_DATA_DEFAULT_COLOR,
+        .color = {255, 255, 255, 255},
         .tangent = topTangent
     };
     const int topCenterIndex = vertexIndex;
@@ -733,7 +726,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
             .position = {x, halfHeight, z},
             .texcoord = {u, v},
             .normal = topNormal,
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = topTangent
         };
         vertexIndex++;
@@ -847,7 +840,7 @@ R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices)
             .position = pos,
             .texcoord = {u, 0.0f},
             .normal = norm,
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = tangent
         };
     }
@@ -858,7 +851,7 @@ R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices)
         .position = {0.0f, halfHeight, 0.0f},
         .texcoord = {0.5f, 1.0f},
         .normal = {0.0f, 1.0f, 0.0f}, // Rough default normal
-        .color = R3D_MESH_DATA_DEFAULT_COLOR,
+        .color = {255, 255, 255, 255},
         .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
     };
 
@@ -868,7 +861,7 @@ R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices)
         .position = {0.0f, -halfHeight, 0.0f},
         .texcoord = {0.5f, 0.5f},
         .normal = {0.0f, -1.0f, 0.0f},
-        .color = R3D_MESH_DATA_DEFAULT_COLOR,
+        .color = {255, 255, 255, 255},
         .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
     };
 
@@ -885,7 +878,7 @@ R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices)
             .position = {x, -halfHeight, z},
             .texcoord = {u, v},
             .normal = {0.0f, -1.0f, 0.0f},
-            .color = R3D_MESH_DATA_DEFAULT_COLOR,
+            .color = {255, 255, 255, 255},
             .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
         };
     }
@@ -987,7 +980,7 @@ R3D_MeshData R3D_GenMeshDataTorus(float radius, float size, int radSeg, int side
                 .position = pos,
                 .texcoord = {u, v},
                 .normal = normal,
-                .color = R3D_MESH_DATA_DEFAULT_COLOR,
+                .color = {255, 255, 255, 255},
                 .tangent = tangent
             };
         }
@@ -1134,7 +1127,7 @@ R3D_MeshData R3D_GenMeshDataKnot(float radius, float size, int radSeg, int sides
                 .position = pos,
                 .texcoord = {u, v},
                 .normal = surfaceNormal,
-                .color = R3D_MESH_DATA_DEFAULT_COLOR,
+                .color = {255, 255, 255, 255},
                 .tangent = vertexTangent
             };
         }
@@ -1249,7 +1242,7 @@ R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
                 .position = {posX, posY, posZ},
                 .texcoord = {u, v},
                 .normal = normal,
-                .color = R3D_MESH_DATA_DEFAULT_COLOR,
+                .color = {255, 255, 255, 255},
                 .tangent = tangent
             };
             vertexIndex++;
@@ -1394,10 +1387,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[2].x + texUVs[2].width, texUVs[2].y}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[1], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
+                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[2], {255, 255, 255, 255}, tangents[2]};
+                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[1], normals[2], {255, 255, 255, 255}, tangents[2]};
+                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[2], {255, 255, 255, 255}, tangents[2]};
+                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[2], {255, 255, 255, 255}, tangents[2]};
 
                     // Clues for 2 triangles
                     indices[indexCount + 0] = vertexCount + 0;
@@ -1420,10 +1413,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[3].x, texUVs[3].y}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[0], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[2], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
+                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[0], normals[3], {255, 255, 255, 255}, tangents[3]};
+                    vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[3], {255, 255, 255, 255}, tangents[3]};
+                    vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[2], normals[3], {255, 255, 255, 255}, tangents[3]};
+                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[3], {255, 255, 255, 255}, tangents[3]};
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1447,10 +1440,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[5].x + texUVs[5].width, texUVs[5].y + texUVs[5].height}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[5], R3D_MESH_DATA_DEFAULT_COLOR, tangents[5]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[5], R3D_MESH_DATA_DEFAULT_COLOR, tangents[5]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[5], R3D_MESH_DATA_DEFAULT_COLOR, tangents[5]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[3], normals[5], R3D_MESH_DATA_DEFAULT_COLOR, tangents[5]};
+                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[5], {255, 255, 255, 255}, tangents[5]};
+                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[5], {255, 255, 255, 255}, tangents[5]};
+                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[5], {255, 255, 255, 255}, tangents[5]};
+                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[3], normals[5], {255, 255, 255, 255}, tangents[5]};
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1472,10 +1465,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[4].x, texUVs[4].y}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[4], R3D_MESH_DATA_DEFAULT_COLOR, tangents[4]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[1], normals[4], R3D_MESH_DATA_DEFAULT_COLOR, tangents[4]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[2], normals[4], R3D_MESH_DATA_DEFAULT_COLOR, tangents[4]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[4], R3D_MESH_DATA_DEFAULT_COLOR, tangents[4]};
+                    vertices[vertexCount + 0] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[4], {255, 255, 255, 255}, tangents[4]};
+                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[1], normals[4], {255, 255, 255, 255}, tangents[4]};
+                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[2], normals[4], {255, 255, 255, 255}, tangents[4]};
+                    vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[4], {255, 255, 255, 255}, tangents[4]};
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1497,10 +1490,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[0].x + texUVs[0].width, texUVs[0].y + texUVs[0].height}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[0], R3D_MESH_DATA_DEFAULT_COLOR, tangents[0]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[0], R3D_MESH_DATA_DEFAULT_COLOR, tangents[0]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[2], normals[0], R3D_MESH_DATA_DEFAULT_COLOR, tangents[0]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[0], R3D_MESH_DATA_DEFAULT_COLOR, tangents[0]};
+                    vertices[vertexCount + 0] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[0], {255, 255, 255, 255}, tangents[0]};
+                    vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[0], {255, 255, 255, 255}, tangents[0]};
+                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[2], normals[0], {255, 255, 255, 255}, tangents[0]};
+                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[0], {255, 255, 255, 255}, tangents[0]};
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1522,10 +1515,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[1].x, texUVs[1].y + texUVs[1].height}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[1], R3D_MESH_DATA_DEFAULT_COLOR, tangents[1]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[1], R3D_MESH_DATA_DEFAULT_COLOR, tangents[1]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[1], R3D_MESH_DATA_DEFAULT_COLOR, tangents[1]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[3], normals[1], R3D_MESH_DATA_DEFAULT_COLOR, tangents[1]};
+                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[1], {255, 255, 255, 255}, tangents[1]};
+                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[1], {255, 255, 255, 255}, tangents[1]};
+                    vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[1], {255, 255, 255, 255}, tangents[1]};
+                    vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[3], normals[1], {255, 255, 255, 255}, tangents[1]};
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1551,10 +1544,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     {texUVs[2].x + texUVs[2].width, texUVs[2].y}
                 };
 
-                vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs_top[0], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
-                vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs_top[1], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
-                vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs_top[2], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
-                vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs_top[3], normals[3], R3D_MESH_DATA_DEFAULT_COLOR, tangents[3]};
+                vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs_top[0], normals[3], {255, 255, 255, 255}, tangents[3]};
+                vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs_top[1], normals[3], {255, 255, 255, 255}, tangents[3]};
+                vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs_top[2], normals[3], {255, 255, 255, 255}, tangents[3]};
+                vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs_top[3], normals[3], {255, 255, 255, 255}, tangents[3]};
 
                 indices[indexCount + 0] = vertexCount + 0;
                 indices[indexCount + 1] = vertexCount + 1;
@@ -1574,10 +1567,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     {texUVs[3].x, texUVs[3].y}
                 };
 
-                vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs_bottom[0], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
-                vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs_bottom[1], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
-                vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs_bottom[2], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
-                vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs_bottom[3], normals[2], R3D_MESH_DATA_DEFAULT_COLOR, tangents[2]};
+                vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs_bottom[0], normals[2], {255, 255, 255, 255}, tangents[2]};
+                vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs_bottom[1], normals[2], {255, 255, 255, 255}, tangents[2]};
+                vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs_bottom[2], normals[2], {255, 255, 255, 255}, tangents[2]};
+                vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs_bottom[3], normals[2], {255, 255, 255, 255}, tangents[2]};
 
                 indices[indexCount + 0] = vertexCount + 0;
                 indices[indexCount + 1] = vertexCount + 1;
