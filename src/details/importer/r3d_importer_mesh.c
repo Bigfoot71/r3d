@@ -264,7 +264,7 @@ static bool load_mesh_internal(R3D_Mesh* outMesh, const struct aiMesh* aiMesh, M
 static bool load_recursive(const r3d_importer_t* importer, R3D_Model* model, const struct aiNode* node, Matrix parentTransform)
 {
     Matrix localTransform = r3d_importer_cast(node->mTransformation);
-    Matrix globalTransform = MatrixMultiply(localTransform, parentTransform);
+    Matrix globalTransform = r3d_matrix_multiply(&localTransform, &parentTransform);
 
     // Process all meshes in this node
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
@@ -312,8 +312,7 @@ bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model)
     }
 
     // Load all meshes recursively
-    Matrix identity = R3D_MATRIX_IDENTITY;
-    if (!load_recursive(importer, model, r3d_importer_get_root(importer), identity)) {
+    if (!load_recursive(importer, model, r3d_importer_get_root(importer), R3D_MATRIX_IDENTITY)) {
         for (int i = 0; i < model->meshCount; i++) {
             R3D_UnloadMesh(&model->meshes[i]);
         }

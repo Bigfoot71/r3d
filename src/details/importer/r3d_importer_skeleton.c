@@ -39,7 +39,7 @@ static void build_skeleton_recursive(
     if (!node) return;
 
     Matrix localTransform = r3d_importer_cast(node->mTransformation);
-    Matrix globalTransform = MatrixMultiply(localTransform, parentTransform);
+    Matrix globalTransform = r3d_matrix_multiply(&localTransform, &parentTransform);
 
     // Check if this node is a bone
     int currentIndex = r3d_importer_get_bone_index(ctx->importer, node->mName.data);
@@ -126,8 +126,7 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
         .boneCount = boneCount
     };
 
-    Matrix identity = R3D_MATRIX_IDENTITY;
-    build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), -1, identity);
+    build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), -1, R3D_MATRIX_IDENTITY);
 
     TraceLog(LOG_INFO, "RENDER: Loaded skeleton with %d bones", boneCount);
 
