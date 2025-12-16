@@ -28,37 +28,18 @@
 /* === Types === */
 
 typedef enum {
-    R3D_DRAWCALL_GEOMETRY_MODEL,    //< Simple meshes are also considered as model here
-    R3D_DRAWCALL_GEOMETRY_SPRITE
-} r3d_drawcall_geometry_e;
-
-typedef enum {
     R3D_DRAWCALL_RENDER_DEFERRED,
     R3D_DRAWCALL_RENDER_FORWARD
 } r3d_drawcall_render_mode_e;
 
 typedef struct {
 
+    R3D_Mesh mesh;                      //< Mesh to render
     Matrix transform;
     R3D_Material material;
-    R3D_ShadowCastMode shadowCastMode;
-
-    r3d_drawcall_geometry_e geometryType;
+    R3D_Skeleton skeleton;                  //< Skeleton that contains the bind pose (if any)
+    const R3D_AnimationPlayer* player;      //< Animation player used. (can be null, skeleton bind pose can be used)
     r3d_drawcall_render_mode_e renderMode;
-
-    union {
-
-        struct {
-            R3D_Mesh mesh;                      //< Mesh to render
-            R3D_Skeleton skeleton;              //< Skeleton that contains the bind pose (if any)
-            const R3D_AnimationPlayer* player;  //< Animation player used. (can be null, skeleton bind pose can be used)
-        } model;
-
-        struct {
-            Vector3 quad[4];                    //< Used only to represent the sprite in world space
-        } sprite;
-
-    } geometry;
 
     struct {
         const Matrix* transforms;

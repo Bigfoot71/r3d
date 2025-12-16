@@ -67,18 +67,10 @@ void r3d_drawcall_sort_back_to_front(r3d_drawcall_t* calls, size_t count)
 
 bool r3d_drawcall_geometry_is_visible(const r3d_drawcall_t* call)
 {
-    if (call->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
-        if (r3d_matrix_is_identity(&call->transform)) {
-            return r3d_frustum_is_aabb_in(&R3D.state.frustum.shape, &call->geometry.model.mesh.aabb);
-        }
-        return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->geometry.model.mesh.aabb, &call->transform);
+    if (r3d_matrix_is_identity(&call->transform)) {
+        return r3d_frustum_is_aabb_in(&R3D.state.frustum.shape, &call->mesh.aabb);
     }
-
-    if (call->geometryType == R3D_DRAWCALL_GEOMETRY_SPRITE) {
-        return r3d_frustum_is_points_in(&R3D.state.frustum.shape, call->geometry.sprite.quad, 4);
-    }
-
-    return false;
+    return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->mesh.aabb, &call->transform);
 }
 
 bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call)
@@ -101,6 +93,16 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     r3d_shader_set_mat4(raster.depth, uMatModel, call->transform);
     r3d_shader_set_mat4(raster.depth, uMatVP, *matVP);
 
+    /* --- Send skinning related data --- */
+
+    if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_shader_set_int(raster.depth, uSkinning, true);
+        r3d_drawcall_upload_matrices(call);
+    }
+    else {
+        r3d_shader_set_int(raster.depth, uSkinning, false);
+    }
+
     /* --- Send billboard related data --- */
 
     r3d_shader_set_int(raster.depth, uBillboard, call->material.billboardMode);
@@ -112,29 +114,6 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
 
     r3d_shader_set_vec2(raster.depth, uTexCoordOffset, call->material.uvOffset);
     r3d_shader_set_vec2(raster.depth, uTexCoordScale, call->material.uvScale);
-
-    /* --- Setup geometry type related uniforms --- */
-
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        {
-            // Send bone matrices and animation related data
-            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
-                r3d_shader_set_int(raster.depth, uSkinning, true);
-                r3d_drawcall_upload_matrices(call);
-            }
-            else {
-                r3d_shader_set_int(raster.depth, uSkinning, false);
-            }
-        }
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        {
-            // Send bone matrices and animation related data
-            r3d_shader_set_int(raster.depth, uSkinning, false);
-        }
-        break;
-    }
 
     /* --- Set forward material data --- */
 
@@ -152,7 +131,7 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     /* --- Applying material parameters that are independent of shaders --- */
 
     if (shadow) {
-        r3d_drawcall_apply_shadow_cast_mode(call->shadowCastMode, call->material.cullMode);
+        r3d_drawcall_apply_shadow_cast_mode(call->mesh.shadowCastMode, call->material.cullMode);
     }
     else {
         r3d_drawcall_apply_cull_mode(call->material.cullMode);
@@ -182,6 +161,16 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     r3d_shader_set_mat4(raster.depthCube, uMatModel, call->transform);
     r3d_shader_set_mat4(raster.depthCube, uMatVP, *matVP);
 
+    /* --- Send skinning related data --- */
+
+    if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_shader_set_int(raster.depthCube, uSkinning, true);
+        r3d_drawcall_upload_matrices(call);
+    }
+    else {
+        r3d_shader_set_int(raster.depthCube, uSkinning, false);
+    }
+
     /* --- Send billboard related data --- */
 
     r3d_shader_set_int(raster.depthCube, uBillboard, call->material.billboardMode);
@@ -193,29 +182,6 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
 
     r3d_shader_set_vec2(raster.depthCube, uTexCoordOffset, call->material.uvOffset);
     r3d_shader_set_vec2(raster.depthCube, uTexCoordScale, call->material.uvScale);
-
-    /* --- Setup geometry type related uniforms --- */
-
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        {
-            // Send bone matrices and animation related data
-            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
-                r3d_shader_set_int(raster.depthCube, uSkinning, true);
-                r3d_drawcall_upload_matrices(call);
-            }
-            else {
-                r3d_shader_set_int(raster.depthCube, uSkinning, false);
-            }
-        }
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        {
-            // Send bone matrices and animation related data
-            r3d_shader_set_int(raster.depthCube, uSkinning, false);
-        }
-        break;
-    }
 
     /* --- Set forward material data --- */
 
@@ -233,7 +199,7 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     /* --- Applying material parameters that are independent of shaders --- */
 
     if (shadow) {
-        r3d_drawcall_apply_shadow_cast_mode(call->shadowCastMode, call->material.cullMode);
+        r3d_drawcall_apply_shadow_cast_mode(call->mesh.shadowCastMode, call->material.cullMode);
     }
     else {
         r3d_drawcall_apply_cull_mode(call->material.cullMode);
@@ -338,13 +304,30 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
 
 void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matVP)
 {
-    /* --- Set additional matrix uniforms --- */
+    /* --- Send matrices --- */
 
     Matrix matNormal = r3d_matrix_normal(&call->transform);
 
     r3d_shader_set_mat4(raster.geometry, uMatModel, call->transform);
     r3d_shader_set_mat4(raster.geometry, uMatNormal, matNormal);
     r3d_shader_set_mat4(raster.geometry, uMatVP, *matVP);
+
+    /* --- Send skinning related data --- */
+
+    if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_shader_set_int(raster.geometry, uSkinning, true);
+        r3d_drawcall_upload_matrices(call);
+    }
+    else {
+        r3d_shader_set_int(raster.geometry, uSkinning, false);
+    }
+
+    /* --- Send billboard related data --- */
+
+    r3d_shader_set_int(raster.geometry, uBillboard, call->material.billboardMode);
+    if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
+        r3d_shader_set_mat4(raster.geometry, uMatInvView, R3D.state.transform.invView);
+    }
 
     /* --- Set factor material maps --- */
 
@@ -367,36 +350,6 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
 
     r3d_shader_set_col4(raster.geometry, uAlbedoColor, call->material.albedo.color);
     r3d_shader_set_col3(raster.geometry, uEmissionColor, call->material.emission.color);
-
-    /* --- Setup billboard mode --- */
-
-    r3d_shader_set_int(raster.geometry, uBillboard, call->material.billboardMode);
-    if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
-        r3d_shader_set_mat4(raster.geometry, uMatInvView, R3D.state.transform.invView);
-    }
-
-    /* --- Setup geometry type related uniforms --- */
-
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        {
-            // Send bone matrices and animation related data
-            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
-                r3d_shader_set_int(raster.geometry, uSkinning, true);
-                r3d_drawcall_upload_matrices(call);
-            }
-            else {
-                r3d_shader_set_int(raster.geometry, uSkinning, false);
-            }
-        }
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        {
-            // Send bone matrices and animation related data
-            r3d_shader_set_int(raster.geometry, uSkinning, false);
-        }
-        break;
-    }
 
     /* --- Bind active texture maps --- */
 
@@ -431,13 +384,30 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
 
 void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP)
 {
-    /* --- Set additional matrix uniforms --- */
+    /* --- Send matrices --- */
 
     Matrix matNormal = r3d_matrix_normal(&call->transform);
 
     r3d_shader_set_mat4(raster.forward, uMatModel, call->transform);
     r3d_shader_set_mat4(raster.forward, uMatNormal, matNormal);
     r3d_shader_set_mat4(raster.forward, uMatVP, *matVP);
+
+    /* --- Send skinning related data --- */
+
+    if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_shader_set_int(raster.forward, uSkinning, true);
+        r3d_drawcall_upload_matrices(call);
+    }
+    else {
+        r3d_shader_set_int(raster.forward, uSkinning, false);
+    }
+
+    /* --- Send billboard related data --- */
+
+    r3d_shader_set_int(raster.forward, uBillboard, call->material.billboardMode);
+    if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
+        r3d_shader_set_mat4(raster.forward, uMatInvView, R3D.state.transform.invView);
+    }
 
     /* --- Set factor material maps --- */
 
@@ -460,36 +430,6 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
 
     r3d_shader_set_col4(raster.forward, uAlbedoColor, call->material.albedo.color);
     r3d_shader_set_col3(raster.forward, uEmissionColor, call->material.emission.color);
-
-    /* --- Setup billboard mode --- */
-
-    r3d_shader_set_int(raster.forward, uBillboard, call->material.billboardMode);
-    if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
-        r3d_shader_set_mat4(raster.forward, uMatInvView, R3D.state.transform.invView);
-    }
-
-    /* --- Setup geometry type related uniforms --- */
-
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        {
-            // Send bone matrices and animation related data
-            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
-                r3d_shader_set_int(raster.forward, uSkinning, true);
-                r3d_drawcall_upload_matrices(call);
-            }
-            else {
-                r3d_shader_set_int(raster.forward, uSkinning, false);
-            }
-        }
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        {
-            // Send bone matrices and animation related data
-            r3d_shader_set_int(raster.forward, uSkinning, false);
-        }
-        break;
-    }
 
     /* --- Bind active texture maps --- */
 
@@ -641,81 +581,24 @@ GLenum r3d_drawcall_get_opengl_primitive(R3D_PrimitiveType primitive)
     return GL_TRIANGLES; // consider an error...
 }
 
-static void r3d_drawcall_bind_geometry_mesh(const R3D_Mesh* mesh)
-{
-    if (rlEnableVertexArray(mesh->vao)) {
-        return;
-    }
-
-    // Enable the vertex buffer (fallback if vao is not available)
-    rlEnableVertexBuffer(mesh->vbo);
-
-    // Bind positions
-    rlSetVertexAttribute(0, 3, RL_FLOAT, false, sizeof(R3D_Vertex), offsetof(R3D_Vertex, position));
-    rlEnableVertexAttribute(0);
-
-    // Bind texcoords
-    rlSetVertexAttribute(1, 2, RL_FLOAT, false, sizeof(R3D_Vertex), offsetof(R3D_Vertex, texcoord));
-    rlEnableVertexAttribute(1);
-
-    // Bind normals
-    rlSetVertexAttribute(2, 3, RL_FLOAT, false, sizeof(R3D_Vertex), offsetof(R3D_Vertex, normal));
-    rlEnableVertexAttribute(2);
-
-    // Bind colors
-    rlSetVertexAttribute(3, 4, RL_FLOAT, false, sizeof(R3D_Vertex), offsetof(R3D_Vertex, color));
-    rlEnableVertexAttribute(3);
-
-    // Bind tangents
-    rlSetVertexAttribute(4, 4, RL_FLOAT, false, sizeof(R3D_Vertex), offsetof(R3D_Vertex, tangent));
-    rlEnableVertexAttribute(4);
-
-    // Bind index buffer
-    if (mesh->ebo > 0) {
-        rlEnableVertexBufferElement(mesh->ebo);
-    }
-}
-
-static void r3d_drawcall_unbind_geometry_mesh(void)
-{
-    rlDisableVertexArray();
-    rlDisableVertexBuffer();
-    rlDisableVertexBufferElement();
-}
-
 void r3d_drawcall(const r3d_drawcall_t* call)
 {
-    if (call->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
-        GLenum primitive = r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType);
-        r3d_drawcall_bind_geometry_mesh(&call->geometry.model.mesh);
-        r3d_drawcall_apply_depth_mode(call->material.depthMode);
-        if (call->geometry.model.mesh.ebo == 0) {
-            glDrawArrays(primitive, 0, call->geometry.model.mesh.vertexCount);
-        }
-        else {
-            glDrawElements(primitive, call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL);
-        }
-        r3d_drawcall_unbind_geometry_mesh();
-    }
+    GLenum primitive = r3d_drawcall_get_opengl_primitive(call->mesh.primitiveType);
+    r3d_drawcall_apply_depth_mode(call->material.depthMode);
 
-    // Sprite mode only requires to render a generic quad
-    else if (call->geometryType == R3D_DRAWCALL_GEOMETRY_SPRITE) {
-        r3d_primitive_bind_and_draw_quad();
-    }
+    glBindVertexArray(call->mesh.vao);
+    if (call->mesh.ebo == 0) glDrawArrays(primitive, 0, call->mesh.vertexCount);
+    else glDrawElements(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL);
+    glBindVertexArray(0);
 }
 
 void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, int locInstanceColor)
 {
-    // Bind the geometry
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        r3d_drawcall_bind_geometry_mesh(&call->geometry.model.mesh);
-        r3d_drawcall_apply_depth_mode(call->material.depthMode);
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        r3d_primitive_bind(&R3D.primitive.quad);
-        break;
-    }
+    // NOTE: All this mess here will be reviewed with the instance buffers
+
+    r3d_drawcall_apply_depth_mode(call->material.depthMode);
+
+    glBindVertexArray(call->mesh.vao);
 
     unsigned int vboTransforms = 0;
     unsigned int vboColors = 0;
@@ -743,24 +626,17 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
     }
 
     // Draw the geometry
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        if (call->geometry.model.mesh.ebo == 0) {
-            glDrawArraysInstanced(
-                r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType),
-                0, call->geometry.model.mesh.vertexCount, (int)call->instanced.count
-            );
-        }
-        else {
-            glDrawElementsInstanced(
-                r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType),
-                call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL, (int)call->instanced.count
-            );
-        }
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        r3d_primitive_draw_instanced(&R3D.primitive.quad, (int)call->instanced.count);
-        break;
+    if (call->mesh.ebo == 0) {
+        glDrawArraysInstanced(
+            r3d_drawcall_get_opengl_primitive(call->mesh.primitiveType),
+            0, call->mesh.vertexCount, (int)call->instanced.count
+        );
+    }
+    else {
+        glDrawElementsInstanced(
+            r3d_drawcall_get_opengl_primitive(call->mesh.primitiveType),
+            call->mesh.indexCount, GL_UNSIGNED_INT, NULL, (int)call->instanced.count
+        );
     }
 
     // Clean up instanced data
@@ -777,53 +653,34 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
         rlUnloadVertexBuffer(vboColors);
     }
 
-    // Unbind the geometry
-    switch (call->geometryType) {
-    case R3D_DRAWCALL_GEOMETRY_MODEL:
-        r3d_drawcall_unbind_geometry_mesh();
-        break;
-    case R3D_DRAWCALL_GEOMETRY_SPRITE:
-        r3d_primitive_unbind();
-        break;
-    }
+    glBindVertexArray(0);
 }
 
 // Helper function to calculate AABB center distance in view space
 static float r3d_drawcall_calculate_center_distance_to_camera(const r3d_drawcall_t* drawCall)
 {
-    Vector3 center = { 0 };
-    if (drawCall->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
-        center.x = (drawCall->geometry.model.mesh.aabb.min.x + drawCall->geometry.model.mesh.aabb.max.x) * 0.5f;
-        center.y = (drawCall->geometry.model.mesh.aabb.min.y + drawCall->geometry.model.mesh.aabb.max.y) * 0.5f;
-        center.z = (drawCall->geometry.model.mesh.aabb.min.z + drawCall->geometry.model.mesh.aabb.max.z) * 0.5f;
-    }
-    else if (drawCall->geometryType == R3D_DRAWCALL_GEOMETRY_SPRITE) {
-        center.x = drawCall->transform.m12;
-        center.y = drawCall->transform.m13;
-        center.z = drawCall->transform.m14;
-    }
-
+    Vector3 center = {
+        (drawCall->mesh.aabb.min.x + drawCall->mesh.aabb.max.x) * 0.5f,
+        (drawCall->mesh.aabb.min.y + drawCall->mesh.aabb.max.y) * 0.5f,
+        (drawCall->mesh.aabb.min.z + drawCall->mesh.aabb.max.z) * 0.5f
+    };
     center = Vector3Transform(center, drawCall->transform);
+
     return Vector3DistanceSqr(R3D.state.transform.viewPos, center);
 }
 
 // Helper function to calculate maximum AABB corner distance in view space
 static float r3d_drawcall_calculate_max_distance_to_camera(const r3d_drawcall_t* drawCall)
 {
-    if (drawCall->geometryType == R3D_DRAWCALL_GEOMETRY_SPRITE) {
-        Vector3 center = { drawCall->transform.m12, drawCall->transform.m13, drawCall->transform.m14 };
-        return Vector3DistanceSqr(R3D.state.transform.viewPos, center);
-    }
-
     Vector3 corners[8] = {
-        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.min.z},
-        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.min.z},
-        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.min.z},
-        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.min.z},
-        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.max.z},
-        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.max.z},
-        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.max.z},
-        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.max.z}
+        {drawCall->mesh.aabb.min.x, drawCall->mesh.aabb.min.y, drawCall->mesh.aabb.min.z},
+        {drawCall->mesh.aabb.max.x, drawCall->mesh.aabb.min.y, drawCall->mesh.aabb.min.z},
+        {drawCall->mesh.aabb.min.x, drawCall->mesh.aabb.max.y, drawCall->mesh.aabb.min.z},
+        {drawCall->mesh.aabb.max.x, drawCall->mesh.aabb.max.y, drawCall->mesh.aabb.min.z},
+        {drawCall->mesh.aabb.min.x, drawCall->mesh.aabb.min.y, drawCall->mesh.aabb.max.z},
+        {drawCall->mesh.aabb.max.x, drawCall->mesh.aabb.min.y, drawCall->mesh.aabb.max.z},
+        {drawCall->mesh.aabb.min.x, drawCall->mesh.aabb.max.y, drawCall->mesh.aabb.max.z},
+        {drawCall->mesh.aabb.max.x, drawCall->mesh.aabb.max.y, drawCall->mesh.aabb.max.z}
     };
 
     float maxDistSq = 0.0f;
@@ -867,13 +724,13 @@ static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call)
     const R3D_Skeleton* skeleton = NULL;
     const Matrix* currentPose = NULL;
 
-    if (call->geometry.model.player != NULL) {
-        skeleton = &call->geometry.model.player->skeleton;
-        currentPose = call->geometry.model.player->currentPose;
+    if (call->player != NULL) {
+        skeleton = &call->player->skeleton;
+        currentPose = call->player->currentPose;
     }
     else {
-        skeleton = &call->geometry.model.skeleton;
-        currentPose = call->geometry.model.skeleton.bindPose;
+        skeleton = &call->skeleton;
+        currentPose = call->skeleton.bindPose;
     }
 
     static Matrix bones[256];

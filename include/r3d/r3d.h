@@ -36,7 +36,6 @@
 #include "r3d_particles.h"
 #include "r3d_skeleton.h"
 #include "r3d_skybox.h"
-#include "r3d_sprite.h"
 #include "r3d_utils.h"
 
 #endif // R3D_H
