@@ -61,8 +61,14 @@ extern "C" {
 
 /**
  * @brief Creates an empty mesh data container.
- * @param vertexCount Number of vertices to allocate.
- * @param indexCount Number of indices to allocate.
+ *
+ * Allocates memory for vertex and index buffers. All allocated buffers
+ * are zero-initialized.
+ *
+ * @param vertexCount Number of vertices to allocate. Must be non-zero.
+ * @param indexCount Number of indices to allocate. May be zero.
+ *                   If zero, no index buffer is allocated.
+ *
  * @return A new R3D_MeshData instance with allocated memory.
  */
 R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
