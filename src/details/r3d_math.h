@@ -7,7 +7,9 @@
 
 #include "./r3d_simd.h"
 
-/* === Helper === */
+// ========================================
+// DEFINITIONS AND CONSTANTS
+// ========================================
 
 #ifndef R3D_RESTRICT
 #   if defined(_MSC_VER)
@@ -17,8 +19,6 @@
 #   endif
 #endif
 
-/* === Constants === */
-
 #define R3D_MATRIX_IDENTITY     \
     (Matrix) {                  \
         1.0f, 0.0f, 0.0f, 0.0f, \
@@ -27,7 +27,33 @@
         0.0f, 0.0f, 0.0f, 1.0f, \
     }
 
-/* === Functions === */
+// ========================================
+// VECTOR3 FUNCTIONS
+// ========================================
+
+static inline Vector3 r3d_vector3_transform(Vector3 v, const Matrix* m)
+{
+    float x = v.x, y = v.y, z = v.z;
+    return (Vector3){
+        m->m0 * x + m->m4 * y + m->m8 * z + m->m12,
+        m->m1 * x + m->m5 * y + m->m9 * z + m->m13,
+        m->m2 * x + m->m6 * y + m->m10 * z + m->m14
+    };
+}
+
+static inline Vector3 r3d_vector3_transform_linear(Vector3 v, const Matrix* m)
+{
+    float x = v.x, y = v.y, z = v.z;
+    return (Vector3){
+        m->m0 * x + m->m4 * y + m->m8 * z,
+        m->m1 * x + m->m5 * y + m->m9 * z,
+        m->m2 * x + m->m6 * y + m->m10 * z
+    };
+}
+
+// ========================================
+// MATRIX FUNCTIONS
+// ========================================
 
 static inline bool r3d_matrix_is_identity(const Matrix* matrix)
 {
