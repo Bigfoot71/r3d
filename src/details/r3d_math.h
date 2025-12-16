@@ -7,7 +7,9 @@
 
 #include "./r3d_simd.h"
 
-/* === Helper === */
+// ========================================
+// DEFINITIONS AND CONSTANTS
+// ========================================
 
 #ifndef R3D_RESTRICT
 #   if defined(_MSC_VER)
@@ -17,8 +19,6 @@
 #   endif
 #endif
 
-/* === Constants === */
-
 #define R3D_MATRIX_IDENTITY     \
     (Matrix) {                  \
         1.0f, 0.0f, 0.0f, 0.0f, \
@@ -27,7 +27,33 @@
         0.0f, 0.0f, 0.0f, 1.0f, \
     }
 
-/* === Functions === */
+// ========================================
+// VECTOR3 FUNCTIONS
+// ========================================
+
+static inline Vector3 r3d_vector3_transform(Vector3 v, const Matrix* m)
+{
+    float x = v.x, y = v.y, z = v.z;
+    return (Vector3){
+        m->m0 * x + m->m4 * y + m->m8 * z + m->m12,
+        m->m1 * x + m->m5 * y + m->m9 * z + m->m13,
+        m->m2 * x + m->m6 * y + m->m10 * z + m->m14
+    };
+}
+
+static inline Vector3 r3d_vector3_transform_linear(Vector3 v, const Matrix* m)
+{
+    float x = v.x, y = v.y, z = v.z;
+    return (Vector3){
+        m->m0 * x + m->m4 * y + m->m8 * z,
+        m->m1 * x + m->m5 * y + m->m9 * z,
+        m->m2 * x + m->m6 * y + m->m10 * z
+    };
+}
+
+// ========================================
+// MATRIX FUNCTIONS
+// ========================================
 
 static inline bool r3d_matrix_is_identity(const Matrix* matrix)
 {
@@ -411,28 +437,28 @@ static inline void r3d_matrix_multiply_batch(
 #endif
 }
 
-static inline Matrix r3d_matrix_scale_translate(const Vector3* s, const Vector3* t)
+static inline Matrix r3d_matrix_scale_translate(Vector3 s, Vector3 t)
 {
     return (Matrix) {
-        s->x, 0.0f, 0.0f, t->x,
-        0.0f, s->y, 0.0f, t->y,
-        0.0f, 0.0f, s->z, t->z,
+        s.x, 0.0f, 0.0f, t.x,
+        0.0f, s.y, 0.0f, t.y,
+        0.0f, 0.0f, s.z, t.z,
         0.0f, 0.0f, 0.0f, 1.0f
     };
 }
 
-static inline Matrix r3d_matrix_scale_rotaxis_translate(const Vector3* s, const Vector4* r, const Vector3* t)
+static inline Matrix r3d_matrix_scale_rotaxis_translate(Vector3 s, Vector4 r, Vector3 t)
 {
-    float axis_len = sqrtf(r->x * r->x + r->y * r->y + r->z * r->z);
+    float axis_len = sqrtf(r.x * r.x + r.y * r.y + r.z * r.z);
     if (axis_len < 1e-6f) {
         return r3d_matrix_scale_translate(s, t);
     }
 
     float inv_len = 1.0f / axis_len;
-    float x = r->x * inv_len;
-    float y = r->y * inv_len; 
-    float z = r->z * inv_len;
-    float angle = r->w;
+    float x = r.x * inv_len;
+    float y = r.y * inv_len; 
+    float z = r.z * inv_len;
+    float angle = r.w;
 
     float c = cosf(angle);
     float s_sin = sinf(angle);
@@ -443,51 +469,51 @@ static inline Matrix r3d_matrix_scale_rotaxis_translate(const Vector3* s, const 
     float xs = x * s_sin, ys = y * s_sin, zs = z * s_sin;
 
     return (Matrix) {
-        s->x * (c + xx * one_minus_c),  s->x * (xy * one_minus_c - zs), s->x * (xz * one_minus_c + ys), t->x,
-        s->y * (xy * one_minus_c + zs), s->y * (c + yy * one_minus_c),  s->y * (yz * one_minus_c - xs), t->y,
-        s->z * (xz * one_minus_c - ys), s->z * (yz * one_minus_c + xs), s->z * (c + zz * one_minus_c),  t->z,
+        s.x * (c + xx * one_minus_c),  s.x * (xy * one_minus_c - zs), s.x * (xz * one_minus_c + ys), t.x,
+        s.y * (xy * one_minus_c + zs), s.y * (c + yy * one_minus_c),  s.y * (yz * one_minus_c - xs), t.y,
+        s.z * (xz * one_minus_c - ys), s.z * (yz * one_minus_c + xs), s.z * (c + zz * one_minus_c),  t.z,
         0,0,0,1
     };
 }
 
-static inline Matrix r3d_matrix_scale_rotxyz_translate(const Vector3* s, const Vector3* r, const Vector3* t)
+static inline Matrix r3d_matrix_scale_rotxyz_translate(Vector3 s, Vector3 r, Vector3 t)
 {
-    float cx = cosf(r->x), sx = sinf(r->x);
-    float cy = cosf(r->y), sy = sinf(r->y); 
-    float cz = cosf(r->z), sz = sinf(r->z);
+    float cx = cosf(r.x), sx = sinf(r.x);
+    float cy = cosf(r.y), sy = sinf(r.y); 
+    float cz = cosf(r.z), sz = sinf(r.z);
 
     float czcx = cz * cx, czsx = cz * sx;
     float szcx = sz * cx, szsx = sz * sx;
 
     return (Matrix) {
-        s->x * (cy*cz),               s->x * (-cy*sz),             s->x * sy,      t->x,
-        s->y * (sx*sy*cz + cx*sz),    s->y * (-sx*sy*sz + cx*cz),  s->y * (-sx*cy), t->y,
-        s->z * (-cx*sy*cz + sx*sz),   s->z * (cx*sy*sz + sx*cz),   s->z * (cx*cy),  t->z,
+        s.x * (cy*cz),               s.x * (-cy*sz),             s.x * sy,      t.x,
+        s.y * (sx*sy*cz + cx*sz),    s.y * (-sx*sy*sz + cx*cz),  s.y * (-sx*cy), t.y,
+        s.z * (-cx*sy*cz + sx*sz),   s.z * (cx*sy*sz + sx*cz),   s.z * (cx*cy),  t.z,
         0,0,0,1
     };
 }
 
-static inline Matrix r3d_matrix_scale_rotq_translate(const Vector3* s, const Quaternion* q, const Vector3* t)
+static inline Matrix r3d_matrix_scale_rotq_translate(Vector3 s, Quaternion q, Vector3 t)
 {
-    float qlen = sqrtf(q->x * q->x + q->y * q->y + q->z * q->z + q->w * q->w);
+    float qlen = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
     if (qlen < 1e-6f) {
         return r3d_matrix_scale_translate(s, t);
     }
 
     float inv_len = 1.0f / qlen;
-    float qx = q->x * inv_len;
-    float qy = q->y * inv_len;
-    float qz = q->z * inv_len;
-    float qw = q->w * inv_len;
+    float qx = q.x * inv_len;
+    float qy = q.y * inv_len;
+    float qz = q.z * inv_len;
+    float qw = q.w * inv_len;
 
     float qx2 = qx * qx, qy2 = qy * qy, qz2 = qz * qz;
     float qxqy = qx * qy, qxqz = qx * qz, qxqw = qx * qw;
     float qyqz = qy * qz, qyqw = qy * qw, qzqw = qz * qw;
 
     return (Matrix) {
-        s->x * (1.0f - 2.0f * (qy2 + qz2)), s->x * (2.0f * (qxqy - qzqw)), s->x * (2.0f * (qxqz + qyqw)), t->x,
-        s->y * (2.0f * (qxqy + qzqw)),       s->y * (1.0f - 2.0f * (qx2 + qz2)), s->y * (2.0f * (qyqz - qxqw)), t->y,
-        s->z * (2.0f * (qxqz - qyqw)),       s->z * (2.0f * (qyqz + qxqw)),       s->z * (1.0f - 2.0f * (qx2 + qy2)), t->z,
+        s.x * (1.0f - 2.0f * (qy2 + qz2)), s.x * (2.0f * (qxqy - qzqw)),      s.x * (2.0f * (qxqz + qyqw)),      t.x,
+        s.y * (2.0f * (qxqy + qzqw)),      s.y * (1.0f - 2.0f * (qx2 + qz2)), s.y * (2.0f * (qyqz - qxqw)),      t.y,
+        s.z * (2.0f * (qxqz - qyqw)),      s.z * (2.0f * (qyqz + qxqw)),      s.z * (1.0f - 2.0f * (qx2 + qy2)), t.z,
         0,0,0,1
     };
 }

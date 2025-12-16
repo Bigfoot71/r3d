@@ -1,6 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -28,7 +26,7 @@ const char* Init(void)
 
     /* --- Generate a large plane to act as the ground --- */
 
-    plane = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
+    plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
     material = R3D_GetDefaultMaterial();
 
     /* --- Load a sprite sheet texture and set its filter --- */
@@ -69,9 +67,9 @@ void Update(float delta)
 
     Vector3 birdPosPrev = birdPos;
 
-    birdPos.x = 2.0f * sinf(GetTime());
-    birdPos.y = 1.0f + cosf(GetTime() * 4.0f) * 0.5f;
-    birdDirX = (birdPos.x - birdPosPrev.x >= 0) ? 1 : -1;
+    birdPos.x = 2.0f * sinf((float)GetTime());
+    birdPos.y = 1.0f + cosf((float)GetTime() * 4.0f) * 0.5f;
+    birdDirX = (birdPos.x - birdPosPrev.x >= 0.0f) ? 1.0f : -1.0f;
 }
 
 void Draw(void)

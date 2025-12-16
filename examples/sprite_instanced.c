@@ -1,7 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -30,7 +27,7 @@ const char* Init(void)
 
     /* --- Generate a large plane to act as the ground --- */
 
-    plane = R3D_GenMeshPlane(200, 200, 1, 1, true);
+    plane = R3D_GenMeshPlane(200, 200, 1, 1);
     material = R3D_GetDefaultMaterial();
     material.albedo.color = GREEN;
 
@@ -46,7 +43,7 @@ const char* Init(void)
     for (int i = 0; i < sizeof(transforms) / sizeof(*transforms); i++) {
         float scaleFactor = GetRandomValue(25, 50) / 10.0f;
         Matrix scale = MatrixScale(scaleFactor, scaleFactor, 1.0f);
-        Matrix translate = MatrixTranslate(GetRandomValue(-100, 100), scaleFactor, GetRandomValue(-100, 100));
+        Matrix translate = MatrixTranslate((float)GetRandomValue(-100, 100), scaleFactor, (float)GetRandomValue(-100, 100));
         transforms[i] = MatrixMultiply(scale, translate);
     }
 

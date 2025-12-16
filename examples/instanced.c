@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 
 /* === Constants === */
 
@@ -25,7 +24,7 @@ const char* Init(void)
 
     /* --- Generates a cube mesh and a default material to render it --- */
 
-    mesh = R3D_GenMeshCube(1, 1, 1, true);
+    mesh = R3D_GenMeshCube(1, 1, 1);
     material = R3D_GetDefaultMaterial();
 
     /* --- Randomly generate the transformation and color of each cube instance --- */

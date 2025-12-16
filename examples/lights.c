@@ -1,7 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -25,18 +22,22 @@ const char* Init(void)
 
     /* --- Generates a plane and sphere meshes and a default material to render them --- */
 
-    plane = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
-    sphere = R3D_GenMeshSphere(0.35f, 16, 16, true);
+    plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
+    sphere = R3D_GenMeshSphere(0.35f, 16, 16);
     material = R3D_GetDefaultMaterial();
 
     /* --- Calculating transformations for all sphere instances --- */
 
     transforms = RL_MALLOC(100 * 100 * sizeof(Matrix));
+    if (transforms == NULL) {
+        TraceLog(LOG_FATAL, "EXAMPLE: Failed to allocate transforms buffer");
+        exit(-1);
+    }
 
     for (int x = -50; x < 50; x++) {
         for (int z = -50; z < 50; z++) {
             int index = (z + 50) * 100 + (x + 50);
-            transforms[index] = MatrixTranslate(x, 0, z);
+            transforms[index] = MatrixTranslate((float)x, 0, (float)z);
         }
     }
 
@@ -46,7 +47,7 @@ const char* Init(void)
         for (int z = -5; z < 5; z++) {
             int index = (z + 5) * 10 + (x + 5);
             lights[index] = R3D_CreateLight(R3D_LIGHT_OMNI);
-            R3D_SetLightPosition(lights[index], (Vector3) { x * 10, 10, z * 10 });
+            R3D_SetLightPosition(lights[index], (Vector3) { (float)x * 10, 10, (float)z * 10 });
             R3D_SetLightColor(lights[index], ColorFromHSV((float)index / 100 * 360, 1.0f, 1.0f));
             R3D_SetLightRange(lights[index], 20.0f);
             R3D_SetLightActive(lights[index], true);

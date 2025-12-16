@@ -920,7 +920,7 @@ void r3d_target_load_mip_chain_hs(int width, int height, int count)
     uint32_t hMip = (uint32_t)height;
 
     // Create the mip chain
-    for (GLuint i = 0; i < R3D.target.mipChainHs.count; i++, wMip /= 2, hMip /= 2) {
+    for (int i = 0; i < R3D.target.mipChainHs.count; i++, wMip /= 2, hMip /= 2) {
         struct r3d_mip* mip = &R3D.target.mipChainHs.chain[i];
 
         mip->w = wMip;

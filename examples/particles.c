@@ -1,6 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
 
 /* === Resources === */
 
@@ -32,7 +30,7 @@ const char* Init(void)
 
     /* --- Gen a sphere as particle mesh --- */
 
-    sphere = R3D_GenMeshSphere(0.1f, 16, 32, true);
+    sphere = R3D_GenMeshSphere(0.1f, 16, 32);
 
     /* --- Setup material of particle mesh --- */
 

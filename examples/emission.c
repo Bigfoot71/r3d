@@ -1,7 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include <raylib.h>
-#include <raymath.h>
 
 /* === Resources === */
 
@@ -53,12 +50,11 @@ const char* Init(void)
 
     /* --- Loads the main model of the scene --- */
 
-    R3D_SetModelImportScale(0.1f);
     model = R3D_LoadModel(RESOURCES_PATH "emission.glb");
 
     /* --- Generates a mesh for the ground and load a material for it --- */
     
-    plane = R3D_GenMeshPlane(1000, 1000, 1, 1, true);
+    plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
     material = R3D_GetDefaultMaterial();
 
     /* --- Setup the scene lighting --- */

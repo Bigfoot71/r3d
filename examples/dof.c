@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 #include "rcamera.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,7 +38,7 @@ const char* Init(void)
 
     /* --- Load sphere mesh and material --- */
 
-    meshSphere = R3D_GenMeshSphere(0.2f, 64, 64, true);
+    meshSphere = R3D_GenMeshSphere(0.2f, 64, 64);
     matDefault = R3D_GetDefaultMaterial();
 
     /* --- Generate instances --- */

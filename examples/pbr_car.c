@@ -1,7 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
-#include "raymath.h"
 
 /* === Resources === */
 
@@ -41,12 +38,11 @@ const char* Init(void)
 
     /* --- Load the car model and apply scaling on import --- */
 
-    R3D_SetModelImportScale(0.01f);
     model = R3D_LoadModel(RESOURCES_PATH "pbr/car.glb");
 
     /* --- Generate ground mesh and setup its material --- */
 
-    ground = R3D_GenMeshPlane(10.0f, 10.0f, 1, 1, true);
+    ground = R3D_GenMeshPlane(10.0f, 10.0f, 1, 1);
 
     groundMat = R3D_GetDefaultMaterial();
     groundMat.albedo.color = (Color) { 31, 31, 31, 255 };

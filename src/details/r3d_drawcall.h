@@ -20,9 +20,10 @@
 #ifndef R3D_DETAILS_DRAWCALL_H
 #define R3D_DETAILS_DRAWCALL_H
 
-#include <stddef.h>
+#include "r3d/r3d_animation.h"
+#include <r3d/r3d_model.h>
 #include <raylib.h>
-#include <r3d.h>
+#include <stddef.h>
 
 /* === Types === */
 
@@ -41,7 +42,6 @@ typedef struct {
     Matrix transform;
     R3D_Material material;
     R3D_ShadowCastMode shadowCastMode;
-    R3D_DepthMode depthMode;
 
     r3d_drawcall_geometry_e geometryType;
     r3d_drawcall_render_mode_e renderMode;
@@ -49,11 +49,9 @@ typedef struct {
     union {
 
         struct {
-            const R3D_Mesh* mesh;               //< Mesh to render
-            const R3D_ModelAnimation* anim;     //< Animation to apply to the mesh (can be NULL)
-            const Matrix* boneOffsets;          //< Bone offset matrices from the R3D_Model
-            const Matrix* boneOverride;         //< Bone override matrices for user supplied animation logic  
-            int frame;                          //< Animation frame to apply to the mesh
+            R3D_Mesh mesh;                      //< Mesh to render
+            R3D_Skeleton skeleton;              //< Skeleton that contains the bind pose (if any)
+            const R3D_AnimationPlayer* player;  //< Animation player used. (can be null, skeleton bind pose can be used)
         } model;
 
         struct {
@@ -80,8 +78,6 @@ void r3d_drawcall_sort_back_to_front(r3d_drawcall_t* calls, size_t count);
 
 bool r3d_drawcall_geometry_is_visible(const r3d_drawcall_t* call);
 bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call);
-
-void r3d_drawcall_update_model_animation(const r3d_drawcall_t* call);
 
 void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool shadow, const Matrix* matVP);
 void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bool shadow, const Matrix* matVP);

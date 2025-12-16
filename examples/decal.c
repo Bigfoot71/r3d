@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 
 #define MAXDECALS 256
 
@@ -130,7 +129,7 @@ const char* Init(void)
 
     /* --- Create a plane along with the transformation matrices to place them to represent a room --- */
 
-    meshPlane = R3D_GenMeshPlane(roomSize, roomSize, 1, 1, true);
+    meshPlane = R3D_GenMeshPlane(roomSize, roomSize, 1, 1);
 
     matRoom[0] = MatrixMultiply(MatrixRotateZ(90.0f * DEG2RAD), MatrixTranslate(roomSize / 2.0f, 0.0f, 0.0f));
     matRoom[1] = MatrixMultiply(MatrixRotateZ(-90.0f * DEG2RAD), MatrixTranslate(-roomSize / 2.0f, 0.0f, 0.0f));

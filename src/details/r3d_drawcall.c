@@ -36,10 +36,11 @@
 /* === Internal functions === */
 
 // Functions applying OpenGL states defined by the material but unrelated to shaders
-static void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode);
 static void r3d_drawcall_apply_cull_mode(R3D_CullMode mode);
 static void r3d_drawcall_apply_blend_mode(R3D_BlendMode mode);
+static void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode);
 static void r3d_drawcall_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
+static GLenum r3d_drawcall_get_opengl_primitive(R3D_PrimitiveType primitive);
 
 // This function supports instanced rendering when necessary
 static void r3d_drawcall(const r3d_drawcall_t* call);
@@ -68,9 +69,9 @@ bool r3d_drawcall_geometry_is_visible(const r3d_drawcall_t* call)
 {
     if (call->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
         if (r3d_matrix_is_identity(&call->transform)) {
-            return r3d_frustum_is_aabb_in(&R3D.state.frustum.shape, &call->geometry.model.mesh->aabb);
+            return r3d_frustum_is_aabb_in(&R3D.state.frustum.shape, &call->geometry.model.mesh.aabb);
         }
-        return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->geometry.model.mesh->aabb, &call->transform);
+        return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->geometry.model.mesh.aabb, &call->transform);
     }
 
     if (call->geometryType == R3D_DRAWCALL_GEOMETRY_SPRITE) {
@@ -91,35 +92,6 @@ bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call)
     }
 
     return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->instanced.allAabb, &call->transform);
-}
-
-void r3d_drawcall_update_model_animation(const r3d_drawcall_t* call)
-{
-    if (call->geometryType != R3D_DRAWCALL_GEOMETRY_MODEL || call->geometry.model.anim == NULL) {
-        return;
-    }
-
-    // skip animation update if custom is being used
-    if (call->geometry.model.boneOverride != NULL) {
-        return;
-    }
-
-    if (call->geometry.model.mesh->boneMatrices == NULL) {
-        // Only meshes belonging to a model with bones have a boneMatrices cache
-        TraceLog(LOG_WARNING, "Attempting to play animation on mesh without bone matrix cache");
-    }
-
-    int frame = call->geometry.model.frame;
-    if (frame >= call->geometry.model.anim->frameCount) {
-        frame = frame % call->geometry.model.anim->frameCount;
-    }
-
-    r3d_matrix_multiply_batch(
-        call->geometry.model.mesh->boneMatrices,
-        call->geometry.model.boneOffsets,
-        call->geometry.model.anim->frameGlobalPoses[frame],
-        call->geometry.model.anim->boneCount
-    );
 }
 
 void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool shadow, const Matrix* matVP)
@@ -147,7 +119,7 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         {
             // Send bone matrices and animation related data
-            if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
                 r3d_shader_set_int(raster.depth, uSkinning, true);
                 r3d_drawcall_upload_matrices(call);
             }
@@ -228,7 +200,7 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         {
             // Send bone matrices and animation related data
-            if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
                 r3d_shader_set_int(raster.depthCube, uSkinning, true);
                 r3d_drawcall_upload_matrices(call);
             }
@@ -409,7 +381,7 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         {
             // Send bone matrices and animation related data
-            if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
                 r3d_shader_set_int(raster.geometry, uSkinning, true);
                 r3d_drawcall_upload_matrices(call);
             }
@@ -502,7 +474,7 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         {
             // Send bone matrices and animation related data
-            if (call->geometry.model.anim != NULL && call->geometry.model.boneOffsets != NULL) {
+            if (call->geometry.model.player != NULL || R3D_IsSkeletonValid(&call->geometry.model.skeleton)) {
                 r3d_shader_set_int(raster.forward, uSkinning, true);
                 r3d_drawcall_upload_matrices(call);
             }
@@ -553,29 +525,9 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
 
 /* === Internal functions === */
 
-void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode)
-{
-    switch (mode)
-    {
-    case R3D_DEPTH_DISABLED:
-        glDisable(GL_DEPTH_TEST);
-        break;
-    case R3D_DEPTH_READ_ONLY:
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        break;
-    default:
-    case R3D_DEPTH_READ_WRITE:
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
-        break;
-    }
-}
-
 void r3d_drawcall_apply_cull_mode(R3D_CullMode mode)
 {
-    switch (mode)
-    {
+    switch (mode) {
     case R3D_CULL_NONE:
         glDisable(GL_CULL_FACE);
         break;
@@ -592,8 +544,7 @@ void r3d_drawcall_apply_cull_mode(R3D_CullMode mode)
 
 void r3d_drawcall_apply_blend_mode(R3D_BlendMode mode)
 {
-    switch (mode)
-    {
+    switch (mode) {
     case R3D_BLEND_OPAQUE:
         glDisable(GL_BLEND);
         break;
@@ -618,10 +569,27 @@ void r3d_drawcall_apply_blend_mode(R3D_BlendMode mode)
     }
 }
 
+void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode)
+{
+    switch (mode) {
+    case R3D_DEPTH_DISABLED:
+        glDisable(GL_DEPTH_TEST);
+        break;
+    case R3D_DEPTH_READ_ONLY:
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+        break;
+    default:
+    case R3D_DEPTH_READ_WRITE:
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        break;
+    }
+}
+
 static void r3d_drawcall_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode)
 {
-    switch (castMode)
-    {
+    switch (castMode) {
     case R3D_SHADOW_CAST_ON_AUTO:
         r3d_drawcall_apply_cull_mode(cullMode);
         break;
@@ -655,6 +623,22 @@ static void r3d_drawcall_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D
         assert("This shouldn't happen" && false);
         break;
     }
+}
+
+GLenum r3d_drawcall_get_opengl_primitive(R3D_PrimitiveType primitive)
+{
+    switch (primitive) {
+    case R3D_PRIMITIVE_POINTS:          return GL_POINTS;
+    case R3D_PRIMITIVE_LINES:           return GL_LINES;
+    case R3D_PRIMITIVE_LINE_STRIP:      return GL_LINE_STRIP;
+    case R3D_PRIMITIVE_LINE_LOOP:       return GL_LINE_LOOP;
+    case R3D_PRIMITIVE_TRIANGLES:       return GL_TRIANGLES;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP:  return GL_TRIANGLE_STRIP;
+    case R3D_PRIMITIVE_TRIANGLE_FAN:    return GL_TRIANGLE_FAN;
+    default: break;
+    }
+
+    return GL_TRIANGLES; // consider an error...
 }
 
 static void r3d_drawcall_bind_geometry_mesh(const R3D_Mesh* mesh)
@@ -702,13 +686,14 @@ static void r3d_drawcall_unbind_geometry_mesh(void)
 void r3d_drawcall(const r3d_drawcall_t* call)
 {
     if (call->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
-        r3d_drawcall_bind_geometry_mesh(call->geometry.model.mesh);
-        r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
-        if (call->geometry.model.mesh->indices == NULL) {
-            glDrawArrays(GL_TRIANGLES, 0, call->geometry.model.mesh->vertexCount);
+        GLenum primitive = r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType);
+        r3d_drawcall_bind_geometry_mesh(&call->geometry.model.mesh);
+        r3d_drawcall_apply_depth_mode(call->material.depthMode);
+        if (call->geometry.model.mesh.ebo == 0) {
+            glDrawArrays(primitive, 0, call->geometry.model.mesh.vertexCount);
         }
         else {
-            glDrawElements(GL_TRIANGLES, call->geometry.model.mesh->indexCount, GL_UNSIGNED_INT, NULL);
+            glDrawElements(primitive, call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL);
         }
         r3d_drawcall_unbind_geometry_mesh();
     }
@@ -724,8 +709,8 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
     // Bind the geometry
     switch (call->geometryType) {
     case R3D_DRAWCALL_GEOMETRY_MODEL:
-        r3d_drawcall_bind_geometry_mesh(call->geometry.model.mesh);
-        r3d_drawcall_apply_depth_mode(call->geometry.model.mesh->depthMode);
+        r3d_drawcall_bind_geometry_mesh(&call->geometry.model.mesh);
+        r3d_drawcall_apply_depth_mode(call->material.depthMode);
         break;
     case R3D_DRAWCALL_GEOMETRY_SPRITE:
         r3d_primitive_bind(&R3D.primitive.quad);
@@ -760,11 +745,17 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
     // Draw the geometry
     switch (call->geometryType) {
     case R3D_DRAWCALL_GEOMETRY_MODEL:
-        if (call->geometry.model.mesh->indices == NULL) {
-            glDrawArraysInstanced(GL_TRIANGLES, 0, call->geometry.model.mesh->vertexCount, (int)call->instanced.count);
+        if (call->geometry.model.mesh.ebo == 0) {
+            glDrawArraysInstanced(
+                r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType),
+                0, call->geometry.model.mesh.vertexCount, (int)call->instanced.count
+            );
         }
         else {
-            glDrawElementsInstanced(GL_TRIANGLES, call->geometry.model.mesh->indexCount, GL_UNSIGNED_INT, NULL, (int)call->instanced.count);
+            glDrawElementsInstanced(
+                r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType),
+                call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL, (int)call->instanced.count
+            );
         }
         break;
     case R3D_DRAWCALL_GEOMETRY_SPRITE:
@@ -802,9 +793,9 @@ static float r3d_drawcall_calculate_center_distance_to_camera(const r3d_drawcall
 {
     Vector3 center = { 0 };
     if (drawCall->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
-        center.x = (drawCall->geometry.model.mesh->aabb.min.x + drawCall->geometry.model.mesh->aabb.max.x) * 0.5f;
-        center.y = (drawCall->geometry.model.mesh->aabb.min.y + drawCall->geometry.model.mesh->aabb.max.y) * 0.5f;
-        center.z = (drawCall->geometry.model.mesh->aabb.min.z + drawCall->geometry.model.mesh->aabb.max.z) * 0.5f;
+        center.x = (drawCall->geometry.model.mesh.aabb.min.x + drawCall->geometry.model.mesh.aabb.max.x) * 0.5f;
+        center.y = (drawCall->geometry.model.mesh.aabb.min.y + drawCall->geometry.model.mesh.aabb.max.y) * 0.5f;
+        center.z = (drawCall->geometry.model.mesh.aabb.min.z + drawCall->geometry.model.mesh.aabb.max.z) * 0.5f;
     }
     else if (drawCall->geometryType == R3D_DRAWCALL_GEOMETRY_SPRITE) {
         center.x = drawCall->transform.m12;
@@ -825,14 +816,14 @@ static float r3d_drawcall_calculate_max_distance_to_camera(const r3d_drawcall_t*
     }
 
     Vector3 corners[8] = {
-        {drawCall->geometry.model.mesh->aabb.min.x, drawCall->geometry.model.mesh->aabb.min.y, drawCall->geometry.model.mesh->aabb.min.z},
-        {drawCall->geometry.model.mesh->aabb.max.x, drawCall->geometry.model.mesh->aabb.min.y, drawCall->geometry.model.mesh->aabb.min.z},
-        {drawCall->geometry.model.mesh->aabb.min.x, drawCall->geometry.model.mesh->aabb.max.y, drawCall->geometry.model.mesh->aabb.min.z},
-        {drawCall->geometry.model.mesh->aabb.max.x, drawCall->geometry.model.mesh->aabb.max.y, drawCall->geometry.model.mesh->aabb.min.z},
-        {drawCall->geometry.model.mesh->aabb.min.x, drawCall->geometry.model.mesh->aabb.min.y, drawCall->geometry.model.mesh->aabb.max.z},
-        {drawCall->geometry.model.mesh->aabb.max.x, drawCall->geometry.model.mesh->aabb.min.y, drawCall->geometry.model.mesh->aabb.max.z},
-        {drawCall->geometry.model.mesh->aabb.min.x, drawCall->geometry.model.mesh->aabb.max.y, drawCall->geometry.model.mesh->aabb.max.z},
-        {drawCall->geometry.model.mesh->aabb.max.x, drawCall->geometry.model.mesh->aabb.max.y, drawCall->geometry.model.mesh->aabb.max.z}
+        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.min.z},
+        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.min.z},
+        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.min.z},
+        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.min.z},
+        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.max.z},
+        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.min.y, drawCall->geometry.model.mesh.aabb.max.z},
+        {drawCall->geometry.model.mesh.aabb.min.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.max.z},
+        {drawCall->geometry.model.mesh.aabb.max.x, drawCall->geometry.model.mesh.aabb.max.y, drawCall->geometry.model.mesh.aabb.max.z}
     };
 
     float maxDistSq = 0.0f;
@@ -873,24 +864,25 @@ int r3d_drawcall_compare_back_to_front(const void* a, const void* b)
 // Upload matrices function
 static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call)
 {
+    const R3D_Skeleton* skeleton = NULL;
+    const Matrix* currentPose = NULL;
+
+    if (call->geometry.model.player != NULL) {
+        skeleton = &call->geometry.model.player->skeleton;
+        currentPose = call->geometry.model.player->currentPose;
+    }
+    else {
+        skeleton = &call->geometry.model.skeleton;
+        currentPose = call->geometry.model.skeleton.bindPose;
+    }
+
+    static Matrix bones[256];
+    r3d_matrix_multiply_batch(bones, skeleton->boneOffsets, currentPose, skeleton->boneCount);
+
     // WARNING: Pay attention to any changes in the binding slot for uTexBoneMatrices.
     //          In theory, being the only texture sampled in the vertex shader,
     //          it should be kept in the first slot '0' for consistency.
 
     const int bindingSlot = 0;
-
-    if (call->geometry.model.boneOverride == NULL) {
-        r3d_storage_bind_and_upload_matrices(
-            call->geometry.model.mesh->boneMatrices,
-            call->geometry.model.mesh->boneCount,
-            bindingSlot
-        );
-    }
-    else {
-        r3d_storage_bind_and_upload_matrices(
-            call->geometry.model.boneOverride,
-            call->geometry.model.anim->boneCount,
-            bindingSlot
-        );
-    }
+    r3d_storage_bind_and_upload_matrices(bones, skeleton->boneCount, bindingSlot);
 }

@@ -1,20 +1,16 @@
 #include "./common.h"
-#include "r3d.h"
-#include "raylib.h"
-#include "raymath.h"
 
 /* === Resources === */
 
 static R3D_Mesh plane = { 0 };
+static R3D_Material planeMat = { 0 };
+
 static R3D_Model dancer = { 0 };
-static R3D_Material material = { 0 };
-static Matrix instances[2*2] = { 0 };
+static Matrix dancerInstances[2*2] = { 0 };
+static R3D_AnimationLib dancerAnims = { 0 };
+static R3D_AnimationPlayer* dancerPlayer = NULL;
 
 static Camera3D camera = { 0 };
-
-static int animCount = 0;
-static R3D_ModelAnimation* anims = NULL;
-
 static R3D_Light lights[2] = { 0 };
 
 /* === Example === */
@@ -41,42 +37,40 @@ const char* Init(void)
     R3D_SetBackgroundColor(BLACK);
     R3D_SetAmbientColor((Color) { 7, 7, 7, 255 });
 
-    /* --- Generate a plane to serve as the ground --- */
+    /* --- Generate a plane to serve as the ground and setup its material --- */
 
-    plane = R3D_GenMeshPlane(32, 32, 1, 1, true);
+    plane = R3D_GenMeshPlane(32, 32, 1, 1);
+
+    planeMat = R3D_GetDefaultMaterial();
+    planeMat.orm.roughness = 0.5f;
+    planeMat.orm.metalness = 0.5f;
+    planeMat.uvScale.x = 64.0f;
+    planeMat.uvScale.y = 64.0f;
+
+    Image checked = GenImageChecked(2, 2, 1, 1, (Color) { 20, 20, 20, 255 }, WHITE);
+    planeMat.albedo.texture = LoadTextureFromImage(checked);
+    UnloadImage(checked);
+
+    SetTextureWrap(planeMat.albedo.texture, TEXTURE_WRAP_REPEAT);
 
     /* --- Load the 3D model and its default material --- */
 
     dancer = R3D_LoadModel(RESOURCES_PATH "dancer.glb");
-    material = R3D_GetDefaultMaterial();
 
     /* --- Create instance matrices for multiple model copies --- */
 
     for (int z = 0; z < 2; z++) {
         for (int x = 0; x < 2; x++) {
-            instances[z * 2 + x] = MatrixTranslate((float)x - 0.5f, 0, (float)z - 0.5f);
+            dancerInstances[z * 2 + x] = MatrixTranslate((float)x - 0.5f, 0, (float)z - 0.5f);
         }
     }
 
-    /* --- Generate a checkerboard texture for the material --- */
-
-    Image checked = GenImageChecked(2, 2, 1, 1, (Color) { 20, 20, 20, 255 }, WHITE);
-    material.albedo.texture = LoadTextureFromImage(checked);
-    UnloadImage(checked);
-
-    SetTextureWrap(material.albedo.texture, TEXTURE_WRAP_REPEAT);
-
-    /* --- Set material properties --- */
-
-    material.orm.roughness = 0.5f;
-    material.orm.metalness = 0.5f;
-
-    material.uvScale.x = 64.0f;
-    material.uvScale.y = 64.0f;
-
     /* --- Load model animations --- */
 
-    anims = R3D_LoadModelAnimations(RESOURCES_PATH "dancer.glb", &animCount, 60);
+    dancerAnims = R3D_LoadAnimationLib(RESOURCES_PATH "dancer.glb");
+    dancer.player = R3D_LoadAnimationPlayer(&dancer.skeleton, &dancerAnims);
+    dancer.player->states[0].weight = 1.0f;
+    dancer.player->states[0].loop = true;
 
     /* --- Setup scene lights with shadows --- */
 
@@ -109,8 +103,7 @@ const char* Init(void)
 void Update(float delta)
 {
     UpdateCamera(&camera, CAMERA_FREE);
-    dancer.anim = &anims[0];
-    dancer.animFrame++;
+    R3D_UpdateAnimationPlayer(dancer.player, delta);
 
     R3D_SetLightColor(lights[0], ColorFromHSV(90.0f * (float)GetTime() + 90.0f, 1.0f, 1.0f));
     R3D_SetLightColor(lights[1], ColorFromHSV(90.0f * (float)GetTime() - 90.0f, 1.0f, 1.0f));
@@ -121,9 +114,9 @@ void Draw(void)
     static int frame = 0;
 
     R3D_Begin(camera);
-        R3D_DrawMesh(&plane, &material, MatrixIdentity());
+        R3D_DrawMesh(&plane, &planeMat, MatrixIdentity());
         R3D_DrawModel(&dancer, (Vector3) { 0, 0, 1.5f }, 1.0f);
-        R3D_DrawModelInstanced(&dancer, instances, 2*2);
+        R3D_DrawModelInstanced(&dancer, dancerInstances, 2*2);
     R3D_End();
 
 	DrawCredits("Model made by zhuoyi0904");
@@ -133,6 +126,6 @@ void Close(void)
 {
     R3D_UnloadMesh(&plane);
     R3D_UnloadModel(&dancer, true);
-    R3D_UnloadMaterial(&material);
+    R3D_UnloadMaterial(&planeMat);
     R3D_Close();
 }

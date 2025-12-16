@@ -20,8 +20,11 @@
 #ifndef R3D_STATE_H
 #define R3D_STATE_H
 
-#include "r3d.h"
-#include "glad.h"
+#include <r3d/r3d_environment.h>
+#include <r3d/r3d_material.h>
+#include <r3d/r3d_core.h>
+#include <r3d/r3d_mesh.h>
+#include <glad.h>
 
 #include "./details/r3d_shaders.h"
 #include "./details/r3d_frustum.h"
@@ -324,7 +327,6 @@ extern struct R3D_State {
 
         // Loading param
         struct {
-            struct aiPropertyStore* aiProps;   //< Assimp import properties (scale, etc.)
             TextureFilter textureFilter;       //< Texture filter used by R3D during model loading
         } loading;
 
@@ -339,7 +341,8 @@ extern struct R3D_State {
     // Misc data
     struct {
         Matrix matCubeViews[6];
-        R3D_Mesh meshDecalBounds;     //< Unit cube used for decal projection
+        // REVIEW: We could use internal primitive rendering (?)
+        R3D_Mesh meshDecalBounds;   //< Unit cube used for decal projection
     } misc;
 
 } R3D;

@@ -14,11 +14,12 @@
 * [x] **Better Shadow Quality and Performance**
   Shadow rendering can currently be easily simplified and improved
 
-* [ ] **Revise the model loading system**
+* [x] **Revise the model loading system**
   The model loading system needs a review, which could take inspiration from Nexium.
   In particular, the mesh loading process needs to be fixed, and the correct bind pose should be loaded separately.
   See: https://github.com/Bigfoot71/Nexium/tree/master/source/Render/Core/Importer
   See: https://github.com/Bigfoot71/r3d/issues/98
+  Fixed: https://github.com/Bigfoot71/r3d/pull/119
 
 ## **v0.6**
 

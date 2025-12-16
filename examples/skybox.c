@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d.h"
 
 /* === Resources === */
 
@@ -20,7 +19,7 @@ const char* Init(void)
 
     /* --- Generate a sphere mesh --- */
 
-    sphere = R3D_GenMeshSphere(0.5f, 64, 64, true);
+    sphere = R3D_GenMeshSphere(0.5f, 64, 64);
 
     /* --- Create a grid of materials with varying metalness and roughness --- */
 
@@ -66,7 +65,7 @@ void Draw(void)
     R3D_Begin(camera);
         for (int x = 0; x < 7; x++) {
             for (int y = 0; y < 7; y++) {
-                R3D_DrawMesh(&sphere, &materials[y * 7 + x], MatrixTranslate(x - 3, y - 3, 0.0f));
+                R3D_DrawMesh(&sphere, &materials[y * 7 + x], MatrixTranslate((float)x - 3, (float)y - 3, 0.0f));
             }
         }
     R3D_End();

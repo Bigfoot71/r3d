@@ -1,6 +1,17 @@
-#include "r3d.h"
+/* r3d_sprite.h -- R3D Sprite Module.
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
 
+#include <r3d/r3d_sprite.h>
 #include <raymath.h>
+
+// ========================================
+// PUBLIC API
+// ========================================
 
 R3D_Sprite R3D_LoadSprite(Texture2D texture, int xFrameCount, int yFrameCount)
 {
