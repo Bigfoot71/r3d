@@ -50,6 +50,10 @@ typedef struct R3D_InterpolationCurve {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Loads an interpolation curve with a specified initial capacity.
  *
@@ -98,6 +102,10 @@ R3DAPI bool R3D_AddKeyframe(R3D_InterpolationCurve* curve, float time, float val
  * @return The value of the curve at the specified time.
  */
 R3DAPI float R3D_EvaluateCurve(R3D_InterpolationCurve curve, float time);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Curves
 

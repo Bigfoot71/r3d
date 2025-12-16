@@ -22,6 +22,10 @@
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Checks if a point is inside the view frustum.
  *
@@ -146,6 +150,10 @@ R3DAPI bool R3D_IsSphereInFrustumBoundingBox(Vector3 position, float radius);
  * @see R3D_IsAABBInFrustum()
  */
 R3DAPI bool R3D_IsAABBInFrustumBoundingBox(BoundingBox aabb);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 /** @} */ // end of Culling
 

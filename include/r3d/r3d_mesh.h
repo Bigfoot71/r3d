@@ -89,6 +89,10 @@ typedef struct R3D_Mesh {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Creates a 3D mesh from CPU-side mesh data.
  * @param type Primitive type used to interpret vertex data.
@@ -240,6 +244,10 @@ R3DAPI R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize);
  * @return Returns true if the update is successful, false otherwise.
  */
 R3DAPI bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Mesh
 

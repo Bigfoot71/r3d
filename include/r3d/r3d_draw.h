@@ -25,6 +25,10 @@
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Begins a rendering session for a 3D camera.
  * 
@@ -358,6 +362,10 @@ R3DAPI void R3D_DrawParticleSystem(const R3D_ParticleSystem* system, const R3D_M
  * @param transform A transformation matrix applied to all particles.
  */
 R3DAPI void R3D_DrawParticleSystemEx(const R3D_ParticleSystem* system, const R3D_Mesh* mesh, const R3D_Material* material, Matrix transform);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Draw
 

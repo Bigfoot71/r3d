@@ -55,6 +55,10 @@ typedef struct R3D_MeshData {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Creates an empty mesh data container.
  * @param vertexCount Number of vertices to allocate.
@@ -310,6 +314,10 @@ R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData);
  * @return The computed bounding box.
  */
 R3DAPI BoundingBox R3D_CalculateMeshDataBoundingBox(const R3D_MeshData* meshData);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of MeshData
 

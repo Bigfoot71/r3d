@@ -53,6 +53,10 @@ typedef struct R3D_Skeleton {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Loads a skeleton hierarchy from a 3D model file.
  *
@@ -94,6 +98,10 @@ R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton* skeleton);
  * @return true if valid, false otherwise.
  */
 R3DAPI bool R3D_IsSkeletonValid(const R3D_Skeleton* skeleton);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Skeleton
 

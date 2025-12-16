@@ -45,6 +45,10 @@ typedef struct R3D_Sprite {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // SPRITE: Sprite Functions
 // ----------------------------------------
@@ -107,6 +111,10 @@ R3DAPI void R3D_UpdateSprite(R3D_Sprite* sprite, float speed);
  * @param speed The speed at which the animation progresses, in frames per second.
  */
 R3DAPI void R3D_UpdateSpriteEx(R3D_Sprite* sprite, int firstFrame, int lastFrame, float speed);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Sprite
 

@@ -126,6 +126,10 @@ typedef struct R3D_Material {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Get the default material configuration.
  *
@@ -149,6 +153,10 @@ R3DAPI R3D_Material R3D_GetDefaultMaterial(void);
  * @param material Pointer to the material structure to be unloaded.
  */
 R3DAPI void R3D_UnloadMaterial(const R3D_Material* material);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Material
 

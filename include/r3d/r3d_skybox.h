@@ -37,6 +37,10 @@ typedef struct R3D_Skybox {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // SKYBOX: Skybox Loading Functions
 // ----------------------------------------
@@ -98,6 +102,10 @@ R3DAPI R3D_Skybox R3D_LoadSkyboxPanoramaFromMemory(Image image, int size);
  * @param sky The skybox to unload.
  */
 R3DAPI void R3D_UnloadSkybox(R3D_Skybox sky);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Skybox
 

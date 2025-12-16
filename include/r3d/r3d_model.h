@@ -48,6 +48,10 @@ typedef struct R3D_Model {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Load a 3D model from a file.
  *
@@ -103,6 +107,10 @@ R3DAPI R3D_Model R3D_LoadModelFromMesh(const R3D_Mesh* mesh);
  * Set to false if textures are still being used elsewhere to avoid freeing shared resources.
  */
 R3DAPI void R3D_UnloadModel(R3D_Model* model, bool unloadMaterials);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Model
 

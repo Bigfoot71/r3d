@@ -18,6 +18,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // UTILS: Default Texture Retrieval Functions
 // ----------------------------------------
@@ -215,6 +219,10 @@ R3DAPI void R3D_DrawBufferSSAO(float x, float y, float w, float h);
  * @param h Height of the drawn buffer.
  */
 R3DAPI void R3D_DrawBufferBloom(float x, float y, float w, float h);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Utils
 

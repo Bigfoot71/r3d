@@ -59,6 +59,10 @@ typedef uint32_t R3D_Light;
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // LIGHTING: Lights Config Functions
 // ----------------------------------------
@@ -578,6 +582,10 @@ R3DAPI BoundingBox R3D_GetLightBoundingBox(R3D_Light light);
  * @param id The ID of the light.
  */
 R3DAPI void R3D_DrawLightShape(R3D_Light id);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Lighting
 

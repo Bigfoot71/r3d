@@ -102,6 +102,10 @@ typedef struct R3D_ParticleSystem {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // PARTICLES: Particle System Functions
 // ----------------------------------------
@@ -163,6 +167,10 @@ R3DAPI void R3D_UpdateParticleSystem(R3D_ParticleSystem* system, float deltaTime
  * @param system Pointer to the `R3D_ParticleSystem` to update.
  */
 R3DAPI void R3D_CalculateParticleSystemBoundingBox(R3D_ParticleSystem* system);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Particles
 

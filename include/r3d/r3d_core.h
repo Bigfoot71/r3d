@@ -80,6 +80,10 @@ typedef uint32_t R3D_Layer;
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Initializes the rendering engine.
  * 
@@ -220,6 +224,10 @@ R3DAPI void R3D_EnableLayers(R3D_Layer bitfield);
  * @param bitfield Bitfield representing one or more layers to disable.
  */
 R3DAPI void R3D_DisableLayers(R3D_Layer bitfield);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 /** @} */ // end of Core
 

@@ -108,6 +108,10 @@ typedef struct R3D_AnimationPlayer {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // ANIMATION: Animation Library Functions
 // ----------------------------------------
@@ -219,6 +223,10 @@ R3DAPI void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player);
  * @param dt Delta time to advance, in seconds.
  */
 R3DAPI void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 /** @} */ // end of Animation
 

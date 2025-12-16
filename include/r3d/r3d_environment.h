@@ -77,6 +77,10 @@ typedef enum R3D_Tonemap {
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // ----------------------------------------
 // ENVIRONMENT: Background And Ambient
 // ----------------------------------------
@@ -981,6 +985,10 @@ R3DAPI void R3D_SetSaturation(float value);
  * @return The current saturation value.
  */
 R3DAPI float R3D_GetSaturation(void);
+
+#ifdef __cplusplus
+// extern "C"
+#endif
 
 /** @} */ // end of Environment
 
