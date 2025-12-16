@@ -840,24 +840,25 @@ int r3d_drawcall_compare_back_to_front(const void* a, const void* b)
 // Upload matrices function
 static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call)
 {
+    const R3D_Skeleton* skeleton = NULL;
+    const Matrix* currentPose = NULL;
+
+    if (call->geometry.model.player != NULL) {
+        skeleton = &call->geometry.model.player->skeleton;
+        currentPose = call->geometry.model.player->currentPose;
+    }
+    else {
+        skeleton = &call->geometry.model.skeleton;
+        currentPose = call->geometry.model.skeleton.bindPose;
+    }
+
+    static Matrix bones[256];
+    r3d_matrix_multiply_batch(bones, skeleton->boneOffsets, currentPose, skeleton->boneCount);
+
     // WARNING: Pay attention to any changes in the binding slot for uTexBoneMatrices.
     //          In theory, being the only texture sampled in the vertex shader,
     //          it should be kept in the first slot '0' for consistency.
 
     const int bindingSlot = 0;
-
-    if (call->geometry.model.player != NULL) {
-        r3d_storage_bind_and_upload_matrices(
-            call->geometry.model.player->currentPose,
-            call->geometry.model.player->skeleton.boneCount,
-            bindingSlot
-        );
-    }
-    else {
-        r3d_storage_bind_and_upload_matrices(
-            call->geometry.model.skeleton.bindPose,
-            call->geometry.model.skeleton.boneCount,
-            bindingSlot
-        );
-    }
+    r3d_storage_bind_and_upload_matrices(bones, skeleton->boneCount, bindingSlot);
 }
