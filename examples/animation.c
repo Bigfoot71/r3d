@@ -1,5 +1,4 @@
 #include "./common.h"
-#include "r3d/r3d_animation.h"
 
 /* === Resources === */
 
@@ -68,8 +67,10 @@ const char* Init(void)
 
     /* --- Load model animations --- */
 
-    dancerAnims = R3D_LoadAnimationLib("dancer.glb");
+    dancerAnims = R3D_LoadAnimationLib(RESOURCES_PATH "dancer.glb");
     dancer.player = R3D_LoadAnimationPlayer(&dancer.skeleton, &dancerAnims);
+    dancer.player->states[0].weight = 1.0f;
+    dancer.player->states[0].loop = true;
 
     /* --- Setup scene lights with shadows --- */
 
