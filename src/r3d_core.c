@@ -128,6 +128,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.misc.matCubeViews[5] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f, -1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
 
     R3D.misc.meshDecalBounds = R3D_GenMeshCube(1.0f, 1.0f, 1.0f);
+    R3D.misc.meshDecalBounds.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
 
     // Load GL Objects - framebuffers, textures, shaders...
     // NOTE: The initialization of these resources is based
