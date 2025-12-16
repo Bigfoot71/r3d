@@ -20,8 +20,11 @@
 #include <string.h>
 
 #ifdef _WIN32
-#   define WIN32_LEAN_AND_MEAN
+#   define NOGDI
+#   define NOUSER
 #   include <windows.h>
+#   undef near
+#   undef far
 #elif defined(__linux__) || defined(__APPLE__)
 #   include <unistd.h>
 #else
