@@ -41,96 +41,80 @@ typedef struct {
     bool owned;
 } loaded_image_t;
 
-typedef struct ready_job {
-    int materialIndex;
-    int mapIndex;
-    struct ready_job* next;
-} ready_job_t;
-
-typedef struct {
-    ready_job_t* head;
-    ready_job_t* tail;
-} job_queue_t;
-
 typedef struct {
     Texture2D textures[R3D_MAP_COUNT];
-    bool used;                          // Marked as true if it was obtained via 'r3d_importer_get_texture', if 'false' the textures will be unloaded when the 'r3d_importer_texture_cache_t' is destroyed
+    bool used;
 } loaded_material_t;
 
 struct r3d_importer_texture_cache {
-    loaded_material_t* materials;       // textures[materialCount]
+    loaded_material_t* materials;
     int materialCount;
 };
 
 typedef struct {
     const r3d_importer_t* importer;
-    loaded_image_t* images;             // images[materialCount][R3D_MAP_COUNT]
+    loaded_image_t* images;             // Flat array: images[materialCount * R3D_MAP_COUNT]
     int materialCount;
     atomic_int nextJob;
     int totalJobs;
 
-    mtx_t queueMutex;
-    cnd_t queueCond;
-    job_queue_t readyQueue;
+    // Ring buffer for ready jobs
+    int* readyJobs;                     // Array of job indices
+    int readyCapacity;
+    atomic_int readyHead;               // Write position
+    atomic_int readyTail;               // Read position
+    atomic_bool allJobsSubmitted;
 } loader_context_t;
 
 // ========================================
-// QUEUE HELPERS
+// GLOBAL CACHE
 // ========================================
 
-static void queue_init(job_queue_t* queue)
-{
-    queue->head = NULL;
-    queue->tail = NULL;
-}
+static int g_numCPUs = 0;
 
-static void queue_push(job_queue_t* queue, int materialIndex, int mapIndex)
+static int get_cpu_count(void)
 {
-    ready_job_t* job = RL_MALLOC(sizeof(ready_job_t));
-    job->materialIndex = materialIndex;
-    job->mapIndex = mapIndex;
-    job->next = NULL;
+    if (g_numCPUs > 0) return g_numCPUs;
 
-    if (queue->tail) {
-        queue->tail->next = job;
-    } else {
-        queue->head = job;
+    #ifdef _WIN32
+        SYSTEM_INFO sysinfo;
+        GetSystemInfo(&sysinfo);
+        g_numCPUs = sysinfo.dwNumberOfProcessors;
+    #elif defined(__linux__) || defined(__APPLE__)
+        g_numCPUs = sysconf(_SC_NPROCESSORS_ONLN);
+    #endif
+
+    if (g_numCPUs < 1) {
+        TraceLog(LOG_WARNING, "R3D: Failed to detect CPU count, defaulting to 1 thread");
+        g_numCPUs = 1;
     }
-    queue->tail = job;
+
+    return g_numCPUs;
 }
 
-static bool queue_pop(job_queue_t* queue, int* materialIndex, int* mapIndex)
+// ========================================
+// RING BUFFER HELPERS
+// ========================================
+
+static void ring_push(loader_context_t* ctx, int jobIndex)
 {
-    if (!queue->head) {
+    int head = atomic_load(&ctx->readyHead);
+    ctx->readyJobs[head % ctx->readyCapacity] = jobIndex;
+    atomic_store(&ctx->readyHead, head + 1);
+}
+
+static bool ring_pop(loader_context_t* ctx, int* jobIndex)
+{
+    int tail = atomic_load(&ctx->readyTail);
+    int head = atomic_load(&ctx->readyHead);
+    
+    if (tail >= head) {
         return false;
     }
-
-    ready_job_t* job = queue->head;
-    *materialIndex = job->materialIndex;
-    *mapIndex = job->mapIndex;
-
-    queue->head = job->next;
-    if (!queue->head) {
-        queue->tail = NULL;
-    }
-
-    RL_FREE(job);
+    
+    *jobIndex = ctx->readyJobs[tail % ctx->readyCapacity];
+    atomic_store(&ctx->readyTail, tail + 1);
     return true;
-}
-
-static bool queue_empty(const job_queue_t* queue)
-{
-    return queue->head == NULL;
-}
-
-static void queue_destroy(job_queue_t* queue)
-{
-    while (queue->head) {
-        ready_job_t* job = queue->head;
-        queue->head = job->next;
-        RL_FREE(job);
-    }
-    queue->tail = NULL;
 }
 
 // ========================================
@@ -174,6 +158,7 @@ static bool load_image_base(
         const struct aiTexture* aiTex = r3d_importer_get_texture(importer, textureIndex);
 
         if (aiTex->mHeight == 0) {
+            // Compressed texture - must decode
             image->image = LoadImageFromMemory(
                 TextFormat(".%s", aiTex->achFormatHint),
                 (const unsigned char*)aiTex->pcData,
@@ -269,7 +254,6 @@ static bool load_image_orm(
         retRoughness ? &imRoughness.image : NULL,
         retMetalness ? &imMetalness.image : NULL
     };
-
     image->image = r3d_compose_images_rgb(sources, WHITE);
     image->owned = true;
 
@@ -347,17 +331,14 @@ static int worker_thread(void* arg)
 
         // Load the image
         const struct aiMaterial* material = r3d_importer_get_material(ctx->importer, materialIdx);
-        loaded_image_t* image = &ctx->images[materialIdx * R3D_MAP_COUNT + mapIdx];
+        loaded_image_t* image = &ctx->images[jobIndex];
 
         load_image_for_map(image, ctx->importer, material, (r3d_importer_texture_map_t)mapIdx);
 
-        // Notify that image is ready
-        mtx_lock(&ctx->queueMutex);
-        queue_push(&ctx->readyQueue, materialIdx, mapIdx);
-        cnd_signal(&ctx->queueCond);
-        mtx_unlock(&ctx->queueMutex);
+        // Push to ready queue
+        ring_push(ctx, jobIndex);
     }
-
+    
     return 0;
 }
 
@@ -375,8 +356,6 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
     // Allocate cache
     r3d_importer_texture_cache_t* cache = RL_MALLOC(sizeof(r3d_importer_texture_cache_t));
     cache->materialCount = r3d_importer_get_material_count(importer);
-
-    // Allocate materials array
     cache->materials = RL_CALLOC(cache->materialCount, sizeof(loaded_material_t));
 
     // Setup loading context
@@ -385,31 +364,21 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
     ctx.materialCount = cache->materialCount;
     ctx.totalJobs = cache->materialCount * R3D_MAP_COUNT;
     atomic_init(&ctx.nextJob, 0);
+    atomic_init(&ctx.allJobsSubmitted, false);
 
-    // Allocate image storage
-    ctx.images = RL_MALLOC(ctx.totalJobs * sizeof(loaded_image_t));
-    memset(ctx.images, 0, ctx.totalJobs * sizeof(loaded_image_t));
+    // Allocate image storage (single flat array)
+    ctx.images = RL_CALLOC(ctx.totalJobs, sizeof(loaded_image_t));
 
-    // Initialize synchronization
-    mtx_init(&ctx.queueMutex, mtx_plain);
-    cnd_init(&ctx.queueCond);
-    queue_init(&ctx.readyQueue);
+    // Allocate ring buffer for ready jobs
+    ctx.readyCapacity = ctx.totalJobs;
+    ctx.readyJobs = RL_MALLOC(ctx.readyCapacity * sizeof(int));
+    atomic_init(&ctx.readyHead, 0);
+    atomic_init(&ctx.readyTail, 0);
 
     // Determine thread count
-    int numThreads = 4; // Default fallback
-    #ifdef _WIN32
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        numThreads = sysinfo.dwNumberOfProcessors;
-    #elif defined(__linux__) || defined(__APPLE__)
-        numThreads = sysconf(_SC_NPROCESSORS_ONLN);
-    #endif
-
+    int numThreads = get_cpu_count();
     if (numThreads > ctx.totalJobs) {
         numThreads = ctx.totalJobs;
-    }
-    if (numThreads < 1) {
-        numThreads = 1;
     }
 
     TraceLog(LOG_INFO, "R3D: Loading textures with %d worker threads", numThreads);
@@ -420,39 +389,46 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
         thrd_create(&threads[i], worker_thread, &ctx);
     }
 
-    // Progressive upload loop
+    // Progressive upload loop on main thread
     int uploadedCount = 0;
-    while (uploadedCount < ctx.totalJobs)
-    {
-        int materialIdx, mapIdx;
+    bool generateMipmaps = (filter >= TEXTURE_FILTER_TRILINEAR);
 
-        // Wait for ready job
-        mtx_lock(&ctx.queueMutex);
-        while (queue_empty(&ctx.readyQueue)) {
-            cnd_wait(&ctx.queueCond, &ctx.queueMutex);
-        }
-        queue_pop(&ctx.readyQueue, &materialIdx, &mapIdx);
-        mtx_unlock(&ctx.queueMutex);
+    while (uploadedCount < ctx.totalJobs) {
+        int jobIndex;
 
-        // Upload texture
-        loaded_image_t* img = &ctx.images[materialIdx * R3D_MAP_COUNT + mapIdx];
-        if (img->image.data) {
-            Texture2D* texture = &cache->materials[materialIdx].textures[mapIdx];
-            *texture = LoadTextureFromImage(img->image);
-            if (filter >= TEXTURE_FILTER_TRILINEAR) {
-                GenTextureMipmaps(texture);
+        // Try to get a ready job from ring buffer
+        if (ring_pop(&ctx, &jobIndex)) {
+            int materialIdx = jobIndex / R3D_MAP_COUNT;
+            int mapIdx = jobIndex % R3D_MAP_COUNT;
+
+            loaded_image_t* img = &ctx.images[jobIndex];
+
+            // Upload texture to GPU
+            if (img->image.data) {
+                Texture2D* texture = &cache->materials[materialIdx].textures[mapIdx];
+                *texture = LoadTextureFromImage(img->image);
+
+                if (texture->id != 0) {
+                    if (generateMipmaps) {
+                        GenTextureMipmaps(texture);
+                    }
+                    SetTextureWrap(*texture, get_wrap_mode(img->wrap[0]));
+                    SetTextureFilter(*texture, filter);
+                }
+
+                // Free image data
+                if (img->owned) {
+                    UnloadImage(img->image);
+                    img->image.data = NULL;
+                }
             }
 
-            SetTextureWrap(*texture, get_wrap_mode(img->wrap[0]));
-            SetTextureFilter(*texture, filter);
-
-            if (img->owned) {
-                UnloadImage(img->image);
-                img->image.data = NULL;
-            }
+            uploadedCount++;
         }
-
-        uploadedCount++;
+        else {
+            // No job ready yet, yield CPU
+            thrd_yield();
+        }
     }
 
     // Join threads
@@ -462,9 +438,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
 
     // Cleanup
     RL_FREE(threads);
-    queue_destroy(&ctx.readyQueue);
-    cnd_destroy(&ctx.queueCond);
-    mtx_destroy(&ctx.queueMutex);
+    RL_FREE(ctx.readyJobs);
     RL_FREE(ctx.images);
 
     TraceLog(LOG_INFO, "R3D: Loaded %d textures successfully", uploadedCount);
