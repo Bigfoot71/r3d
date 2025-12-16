@@ -67,9 +67,9 @@ void Update(float delta)
 
     Vector3 birdPosPrev = birdPos;
 
-    birdPos.x = 2.0f * sinf(GetTime());
-    birdPos.y = 1.0f + cosf(GetTime() * 4.0f) * 0.5f;
-    birdDirX = (birdPos.x - birdPosPrev.x >= 0) ? 1 : -1;
+    birdPos.x = 2.0f * sinf((float)GetTime());
+    birdPos.y = 1.0f + cosf((float)GetTime() * 4.0f) * 0.5f;
+    birdDirX = (birdPos.x - birdPosPrev.x >= 0.0f) ? 1.0f : -1.0f;
 }
 
 void Draw(void)

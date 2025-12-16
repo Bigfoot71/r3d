@@ -27,11 +27,15 @@ const char* Init(void)
     /* --- Calculation of transformation matrices for all spheres instances --- */
 
     transforms = RL_MALLOC(100 * 100 * sizeof(Matrix));
+    if (transforms == NULL) {
+        TraceLog(LOG_FATAL, "EXAMPLE: Failed to allocate transforms buffer");
+        exit(-1);
+    }
 
     for (int x = -50; x < 50; x++) {
         for (int z = -50; z < 50; z++) {
             int index = (z + 50) * 100 + (x + 50);
-            transforms[index] = MatrixTranslate(x * 2, 0, z * 2);
+            transforms[index] = MatrixTranslate((float)x * 2, 0, (float)z * 2);
         }
     }
 

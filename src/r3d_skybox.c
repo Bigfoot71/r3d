@@ -361,7 +361,7 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
     // Enable shader for prefiltering
     r3d_shader_enable(generate.prefilter);
     r3d_shader_set_mat4(generate.prefilter, uMatProj, matProj);
-    r3d_shader_set_float(generate.prefilter, uResolution, sky.width);
+    r3d_shader_set_float(generate.prefilter, uResolution, (float)sky.width);
     r3d_shader_bind_samplerCube(generate.prefilter, uCubemap, sky.id);
 
     // Configure framebuffer and rendering parameters

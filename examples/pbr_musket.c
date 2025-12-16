@@ -61,7 +61,7 @@ const char* Init(void)
 
 void Update(float delta)
 {
-    modelScale = Clamp(modelScale + GetMouseWheelMove() * 0.1, 0.25f, 2.5f);
+    modelScale = Clamp(modelScale + GetMouseWheelMove() * 0.1f, 0.25f, 2.5f);
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
     {

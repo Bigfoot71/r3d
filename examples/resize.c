@@ -76,7 +76,7 @@ void Draw(void)
 
     R3D_Begin(camera);
         for (int i = 0; i < 5; i++) {
-            R3D_DrawMesh(&sphere, &materials[i], MatrixTranslate(i - 2, 0, 0));
+            R3D_DrawMesh(&sphere, &materials[i], MatrixTranslate((float)i - 2, 0, 0));
         }
     R3D_End();
 

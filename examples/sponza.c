@@ -51,7 +51,7 @@ const char* Init(void)
     {
         lights[i] = R3D_CreateLight(R3D_LIGHT_OMNI);
 
-        R3D_SetLightPosition(lights[i], (Vector3) { i ? -10 : 10, 20, 0 });
+        R3D_SetLightPosition(lights[i], (Vector3) { i ? -10.0f : 10.0f, 20.0f, 0.0f });
         R3D_SetLightActive(lights[i], true);
         R3D_SetLightEnergy(lights[i], 4.0f);
 
