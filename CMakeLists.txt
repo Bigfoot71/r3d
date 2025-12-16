@@ -13,12 +13,6 @@ if(POLICY CMP0141)
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-# Per compiler instructions
-
-if (MSVC)
-    target_compile_options(r3d PRIVATE /experimental:c11atomics)
-endif()
-
 # Determine the project's root directory and check if it's the main project
 
 set(R3D_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
@@ -289,6 +283,11 @@ target_include_directories(${PROJECT_NAME}
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
+endif()
+
+if (MSVC)
+    # Why microsoft, why?
+    target_compile_options(${PROJECT_NAME} PRIVATE /experimental:c11atomics)
 endif()
 
 # Doxygen configuration
