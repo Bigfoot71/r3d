@@ -153,12 +153,9 @@ static bool load_mesh_internal(R3D_Mesh* outMesh, const struct aiMesh* aiMesh, M
                 bool slotFound = false;
 
                 for (int slot = 0; slot < 4; slot++) {
-                    float* weights = (float*)&vertex->weights;
-                    float* boneIds = (float*)&vertex->boneIds;
-
-                    if (weights[slot] == 0.0f) {
-                        weights[slot] = weightValue;
-                        boneIds[slot] = (float)boneIndex;
+                    if (vertex->weights[slot] == 0.0f) {
+                        vertex->weights[slot] = weightValue;
+                        vertex->boneIds[slot] = (float)boneIndex;
                         slotFound = true;
                         break;
                     }
@@ -166,19 +163,16 @@ static bool load_mesh_internal(R3D_Mesh* outMesh, const struct aiMesh* aiMesh, M
 
                 // If all 4 slots are occupied, replace the smallest weight
                 if (!slotFound) {
-                    float* weights = (float*)&vertex->weights;
-                    float* boneIds = (float*)&vertex->boneIds;
-
                     int minWeightIndex = 0;
                     for (int slot = 1; slot < 4; slot++) {
-                        if (weights[slot] < weights[minWeightIndex]) {
+                        if (vertex->weights[slot] < vertex->weights[minWeightIndex]) {
                             minWeightIndex = slot;
                         }
                     }
 
-                    if (weightValue > weights[minWeightIndex]) {
-                        weights[minWeightIndex] = weightValue;
-                        boneIds[minWeightIndex] = (float)boneIndex;
+                    if (weightValue > vertex->weights[minWeightIndex]) {
+                        vertex->weights[minWeightIndex] = weightValue;
+                        vertex->boneIds[minWeightIndex] = (float)boneIndex;
                     }
                 }
             }
@@ -187,35 +181,30 @@ static bool load_mesh_internal(R3D_Mesh* outMesh, const struct aiMesh* aiMesh, M
         // Normalize bone weights for each vertex
         for (int i = 0; i < vertexCount; i++) {
             R3D_Vertex* vertex = &data.vertices[i];
-            float* weights = (float*)&vertex->weights;
-            float* boneIds = (float*)&vertex->boneIds;
-
             float totalWeight = 0.0f;
 
             // Calculate total weight
             for (int j = 0; j < 4; j++) {
-                totalWeight += weights[j];
+                totalWeight += vertex->weights[j];
             }
 
             // Normalize weights if total > 0
             if (totalWeight > 0.0f) {
                 for (int j = 0; j < 4; j++) {
-                    weights[j] /= totalWeight;
+                    vertex->weights[j] /= totalWeight;
                 }
             } else {
                 // If no bone weights, assign to first bone with weight 1.0
-                weights[0] = 1.0f;
-                boneIds[0] = 0.0f;
+                vertex->weights[0] = 1.0f;
+                vertex->boneIds[0] = 0.0f;
             }
         }
     }
     else {
         // No bones found for this mesh
         for (int i = 0; i < vertexCount; i++) {
-            float* weights = (float*)&data.vertices[i].weights;
-            float* boneIds = (float*)&data.vertices[i].boneIds;
-            weights[0] = 1.0f;
-            boneIds[0] = 0.0f;
+            data.vertices[i].weights[0] = 1.0f;
+            data.vertices[i].boneIds[0] = 0.0f;
         }
     }
 
