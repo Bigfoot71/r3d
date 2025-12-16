@@ -169,7 +169,7 @@ R3DAPI void R3D_UpdateParticleSystem(R3D_ParticleSystem* system, float deltaTime
 R3DAPI void R3D_CalculateParticleSystemBoundingBox(R3D_ParticleSystem* system);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Particles

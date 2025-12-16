@@ -109,7 +109,7 @@ R3DAPI R3D_Model R3D_LoadModelFromMesh(const R3D_Mesh* mesh);
 R3DAPI void R3D_UnloadModel(R3D_Model* model, bool unloadMaterials);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Model

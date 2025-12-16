@@ -104,7 +104,7 @@ R3DAPI bool R3D_AddKeyframe(R3D_InterpolationCurve* curve, float time, float val
 R3DAPI float R3D_EvaluateCurve(R3D_InterpolationCurve curve, float time);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Curves

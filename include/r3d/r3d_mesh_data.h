@@ -322,7 +322,7 @@ R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData);
 R3DAPI BoundingBox R3D_CalculateMeshDataBoundingBox(const R3D_MeshData* meshData);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of MeshData

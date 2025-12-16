@@ -155,7 +155,7 @@ R3DAPI R3D_Material R3D_GetDefaultMaterial(void);
 R3DAPI void R3D_UnloadMaterial(const R3D_Material* material);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Material

@@ -113,7 +113,7 @@ R3DAPI void R3D_UpdateSprite(R3D_Sprite* sprite, float speed);
 R3DAPI void R3D_UpdateSpriteEx(R3D_Sprite* sprite, int firstFrame, int lastFrame, float speed);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Sprite

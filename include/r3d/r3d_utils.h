@@ -221,7 +221,7 @@ R3DAPI void R3D_DrawBufferSSAO(float x, float y, float w, float h);
 R3DAPI void R3D_DrawBufferBloom(float x, float y, float w, float h);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Utils

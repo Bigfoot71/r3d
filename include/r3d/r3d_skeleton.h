@@ -100,7 +100,7 @@ R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton* skeleton);
 R3DAPI bool R3D_IsSkeletonValid(const R3D_Skeleton* skeleton);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Skeleton

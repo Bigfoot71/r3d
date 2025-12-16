@@ -987,7 +987,7 @@ R3DAPI void R3D_SetSaturation(float value);
 R3DAPI float R3D_GetSaturation(void);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Environment

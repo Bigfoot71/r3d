@@ -104,7 +104,7 @@ R3DAPI R3D_Skybox R3D_LoadSkyboxPanoramaFromMemory(Image image, int size);
 R3DAPI void R3D_UnloadSkybox(R3D_Skybox sky);
 
 #ifdef __cplusplus
-// extern "C"
+} // extern "C"
 #endif
 
 /** @} */ // end of Skybox
