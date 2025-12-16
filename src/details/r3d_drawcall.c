@@ -40,6 +40,7 @@ static void r3d_drawcall_apply_cull_mode(R3D_CullMode mode);
 static void r3d_drawcall_apply_blend_mode(R3D_BlendMode mode);
 static void r3d_drawcall_apply_depth_mode(R3D_DepthMode mode);
 static void r3d_drawcall_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
+static GLenum r3d_drawcall_get_opengl_primitive(R3D_PrimitiveType primitive);
 
 // This function supports instanced rendering when necessary
 static void r3d_drawcall(const r3d_drawcall_t* call);
@@ -624,6 +625,22 @@ static void r3d_drawcall_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D
     }
 }
 
+GLenum r3d_drawcall_get_opengl_primitive(R3D_PrimitiveType primitive)
+{
+    switch (primitive) {
+    case R3D_PRIMITIVE_POINTS:          return GL_POINTS;
+    case R3D_PRIMITIVE_LINES:           return GL_LINES;
+    case R3D_PRIMITIVE_LINE_STRIP:      return GL_LINE_STRIP;
+    case R3D_PRIMITIVE_LINE_LOOP:       return GL_LINE_LOOP;
+    case R3D_PRIMITIVE_TRIANGLES:       return GL_TRIANGLES;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP:  return GL_TRIANGLE_STRIP;
+    case R3D_PRIMITIVE_TRIANGLE_FAN:    return GL_TRIANGLE_FAN;
+    default: break;
+    }
+
+    return GL_TRIANGLES; // consider an error...
+}
+
 static void r3d_drawcall_bind_geometry_mesh(const R3D_Mesh* mesh)
 {
     if (rlEnableVertexArray(mesh->vao)) {
@@ -669,13 +686,14 @@ static void r3d_drawcall_unbind_geometry_mesh(void)
 void r3d_drawcall(const r3d_drawcall_t* call)
 {
     if (call->geometryType == R3D_DRAWCALL_GEOMETRY_MODEL) {
+        GLenum primitive = r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType);
         r3d_drawcall_bind_geometry_mesh(&call->geometry.model.mesh);
         r3d_drawcall_apply_depth_mode(call->material.depthMode);
         if (call->geometry.model.mesh.ebo == 0) {
-            glDrawArrays(GL_TRIANGLES, 0, call->geometry.model.mesh.vertexCount);
+            glDrawArrays(primitive, 0, call->geometry.model.mesh.vertexCount);
         }
         else {
-            glDrawElements(GL_TRIANGLES, call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL);
+            glDrawElements(primitive, call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL);
         }
         r3d_drawcall_unbind_geometry_mesh();
     }
@@ -728,10 +746,16 @@ void r3d_drawcall_instanced(const r3d_drawcall_t* call, int locInstanceModel, in
     switch (call->geometryType) {
     case R3D_DRAWCALL_GEOMETRY_MODEL:
         if (call->geometry.model.mesh.ebo == 0) {
-            glDrawArraysInstanced(GL_TRIANGLES, 0, call->geometry.model.mesh.vertexCount, (int)call->instanced.count);
+            glDrawArraysInstanced(
+                r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType),
+                0, call->geometry.model.mesh.vertexCount, (int)call->instanced.count
+            );
         }
         else {
-            glDrawElementsInstanced(GL_TRIANGLES, call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL, (int)call->instanced.count);
+            glDrawElementsInstanced(
+                r3d_drawcall_get_opengl_primitive(call->geometry.model.mesh.primitiveType),
+                call->geometry.model.mesh.indexCount, GL_UNSIGNED_INT, NULL, (int)call->instanced.count
+            );
         }
         break;
     case R3D_DRAWCALL_GEOMETRY_SPRITE:
