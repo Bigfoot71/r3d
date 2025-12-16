@@ -12,6 +12,8 @@
 #include <string.h>
 #include <float.h>
 
+#include "./details/r3d_math.h"
+
 // ========================================
 // PUBLIC API
 // ========================================
@@ -59,65 +61,68 @@ bool R3D_IsMeshDataValid(const R3D_MeshData* meshData)
     return (meshData->vertices != NULL) && (meshData->vertexCount > 0);
 }
 
-R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
+R3D_MeshData R3D_GenMeshDataQuad(float width, float length, int resX, int resZ, Vector3 frontDir)
 {
     R3D_MeshData meshData = {0};
 
-    // Validation of parameters
-    if (sides < 3 || radius <= 0.0f) return meshData;
+    Vector3 normal = Vector3Normalize(frontDir);
 
-    // Memory allocation
-    // For a polygon: 1 central vertex + peripheral vertices
-    meshData.vertexCount = sides + 1;
-    meshData.indexCount = sides * 3; // sides triangles, 3 indices per triangle
+    Vector3 reference = (fabsf(normal.y) < 0.9f) ? (Vector3){0.0f, 1.0f, 0.0f} : (Vector3){1.0f, 0.0f, 0.0f};
+    Vector3 tangent = Vector3CrossProduct(normal, reference);
+    tangent = Vector3Normalize(tangent);
+
+    Vector3 bitangent = Vector3CrossProduct(normal, tangent);
+
+    int vertCountX = resX + 1;
+    int vertCountZ = resZ + 1;
+    meshData.vertexCount = vertCountX * vertCountZ;
+    meshData.indexCount = resX * resZ * 6;
 
     meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
     meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
 
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
-        return meshData;
+    int vertexIndex = 0;
+    for (int z = 0; z <= resZ; z++) {
+        for (int x = 0; x <= resX; x++) {
+            float u = ((float)x / resX) - 0.5f;
+            float v = ((float)z / resZ) - 0.5f;
+            float localX = u * width;
+            float localY = v * length;
+
+            meshData.vertices[vertexIndex].position.x = localX * tangent.x + localY * bitangent.x;
+            meshData.vertices[vertexIndex].position.y = localX * tangent.y + localY * bitangent.y;
+            meshData.vertices[vertexIndex].position.z = localX * tangent.z + localY * bitangent.z;
+
+            meshData.vertices[vertexIndex].texcoord = (Vector2){(float)x / resX, (float)z / resZ};
+            meshData.vertices[vertexIndex].normal = normal;
+            meshData.vertices[vertexIndex].color = WHITE;
+            meshData.vertices[vertexIndex].tangent = (Vector4){tangent.x, tangent.y, tangent.z, 1.0f};
+
+            for (int i = 0; i < 4; i++) {
+                meshData.vertices[vertexIndex].boneIds[i] = 0;
+                meshData.vertices[vertexIndex].weights[i] = 0.0f;
+            }
+
+            vertexIndex++;
+        }
     }
 
-    // Pre-compute some values
-    const float angleStep = 2.0f * PI / sides;
+    int indexOffset = 0;
+    for (int z = 0; z < resZ; z++) {
+        for (int x = 0; x < resX; x++) {
+            uint32_t i0 = z * (resX + 1) + x;
+            uint32_t i1 = z * (resX + 1) + (x + 1);
+            uint32_t i2 = (z + 1) * (resX + 1) + (x + 1);
+            uint32_t i3 = (z + 1) * (resX + 1) + x;
 
-    // Central vertex (index 0)
-    meshData.vertices[0] = (R3D_Vertex){
-        .position = {0.0f, 0.0f, 0.0f},
-        .texcoord = {0.5f, 0.5f},
-        .normal = {0.0f, 1.0f, 0.0f},
-        .color = {255, 255, 255, 255},
-        .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
-    };
+            meshData.indices[indexOffset++] = i0;
+            meshData.indices[indexOffset++] = i1;
+            meshData.indices[indexOffset++] = i2;
 
-    for (int i = 0; i < sides; i++) {
-        const float angle = i * angleStep;
-        const float cosAngle = cosf(angle);
-        const float sinAngle = sinf(angle);
-
-        // Position on the circle
-        const float x = radius * cosAngle;
-        const float y = radius * sinAngle;
-
-        // Peripheral vertex
-        meshData.vertices[i + 1] = (R3D_Vertex){
-            .position = {x, y, 0.0f},
-            .texcoord = {
-                0.5f + 0.5f * cosAngle, // Circular UV mapping
-                0.5f + 0.5f * sinAngle
-            },
-            .normal = {0.0f, 1.0f, 0.0f},
-            .color = {255, 255, 255, 255},
-            .tangent = {-sinAngle, cosAngle, 0.0f, 1.0f} // Tangent perpendicular to the radius
-        };
-
-        // Indices for the triangle (center, current vertex, next vertex)
-        const int baseIdx = i * 3;
-        meshData.indices[baseIdx] = 0; // Center
-        meshData.indices[baseIdx + 1] = i + 1; // Current vertex
-        meshData.indices[baseIdx + 2] = (i + 1) % sides + 1; // Next vertex (with wrap)
+            meshData.indices[indexOffset++] = i0;
+            meshData.indices[indexOffset++] = i2;
+            meshData.indices[indexOffset++] = i3;
+        }
     }
 
     return meshData;
@@ -198,6 +203,70 @@ R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, int resZ)
             meshData.indices[indexOffset++] = bottomLeft;
             meshData.indices[indexOffset++] = bottomRight;
         }
+    }
+
+    return meshData;
+}
+
+R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
+{
+    R3D_MeshData meshData = {0};
+
+    // Validation of parameters
+    if (sides < 3 || radius <= 0.0f) return meshData;
+
+    // Memory allocation
+    // For a polygon: 1 central vertex + peripheral vertices
+    meshData.vertexCount = sides + 1;
+    meshData.indexCount = sides * 3; // sides triangles, 3 indices per triangle
+
+    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
+    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
+
+    if (!meshData.vertices || !meshData.indices) {
+        if (meshData.vertices) RL_FREE(meshData.vertices);
+        if (meshData.indices) RL_FREE(meshData.indices);
+        return meshData;
+    }
+
+    // Pre-compute some values
+    const float angleStep = 2.0f * PI / sides;
+
+    // Central vertex (index 0)
+    meshData.vertices[0] = (R3D_Vertex){
+        .position = {0.0f, 0.0f, 0.0f},
+        .texcoord = {0.5f, 0.5f},
+        .normal = {0.0f, 1.0f, 0.0f},
+        .color = {255, 255, 255, 255},
+        .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
+    };
+
+    for (int i = 0; i < sides; i++) {
+        const float angle = i * angleStep;
+        const float cosAngle = cosf(angle);
+        const float sinAngle = sinf(angle);
+
+        // Position on the circle
+        const float x = radius * cosAngle;
+        const float y = radius * sinAngle;
+
+        // Peripheral vertex
+        meshData.vertices[i + 1] = (R3D_Vertex){
+            .position = {x, y, 0.0f},
+            .texcoord = {
+                0.5f + 0.5f * cosAngle, // Circular UV mapping
+                0.5f + 0.5f * sinAngle
+            },
+            .normal = {0.0f, 1.0f, 0.0f},
+            .color = {255, 255, 255, 255},
+            .tangent = {-sinAngle, cosAngle, 0.0f, 1.0f} // Tangent perpendicular to the radius
+        };
+
+        // Indices for the triangle (center, current vertex, next vertex)
+        const int baseIdx = i * 3;
+        meshData.indices[baseIdx] = 0; // Center
+        meshData.indices[baseIdx + 1] = i + 1; // Current vertex
+        meshData.indices[baseIdx + 2] = (i + 1) % sides + 1; // Next vertex (with wrap)
     }
 
     return meshData;

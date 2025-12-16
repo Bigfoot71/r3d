@@ -120,19 +120,14 @@ bool R3D_IsMeshValid(const R3D_Mesh* mesh)
     return (mesh->vao != 0) && (mesh->vbo != 0);
 }
 
-R3D_Mesh R3D_GenMeshPoly(int sides, float radius)
+R3D_Mesh R3D_GenMeshQuad(float width, float length, int resX, int resZ, Vector3 frontDir)
 {
     R3D_Mesh mesh = { 0 };
 
-    R3D_MeshData data = R3D_GenMeshDataPoly(sides, radius);
+    R3D_MeshData data = R3D_GenMeshDataQuad(width, length, resX, resZ, frontDir);
     if (!R3D_IsMeshDataValid(&data)) return mesh;
 
-    BoundingBox aabb = {
-        {-radius, 0.0f, -radius},
-        { radius, 0.0f,  radius}
-    };
-
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, NULL, R3D_STATIC_MESH);
     R3D_UnloadMeshData(&data);
 
     return mesh;
@@ -148,6 +143,24 @@ R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ)
     BoundingBox aabb = {
         {-width * 0.5f, 0.0f, -length * 0.5f},
         { width * 0.5f, 0.0f,  length * 0.5f}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(&data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshPoly(int sides, float radius)
+{
+    R3D_Mesh mesh = { 0 };
+
+    R3D_MeshData data = R3D_GenMeshDataPoly(sides, radius);
+    if (!R3D_IsMeshDataValid(&data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius, 0.0f, -radius},
+        { radius, 0.0f,  radius}
     };
 
     mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);

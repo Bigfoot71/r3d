@@ -91,17 +91,23 @@ R3DAPI void R3D_UnloadMeshData(R3D_MeshData* meshData);
 R3DAPI bool R3D_IsMeshDataValid(const R3D_MeshData* meshData);
 
 /**
- * @brief Generate a polygon mesh with specified number of sides.
+ * @brief Generate a quad mesh with specified dimensions, resolution, and orientation.
  *
- * Creates a regular polygon mesh centered at the origin in the XY plane.
- * The polygon is generated with vertices evenly distributed around a circle.
+ * Creates a flat rectangular quad mesh with customizable facing direction.
+ * The mesh can be subdivided for higher resolution or displacement mapping.
+ * The quad is centered at the origin and oriented according to the frontDir parameter,
+ * which defines both the face direction and the surface normal.
  *
- * @param sides Number of sides for the polygon (minimum 3).
- * @param radius Radius of the circumscribed circle.
+ * @param width Width of the quad along its local X axis.
+ * @param length Length of the quad along its local Z axis.
+ * @param resX Number of subdivisions along the width.
+ * @param resZ Number of subdivisions along the length.
+ * @param frontDir Direction vector defining the quad's front face and normal.
+ *                 This vector will be normalized internally.
  *
- * @return Generated polygon mesh structure.
+ * @return Generated quad mesh structure with proper normals, tangents, and UVs.
  */
-R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius);
+R3DAPI R3D_MeshData R3D_GenMeshDataQuad(float width, float length, int resX, int resZ, Vector3 frontDir);
 
 /**
  * @brief Generate a plane mesh with specified dimensions and resolution.
@@ -117,6 +123,19 @@ R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius);
  * @return Generated plane mesh structure.
  */
 R3DAPI R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, int resZ);
+
+/**
+ * @brief Generate a polygon mesh with specified number of sides.
+ *
+ * Creates a regular polygon mesh centered at the origin in the XY plane.
+ * The polygon is generated with vertices evenly distributed around a circle.
+ *
+ * @param sides Number of sides for the polygon (minimum 3).
+ * @param radius Radius of the circumscribed circle.
+ *
+ * @return Generated polygon mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius);
 
 /**
  * @brief Generate a cube mesh with specified dimensions.

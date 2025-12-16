@@ -121,13 +121,16 @@ R3DAPI void R3D_UnloadMesh(R3D_Mesh* mesh);
 R3DAPI bool R3D_IsMeshValid(const R3D_Mesh* mesh);
 
 /**
- * @brief Generate a polygon mesh.
- * @param sides Number of sides (min 3).
- * @param radius Radius of the polygon.
+ * @brief Generate a quad mesh with orientation.
+ * @param width Width along local X axis.
+ * @param length Length along local Z axis.
+ * @param resX Subdivisions along width.
+ * @param resZ Subdivisions along length.
+ * @param frontDir Direction vector for the quad's front face.
  * @return Mesh ready for rendering.
- * @see R3D_GenMeshDataPoly
+ * @see R3D_GenMeshDataQuad
  */
-R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius);
+R3DAPI R3D_Mesh R3D_GenMeshQuad(float width, float length, int resX, int resZ, Vector3 frontDir);
 
 /**
  * @brief Generate a plane mesh.
@@ -139,6 +142,15 @@ R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius);
  * @see R3D_GenMeshDataPlane
  */
 R3DAPI R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ);
+
+/**
+ * @brief Generate a polygon mesh.
+ * @param sides Number of sides (min 3).
+ * @param radius Radius of the polygon.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataPoly
+ */
+R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius);
 
 /**
  * @brief Generate a cube mesh.
