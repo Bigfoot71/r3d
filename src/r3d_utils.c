@@ -6,6 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
+#include <r3d/r3d_utils.h>
 #include "./r3d_state.h"
 
 // ========================================
