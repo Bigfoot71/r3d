@@ -227,10 +227,10 @@ static inline Color r3d_importer_cast_aicolor4d_to_color(struct aiColor4D src)
 static inline Matrix r3d_importer_cast_aimatrix4x4_to_matrix(struct aiMatrix4x4 src)
 {
     return (Matrix) {
-        src.a1, src.b1, src.c1, src.d1,
-        src.a2, src.b2, src.c2, src.d2,
-        src.a3, src.b3, src.c3, src.d3,
-        src.a4, src.b4, src.c4, src.d4
+        src.a1, src.a2, src.a3, src.a4,
+        src.b1, src.b2, src.b3, src.b4,
+        src.c1, src.c2, src.c3, src.c4,
+        src.d1, src.d2, src.d3, src.d4,
     };
 }
 
