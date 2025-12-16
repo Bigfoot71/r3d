@@ -312,14 +312,14 @@ void compute_pose(R3D_AnimationPlayer* player, float totalWeight)
             Transform local = interpolate_channel(channel, state->currentTime * anim->ticksPerSecond);
             float w = state->weight / totalWeight;
 
-            blended.translation = Vector3Scale(Vector3Add(blended.translation, local.translation), w);
-            blended.rotation = QuaternionScale(QuaternionAdd(blended.rotation, local.rotation), w);
-            blended.scale = Vector3Scale(Vector3Add(blended.scale, local.scale), w);
+            blended.translation = Vector3Add(blended.translation, Vector3Scale(local.translation, w));
+            blended.rotation = QuaternionAdd(blended.rotation, QuaternionScale(local.rotation, w));
+            blended.scale = Vector3Add(blended.scale, Vector3Scale(local.scale, w));
         }
 
         if (isAnimated) {
             blended.rotation = QuaternionNormalize(blended.rotation);
-            player->currentPose[iBone] = r3d_matrix_scale_rotq_translate(blended.translation, blended.rotation, blended.scale);
+            player->currentPose[iBone] = r3d_matrix_scale_rotq_translate(blended.scale, blended.rotation, blended.translation);
         }
         else {
             player->currentPose[iBone] = player->skeleton.bindLocal[iBone];
