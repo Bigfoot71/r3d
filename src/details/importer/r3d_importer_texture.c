@@ -20,7 +20,8 @@
 #include <string.h>
 
 #ifdef _WIN32
-#   include <sysinfoapi.h>
+#   define WIN32_LEAN_AND_MEAN
+#   include <windows.h>
 #elif defined(__linux__) || defined(__APPLE__)
 #   include <unistd.h>
 #else
