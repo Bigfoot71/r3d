@@ -209,7 +209,7 @@ static TextureCubemap r3d_skybox_load_cubemap_from_panorama(Image image, int siz
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapId, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
         r3d_shader_set_mat4(prepare.cubemapFromEquirectangular, uMatView, R3D.misc.matCubeViews[i]);
-        r3d_primitive_bind_and_draw_cube();
+        r3d_primitive_draw_cube();
     }
 
     // Unbind texture and disable the shader
@@ -297,7 +297,7 @@ static TextureCubemap r3d_skybox_generate_irradiance(TextureCubemap sky)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceId, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
         r3d_shader_set_mat4(prepare.cubemapIrradiance, uMatView, R3D.misc.matCubeViews[i]);
-        r3d_primitive_bind_and_draw_cube();
+        r3d_primitive_draw_cube();
     }
 
     // Unbind texture and disable the shader
@@ -383,7 +383,7 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
             r3d_shader_set_mat4(prepare.cubemapPrefilter, uMatView, R3D.misc.matCubeViews[i]);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterId, mip);
             glClear(GL_DEPTH_BUFFER_BIT);
-            r3d_primitive_bind_and_draw_cube();
+            r3d_primitive_draw_cube();
         }
     }
 

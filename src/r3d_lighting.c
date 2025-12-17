@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_lighting.h>
 #include <raymath.h>
+#include <rlgl.h>
 
 #include "./details/r3d_light.h"
 #include "./r3d_state.h"

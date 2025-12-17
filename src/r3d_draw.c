@@ -1503,7 +1503,7 @@ void r3d_pass_scene_background(void)
                 r3d_shader_set_mat4(scene.skybox, uMatProj, R3D.state.transform.proj);
                 r3d_shader_set_vec4(scene.skybox, uRotation, R3D.env.quatSky);
 
-                r3d_primitive_bind_and_draw_cube();
+                r3d_primitive_draw_cube();
 
                 r3d_shader_unbind_samplerCube(scene.skybox, uCubeSky);
             }
