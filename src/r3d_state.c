@@ -836,8 +836,8 @@ static void r3d_target_load_ssao_pp_hs(int width, int height)
     for (int i = 0; i < 2; i++) {
         glBindTexture(GL_TEXTURE_2D, R3D.target.ssaoPpHs[i]);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
@@ -1138,11 +1138,16 @@ void r3d_shader_load_prepare_ssao_blur(void)
 
     R3D_SHADER_VALIDATION(prepare.ssaoBlur);
 
-    r3d_shader_get_location(prepare.ssaoBlur, uTexture);
-    r3d_shader_get_location(prepare.ssaoBlur, uTexelDir);
+    r3d_shader_get_location(prepare.ssaoBlur, uTexOcclusion);
+    r3d_shader_get_location(prepare.ssaoBlur, uTexNormal);
+    r3d_shader_get_location(prepare.ssaoBlur, uTexDepth);
+    r3d_shader_get_location(prepare.ssaoBlur, uMatInvProj);
+    r3d_shader_get_location(prepare.ssaoBlur, uDirection);
 
     r3d_shader_enable(prepare.ssaoBlur);
-    r3d_shader_set_sampler2D_slot(prepare.ssaoBlur, uTexture, 0);
+    r3d_shader_set_sampler2D_slot(prepare.ssaoBlur, uTexOcclusion, 0);
+    r3d_shader_set_sampler2D_slot(prepare.ssaoBlur, uTexNormal, 1);
+    r3d_shader_set_sampler2D_slot(prepare.ssaoBlur, uTexDepth, 2);
     r3d_shader_disable();
 }
 

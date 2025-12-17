@@ -957,22 +957,28 @@ void r3d_pass_prepare_ssao(void)
 
         r3d_shader_enable(prepare.ssaoBlur);
         {
+            r3d_shader_set_mat4(prepare.ssaoBlur, uMatInvProj, R3D.state.transform.invProj);
+            r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexNormal, R3D.target.normal);
+            r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexDepth, R3D.target.depth);
+
             for (int i = 0; i < R3D.env.ssaoIterations; i++)
             {
                 // Horizontal pass
-                r3d_shader_set_vec2(prepare.ssaoBlur, uTexelDir, (Vector2) { R3D.state.resolution.texel.x, 0 });
-                r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexture, R3D.target.ssaoPpHs[1]);
+                r3d_shader_set_vec2(prepare.ssaoBlur, uDirection, (Vector2) { 1.0, 0 });
+                r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexOcclusion, R3D.target.ssaoPpHs[1]);
                 r3d_primitive_bind_and_draw_screen();
                 r3d_target_swap_pingpong(R3D.target.ssaoPpHs);
 
                 // Vertical pass
-                r3d_shader_set_vec2(prepare.ssaoBlur, uTexelDir, (Vector2) { 0, R3D.state.resolution.texel.y });
-                r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexture, R3D.target.ssaoPpHs[1]);
+                r3d_shader_set_vec2(prepare.ssaoBlur, uDirection, (Vector2) { 0, 1.0 });
+                r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexOcclusion, R3D.target.ssaoPpHs[1]);
                 r3d_primitive_bind_and_draw_screen();
                 r3d_target_swap_pingpong(R3D.target.ssaoPpHs);
             }
 
-            r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexture);
+            r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexOcclusion);
+            r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexNormal);
+            r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexDepth);
         }
         r3d_shader_disable();
     }

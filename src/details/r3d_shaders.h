@@ -58,8 +58,11 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexture;
-    r3d_shader_uniform_vec2_t uTexelDir;
+    r3d_shader_uniform_sampler2D_t uTexOcclusion;
+    r3d_shader_uniform_sampler2D_t uTexNormal;
+    r3d_shader_uniform_sampler2D_t uTexDepth;
+    r3d_shader_uniform_mat4_t uMatInvProj;
+    r3d_shader_uniform_vec2_t uDirection;
 } r3d_shader_prepare_ssao_blur_t;
 
 typedef struct {
