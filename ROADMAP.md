@@ -1,26 +1,5 @@
 # R3D Roadmap
 
-## **v0.5**
-
-* [x] **Create Shader Include System**
-  Implement an internal shader include system to reduce code duplication in built-in shaders. This could be integrated during the compilation phase, either in `glsl_minifier` or a dedicated pre-processing script.
-
-* [x] **Simplify forward rendering**
-  Forward rendering will now be limited to semi-transparent objects.
-  This change simplifies r3d and drops OpenGL ES support.
-  If you need OpenGL ES 3.2, I'm developing another project that already supports it.
-  See: https://github.com/Bigfoot71/Nexium/
-
-* [x] **Better Shadow Quality and Performance**
-  Shadow rendering can currently be easily simplified and improved
-
-* [x] **Revise the model loading system**
-  The model loading system needs a review, which could take inspiration from Nexium.
-  In particular, the mesh loading process needs to be fixed, and the correct bind pose should be loaded separately.
-  See: https://github.com/Bigfoot71/Nexium/tree/master/source/Render/Core/Importer
-  See: https://github.com/Bigfoot71/r3d/issues/98
-  Fixed: https://github.com/Bigfoot71/r3d/pull/119
-
 ## **v0.6**
 
 * [ ] **Modular State System and On-Demand Resource Loading**
@@ -51,6 +30,9 @@
     Perform sorting and culling on the index arrays rather than directly on the draw call structures themselves.
 
 ## **v0.7**
+
+* [ ] Adding the `R3D_InstanceBuffer` type to manage instances.
+  See: https://github.com/Bigfoot71/r3d/discussions/121
 
 * [ ] **Merge Scene Vertex Shaders**
   Merge all vertex shaders used by the `scene` module into a single unified vertex shader.
