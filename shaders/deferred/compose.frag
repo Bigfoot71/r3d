@@ -1,4 +1,4 @@
-/* scene.frag -- Deferred pipeline composition fragment shader
+/* compose.frag -- Deferred pipeline composition fragment shader
  *
  * Composes the final scene by combining the outputs from
  * the deferred rendering pipeline.

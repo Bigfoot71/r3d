@@ -1,4 +1,4 @@
-/* downsampling.frag -- Custom 36-tap bilinear downsampling shader for bloom generation
+/* bloom_down.frag -- Custom 36-tap bilinear downsampling shader for bloom generation
  *
  * Original implementation by Jorge Jiménez, presented at SIGGRAPH 2014
  * (used in Call of Duty: Advanced Warfare)

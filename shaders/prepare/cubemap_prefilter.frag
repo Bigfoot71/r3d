@@ -1,4 +1,4 @@
-/* prefilter.frag -- Prefiltered cubemap generation fragment shader
+/* cubemap_prefilter.frag -- Prefiltered cubemap generation fragment shader
  *
  * Copyright (c) 2025 Le Juez Victor
  *

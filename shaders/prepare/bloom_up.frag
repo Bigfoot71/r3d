@@ -1,4 +1,4 @@
-/* upsampling.frag -- Custom upsampling fragment shader used for bloom generation
+/* bloom_up.frag -- Custom upsampling fragment shader used for bloom generation
  *
  * Original implementation by Jorge Jiménez, presented at SIGGRAPH 2014
  * (used in Call of Duty: Advanced Warfare)

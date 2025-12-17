@@ -186,8 +186,8 @@ void R3D_SetState(unsigned int flags)
     R3D.state.flags |= flags;
 
     if (flags & R3D_FLAG_FXAA) {
-        if (R3D.shader.screen.fxaa.id == 0) {
-            r3d_shader_load_screen_fxaa();
+        if (R3D.shader.post.fxaa.id == 0) {
+            r3d_shader_load_post_fxaa();
         }
     }
 }

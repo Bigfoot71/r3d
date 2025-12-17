@@ -1,4 +1,4 @@
-/* irradiance_convolution.frag -- Irradiance cubemap generation fragment shader
+/* cubemap_irradiance.frag -- Irradiance cubemap generation fragment shader
  *
  * Copyright (c) 2025 Le Juez Victor
  *

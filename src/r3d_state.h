@@ -165,58 +165,62 @@ extern struct R3D_State {
     // Internal shaders
     struct {
 
-        // Generation shaders
+        // Prepare shaders
         struct {
-            r3d_shader_generate_gaussian_blur_dual_pass_t gaussianBlurDualPass;
-            r3d_shader_generate_downsampling_t downsampling;
-            r3d_shader_generate_upsampling_t upsampling;
-            r3d_shader_generate_cubemap_from_equirectangular_t cubemapFromEquirectangular;
-            r3d_shader_generate_irradiance_convolution_t irradianceConvolution;
-            r3d_shader_generate_prefilter_t prefilter;
-        } generate;
+            r3d_shader_prepare_ssao_t ssao;
+            r3d_shader_prepare_ssao_blur_t ssaoBlur;
+            r3d_shader_prepare_bloom_down_t bloomDown;
+            r3d_shader_prepare_bloom_up_t bloomUp;
+            r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
+            r3d_shader_prepare_cubemap_irradiance_t cubemapIrradiance;
+            r3d_shader_prepare_cubemap_prefilter_t cubemapPrefilter;
+        } prepare;
 
-        // Raster shaders
+        // Scene shaders
         struct {
-            r3d_shader_raster_geometry_t geometry;
-            r3d_shader_raster_forward_t forward;
-            r3d_shader_raster_background_t background;
-            r3d_shader_raster_skybox_t skybox;
-            r3d_shader_raster_depth_volume_t depthVolume;
-            r3d_shader_raster_depth_t depth;
-            r3d_shader_raster_depth_cube_t depthCube;
-            r3d_shader_raster_decal_t decal;
-        } raster;
+            r3d_shader_scene_geometry_t geometry;
+            r3d_shader_scene_forward_t forward;
+            r3d_shader_scene_background_t background;
+            r3d_shader_scene_skybox_t skybox;
+            r3d_shader_scene_depth_volume_t depthVolume;
+            r3d_shader_scene_depth_t depth;
+            r3d_shader_scene_depth_cube_t depthCube;
+            r3d_shader_scene_decal_t decal;
+        } scene;
 
-        // Screen shaders
+        // Deferred shaders
         struct {
-            r3d_shader_screen_ssao_t ssao;
-            r3d_shader_screen_ambient_ibl_t ambientIbl;
-            r3d_shader_screen_ambient_t ambient;
-            r3d_shader_screen_lighting_t lighting;
-            r3d_shader_screen_scene_t scene;
-            r3d_shader_screen_bloom_t bloom;
-            r3d_shader_screen_ssr_t ssr;
-            r3d_shader_screen_fog_t fog;
-            r3d_shader_screen_output_t output[R3D_TONEMAP_COUNT];
-            r3d_shader_screen_fxaa_t fxaa;
-            r3d_shader_screen_dof_t dof;
-        } screen;
+            r3d_shader_deferred_ambient_ibl_t ambientIbl;
+            r3d_shader_deferred_ambient_t ambient;
+            r3d_shader_deferred_lighting_t lighting;
+            r3d_shader_deferred_compose_t compose;
+        } deferred;
+
+        // Post shaders
+        struct {
+            r3d_shader_post_bloom_t bloom;
+            r3d_shader_post_ssr_t ssr;
+            r3d_shader_post_fog_t fog;
+            r3d_shader_post_output_t output[R3D_TONEMAP_COUNT];
+            r3d_shader_post_fxaa_t fxaa;
+            r3d_shader_post_dof_t dof;
+        } post;
 
     } shader;
 
     // Environment data
     struct {
 
-        Vector4 backgroundColor;        // Used as default albedo color when skybox is disabled (raster pass)
+        Vector4 backgroundColor;        // Used as default albedo color when skybox is disabled (scene pass)
 
         Color ambientColor;             // Base color of ambient light used when skybox is disabled (light pass)
         float ambientEnergy;            // Multiplicative energy for ambient light when skybox is disabled (light pass)
         Vector3 ambientLight;           // Total ambient light contribution when skybox is disabled (light pass)
                                         
-        Quaternion quatSky;             // Rotation of the skybox (raster / light passes)
-        R3D_Skybox sky;                 // Skybox textures (raster / light passes)
+        Quaternion quatSky;             // Rotation of the skybox (scene / light passes)
+        R3D_Skybox sky;                 // Skybox textures (scene / light passes)
         bool useSky;                    // Flag to indicate if skybox is enabled (light pass)
-        float skyBackgroundIntensity;   // Intensity of the visible background from the skybox (raster / light passes) 
+        float skyBackgroundIntensity;   // Intensity of the visible background from the skybox (scene / light passes) 
         float skyAmbientIntensity;      // Intensity of the ambient light from the skybox (light pass)
         float skyReflectIntensity;      // Intensity of reflections from the skybox (light pass)
                                         
@@ -386,31 +390,31 @@ void r3d_framebuffer_load_scene(int width, int height);
 
 /* === Shader loading functions === */
 
-void r3d_shader_load_generate_gaussian_blur_dual_pass(void);
-void r3d_shader_load_generate_downsampling(void);
-void r3d_shader_load_generate_upsampling(void);
-void r3d_shader_load_generate_cubemap_from_equirectangular(void);
-void r3d_shader_load_generate_irradiance_convolution(void);
-void r3d_shader_load_generate_prefilter(void);
-void r3d_shader_load_raster_geometry(void);
-void r3d_shader_load_raster_forward(void);
-void r3d_shader_load_raster_background(void);
-void r3d_shader_load_raster_skybox(void);
-void r3d_shader_load_raster_depth_volume(void);
-void r3d_shader_load_raster_depth(void);
-void r3d_shader_load_raster_depth_cube(void);
-void r3d_shader_load_raster_decal(void);
-void r3d_shader_load_screen_ssao(void);
-void r3d_shader_load_screen_ambient_ibl(void);
-void r3d_shader_load_screen_ambient(void);
-void r3d_shader_load_screen_lighting(void);
-void r3d_shader_load_screen_scene(void);
-void r3d_shader_load_screen_bloom(void);
-void r3d_shader_load_screen_ssr(void);
-void r3d_shader_load_screen_fog(void);
-void r3d_shader_load_screen_dof(void);
-void r3d_shader_load_screen_output(R3D_Tonemap tonemap);
-void r3d_shader_load_screen_fxaa(void);
+void r3d_shader_load_prepare_ssao(void);
+void r3d_shader_load_prepare_ssao_blur(void);
+void r3d_shader_load_prepare_bloom_down(void);
+void r3d_shader_load_prepare_bloom_up(void);
+void r3d_shader_load_prepare_cubemap_from_equirectangular(void);
+void r3d_shader_load_prepare_cubemap_irradiance(void);
+void r3d_shader_load_prepare_cubemap_prefilter(void);
+void r3d_shader_load_scene_geometry(void);
+void r3d_shader_load_scene_forward(void);
+void r3d_shader_load_scene_background(void);
+void r3d_shader_load_scene_skybox(void);
+void r3d_shader_load_scene_depth_volume(void);
+void r3d_shader_load_scene_depth(void);
+void r3d_shader_load_scene_depth_cube(void);
+void r3d_shader_load_scene_decal(void);
+void r3d_shader_load_deferred_ambient_ibl(void);
+void r3d_shader_load_deferred_ambient(void);
+void r3d_shader_load_deferred_lighting(void);
+void r3d_shader_load_deferred_compose(void);
+void r3d_shader_load_post_bloom(void);
+void r3d_shader_load_post_ssr(void);
+void r3d_shader_load_post_fog(void);
+void r3d_shader_load_post_dof(void);
+void r3d_shader_load_post_output(R3D_Tonemap tonemap);
+void r3d_shader_load_post_fxaa(void);
 
 /* === Texture loading functions === */
 

@@ -90,42 +90,42 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
 {
     /* --- Send matrices --- */
 
-    r3d_shader_set_mat4(raster.depth, uMatModel, call->transform);
-    r3d_shader_set_mat4(raster.depth, uMatVP, *matVP);
+    r3d_shader_set_mat4(scene.depth, uMatModel, call->transform);
+    r3d_shader_set_mat4(scene.depth, uMatVP, *matVP);
 
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
-        r3d_shader_set_int(raster.depth, uSkinning, true);
+        r3d_shader_set_int(scene.depth, uSkinning, true);
         r3d_drawcall_upload_matrices(call);
     }
     else {
-        r3d_shader_set_int(raster.depth, uSkinning, false);
+        r3d_shader_set_int(scene.depth, uSkinning, false);
     }
 
     /* --- Send billboard related data --- */
 
-    r3d_shader_set_int(raster.depth, uBillboard, call->material.billboardMode);
+    r3d_shader_set_int(scene.depth, uBillboard, call->material.billboardMode);
     if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
-        r3d_shader_set_mat4(raster.depth, uMatInvView, R3D.state.transform.invView);
+        r3d_shader_set_mat4(scene.depth, uMatInvView, R3D.state.transform.invView);
     }
 
     /* --- Set texcoord offset/scale --- */
 
-    r3d_shader_set_vec2(raster.depth, uTexCoordOffset, call->material.uvOffset);
-    r3d_shader_set_vec2(raster.depth, uTexCoordScale, call->material.uvScale);
+    r3d_shader_set_vec2(scene.depth, uTexCoordOffset, call->material.uvOffset);
+    r3d_shader_set_vec2(scene.depth, uTexCoordScale, call->material.uvScale);
 
     /* --- Set forward material data --- */
 
     if (forward) {
-        r3d_shader_set_float(raster.depth, uAlphaCutoff, call->material.alphaCutoff);
-        r3d_shader_set_float(raster.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
-        r3d_shader_bind_sampler2D_opt(raster.depth, uTexAlbedo, call->material.albedo.texture.id, white);
+        r3d_shader_set_float(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
+        r3d_shader_set_float(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
+        r3d_shader_bind_sampler2D_opt(scene.depth, uTexAlbedo, call->material.albedo.texture.id, white);
     }
     else {
-        r3d_shader_set_float(raster.depth, uAlpha, 1.0f);
-        r3d_shader_set_float(raster.depth, uAlphaCutoff, 0.0f);
-        r3d_shader_bind_sampler2D(raster.depth, uTexAlbedo, R3D.texture.white);
+        r3d_shader_set_float(scene.depth, uAlpha, 1.0f);
+        r3d_shader_set_float(scene.depth, uAlphaCutoff, 0.0f);
+        r3d_shader_bind_sampler2D(scene.depth, uTexAlbedo, R3D.texture.white);
     }
 
     /* --- Applying material parameters that are independent of shaders --- */
@@ -140,7 +140,7 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     /* --- Rendering the object corresponding to the draw call --- */
 
     bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
-    r3d_shader_set_int(raster.depth, uInstancing, instancing);
+    r3d_shader_set_int(scene.depth, uInstancing, instancing);
 
     if (instancing) {
         r3d_drawcall_instanced(call, 10, -1);
@@ -151,49 +151,49 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
 
     /* --- Unbind samplers --- */
 
-    r3d_shader_unbind_sampler2D(raster.depth, uTexAlbedo);
+    r3d_shader_unbind_sampler2D(scene.depth, uTexAlbedo);
 }
 
 void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bool shadow, const Matrix* matVP)
 {
     /* --- Send matrices --- */
 
-    r3d_shader_set_mat4(raster.depthCube, uMatModel, call->transform);
-    r3d_shader_set_mat4(raster.depthCube, uMatVP, *matVP);
+    r3d_shader_set_mat4(scene.depthCube, uMatModel, call->transform);
+    r3d_shader_set_mat4(scene.depthCube, uMatVP, *matVP);
 
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
-        r3d_shader_set_int(raster.depthCube, uSkinning, true);
+        r3d_shader_set_int(scene.depthCube, uSkinning, true);
         r3d_drawcall_upload_matrices(call);
     }
     else {
-        r3d_shader_set_int(raster.depthCube, uSkinning, false);
+        r3d_shader_set_int(scene.depthCube, uSkinning, false);
     }
 
     /* --- Send billboard related data --- */
 
-    r3d_shader_set_int(raster.depthCube, uBillboard, call->material.billboardMode);
+    r3d_shader_set_int(scene.depthCube, uBillboard, call->material.billboardMode);
     if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
-        r3d_shader_set_mat4(raster.depthCube, uMatInvView, R3D.state.transform.invView);
+        r3d_shader_set_mat4(scene.depthCube, uMatInvView, R3D.state.transform.invView);
     }
 
     /* --- Set texcoord offset/scale --- */
 
-    r3d_shader_set_vec2(raster.depthCube, uTexCoordOffset, call->material.uvOffset);
-    r3d_shader_set_vec2(raster.depthCube, uTexCoordScale, call->material.uvScale);
+    r3d_shader_set_vec2(scene.depthCube, uTexCoordOffset, call->material.uvOffset);
+    r3d_shader_set_vec2(scene.depthCube, uTexCoordScale, call->material.uvScale);
 
     /* --- Set forward material data --- */
 
     if (forward) {
-        r3d_shader_set_float(raster.depthCube, uAlphaCutoff, call->material.alphaCutoff);
-        r3d_shader_set_float(raster.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
-        r3d_shader_bind_sampler2D_opt(raster.depthCube, uTexAlbedo, call->material.albedo.texture.id, white);
+        r3d_shader_set_float(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
+        r3d_shader_set_float(scene.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
+        r3d_shader_bind_sampler2D_opt(scene.depthCube, uTexAlbedo, call->material.albedo.texture.id, white);
     }
     else {
-        r3d_shader_set_float(raster.depthCube, uAlpha, 1.0f);
-        r3d_shader_set_float(raster.depthCube, uAlphaCutoff, 0.0f);
-        r3d_shader_bind_sampler2D(raster.depthCube, uTexAlbedo, R3D.texture.white);
+        r3d_shader_set_float(scene.depthCube, uAlpha, 1.0f);
+        r3d_shader_set_float(scene.depthCube, uAlphaCutoff, 0.0f);
+        r3d_shader_bind_sampler2D(scene.depthCube, uTexAlbedo, R3D.texture.white);
     }
 
     /* --- Applying material parameters that are independent of shaders --- */
@@ -208,7 +208,7 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     /* --- Rendering the object corresponding to the draw call --- */
 
     bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
-    r3d_shader_set_int(raster.depthCube, uInstancing, instancing);
+    r3d_shader_set_int(scene.depthCube, uInstancing, instancing);
 
     if (instancing) {
         r3d_drawcall_instanced(call, 10, -1);
@@ -225,7 +225,7 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
 
     /* --- Unbind samplers --- */
 
-    r3d_shader_unbind_sampler2D(raster.depthCube, uTexAlbedo);
+    r3d_shader_unbind_sampler2D(scene.depthCube, uTexAlbedo);
 }
 
 void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
@@ -234,43 +234,43 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
 
     Matrix matNormal = r3d_matrix_normal(&call->transform);
 
-    r3d_shader_set_mat4(raster.decal, uMatModel, call->transform);
-    r3d_shader_set_mat4(raster.decal, uMatNormal, matNormal);
-    r3d_shader_set_mat4(raster.decal, uMatVP, *matVP);
+    r3d_shader_set_mat4(scene.decal, uMatModel, call->transform);
+    r3d_shader_set_mat4(scene.decal, uMatNormal, matNormal);
+    r3d_shader_set_mat4(scene.decal, uMatVP, *matVP);
 
-    r3d_shader_set_mat4(raster.decal, uMatInvView, R3D.state.transform.invView);
-    r3d_shader_set_mat4(raster.decal, uMatInvProj, R3D.state.transform.invProj);
-    r3d_shader_set_mat4(raster.decal, uMatProj, R3D.state.transform.proj);
+    r3d_shader_set_mat4(scene.decal, uMatInvView, R3D.state.transform.invView);
+    r3d_shader_set_mat4(scene.decal, uMatInvProj, R3D.state.transform.invProj);
+    r3d_shader_set_mat4(scene.decal, uMatProj, R3D.state.transform.proj);
 
     /* --- Set factor material maps --- */
 
-    r3d_shader_set_float(raster.decal, uEmissionEnergy, call->material.emission.energy);
-    r3d_shader_set_float(raster.decal, uNormalScale, call->material.normal.scale);
-    r3d_shader_set_float(raster.decal, uOcclusion, call->material.orm.occlusion);
-    r3d_shader_set_float(raster.decal, uRoughness, call->material.orm.roughness);
-    r3d_shader_set_float(raster.decal, uMetalness, call->material.orm.metalness);
+    r3d_shader_set_float(scene.decal, uEmissionEnergy, call->material.emission.energy);
+    r3d_shader_set_float(scene.decal, uNormalScale, call->material.normal.scale);
+    r3d_shader_set_float(scene.decal, uOcclusion, call->material.orm.occlusion);
+    r3d_shader_set_float(scene.decal, uRoughness, call->material.orm.roughness);
+    r3d_shader_set_float(scene.decal, uMetalness, call->material.orm.metalness);
 
     /* --- Set misc material values --- */
 
-    r3d_shader_set_float(raster.decal, uAlphaCutoff, call->material.alphaCutoff);
+    r3d_shader_set_float(scene.decal, uAlphaCutoff, call->material.alphaCutoff);
 
     /* --- Set texcoord offset/scale --- */
 
-    r3d_shader_set_vec2(raster.decal, uTexCoordOffset, call->material.uvOffset);
-    r3d_shader_set_vec2(raster.decal, uTexCoordScale, call->material.uvScale);
+    r3d_shader_set_vec2(scene.decal, uTexCoordOffset, call->material.uvOffset);
+    r3d_shader_set_vec2(scene.decal, uTexCoordScale, call->material.uvScale);
 
     /* --- Set color material maps --- */
 
-    r3d_shader_set_col4(raster.decal, uAlbedoColor, call->material.albedo.color);
-    r3d_shader_set_col3(raster.decal, uEmissionColor, call->material.emission.color);
+    r3d_shader_set_col4(scene.decal, uAlbedoColor, call->material.albedo.color);
+    r3d_shader_set_col3(scene.decal, uEmissionColor, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
-    r3d_shader_bind_sampler2D_opt(raster.decal, uTexAlbedo, call->material.albedo.texture.id, white);
-    r3d_shader_bind_sampler2D_opt(raster.decal, uTexNormal, call->material.normal.texture.id, normal);
-    r3d_shader_bind_sampler2D_opt(raster.decal, uTexEmission, call->material.emission.texture.id, black);
-    r3d_shader_bind_sampler2D_opt(raster.decal, uTexORM, call->material.orm.texture.id, white);
-    r3d_shader_bind_sampler2D(raster.decal, uTexDepth, R3D.target.depth);
+    r3d_shader_bind_sampler2D_opt(scene.decal, uTexAlbedo, call->material.albedo.texture.id, white);
+    r3d_shader_bind_sampler2D_opt(scene.decal, uTexNormal, call->material.normal.texture.id, normal);
+    r3d_shader_bind_sampler2D_opt(scene.decal, uTexEmission, call->material.emission.texture.id, black);
+    r3d_shader_bind_sampler2D_opt(scene.decal, uTexORM, call->material.orm.texture.id, white);
+    r3d_shader_bind_sampler2D(scene.decal, uTexDepth, R3D.target.depth);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -284,7 +284,7 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
     /* --- Rendering the object corresponding to the draw call --- */
 
     bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
-    r3d_shader_set_int(raster.decal, uInstancing, instancing);
+    r3d_shader_set_int(scene.decal, uInstancing, instancing);
 
     if (instancing) {
         r3d_drawcall_instanced(call, 10, -1);
@@ -295,11 +295,11 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
 
     /* --- Unbind all bound texture maps --- */
 
-    r3d_shader_unbind_sampler2D(raster.decal, uTexAlbedo);
-    r3d_shader_unbind_sampler2D(raster.decal, uTexNormal);
-    r3d_shader_unbind_sampler2D(raster.decal, uTexEmission);
-    r3d_shader_unbind_sampler2D(raster.decal, uTexORM);
-    r3d_shader_unbind_sampler2D(raster.decal, uTexDepth);
+    r3d_shader_unbind_sampler2D(scene.decal, uTexAlbedo);
+    r3d_shader_unbind_sampler2D(scene.decal, uTexNormal);
+    r3d_shader_unbind_sampler2D(scene.decal, uTexEmission);
+    r3d_shader_unbind_sampler2D(scene.decal, uTexORM);
+    r3d_shader_unbind_sampler2D(scene.decal, uTexDepth);
 }
 
 void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matVP)
@@ -308,55 +308,55 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
 
     Matrix matNormal = r3d_matrix_normal(&call->transform);
 
-    r3d_shader_set_mat4(raster.geometry, uMatModel, call->transform);
-    r3d_shader_set_mat4(raster.geometry, uMatNormal, matNormal);
-    r3d_shader_set_mat4(raster.geometry, uMatVP, *matVP);
+    r3d_shader_set_mat4(scene.geometry, uMatModel, call->transform);
+    r3d_shader_set_mat4(scene.geometry, uMatNormal, matNormal);
+    r3d_shader_set_mat4(scene.geometry, uMatVP, *matVP);
 
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
-        r3d_shader_set_int(raster.geometry, uSkinning, true);
+        r3d_shader_set_int(scene.geometry, uSkinning, true);
         r3d_drawcall_upload_matrices(call);
     }
     else {
-        r3d_shader_set_int(raster.geometry, uSkinning, false);
+        r3d_shader_set_int(scene.geometry, uSkinning, false);
     }
 
     /* --- Send billboard related data --- */
 
-    r3d_shader_set_int(raster.geometry, uBillboard, call->material.billboardMode);
+    r3d_shader_set_int(scene.geometry, uBillboard, call->material.billboardMode);
     if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
-        r3d_shader_set_mat4(raster.geometry, uMatInvView, R3D.state.transform.invView);
+        r3d_shader_set_mat4(scene.geometry, uMatInvView, R3D.state.transform.invView);
     }
 
     /* --- Set factor material maps --- */
 
-    r3d_shader_set_float(raster.geometry, uEmissionEnergy, call->material.emission.energy);
-    r3d_shader_set_float(raster.geometry, uNormalScale, call->material.normal.scale);
-    r3d_shader_set_float(raster.geometry, uOcclusion, call->material.orm.occlusion);
-    r3d_shader_set_float(raster.geometry, uRoughness, call->material.orm.roughness);
-    r3d_shader_set_float(raster.geometry, uMetalness, call->material.orm.metalness);
+    r3d_shader_set_float(scene.geometry, uEmissionEnergy, call->material.emission.energy);
+    r3d_shader_set_float(scene.geometry, uNormalScale, call->material.normal.scale);
+    r3d_shader_set_float(scene.geometry, uOcclusion, call->material.orm.occlusion);
+    r3d_shader_set_float(scene.geometry, uRoughness, call->material.orm.roughness);
+    r3d_shader_set_float(scene.geometry, uMetalness, call->material.orm.metalness);
 
     /* --- Set misc material values --- */
 
-    r3d_shader_set_float(raster.geometry, uAlphaCutoff, call->material.alphaCutoff);
+    r3d_shader_set_float(scene.geometry, uAlphaCutoff, call->material.alphaCutoff);
 
     /* --- Set texcoord offset/scale --- */
 
-    r3d_shader_set_vec2(raster.geometry, uTexCoordOffset, call->material.uvOffset);
-    r3d_shader_set_vec2(raster.geometry, uTexCoordScale, call->material.uvScale);
+    r3d_shader_set_vec2(scene.geometry, uTexCoordOffset, call->material.uvOffset);
+    r3d_shader_set_vec2(scene.geometry, uTexCoordScale, call->material.uvScale);
 
     /* --- Set color material maps --- */
 
-    r3d_shader_set_col4(raster.geometry, uAlbedoColor, call->material.albedo.color);
-    r3d_shader_set_col3(raster.geometry, uEmissionColor, call->material.emission.color);
+    r3d_shader_set_col4(scene.geometry, uAlbedoColor, call->material.albedo.color);
+    r3d_shader_set_col3(scene.geometry, uEmissionColor, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
-    r3d_shader_bind_sampler2D_opt(raster.geometry, uTexAlbedo, call->material.albedo.texture.id, white);
-    r3d_shader_bind_sampler2D_opt(raster.geometry, uTexNormal, call->material.normal.texture.id, normal);
-    r3d_shader_bind_sampler2D_opt(raster.geometry, uTexEmission, call->material.emission.texture.id, black);
-    r3d_shader_bind_sampler2D_opt(raster.geometry, uTexORM, call->material.orm.texture.id, white);
+    r3d_shader_bind_sampler2D_opt(scene.geometry, uTexAlbedo, call->material.albedo.texture.id, white);
+    r3d_shader_bind_sampler2D_opt(scene.geometry, uTexNormal, call->material.normal.texture.id, normal);
+    r3d_shader_bind_sampler2D_opt(scene.geometry, uTexEmission, call->material.emission.texture.id, black);
+    r3d_shader_bind_sampler2D_opt(scene.geometry, uTexORM, call->material.orm.texture.id, white);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -365,7 +365,7 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
     /* --- Rendering the object corresponding to the draw call --- */
 
     bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
-    r3d_shader_set_int(raster.geometry, uInstancing, instancing);
+    r3d_shader_set_int(scene.geometry, uInstancing, instancing);
 
     if (instancing) {
         r3d_drawcall_instanced(call, 10, 14);
@@ -376,10 +376,10 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
 
     /* --- Unbind all bound texture maps --- */
 
-    r3d_shader_unbind_sampler2D(raster.geometry, uTexAlbedo);
-    r3d_shader_unbind_sampler2D(raster.geometry, uTexNormal);
-    r3d_shader_unbind_sampler2D(raster.geometry, uTexEmission);
-    r3d_shader_unbind_sampler2D(raster.geometry, uTexORM);
+    r3d_shader_unbind_sampler2D(scene.geometry, uTexAlbedo);
+    r3d_shader_unbind_sampler2D(scene.geometry, uTexNormal);
+    r3d_shader_unbind_sampler2D(scene.geometry, uTexEmission);
+    r3d_shader_unbind_sampler2D(scene.geometry, uTexORM);
 }
 
 void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP)
@@ -388,55 +388,55 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
 
     Matrix matNormal = r3d_matrix_normal(&call->transform);
 
-    r3d_shader_set_mat4(raster.forward, uMatModel, call->transform);
-    r3d_shader_set_mat4(raster.forward, uMatNormal, matNormal);
-    r3d_shader_set_mat4(raster.forward, uMatVP, *matVP);
+    r3d_shader_set_mat4(scene.forward, uMatModel, call->transform);
+    r3d_shader_set_mat4(scene.forward, uMatNormal, matNormal);
+    r3d_shader_set_mat4(scene.forward, uMatVP, *matVP);
 
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
-        r3d_shader_set_int(raster.forward, uSkinning, true);
+        r3d_shader_set_int(scene.forward, uSkinning, true);
         r3d_drawcall_upload_matrices(call);
     }
     else {
-        r3d_shader_set_int(raster.forward, uSkinning, false);
+        r3d_shader_set_int(scene.forward, uSkinning, false);
     }
 
     /* --- Send billboard related data --- */
 
-    r3d_shader_set_int(raster.forward, uBillboard, call->material.billboardMode);
+    r3d_shader_set_int(scene.forward, uBillboard, call->material.billboardMode);
     if (call->material.billboardMode != R3D_BILLBOARD_DISABLED) {
-        r3d_shader_set_mat4(raster.forward, uMatInvView, R3D.state.transform.invView);
+        r3d_shader_set_mat4(scene.forward, uMatInvView, R3D.state.transform.invView);
     }
 
     /* --- Set factor material maps --- */
 
-    r3d_shader_set_float(raster.forward, uEmissionEnergy, call->material.emission.energy);
-    r3d_shader_set_float(raster.forward, uNormalScale, call->material.normal.scale);
-    r3d_shader_set_float(raster.forward, uOcclusion, call->material.orm.occlusion);
-    r3d_shader_set_float(raster.forward, uRoughness, call->material.orm.roughness);
-    r3d_shader_set_float(raster.forward, uMetalness, call->material.orm.metalness);
+    r3d_shader_set_float(scene.forward, uEmissionEnergy, call->material.emission.energy);
+    r3d_shader_set_float(scene.forward, uNormalScale, call->material.normal.scale);
+    r3d_shader_set_float(scene.forward, uOcclusion, call->material.orm.occlusion);
+    r3d_shader_set_float(scene.forward, uRoughness, call->material.orm.roughness);
+    r3d_shader_set_float(scene.forward, uMetalness, call->material.orm.metalness);
 
     /* --- Set misc material values --- */
 
-    r3d_shader_set_float(raster.forward, uAlphaCutoff, call->material.alphaCutoff);
+    r3d_shader_set_float(scene.forward, uAlphaCutoff, call->material.alphaCutoff);
 
     /* --- Set texcoord offset/scale --- */
 
-    r3d_shader_set_vec2(raster.forward, uTexCoordOffset, call->material.uvOffset);
-    r3d_shader_set_vec2(raster.forward, uTexCoordScale, call->material.uvScale);
+    r3d_shader_set_vec2(scene.forward, uTexCoordOffset, call->material.uvOffset);
+    r3d_shader_set_vec2(scene.forward, uTexCoordScale, call->material.uvScale);
 
     /* --- Set color material maps --- */
 
-    r3d_shader_set_col4(raster.forward, uAlbedoColor, call->material.albedo.color);
-    r3d_shader_set_col3(raster.forward, uEmissionColor, call->material.emission.color);
+    r3d_shader_set_col4(scene.forward, uAlbedoColor, call->material.albedo.color);
+    r3d_shader_set_col3(scene.forward, uEmissionColor, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
-    r3d_shader_bind_sampler2D_opt(raster.forward, uTexAlbedo, call->material.albedo.texture.id, white);
-    r3d_shader_bind_sampler2D_opt(raster.forward, uTexNormal, call->material.normal.texture.id, normal);
-    r3d_shader_bind_sampler2D_opt(raster.forward, uTexEmission, call->material.emission.texture.id, black);
-    r3d_shader_bind_sampler2D_opt(raster.forward, uTexORM, call->material.orm.texture.id, white);
+    r3d_shader_bind_sampler2D_opt(scene.forward, uTexAlbedo, call->material.albedo.texture.id, white);
+    r3d_shader_bind_sampler2D_opt(scene.forward, uTexNormal, call->material.normal.texture.id, normal);
+    r3d_shader_bind_sampler2D_opt(scene.forward, uTexEmission, call->material.emission.texture.id, black);
+    r3d_shader_bind_sampler2D_opt(scene.forward, uTexORM, call->material.orm.texture.id, white);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -446,7 +446,7 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
     /* --- Rendering the object corresponding to the draw call --- */
 
     bool instancing = (call->instanced.count > 0 && call->instanced.transforms);
-    r3d_shader_set_int(raster.forward, uInstancing, instancing);
+    r3d_shader_set_int(scene.forward, uInstancing, instancing);
 
     if (instancing) {
         r3d_drawcall_instanced(call, 10, 14);
@@ -457,10 +457,10 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
 
     /* --- Unbind all bound texture maps --- */
 
-    r3d_shader_unbind_sampler2D(raster.forward, uTexAlbedo);
-    r3d_shader_unbind_sampler2D(raster.forward, uTexNormal);
-    r3d_shader_unbind_sampler2D(raster.forward, uTexEmission);
-    r3d_shader_unbind_sampler2D(raster.forward, uTexORM);
+    r3d_shader_unbind_sampler2D(scene.forward, uTexAlbedo);
+    r3d_shader_unbind_sampler2D(scene.forward, uTexNormal);
+    r3d_shader_unbind_sampler2D(scene.forward, uTexEmission);
+    r3d_shader_unbind_sampler2D(scene.forward, uTexORM);
 }
 
 /* === Internal functions === */
