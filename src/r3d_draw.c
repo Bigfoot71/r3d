@@ -17,6 +17,8 @@
 #include "./details/r3d_drawcall.h"
 #include "./details/r3d_light.h"
 #include "./details/r3d_math.h"
+
+#include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
 
 // ========================================
@@ -1746,30 +1748,24 @@ void r3d_pass_post_bloom(void)
 
 void r3d_pass_post_output(void)
 {
-    R3D_Tonemap tonemap = R3D.env.tonemapMode;
-
-    // Checks if the output shader with the required tonemap exists
-    if (R3D.shader.post.output[tonemap].id == 0) {
-        r3d_shader_load_post_output(tonemap);
-    }
-
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.scene);
     {
         glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
 
-        r3d_shader_enable(post.output[tonemap]);
+        r3d_shader_enable(post.output);
         {
-            r3d_shader_bind_sampler2D(post.output[tonemap], uTexColor, R3D.target.scenePp[1]);
+            r3d_shader_bind_sampler2D(post.output, uTexColor, R3D.target.scenePp[1]);
 
-            r3d_shader_set_float(post.output[tonemap], uTonemapExposure, R3D.env.tonemapExposure);
-            r3d_shader_set_float(post.output[tonemap], uTonemapWhite, R3D.env.tonemapWhite);
-            r3d_shader_set_float(post.output[tonemap], uBrightness, R3D.env.brightness);
-            r3d_shader_set_float(post.output[tonemap], uContrast, R3D.env.contrast);
-            r3d_shader_set_float(post.output[tonemap], uSaturation, R3D.env.saturation);
+            r3d_shader_set_float(post.output, uTonemapExposure, R3D.env.tonemapExposure);
+            r3d_shader_set_float(post.output, uTonemapWhite, R3D.env.tonemapWhite);
+            r3d_shader_set_int(post.output, uTonemapMode, R3D.env.tonemapMode);
+            r3d_shader_set_float(post.output, uBrightness, R3D.env.brightness);
+            r3d_shader_set_float(post.output, uContrast, R3D.env.contrast);
+            r3d_shader_set_float(post.output, uSaturation, R3D.env.saturation);
 
             r3d_primitive_bind_and_draw_screen();
 
-            r3d_shader_unbind_sampler2D(post.output[tonemap], uTexColor);
+            r3d_shader_unbind_sampler2D(post.output, uTexColor);
         }
         r3d_shader_disable();
 

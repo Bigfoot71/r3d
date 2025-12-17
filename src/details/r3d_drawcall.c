@@ -19,7 +19,7 @@
 
 #include "./r3d_drawcall.h"
 
-#include "./r3d_primitives.h"
+#include "../modules/r3d_shader.h"
 #include "./r3d_frustum.h"
 #include "../r3d_state.h"
 #include "./r3d_math.h"

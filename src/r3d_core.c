@@ -15,12 +15,14 @@
 #include <assimp/cimport.h>
 #include <float.h>
 
-#include "./r3d_state.h"
-#include "./details/r3d_light.h"
-#include "./details/r3d_drawcall.h"
-#include "./details/r3d_primitives.h"
-#include "./details/containers/r3d_array.h"
 #include "./details/containers/r3d_registry.h"
+#include "./details/containers/r3d_array.h"
+#include "./details/r3d_primitives.h"
+#include "./details/r3d_drawcall.h"
+#include "./details/r3d_light.h"
+
+#include "./modules/r3d_shader.h"
+#include "./r3d_state.h"
 
 // ========================================
 // PUBLIC API
@@ -136,7 +138,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     r3d_framebuffers_load(resWidth, resHeight);
     r3d_textures_load();
     r3d_storages_load();
-    r3d_shaders_load();
+    r3d_mod_shader_init();
 
     // Defines suitable clipping plane distances for r3d
     rlSetClipPlanes(0.05f, 4000.0f);
@@ -147,7 +149,7 @@ void R3D_Close(void)
     r3d_framebuffers_unload();
     r3d_textures_unload();
     r3d_storages_unload();
-    r3d_shaders_unload();
+    r3d_mod_shader_quit();
 
     r3d_array_destroy(&R3D.container.aDrawForward);
     r3d_array_destroy(&R3D.container.aDrawDeferred);
@@ -184,12 +186,6 @@ void R3D_SetState(unsigned int flags)
     }
 
     R3D.state.flags |= flags;
-
-    if (flags & R3D_FLAG_FXAA) {
-        if (R3D.shader.post.fxaa.id == 0) {
-            r3d_shader_load_post_fxaa();
-        }
-    }
 }
 
 void R3D_ClearState(unsigned int flags)

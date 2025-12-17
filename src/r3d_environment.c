@@ -91,12 +91,6 @@ void R3D_SetSSAO(bool enabled)
 		if (R3D.texture.ssaoKernel == 0) {
 			r3d_texture_load_ssao_kernel();
 		}
-		if (R3D.shader.prepare.ssao.id == 0) {
-			r3d_shader_load_prepare_ssao();
-		}
-		if (R3D.shader.prepare.ssaoBlur.id == 0) {
-			r3d_shader_load_prepare_ssao_blur();
-		}
 	}
 }
 
@@ -176,15 +170,6 @@ void R3D_SetBloomMode(R3D_Bloom mode)
 				R3D.state.resolution.height
 			);
 		}
-		if (R3D.shader.prepare.bloomDown.id == 0) {
-			r3d_shader_load_prepare_bloom_down();
-		}
-		if (R3D.shader.prepare.bloomUp.id == 0) {
-			r3d_shader_load_prepare_bloom_up();
-		}
-		if (R3D.shader.post.bloom.id == 0) {
-			r3d_shader_load_post_bloom();
-		}
 	}
 }
 
@@ -256,12 +241,6 @@ float R3D_GetBloomSoftThreshold(void)
 void R3D_SetSSR(bool enabled)
 {
 	R3D.env.ssrEnabled = enabled;
-
-	if (enabled) {
-		if (R3D.shader.post.ssr.id == 0) {
-			r3d_shader_load_post_ssr();
-		}
-	}
 }
 
 bool R3D_GetSSR(void)
@@ -334,12 +313,6 @@ void R3D_GetSSRScreenEdgeFade(float* start, float* end)
 void R3D_SetFogMode(R3D_Fog mode)
 {
 	R3D.env.fogMode = mode;
-
-	if (mode != R3D_FOG_DISABLED) {
-		if (R3D.shader.post.fog.id == 0) {
-			r3d_shader_load_post_fog();
-		}
-	}
 }
 
 R3D_Fog R3D_GetFogMode(void)
@@ -413,7 +386,7 @@ void R3D_SetTonemapMode(R3D_Tonemap mode)
 	//       in `R3D_End()`
 
 	//if (R3D.shader.screen.output[mode].id == 0) {
-	//	r3d_shader_load_post_output(mode);
+	//	r3d_mod_shader_load_post_output(mode);
 	//}
 }
 
@@ -475,12 +448,6 @@ float R3D_GetSaturation(void)
 void R3D_SetDofMode(R3D_Dof mode)
 {
 	R3D.env.dofMode = mode;
-
-	if (mode != R3D_DOF_DISABLED) {
-		if (R3D.shader.post.dof.id == 0) {
-			r3d_shader_load_post_dof();
-		}
-	}
 }
 
 R3D_Dof R3D_GetDofMode(void)

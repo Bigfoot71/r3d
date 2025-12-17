@@ -23,6 +23,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
 
 // ========================================
