@@ -9,6 +9,7 @@
 #include <r3d/r3d_draw.h>
 #include <raymath.h>
 #include <stddef.h>
+#include <assert.h>
 #include <float.h>
 #include <rlgl.h>
 #include <glad.h>
@@ -17,7 +18,6 @@
 #include "./details/r3d_light.h"
 #include "./details/r3d_math.h"
 #include "./r3d_state.h"
-#include "raylib.h"
 
 // ========================================
 // HELPER MACROS
@@ -1085,6 +1085,7 @@ void r3d_pass_deferred_lights(void)
 
         /* --- Setup OpenGL pipeline --- */
 
+        glEnable(GL_SCISSOR_TEST);
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_GREATER);
         glDepthMask(GL_FALSE);
@@ -1115,6 +1116,39 @@ void r3d_pass_deferred_lights(void)
         for (int i = 0; i < R3D.container.aLightBatch.count; i++)
         {
             r3d_light_batched_t* light = r3d_array_at(&R3D.container.aLightBatch, i);
+
+            int x = 0, y = 0;
+            int w = R3D.state.resolution.width;
+            int h = R3D.state.resolution.height;
+
+            if (light->data->type != R3D_LIGHT_DIR) {
+                Vector3 min = light->aabb.min;
+                Vector3 max = light->aabb.max;
+
+                Vector2 minNDC = {FLT_MAX, FLT_MAX};
+                Vector2 maxNDC = {-FLT_MAX, -FLT_MAX};
+
+                bool allInside = true;
+                for (int j = 0; j < 8; j++) {
+                    Vector4 corner = {(j & 1) ? max.x : min.x, (j & 2) ? max.y : min.y, (j & 4) ? max.z : min.z, 1.0f};
+                    Vector4 clip = r3d_vector4_transform(corner, &R3D.state.transform.viewProj);
+                    if (clip.w <= 0.0f) { allInside = false; break; }
+
+                    Vector2 ndc = Vector2Scale((Vector2){clip.x, clip.y}, 1.0f / clip.w);
+                    minNDC = Vector2Min(minNDC, ndc);
+                    maxNDC = Vector2Max(maxNDC, ndc);
+                }
+
+                if (allInside) {
+                    x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * R3D.state.resolution.width, 0.0f);
+                    y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * R3D.state.resolution.height, 0.0f);
+                    w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * R3D.state.resolution.width, (float)R3D.state.resolution.width) - x;
+                    h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * R3D.state.resolution.height, (float)R3D.state.resolution.height) - y;
+                    assert(w > 0 && h > 0); // This should never happen if the upstream frustum culling of the lights is correct.
+                }
+            }
+
+            glScissor(x, y, w, h);
 
             // Lighting accumulation pass
             r3d_shader_enable(screen.lighting);
@@ -1181,6 +1215,8 @@ void r3d_pass_deferred_lights(void)
         r3d_shader_unbind_samplerCube(screen.lighting, uLight.shadowCubemap);
         r3d_shader_unbind_sampler2D(screen.lighting, uLight.shadowMap);
     }
+
+    glDisable(GL_SCISSOR_TEST);
 }
 
 void r3d_pass_scene_deferred(void)

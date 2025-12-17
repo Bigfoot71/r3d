@@ -28,7 +28,7 @@
     }
 
 // ========================================
-// VECTOR3 FUNCTIONS
+// VECTOR FUNCTIONS
 // ========================================
 
 static inline Vector3 r3d_vector3_transform(Vector3 v, const Matrix* m)
@@ -48,6 +48,17 @@ static inline Vector3 r3d_vector3_transform_linear(Vector3 v, const Matrix* m)
         m->m0 * x + m->m4 * y + m->m8 * z,
         m->m1 * x + m->m5 * y + m->m9 * z,
         m->m2 * x + m->m6 * y + m->m10 * z
+    };
+}
+
+static inline Vector4 r3d_vector4_transform(Vector4 v, const Matrix* m)
+{
+    float x = v.x, y = v.y, z = v.z, w = v.w;
+    return (Vector4){
+        m->m0 * x + m->m4 * y + m->m8 * z + m->m12 * w,
+        m->m1 * x + m->m5 * y + m->m9 * z + m->m13 * w,
+        m->m2 * x + m->m6 * y + m->m10 * z + m->m14 * w,
+        m->m3 * x + m->m7 * y + m->m11 * z + m->m15 * w
     };
 }
 
