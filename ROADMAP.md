@@ -23,19 +23,43 @@
 
 ## **v0.6**
 
+* [ ] **Modular State System and On-Demand Resource Loading**
+  Replace `r3d_state.h` with a modular system, split by responsibility, with internal on-demand loading management.
+  For example, introduce a *shader cache* that loads all shaders lazily when they are first requested during rendering.
+  Apply the same approach to render targets and any other applicable resources.
+
+* [ ] **Draw Call System Refactor**
+  Migrate all content from `details/r3d_drawcall.h` into `r3d_draw.c`.
+
+* [ ] **Unified Draw Call Storage and Index-Based Sorting**
+  Replace multiple draw call arrays and in-place object sorting with:
+
+  * a single array containing all draw calls
+  * multiple index arrays per category
+    Perform sorting and culling on the index arrays rather than directly on the draw call structures themselves.
+
+* [ ] **Merge Scene Vertex Shaders**
+  Merge all vertex shaders used by the `scene` module into a single unified vertex shader.
+
+* [ ] **Environment API Refactor**
+  Replace all environment-related functions with a single `R3D_Environment` structure, while keeping a global environment state.
+  See: [https://github.com/Bigfoot71/r3d/discussions/117](https://github.com/Bigfoot71/r3d/discussions/117)
+
+* [ ] **Skybox Revision and Reflection Probes**
+  Revise the skybox system and add support for reflection probes, including probe blending.
+
+## **v0.7**
+
 * [ ] **Add Support for Custom Screen-Space Shaders (Post-Processing)**
   Allow custom shaders to be used in screen-space for post-processing effects.
 
 * [ ] **Add Support for Custom Material Shaders**
   Allow custom shaders per material. This will likely require a different approach for deferred vs. forward rendering. Deferred mode will probably offer fewer possibilities than forward mode for custom material shaders.
 
-- [ ] **Rework Scene Management for Directional Lights**  
-  Currently, shadow projection for directional lights relies on scene bounds defined by `R3D_SetSceneBounds(bounds)`. This function only exists for that purpose, which makes the system unclear and inflexible. It would be better to design a more natural way to handle shadow projection for directional lights.
-
 * [ ] **Better logs**
   Add better logs for initialization, shutdown, loading operations, and failures.
 
-## **v0.7**
+## **v0.8**
 
 * [ ] **Improve Shadow Map Management**
   Instead of using one shadow map per light, implement an internal batching system with a 2D texture array and `Sample2DArray` in shaders.
@@ -47,11 +71,11 @@
 * [ ] **Make a Wiki**
   Add wiki pages to the Github repository.
 
-*Note: v0.7 features are still unsure and incomplete.*
+*Note: v0.8 features are still unsure and/or incomplete.*
 
 ## **Ideas (Not Planned Yet)**
 
-* [ ] After implementing `Sampler2DArray` for shadow maps, explore using UBOs for lights. Evaluate whether this is more efficient than the current approach.
+* [ ] After implementing `Sampler2DArray` for shadow maps, explore using UBOs for lights, but also for environment.
 * [ ] Provide an easy way to configure the number of lights in forward shaders (preferably runtime-configurable).
 * [ ] Implement a system to save loaded skyboxes together with their generated irradiance and prefiltered textures for later reloading.
 * [ ] Improve support for shadow/transparency interaction (e.g., colored shadows).
