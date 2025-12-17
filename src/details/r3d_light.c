@@ -226,8 +226,8 @@ void r3d_light_indicate_shadow_update(r3d_light_t* light)
 BoundingBox r3d_light_get_bounding_box(const r3d_light_t* light)
 {
     BoundingBox aabb = {
-        { -FLT_MAX, -FLT_MAX, -FLT_MAX },
-        { +FLT_MAX, +FLT_MAX, +FLT_MAX },
+        {-FLT_MAX, -FLT_MAX, -FLT_MAX},
+        {+FLT_MAX, +FLT_MAX, +FLT_MAX},
     };
 
     switch (light->type)
@@ -236,18 +236,15 @@ BoundingBox r3d_light_get_bounding_box(const r3d_light_t* light)
         break;
 
     case R3D_LIGHT_OMNI:
-        {
-            const float r = light->range;
-            const Vector3* p = &light->position;
-            for (int i = 0; i < 3; ++i) {
-                ((float*)&aabb.min)[i] = ((float*)p)[i] - r;
-                ((float*)&aabb.max)[i] = ((float*)p)[i] + r;
-            }
-        }
+        aabb.min = Vector3AddValue(light->position, -light->range);
+        aabb.max = Vector3AddValue(light->position, +light->range);
         break;
 
     case R3D_LIGHT_SPOT:
         {
+            // REVIEW: This method seems a bit extreme to me
+            //         A simpler method allowing a slight margin would be acceptable...
+
             const float h = light->range;
             const float cosTheta = light->outerCutOff;
 
