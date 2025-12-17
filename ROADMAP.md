@@ -75,7 +75,7 @@
 
 ## **Ideas (Not Planned Yet)**
 
-* [ ] After implementing `Sampler2DArray` for shadow maps, explore using UBOs for lights, but also for environment.
+* [ ] After implementing `Sampler2DArray` for shadow maps, explore using UBOs for lights, but also for environment and matrices/camera data.
 * [ ] Provide an easy way to configure the number of lights in forward shaders (preferably runtime-configurable).
 * [ ] Implement a system to save loaded skyboxes together with their generated irradiance and prefiltered textures for later reloading.
 * [ ] Improve support for shadow/transparency interaction (e.g., colored shadows).
