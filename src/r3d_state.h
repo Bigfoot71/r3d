@@ -36,11 +36,6 @@
 
 #define R3D_STORAGE_MATRIX_CAPACITY  256
 
-#define R3D_STENCIL_GEOMETRY_BIT     0x80                               // Bit 7 (MSB) for geometry
-#define R3D_STENCIL_GEOMETRY_MASK    0x80                               // Mask for geometry bit only
-#define R3D_STENCIL_EFFECT_MASK      0x7F                               // Mask for effect bits (bits 0-6)
-#define R3D_STENCIL_EFFECT_ID(n)     ((n) & R3D_STENCIL_EFFECT_MASK)    // Extract effect ID (7 bits - 127 effects)
-
 /* === Internal Strucs === */
 
 struct r3d_support_internal_format {
@@ -100,7 +95,7 @@ extern struct R3D_State {
         GLuint emission;            ///< RGB[11|11|10] (or fallbacks)
         GLuint normal;              ///< RG[16|16] (8-bit if R3D_FLAGS_8_BIT_NORMALS or 16F not supported)
         GLuint orm;                 ///< RGB[8|8|8]
-        GLuint depthStencil;        ///< DS[24|8] -> Stencil: Last bit is a true/false geometry and others bits are for the rest
+        GLuint depth;               ///< D[24]
         GLuint diffuse;             ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Diffuse contribution
         GLuint specular;            ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Specular contribution
         GLuint ssaoPpHs[2];         ///< R[8] -> Used for initial SSAO rendering + blur effect
@@ -124,16 +119,15 @@ extern struct R3D_State {
                              *   [1] = emission
                              *   [2] = normal
                              *   [3] = orm
-                             *   [_] = depthStencil
+                             *   [_] = depth
                              */
 
         GLuint ssao;        /**< [0] = ssaoPpHs
-                             *   [_] = depthStencil (use stencil)
                              */
 
         GLuint deferred;    /**< [0] = diffuse
                              *   [1] = specular
-                             *   [_] = depthStencil
+                             *   [_] = depth
                              */
 
         GLuint bloom;       /**< [0] = mipChainHs
@@ -143,7 +137,7 @@ extern struct R3D_State {
                               *  [1] = albedo
                               *  [2] = normal
                               *  [3] = orm
-                              *  [_] = depthStencil
+                              *  [_] = depth
                               */
 
         // Custom target (optional)
@@ -185,6 +179,7 @@ extern struct R3D_State {
         struct {
             r3d_shader_raster_geometry_t geometry;
             r3d_shader_raster_forward_t forward;
+            r3d_shader_raster_background_t background;
             r3d_shader_raster_skybox_t skybox;
             r3d_shader_raster_depth_volume_t depthVolume;
             r3d_shader_raster_depth_t depth;
@@ -212,7 +207,7 @@ extern struct R3D_State {
     // Environment data
     struct {
 
-        Vector3 backgroundColor;        // Used as default albedo color when skybox is disabled (raster pass)
+        Vector4 backgroundColor;        // Used as default albedo color when skybox is disabled (raster pass)
 
         Color ambientColor;             // Base color of ambient light used when skybox is disabled (light pass)
         float ambientEnergy;            // Multiplicative energy for ambient light when skybox is disabled (light pass)
@@ -399,6 +394,7 @@ void r3d_shader_load_generate_irradiance_convolution(void);
 void r3d_shader_load_generate_prefilter(void);
 void r3d_shader_load_raster_geometry(void);
 void r3d_shader_load_raster_forward(void);
+void r3d_shader_load_raster_background(void);
 void r3d_shader_load_raster_skybox(void);
 void r3d_shader_load_raster_depth_volume(void);
 void r3d_shader_load_raster_depth(void);

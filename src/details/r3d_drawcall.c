@@ -270,7 +270,7 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
     r3d_shader_bind_sampler2D_opt(raster.decal, uTexNormal, call->material.normal.texture.id, normal);
     r3d_shader_bind_sampler2D_opt(raster.decal, uTexEmission, call->material.emission.texture.id, black);
     r3d_shader_bind_sampler2D_opt(raster.decal, uTexORM, call->material.orm.texture.id, white);
-    r3d_shader_bind_sampler2D(raster.decal, uTexDepth, R3D.target.depthStencil);
+    r3d_shader_bind_sampler2D(raster.decal, uTexDepth, R3D.target.depth);
 
     /* --- Applying material parameters that are independent of shaders --- */
 

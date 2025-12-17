@@ -20,6 +20,7 @@ void R3D_SetBackgroundColor(Color color)
 	R3D.env.backgroundColor.x = (float)color.r / 255;
 	R3D.env.backgroundColor.y = (float)color.g / 255;
 	R3D.env.backgroundColor.z = (float)color.b / 255;
+	R3D.env.backgroundColor.w = (float)color.a / 255;
 }
 
 void R3D_SetAmbientColor(Color color)

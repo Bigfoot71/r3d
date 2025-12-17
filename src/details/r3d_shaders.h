@@ -113,6 +113,11 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_vec4_t uColor;
+} r3d_shader_raster_background_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_vec4_t uRotation;

@@ -69,6 +69,8 @@ void main()
     /* --- Get current depth and view-space position --- */
 
     float depth = texture(uTexDepth, vTexCoord).r;
+    if (depth >= 1.0 - 1e-5) discard;
+
     vec3 position = DepthToViewPosition(depth);
 
     /* --- Get and decode current normal, then transform to view space --- */

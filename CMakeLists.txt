@@ -216,6 +216,7 @@ add_library(${PROJECT_NAME}
 )
 
 embed_shaders(${PROJECT_NAME}
+    "${R3D_ROOT_PATH}/shaders/common/color.frag"
     "${R3D_ROOT_PATH}/shaders/common/screen.vert"
     "${R3D_ROOT_PATH}/shaders/common/cubemap.vert"
     "${R3D_ROOT_PATH}/shaders/generate/gaussian_blur_dual_pass.frag"

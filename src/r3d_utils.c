@@ -71,7 +71,7 @@ Texture2D R3D_GetBufferNormal(void)
 Texture2D R3D_GetBufferDepth(void)
 {
     Texture2D texture = { 0 };
-    texture.id = R3D.target.depthStencil;
+    texture.id = R3D.target.depth;
     texture.width = R3D.state.resolution.width;
     texture.height = R3D.state.resolution.height;
     texture.mipmaps = 1;

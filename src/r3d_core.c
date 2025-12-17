@@ -47,7 +47,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.container.aLightBatch = r3d_array_create(8, sizeof(r3d_light_batched_t));
 
     // Environment data
-    R3D.env.backgroundColor = (Vector3) { 0.2f, 0.2f, 0.2f };
+    R3D.env.backgroundColor = (Vector4) { 0.2f, 0.2f, 0.2f, 1.0f };
     R3D.env.ambientColor = (Color){ 0, 0, 0, 255 };
     R3D.env.ambientEnergy = 1.0f;
     R3D.env.ambientLight = (Vector3){ 0.0f, 0.0f, 0.0f };

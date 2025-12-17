@@ -33,5 +33,5 @@ void main()
     vPosition = M_Rotate3D(aPosition, uRotation);
 
     mat4 rotView = mat4(mat3(uMatView));
-    gl_Position = uMatProj * rotView * vec4(aPosition, 1.0);
+    gl_Position = (uMatProj * rotView * vec4(aPosition, 1.0)).xyww;
 }

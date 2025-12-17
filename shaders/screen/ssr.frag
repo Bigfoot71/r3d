@@ -151,7 +151,7 @@ void main()
     vec3 sceneColor = texture(uTexColor, vTexCoord).rgb;
     float depth = texture(uTexDepth, vTexCoord).r;
 
-    if (depth > 0.999) {
+    if (depth > 1.0 - 1e-5) {
         FragColor = vec4(sceneColor, 1.0);
         return;
     }

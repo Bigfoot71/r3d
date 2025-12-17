@@ -35,6 +35,7 @@
 
 #include <shaders/ambient.frag.h>
 #include <shaders/bloom.frag.h>
+#include <shaders/color.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap.vert.h>
 #include <shaders/decal.vert.h>
@@ -517,8 +518,8 @@ void r3d_framebuffers_unload(void)
     if (R3D.target.orm > 0) {
         glDeleteTextures(1, &R3D.target.orm);
     }
-    if (R3D.target.depthStencil > 0) {
-        glDeleteTextures(1, &R3D.target.depthStencil);
+    if (R3D.target.depth > 0) {
+        glDeleteTextures(1, &R3D.target.depth);
     }
     if (R3D.target.diffuse > 0) {
         glDeleteTextures(1, &R3D.target.diffuse);
@@ -594,6 +595,7 @@ void r3d_shaders_load(void)
     r3d_shader_load_raster_geometry();
     r3d_shader_load_raster_forward();
     r3d_shader_load_raster_decal();
+    r3d_shader_load_raster_background();
     r3d_shader_load_raster_skybox();
     r3d_shader_load_raster_depth_volume();
     r3d_shader_load_raster_depth();
@@ -652,6 +654,7 @@ void r3d_shaders_unload(void)
     rlUnloadShaderProgram(R3D.shader.raster.geometry.id);
     rlUnloadShaderProgram(R3D.shader.raster.forward.id);
     rlUnloadShaderProgram(R3D.shader.raster.decal.id);
+    rlUnloadShaderProgram(R3D.shader.raster.background.id);
     rlUnloadShaderProgram(R3D.shader.raster.skybox.id);
     rlUnloadShaderProgram(R3D.shader.raster.depthVolume.id);
     rlUnloadShaderProgram(R3D.shader.raster.depth.id);
@@ -778,13 +781,13 @@ static void r3d_target_load_orm(int width, int height)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static void r3d_target_load_depth_stencil(int width, int height)
+static void r3d_target_load_depth(int width, int height)
 {
-    assert(R3D.target.depthStencil == 0);
+    assert(R3D.target.depth == 0);
 
-    glGenTextures(1, &R3D.target.depthStencil);
-    glBindTexture(GL_TEXTURE_2D, R3D.target.depthStencil);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, width, height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    glGenTextures(1, &R3D.target.depth);
+    glBindTexture(GL_TEXTURE_2D, R3D.target.depth);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -898,7 +901,7 @@ void r3d_target_load_mip_chain_hs(int width, int height, int count)
 
     // Calculate the maximum mip levels based on smallest dimension
     int maxDimension = (width > height) ? width : height;
-    int maxLevels = 1 + (int)floor(log2((float)maxDimension));
+    int maxLevels = 1 + (int)floorf(log2f((float)maxDimension));
 
     // Use maximum level if count is too large or not specified
     if (count <= 0 || count > maxLevels) {
@@ -958,11 +961,11 @@ void r3d_framebuffer_load_gbuffer(int width, int height)
 {
     /* --- Ensures that targets exist --- */
 
-    if (!R3D.target.albedo)         r3d_target_load_albedo(width, height);
-    if (!R3D.target.emission)       r3d_target_load_emission(width, height);
-    if (!R3D.target.normal)         r3d_target_load_normal(width, height);
-    if (!R3D.target.orm)            r3d_target_load_orm(width, height);
-    if (!R3D.target.depthStencil)   r3d_target_load_depth_stencil(width, height);
+    if (!R3D.target.albedo)     r3d_target_load_albedo(width, height);
+    if (!R3D.target.emission)   r3d_target_load_emission(width, height);
+    if (!R3D.target.normal)     r3d_target_load_normal(width, height);
+    if (!R3D.target.orm)        r3d_target_load_orm(width, height);
+    if (!R3D.target.depth)      r3d_target_load_depth(width, height);
 
     /* --- Create and configure the framebuffer --- */
 
@@ -980,7 +983,7 @@ void r3d_framebuffer_load_gbuffer(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, R3D.target.emission, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, R3D.target.normal, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, R3D.target.orm, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depth, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -995,19 +998,14 @@ void r3d_framebuffer_load_ssao(int width, int height)
     /* --- Ensures that targets exist --- */
 
     if (!R3D.target.ssaoPpHs[0]) r3d_target_load_ssao_pp_hs(width, height);
-    if (!R3D.target.depthStencil) r3d_target_load_depth_stencil(width, height);
 
     /* --- Create and configure the framebuffer --- */
 
     glGenFramebuffers(1, &R3D.framebuffer.ssao);
     glBindFramebuffer(GL_FRAMEBUFFER, R3D.framebuffer.ssao);
 
-    glDrawBuffers(1, (GLenum[]) {
-        GL_COLOR_ATTACHMENT0
-    });
-
+    glDrawBuffers(1, (GLenum[]) { GL_COLOR_ATTACHMENT0 });
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, R3D.target.ssaoPpHs[0], 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -1021,9 +1019,9 @@ void r3d_framebuffer_load_deferred(int width, int height)
 {
     /* --- Ensures that targets exist --- */
 
-    if (!R3D.target.diffuse)        r3d_target_load_diffuse(width, height);
-    if (!R3D.target.specular)       r3d_target_load_specular(width, height);
-    if (!R3D.target.depthStencil)   r3d_target_load_depth_stencil(width, height);
+    if (!R3D.target.diffuse)    r3d_target_load_diffuse(width, height);
+    if (!R3D.target.specular)   r3d_target_load_specular(width, height);
+    if (!R3D.target.depth)      r3d_target_load_depth(width, height);
 
     /* --- Create and configure the framebuffer --- */
 
@@ -1037,7 +1035,7 @@ void r3d_framebuffer_load_deferred(int width, int height)
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, R3D.target.diffuse, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, R3D.target.specular, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depth, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -1078,11 +1076,11 @@ void r3d_framebuffer_load_scene(int width, int height)
 {
     /* --- Ensures that targets exist --- */
 
-    if (!R3D.target.scenePp[0])     r3d_target_load_scene_pp(width, height);
-    if (!R3D.target.albedo)         r3d_target_load_albedo(width, height);
-    if (!R3D.target.normal)         r3d_target_load_normal(width, height);
-    if (!R3D.target.orm)            r3d_target_load_orm(width, height);
-    if (!R3D.target.depthStencil)   r3d_target_load_depth_stencil(width, height);
+    if (!R3D.target.scenePp[0]) r3d_target_load_scene_pp(width, height);
+    if (!R3D.target.albedo)     r3d_target_load_albedo(width, height);
+    if (!R3D.target.normal)     r3d_target_load_normal(width, height);
+    if (!R3D.target.orm)        r3d_target_load_orm(width, height);
+    if (!R3D.target.depth)      r3d_target_load_depth(width, height);
 
     /* --- Create and configure the framebuffer --- */
 
@@ -1100,7 +1098,7 @@ void r3d_framebuffer_load_scene(int width, int height)
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, R3D.target.albedo, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, R3D.target.normal, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, R3D.target.orm, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depthStencil, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, R3D.target.depth, 0);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -1345,6 +1343,16 @@ void r3d_shader_load_raster_forward(void)
     }
 
     r3d_shader_disable();
+}
+
+void r3d_shader_load_raster_background(void)
+{
+    R3D.shader.raster.background.id = rlLoadShaderCode(
+        SCREEN_VERT, COLOR_FRAG
+    );
+    R3D_SHADER_VALIDATION(raster.background);
+
+    r3d_shader_get_location(raster.background, uColor);
 }
 
 void r3d_shader_load_raster_skybox(void)
