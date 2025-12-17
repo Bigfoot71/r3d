@@ -27,6 +27,7 @@
   Replace `r3d_state.h` with a modular system, split by responsibility, with internal on-demand loading management.
   For example, introduce a *shader cache* that loads all shaders lazily when they are first requested during rendering.
   Apply the same approach to render targets and any other applicable resources.
+  Note that `details/r3d_primitives.c` could also become a module with lazy loading.
 
 * [ ] **Draw Call System Refactor**
   Migrate all content from `details/r3d_drawcall.h` into `r3d_draw.c`.
