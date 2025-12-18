@@ -37,7 +37,6 @@ uniform sampler2D uTexBrdfLut;
 uniform vec4 uQuatSkybox;
 uniform float uSkyboxAmbientIntensity;
 uniform float uSkyboxReflectIntensity;
-uniform float uSSAOPower;
 
 uniform vec3 uViewPosition;
 uniform mat4 uMatInvProj;
@@ -67,19 +66,14 @@ void main()
     
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
+
     float occlusion = orm.r;
     float roughness = orm.g;
     float metalness = orm.b;
 
     /* Sample SSAO buffer and modulate occlusion value */
 
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-
-    if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-
-    occlusion *= ssao;
+    occlusion *= texture(uTexSSAO, vTexCoord).r;
 
     /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
 
@@ -139,7 +133,6 @@ uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexSSAO;
 uniform sampler2D uTexORM;
 uniform vec3 uAmbientLight;
-uniform float uSSAOPower;
 
 /* === Fragments === */
 
@@ -149,7 +142,7 @@ layout(location = 0) out vec4 FragDiffuse;
 
 void main()
 {
-    /* --- Material properties --- */
+    /* Sample albedo and ORM texture and extract values */
 
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
@@ -158,15 +151,9 @@ void main()
     float roughness = orm.g;
     float metalness = orm.b;
 
-    /* --- Ambient occlusion (SSAO) --- */
+    /* Sample SSAO buffer and modulate occlusion value */
 
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-
-	if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-
-	occlusion *= ssao;
+	occlusion *= texture(uTexSSAO, vTexCoord).r;
 
     /* --- Ambient lighting --- */
 

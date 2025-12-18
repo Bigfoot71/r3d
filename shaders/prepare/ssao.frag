@@ -30,6 +30,7 @@ uniform mat4 uMatView;
 uniform float uRadius;
 uniform float uBias;
 uniform float uIntensity;
+uniform float uPower;
 
 /* === Constants === */
 
@@ -117,5 +118,6 @@ void main()
         }
     }
 
-    FragOcclusion = 1.0 - (occlusion / float(KERNEL_SIZE)) * uIntensity;
+    occlusion = 1.0 - (occlusion / float(KERNEL_SIZE));
+    FragOcclusion = pow(occlusion, uPower) * uIntensity;
 }

@@ -153,6 +153,7 @@ void r3d_mod_shader_load_prepare_ssao(void)
     GET_LOCATION(prepare.ssao, uRadius);
     GET_LOCATION(prepare.ssao, uBias);
     GET_LOCATION(prepare.ssao, uIntensity);
+    GET_LOCATION(prepare.ssao, uPower);
 
     USE_SHADER(prepare.ssao);
 
@@ -489,7 +490,6 @@ void r3d_mod_shader_load_deferred_ambient_ibl(void)
     GET_LOCATION(deferred.ambientIbl, uViewPosition);
     GET_LOCATION(deferred.ambientIbl, uMatInvProj);
     GET_LOCATION(deferred.ambientIbl, uMatInvView);
-    GET_LOCATION(deferred.ambientIbl, uSSAOPower);
 
     USE_SHADER(deferred.ambientIbl);
 
@@ -513,7 +513,6 @@ void r3d_mod_shader_load_deferred_ambient(void)
     GET_LOCATION(deferred.ambient, uTexSSAO);
     GET_LOCATION(deferred.ambient, uTexORM);
     GET_LOCATION(deferred.ambient, uAmbientLight);
-    GET_LOCATION(deferred.ambient, uSSAOPower);
 
     USE_SHADER(deferred.ambient);
 
@@ -529,10 +528,12 @@ void r3d_mod_shader_load_deferred_lighting(void)
     GET_LOCATION(deferred.lighting, uTexAlbedo);
     GET_LOCATION(deferred.lighting, uTexNormal);
     GET_LOCATION(deferred.lighting, uTexDepth);
+    GET_LOCATION(deferred.lighting, uTexSSAO);
     GET_LOCATION(deferred.lighting, uTexORM);
     GET_LOCATION(deferred.lighting, uViewPosition);
     GET_LOCATION(deferred.lighting, uMatInvProj);
     GET_LOCATION(deferred.lighting, uMatInvView);
+    GET_LOCATION(deferred.lighting, uSSAOLightAffect);
 
     GET_LOCATION(deferred.lighting, uLight.matVP);
     GET_LOCATION(deferred.lighting, uLight.shadowMap);
@@ -560,10 +561,11 @@ void r3d_mod_shader_load_deferred_lighting(void)
     SET_SAMPLER_2D(deferred.lighting, uTexAlbedo, 0);
     SET_SAMPLER_2D(deferred.lighting, uTexNormal, 1);
     SET_SAMPLER_2D(deferred.lighting, uTexDepth, 2);
-    SET_SAMPLER_2D(deferred.lighting, uTexORM, 3);
+    SET_SAMPLER_2D(deferred.lighting, uTexSSAO, 3);
+    SET_SAMPLER_2D(deferred.lighting, uTexORM, 4);
 
-    SET_SAMPLER_2D(deferred.lighting, uLight.shadowMap, 4);
-    SET_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap, 5);
+    SET_SAMPLER_2D(deferred.lighting, uLight.shadowMap, 5);
+    SET_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap, 6);
 }
 
 void r3d_mod_shader_load_deferred_compose(void)
@@ -574,9 +576,6 @@ void r3d_mod_shader_load_deferred_compose(void)
     GET_LOCATION(deferred.compose, uTexEmission);
     GET_LOCATION(deferred.compose, uTexDiffuse);
     GET_LOCATION(deferred.compose, uTexSpecular);
-    GET_LOCATION(deferred.compose, uTexSSAO);
-    GET_LOCATION(deferred.compose, uSSAOPower);
-    GET_LOCATION(deferred.compose, uSSAOLightAffect);
 
     USE_SHADER(deferred.compose);
 
@@ -584,9 +583,6 @@ void r3d_mod_shader_load_deferred_compose(void)
     SET_SAMPLER_2D(deferred.compose, uTexEmission, 1);
     SET_SAMPLER_2D(deferred.compose, uTexDiffuse, 2);
     SET_SAMPLER_2D(deferred.compose, uTexSpecular, 3);
-
-    SET_SAMPLER_2D(deferred.compose, uTexSSAO, 4);
-
 }
 
 void r3d_mod_shader_load_post_bloom(void)
