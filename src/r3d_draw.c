@@ -18,6 +18,7 @@
 #include "./details/r3d_light.h"
 #include "./details/r3d_math.h"
 
+#include "./modules/r3d_primitive.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
@@ -882,7 +883,7 @@ r3d_target_t r3d_pass_prepare_ssao(void)
     R3D_SHADER_BIND_SAMPLER_1D(prepare.ssao, uTexKernel, R3D.texture.ssaoKernel);
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNoise, R3D.texture.ssaoNoise);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexDepth);
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexNormal);
@@ -903,13 +904,13 @@ r3d_target_t r3d_pass_prepare_ssao(void)
         R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
         R3D_SHADER_BIND_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion, r3d_target_get(ssaoTarget));
         R3D_SHADER_SET_VEC2(prepare.ssaoBlur, uDirection, (Vector2) { 1.0, 0 });
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
 
         // Vertical pass
         R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
         R3D_SHADER_BIND_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion, r3d_target_get(ssaoTarget));
         R3D_SHADER_SET_VEC2(prepare.ssaoBlur, uDirection, (Vector2) { 0, 1.0 });
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion);
@@ -949,7 +950,7 @@ void r3d_pass_deferred_ambient(r3d_target_t ssaoSource)
         R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uSkyboxAmbientIntensity, R3D.env.skyAmbientIntensity);
         R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
 
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
 
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexAlbedo);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexNormal);
@@ -976,7 +977,7 @@ void r3d_pass_deferred_ambient(r3d_target_t ssaoSource)
 
         R3D_SHADER_SET_VEC3(deferred.ambient, uAmbientLight, R3D.env.ambientLight);
 
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
 
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexAlbedo);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexSSAO);
@@ -1103,7 +1104,7 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
         }
 
         // Accumulate this light!
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
     /* --- Unbind all textures --- */
@@ -1137,7 +1138,7 @@ void r3d_pass_deferred_compose(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uTexDiffuse, r3d_target_get(R3D_TARGET_DIFFUSE));
     R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uTexSpecular, r3d_target_get(R3D_TARGET_SPECULAR));
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexAlbedo);
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexEmission);
@@ -1357,14 +1358,14 @@ void r3d_pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_SET_MAT4(scene.skybox, uMatProj, R3D.state.transform.proj);
         R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.env.quatSky);
 
-        r3d_primitive_draw_cube();
+        R3D_PRIMITIVE_DRAW_CUBE();
 
         R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uCubeSky);
     }
     else {
         R3D_SHADER_USE(scene.background);
         R3D_SHADER_SET_VEC4(scene.background, uColor, R3D.env.backgroundColor);
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
     }
 }
 
@@ -1403,7 +1404,7 @@ r3d_target_t r3d_pass_post_ssr(r3d_target_t sceneTarget)
     R3D_SHADER_SET_MAT4(post.ssr, uMatViewProj, R3D.state.transform.viewProj);
     R3D_SHADER_SET_VEC3(post.ssr, uViewPosition, R3D.state.transform.viewPos);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexColor);
     R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexAlbedo);
@@ -1431,7 +1432,7 @@ r3d_target_t r3d_pass_post_fog(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT(post.fog, uFogDensity, R3D.env.fogDensity);
     R3D_SHADER_SET_FLOAT(post.fog, uSkyAffect, R3D.env.fogSkyAffect);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.fog, uTexColor);
     R3D_SHADER_UNBIND_SAMPLER_2D(post.fog, uTexDepth);
@@ -1455,7 +1456,7 @@ r3d_target_t r3d_pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT(post.dof, uMaxBlurSize, R3D.env.dofMaxBlurSize);
     R3D_SHADER_SET_INT(post.dof, uDebugMode, R3D.env.dofDebugMode);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.dof, uTexColor);
     R3D_SHADER_UNBIND_SAMPLER_2D(post.dof, uTexDepth);
@@ -1485,7 +1486,7 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
     R3D_SHADER_SET_VEC4(prepare.bloomDown, uPrefilter, R3D.env.bloomPrefilter);
     R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, 0);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     /* --- Bloom: Downsampling --- */
 
@@ -1504,7 +1505,7 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
         R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
         R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, dstLevel);
 
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomDown, uTexture);
@@ -1533,7 +1534,7 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
             (float)R3D.env.bloomFilterRadius / srcH
         });
 
-        r3d_primitive_bind_and_draw_screen();
+        R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomUp, uTexture);
@@ -1551,7 +1552,7 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
     R3D_SHADER_SET_INT(post.bloom, uBloomMode, R3D.env.bloomMode);
     R3D_SHADER_SET_FLOAT(post.bloom, uBloomIntensity, R3D.env.bloomIntensity);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.bloom, uTexColor);
     R3D_SHADER_UNBIND_SAMPLER_2D(post.bloom, uTexBloomBlur);
@@ -1573,7 +1574,7 @@ r3d_target_t r3d_pass_post_output(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT(post.output, uContrast, R3D.env.contrast);
     R3D_SHADER_SET_FLOAT(post.output, uSaturation, R3D.env.saturation);
 
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.output, uTexColor);
 
@@ -1588,7 +1589,7 @@ r3d_target_t r3d_pass_post_fxaa(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_2D(post.fxaa, uTexture, r3d_target_get(sceneTarget));
 
     R3D_SHADER_SET_VEC2(post.fxaa, uTexelSize, R3D.state.resolution.texel);
-    r3d_primitive_bind_and_draw_screen();
+    R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.fxaa, uTexture);
 
@@ -1598,6 +1599,7 @@ r3d_target_t r3d_pass_post_fxaa(r3d_target_t sceneTarget)
 void r3d_reset_raylib_state(void)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindVertexArray(0);
     glUseProgram(0);
 
     glViewport(0, 0, GetRenderWidth(), GetRenderHeight());

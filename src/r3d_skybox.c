@@ -23,6 +23,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#include "./modules/r3d_primitive.h"
 #include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
 
@@ -207,7 +208,7 @@ static TextureCubemap r3d_skybox_load_cubemap_from_panorama(Image image, int siz
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapId, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
         R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatView, R3D.misc.matCubeViews[i]);
-        r3d_primitive_draw_cube();
+        R3D_PRIMITIVE_DRAW_CUBE();
     }
 
     // Unbind texture
@@ -291,7 +292,7 @@ static TextureCubemap r3d_skybox_generate_irradiance(TextureCubemap sky)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceId, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
         R3D_SHADER_SET_MAT4(prepare.cubemapIrradiance, uMatView, R3D.misc.matCubeViews[i]);
-        r3d_primitive_draw_cube();
+        R3D_PRIMITIVE_DRAW_CUBE();
     }
 
     // Unbind texture
@@ -373,7 +374,7 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
             R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatView, R3D.misc.matCubeViews[i]);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterId, mip);
             glClear(GL_DEPTH_BUFFER_BIT);
-            r3d_primitive_draw_cube();
+            R3D_PRIMITIVE_DRAW_CUBE();
         }
     }
 

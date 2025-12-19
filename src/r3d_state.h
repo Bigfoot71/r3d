@@ -27,7 +27,6 @@
 #include <glad.h>
 
 #include "./details/r3d_frustum.h"
-#include "./details/r3d_primitives.h"
 #include "./details/containers/r3d_array.h"
 #include "./details/containers/r3d_registry.h"
 
@@ -130,13 +129,6 @@ extern struct R3D_State {
         GLuint iblBrdfLut;
     } texture;
 
-    // Primitives
-    struct {
-        GLuint dummyVAO;        //< VAO with no buffers, used when the vertex shader takes care of geometry
-        r3d_primitive_t quad;
-        r3d_primitive_t cube;
-    } primitive;
-
     // Storages
     struct {
         GLuint texMatrices[3];  // Stores 4x4 matrices for GPU skinning (triple-buffered to avoid GPU stalls)
@@ -223,24 +215,5 @@ void r3d_texture_load_ibl_brdf_lut(void);
 /* === Storage loading functions === */
 
 void r3d_storage_load_tex_matrices(void);
-
-/* === Primitive helper macros */
-
-#define r3d_primitive_draw_quad()               \
-{                                               \
-    r3d_primitive_draw(&R3D.primitive.quad);    \
-}
-
-#define r3d_primitive_draw_cube()               \
-{                                               \
-    r3d_primitive_draw(&R3D.primitive.cube);    \
-}
-
-#define r3d_primitive_bind_and_draw_screen()    \
-{                                               \
-    glBindVertexArray(R3D.primitive.dummyVAO);  \
-    glDrawArrays(GL_TRIANGLES, 0, 3);           \
-    glBindVertexArray(0);                       \
-}
 
 #endif // R3D_STATE_H

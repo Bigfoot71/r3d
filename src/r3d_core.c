@@ -17,10 +17,10 @@
 
 #include "./details/containers/r3d_registry.h"
 #include "./details/containers/r3d_array.h"
-#include "./details/r3d_primitives.h"
 #include "./details/r3d_drawcall.h"
 #include "./details/r3d_light.h"
 
+#include "./modules/r3d_primitive.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
@@ -114,11 +114,6 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     // Init default rendering layers
     R3D.state.layers = R3D_LAYER_ALL;
 
-    // Load primitive shapes
-    glGenVertexArrays(1, &R3D.primitive.dummyVAO);
-    R3D.primitive.quad = r3d_primitive_load_quad();
-    R3D.primitive.cube = r3d_primitive_load_cube();
-
     // Init misc data
     R3D.misc.matCubeViews[0] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  1.0f,  0.0f,  0.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
     R3D.misc.matCubeViews[1] = MatrixLookAt((Vector3) { 0 }, (Vector3) { -1.0f,  0.0f,  0.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
@@ -130,9 +125,8 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.misc.meshDecalBounds = R3D_GenMeshCube(1.0f, 1.0f, 1.0f);
     R3D.misc.meshDecalBounds.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
 
-    // Load GL Objects - framebuffers, textures, shaders...
-    // NOTE: The initialization of these resources is based
-    //       on the global state and should be performed last.
+    // Initialize modules
+    r3d_mod_primitive_init();
     r3d_mod_target_init(resWidth, resHeight);
     r3d_textures_load();
     r3d_storages_load();
@@ -144,6 +138,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
 
 void R3D_Close(void)
 {
+    r3d_mod_primitive_quit();
     r3d_mod_target_quit();
     r3d_textures_unload();
     r3d_storages_unload();
@@ -158,10 +153,6 @@ void R3D_Close(void)
 
     r3d_registry_destroy(&R3D.container.rLights);
     r3d_array_destroy(&R3D.container.aLightBatch);
-
-    glDeleteVertexArrays(1, &R3D.primitive.dummyVAO);
-    r3d_primitive_unload(&R3D.primitive.quad);
-    r3d_primitive_unload(&R3D.primitive.cube);
 
     R3D_UnloadMesh(&R3D.misc.meshDecalBounds);
 }
