@@ -6,8 +6,8 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#ifndef R3D_PRIMITIVE_H
-#define R3D_PRIMITIVE_H
+#ifndef R3D_MODULE_PRIMTIVE_H
+#define R3D_MODULE_PRIMTIVE_H
 
 #include <raylib.h>
 
@@ -51,4 +51,4 @@ void r3d_primitive_draw(r3d_primitive_t primitive);
 bool r3d_mod_primitive_init(void);
 void r3d_mod_primitive_quit(void);
 
-#endif // R3D_PRIMITIVE_H
+#endif // R3D_MODULE_PRIMTIVE_H
