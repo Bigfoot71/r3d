@@ -35,114 +35,9 @@
 
 #define R3D_STORAGE_MATRIX_CAPACITY  256
 
-/* === Internal Strucs === */
-
-struct r3d_support_internal_format {
-    bool internal, attachment;
-};
-
 /* === Global R3D State === */
 
 extern struct R3D_State {
-
-    // GPU Supports
-    struct {
-
-        // Single Channel Formats
-        struct r3d_support_internal_format R8;               // 8-bit normalized red channel
-        struct r3d_support_internal_format R16F;             // 16-bit half-precision floating point red channel
-        struct r3d_support_internal_format R32F;             // 32-bit full-precision floating point red channel
-
-        // Dual Channel Formats
-        struct r3d_support_internal_format RG8;              // 8-bit normalized red-green channels
-        struct r3d_support_internal_format RG16F;            // 16-bit half-precision floating point red-green channels
-        struct r3d_support_internal_format RG32F;            // 32-bit full-precision floating point red-green channels
-
-        // Triple Channel Formats (RGB)
-        struct r3d_support_internal_format RGB565;           // 5-6-5 bits RGB (packed, legacy)
-        struct r3d_support_internal_format RGB8;             // 8-bit normalized RGB channels
-        struct r3d_support_internal_format SRGB8;            // 8-bit sRGB color space RGB channels
-        struct r3d_support_internal_format RGB12;            // 12-bit normalized RGB channels
-        struct r3d_support_internal_format RGB16;            // 16-bit normalized RGB channels
-        struct r3d_support_internal_format RGB9_E5;          // RGB with shared 5-bit exponent (compact HDR format)
-        struct r3d_support_internal_format R11F_G11F_B10F;   // 11-bit red, 11-bit green, 10-bit blue floating point (packed HDR)
-        struct r3d_support_internal_format RGB16F;           // 16-bit half-precision floating point RGB channels
-        struct r3d_support_internal_format RGB32F;           // 32-bit full-precision floating point RGB channels
-
-        // Quad Channel Formats (RGBA)
-        struct r3d_support_internal_format RGBA4;            // 4-4-4-4 bits RGBA (packed, legacy)
-        struct r3d_support_internal_format RGB5_A1;          // 5-5-5-1 bits RGBA (packed, legacy)
-        struct r3d_support_internal_format RGBA8;            // 8-bit normalized RGBA channels
-        struct r3d_support_internal_format SRGB8_ALPHA8;     // 8-bit sRGB RGB + 8-bit linear alpha channel
-        struct r3d_support_internal_format RGB10_A2;         // 10-bit RGB + 2-bit alpha (HDR color with minimal alpha)
-        struct r3d_support_internal_format RGBA12;           // 12-bit normalized RGBA channels
-        struct r3d_support_internal_format RGBA16;           // 16-bit normalized RGBA channels
-        struct r3d_support_internal_format RGBA16F;          // 16-bit half-precision floating point RGBA channels
-        struct r3d_support_internal_format RGBA32F;          // 32-bit full-precision floating point RGBA channels
-
-    } support;
-
-    // Targets
-    struct {
-
-        /**
-         * @suffix: 'Pp' indicates that the target is used for ping-pong rendering, where [0] is the target and [1] is the source
-         * @suffix: 'Hs' indicates that the target is half-sized
-         */
-
-        GLuint albedo;              ///< RGB[8|8|8]
-        GLuint emission;            ///< RGB[11|11|10] (or fallbacks)
-        GLuint normal;              ///< RG[16|16] (8-bit if R3D_FLAGS_8_BIT_NORMALS or 16F not supported)
-        GLuint orm;                 ///< RGB[8|8|8]
-        GLuint depth;               ///< D[24]
-        GLuint diffuse;             ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Diffuse contribution
-        GLuint specular;            ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks) -> Specular contribution
-        GLuint ssaoPpHs[2];         ///< R[8] -> Used for initial SSAO rendering + blur effect
-        GLuint scenePp[2];          ///< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks)
-
-        struct r3d_mip_chain {
-            struct r3d_mip {
-                unsigned int id;    //< RGB[16|16|16] (or R11G11B10 in low precision) (or fallbacks)
-                uint32_t w, h;      //< Dimensions
-                float tx, ty;       //< Texel size
-            } *chain;
-            int count;
-        } mipChainHs;
-
-    } target;
-
-    // Framebuffers
-    struct {
-
-        GLuint gBuffer;     /**< [0] = albedo
-                             *   [1] = emission
-                             *   [2] = normal
-                             *   [3] = orm
-                             *   [_] = depth
-                             */
-
-        GLuint ssao;        /**< [0] = ssaoPpHs
-                             */
-
-        GLuint deferred;    /**< [0] = diffuse
-                             *   [1] = specular
-                             *   [_] = depth
-                             */
-
-        GLuint bloom;       /**< [0] = mipChainHs
-                             */
-
-        GLuint scene;       /**< [0] = scenePp
-                              *  [1] = albedo
-                              *  [2] = normal
-                              *  [3] = orm
-                              *  [_] = depth
-                              */
-
-        // Custom target (optional)
-        RenderTexture customTarget;
-
-    } framebuffer;
 
     // Containers
     struct {
@@ -304,39 +199,17 @@ extern struct R3D_State {
 bool r3d_texture_is_default(GLuint id);
 void r3d_calculate_bloom_prefilter_data(void);
 
-/* === Support functions === */
-
-GLenum r3d_support_get_internal_format(GLenum internalFormat, bool asAttachment);
-
 /* === Storage functions === */
 
 void r3d_storage_bind_and_upload_matrices(const Matrix* matrices, int count, int slot);
 
 /* === Main loading functions === */
 
-void r3d_supports_check(void);
-
-void r3d_framebuffers_load(int width, int height);
-void r3d_framebuffers_unload(void);
-
 void r3d_textures_load(void);
 void r3d_textures_unload(void);
 
 void r3d_storages_load(void);
 void r3d_storages_unload(void);
-
-/* === Target loading functions === */
-
-void r3d_target_load_mip_chain_hs(int width, int height, int count);
-void r3d_target_unload_mip_chain_hs(void);
-
-/* === Framebuffer loading functions === */
-
-void r3d_framebuffer_load_gbuffer(int width, int height);
-void r3d_framebuffer_load_ssao(int width, int height);
-void r3d_framebuffer_load_deferred(int width, int height);
-void r3d_framebuffer_load_bloom(int width, int height);
-void r3d_framebuffer_load_scene(int width, int height);
 
 /* === Texture loading functions === */
 
@@ -350,19 +223,6 @@ void r3d_texture_load_ibl_brdf_lut(void);
 /* === Storage loading functions === */
 
 void r3d_storage_load_tex_matrices(void);
-
-/* === Framebuffer helper macros === */
-
-#define r3d_target_swap_pingpong(fb)            \
-{                                               \
-    unsigned int tmp = (fb)[0];                 \
-    (fb)[0] = (fb)[1];                          \
-    (fb)[1] = tmp;                              \
-    glFramebufferTexture2D(                     \
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,   \
-        GL_TEXTURE_2D, (fb)[0], 0               \
-    );                                          \
-}
 
 /* === Primitive helper macros */
 

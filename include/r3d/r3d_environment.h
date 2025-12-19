@@ -421,7 +421,7 @@ R3DAPI float R3D_GetBloomIntensity(void);
  *
  * @param value The radius of the bloom filter (in pixels).
  *
- * Default: 0
+ * Default: 1
  */
 R3DAPI void R3D_SetBloomFilterRadius(int value);
 

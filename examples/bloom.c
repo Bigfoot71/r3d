@@ -99,7 +99,6 @@ void Draw(void)
     R3D_End();
 
     R3D_DrawBufferEmission(10, 10, 100, 100);
-    R3D_DrawBufferBloom(120, 10, 100, 100);
 
     const char* infoStr;
     int infoLen;

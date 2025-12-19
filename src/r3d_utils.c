@@ -7,6 +7,8 @@
  */
 
 #include <r3d/r3d_utils.h>
+
+#include "./modules/r3d_target.h"
 #include "./r3d_state.h"
 
 // ========================================
@@ -46,21 +48,10 @@ Texture2D R3D_GetNormalTexture(void)
     return texture;
 }
 
-Texture2D R3D_GetBufferColor(void)
-{
-    Texture2D texture = { 0 };
-    texture.id = R3D.target.scenePp[1];
-    texture.width = R3D.state.resolution.width;
-    texture.height = R3D.state.resolution.height;
-    texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
-    return texture;
-}
-
 Texture2D R3D_GetBufferNormal(void)
 {
     Texture2D texture = { 0 };
-    texture.id = R3D.target.normal;
+    texture.id = r3d_target_get(R3D_TARGET_NORMAL);
     texture.width = R3D.state.resolution.width;
     texture.height = R3D.state.resolution.height;
     texture.mipmaps = 1;
@@ -71,7 +62,7 @@ Texture2D R3D_GetBufferNormal(void)
 Texture2D R3D_GetBufferDepth(void)
 {
     Texture2D texture = { 0 };
-    texture.id = R3D.target.depth;
+    texture.id = r3d_target_get(R3D_TARGET_DEPTH);
     texture.width = R3D.state.resolution.width;
     texture.height = R3D.state.resolution.height;
     texture.mipmaps = 1;
@@ -102,7 +93,7 @@ Matrix R3D_GetMatrixInvProjection(void)
 void R3D_DrawBufferAlbedo(float x, float y, float w, float h)
 {
     Texture2D tex = {
-        .id = R3D.target.albedo,
+        .id = r3d_target_get(R3D_TARGET_ALBEDO),
         .width = R3D.state.resolution.width,
         .height = R3D.state.resolution.width
     };
@@ -122,7 +113,7 @@ void R3D_DrawBufferAlbedo(float x, float y, float w, float h)
 void R3D_DrawBufferEmission(float x, float y, float w, float h)
 {
     Texture2D tex = {
-        .id = R3D.target.emission,
+        .id = r3d_target_get(R3D_TARGET_EMISSION),
         .width = R3D.state.resolution.width,
         .height = R3D.state.resolution.height
     };
@@ -142,7 +133,7 @@ void R3D_DrawBufferEmission(float x, float y, float w, float h)
 void R3D_DrawBufferNormal(float x, float y, float w, float h)
 {
     Texture2D tex = {
-        .id = R3D.target.normal,
+        .id = r3d_target_get(R3D_TARGET_NORMAL),
         .width = R3D.state.resolution.width,
         .height = R3D.state.resolution.height
     };
@@ -162,53 +153,9 @@ void R3D_DrawBufferNormal(float x, float y, float w, float h)
 void R3D_DrawBufferORM(float x, float y, float w, float h)
 {
     Texture2D tex = {
-        .id = R3D.target.orm,
+        .id = r3d_target_get(R3D_TARGET_ORM),
         .width = R3D.state.resolution.width,
         .height = R3D.state.resolution.height
-    };
-
-    DrawTexturePro(
-        tex, (Rectangle) { 0, 0, (float)tex.width, (float)-tex.height },
-        (Rectangle) { x, y, w, h }, (Vector2) { 0 }, 0, WHITE
-    );
-
-    DrawRectangleLines(
-        (int)(x + 0.5f), (int)(y + 0.5f),
-        (int)(w + 0.5f), (int)(h + 0.5f),
-        (Color) { 255, 0, 0, 255 }
-    );
-}
-
-void R3D_DrawBufferSSAO(float x, float y, float w, float h)
-{
-    Texture2D tex = {
-        .id = R3D.target.ssaoPpHs[1],
-        .width = R3D.state.resolution.width / 2,
-        .height = R3D.state.resolution.height / 2
-    };
-
-    DrawTexturePro(
-        tex, (Rectangle) { 0, 0, (float)tex.width, (float)-tex.height },
-        (Rectangle) { x, y, w, h }, (Vector2) { 0 }, 0, WHITE
-    );
-
-    DrawRectangleLines(
-        (int)(x + 0.5f), (int)(y + 0.5f),
-        (int)(w + 0.5f), (int)(h + 0.5f),
-        (Color) { 255, 0, 0, 255 }
-    );
-}
-
-void R3D_DrawBufferBloom(float x, float y, float w, float h)
-{
-    if (R3D.target.mipChainHs.chain == NULL) {
-        return;
-    }
-
-    Texture2D tex = {
-        .id = R3D.target.mipChainHs.chain[0].id,
-        .width = R3D.state.resolution.width / 2,
-        .height = R3D.state.resolution.height / 2
     };
 
     DrawTexturePro(

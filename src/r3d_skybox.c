@@ -173,16 +173,13 @@ static TextureCubemap r3d_skybox_load_cubemap_from_panorama(Image image, int siz
     Texture2D panorama = LoadTextureFromImage(image);
     SetTextureFilter(panorama, TEXTURE_FILTER_BILINEAR);
 
-    // Choose the best HDR format available
-    GLenum format = r3d_support_get_internal_format(GL_RGB16F, true);
-
     // Create the skybox cubemap texture
     unsigned int cubemapId = 0;
     glGenTextures(1, &cubemapId);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapId);
     for (int i = 0; i < 6; i++) {
         glTexImage2D(
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
             size, size, 0, GL_RGB, GL_FLOAT, NULL
         );
     }
@@ -256,16 +253,13 @@ static TextureCubemap r3d_skybox_generate_irradiance(TextureCubemap sky)
     int size = sky.width / 16;
     if (size < 32) size = 32;
 
-    // Choose the best HDR format available
-    GLenum format = r3d_support_get_internal_format(GL_RGB16F, true);
-
     // Create the irradiance cubemap texture
     unsigned int irradianceId = 0;
     glGenTextures(1, &irradianceId);
     glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceId);
     for (int i = 0; i < 6; i++) {
         glTexImage2D(
-            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format,
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F,
             size, size, 0, GL_RGB, GL_FLOAT, NULL
         );
     }
@@ -330,9 +324,6 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
     static const int PREFILTER_SIZE = 128;
     static const int MAX_MIP_LEVELS = 8;    //< 1 + (int)floor(log2(PREFILTER_SIZE))
 
-    // Choose the best HDR format available
-    GLenum format = r3d_support_get_internal_format(GL_RGB16F, true);
-
     // Create the prefilter cubemap texture
     unsigned int prefilterId = 0;
     glGenTextures(1, &prefilterId);
@@ -341,7 +332,7 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
         for (int level = 0; level < MAX_MIP_LEVELS; level++) {
             int size = PREFILTER_SIZE >> level;
             glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, format,
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, GL_RGB16F,
                 size, size, 0, GL_RGB, GL_FLOAT, NULL
             );
         }

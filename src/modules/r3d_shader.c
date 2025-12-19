@@ -186,8 +186,8 @@ void r3d_mod_shader_load_prepare_bloom_down(void)
 
     GET_LOCATION(prepare.bloomDown, uTexture);
     GET_LOCATION(prepare.bloomDown, uTexelSize);
-    GET_LOCATION(prepare.bloomDown, uMipLevel);
     GET_LOCATION(prepare.bloomDown, uPrefilter);
+    GET_LOCATION(prepare.bloomDown, uDstLevel);
 
     USE_SHADER(prepare.bloomDown);
 
@@ -200,6 +200,7 @@ void r3d_mod_shader_load_prepare_bloom_up(void)
 
     GET_LOCATION(prepare.bloomUp, uTexture);
     GET_LOCATION(prepare.bloomUp, uFilterRadius);
+    GET_LOCATION(prepare.bloomUp, uSrcLevel);
 
     USE_SHADER(prepare.bloomUp);
 
@@ -334,9 +335,6 @@ void r3d_mod_shader_load_scene_forward(void)
     int shadowMapSlot = 10;
     for (int i = 0; i < R3D_SHADER_FORWARD_NUM_LIGHTS; i++)
     {
-        SET_SAMPLER_CUBE(scene.forward, uShadowMapCube[i], shadowMapSlot++);
-        SET_SAMPLER_2D(scene.forward, uShadowMap2D[i], shadowMapSlot++);
-
         GET_LOCATION_ARRAY(scene.forward, uMatLightVP, i);
         GET_LOCATION_ARRAY(scene.forward, uShadowMapCube, i);
         GET_LOCATION_ARRAY(scene.forward, uShadowMap2D, i);
@@ -359,6 +357,9 @@ void r3d_mod_shader_load_scene_forward(void)
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, type);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, enabled);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadow);
+
+        SET_SAMPLER_CUBE(scene.forward, uShadowMapCube[i], shadowMapSlot++);
+        SET_SAMPLER_2D(scene.forward, uShadowMap2D[i], shadowMapSlot++);
     }
 }
 

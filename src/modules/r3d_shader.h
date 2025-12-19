@@ -209,14 +209,15 @@ typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexture;
     r3d_shader_uniform_vec2_t uTexelSize;
-    r3d_shader_uniform_int_t uMipLevel;
     r3d_shader_uniform_vec4_t uPrefilter;
+    r3d_shader_uniform_int_t uDstLevel;
 } r3d_shader_prepare_bloom_down_t;
 
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexture;
     r3d_shader_uniform_vec2_t uFilterRadius;
+    r3d_shader_uniform_float_t uSrcLevel;
 } r3d_shader_prepare_bloom_up_t;
 
 typedef struct {
@@ -525,7 +526,7 @@ typedef struct {
     r3d_shader_uniform_float_t uFocusPoint;
     r3d_shader_uniform_float_t uFocusScale;
     r3d_shader_uniform_float_t uMaxBlurSize;
-    r3d_shader_uniform_int_t   uDebugMode;
+    r3d_shader_uniform_int_t uDebugMode;
 } r3d_shader_post_dof_t;
 
 typedef struct {

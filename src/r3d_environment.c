@@ -79,12 +79,6 @@ void R3D_SetSSAO(bool enabled)
 	R3D.env.ssaoEnabled = enabled;
 
 	if (enabled) {
-		if (R3D.framebuffer.ssao == 0) {
-			r3d_framebuffer_load_ssao(
-				R3D.state.resolution.width,
-				R3D.state.resolution.height
-			);
-		}
 		if (R3D.texture.ssaoNoise == 0) {
         	r3d_texture_load_ssao_noise();
 		}
@@ -162,15 +156,6 @@ float R3D_GetSSAOLightAffect(void)
 void R3D_SetBloomMode(R3D_Bloom mode)
 {
 	R3D.env.bloomMode = mode;
-
-	if (mode != R3D_BLOOM_DISABLED) {
-		if (R3D.framebuffer.bloom == 0) {
-			r3d_framebuffer_load_bloom(
-				R3D.state.resolution.width,
-				R3D.state.resolution.height
-			);
-		}
-	}
 }
 
 R3D_Bloom R3D_GetBloomMode(void)
@@ -180,13 +165,7 @@ R3D_Bloom R3D_GetBloomMode(void)
 
 void R3D_SetBloomLevels(int value)
 {
-	if (R3D.env.bloomMode != R3D_BLOOM_DISABLED) {
-		r3d_target_unload_mip_chain_hs();
-		r3d_target_load_mip_chain_hs(R3D.state.resolution.width, R3D.state.resolution.height, value);
-	}
-
-	// Update value based on actual number of mip levels generated
-	R3D.env.bloomLevels = R3D.target.mipChainHs.count;
+	//R3D.env.bloomLevels = R3D.target.mipChainHs.count;
 }
 
 int R3D_GetBloomLevels(void)

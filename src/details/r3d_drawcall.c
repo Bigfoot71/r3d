@@ -270,7 +270,6 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
     r3d_shader_bind_sampler2D_opt(scene.decal, uTexNormal, call->material.normal.texture.id, normal);
     r3d_shader_bind_sampler2D_opt(scene.decal, uTexEmission, call->material.emission.texture.id, black);
     r3d_shader_bind_sampler2D_opt(scene.decal, uTexORM, call->material.orm.texture.id, white);
-    r3d_shader_bind_sampler2D(scene.decal, uTexDepth, R3D.target.depth);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -299,7 +298,6 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
     r3d_shader_unbind_sampler2D(scene.decal, uTexNormal);
     r3d_shader_unbind_sampler2D(scene.decal, uTexEmission);
     r3d_shader_unbind_sampler2D(scene.decal, uTexORM);
-    r3d_shader_unbind_sampler2D(scene.decal, uTexDepth);
 }
 
 void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matVP)

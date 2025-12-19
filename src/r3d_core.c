@@ -21,6 +21,7 @@
 #include "./details/r3d_drawcall.h"
 #include "./details/r3d_light.h"
 
+#include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
 
@@ -32,9 +33,6 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
 {
     // Set parameter flags
     R3D.state.flags = flags;
-
-    // Check GPU supports
-    r3d_supports_check();
 
     // Load draw call arrays
     R3D.container.aDrawForward = r3d_array_create(128, sizeof(r3d_drawcall_t));
@@ -68,7 +66,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.env.bloomMode = R3D_BLOOM_DISABLED;
     R3D.env.bloomLevels = 7;
     R3D.env.bloomIntensity = 0.05f;
-    R3D.env.bloomFilterRadius = 0;
+    R3D.env.bloomFilterRadius = 1;
     R3D.env.bloomThreshold = 0.0f;
     R3D.env.bloomSoftThreshold = 0.5f;
     R3D.env.fogMode = R3D_FOG_DISABLED;
@@ -135,7 +133,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     // Load GL Objects - framebuffers, textures, shaders...
     // NOTE: The initialization of these resources is based
     //       on the global state and should be performed last.
-    r3d_framebuffers_load(resWidth, resHeight);
+    r3d_mod_target_init(resWidth, resHeight);
     r3d_textures_load();
     r3d_storages_load();
     r3d_mod_shader_init();
@@ -146,7 +144,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
 
 void R3D_Close(void)
 {
-    r3d_framebuffers_unload();
+    r3d_mod_target_quit();
     r3d_textures_unload();
     r3d_storages_unload();
     r3d_mod_shader_quit();
@@ -220,8 +218,10 @@ void R3D_UpdateResolution(int width, int height)
         return;
     }
 
-    r3d_framebuffers_unload();
-    r3d_framebuffers_load(width, height);
+    // TODO: Add a texture resizing function that avoids
+    //       reallocation if the new resolution is lower
+    r3d_mod_target_quit();
+    r3d_mod_target_init(width, height);
 
     R3D.state.resolution.width = width;
     R3D.state.resolution.height = height;
