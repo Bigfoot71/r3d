@@ -191,9 +191,9 @@ static TextureCubemap r3d_skybox_load_cubemap_from_panorama(Image image, int siz
     const Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     // Enable and configure the shader for converting panorama to cubemap
-    r3d_shader_enable(prepare.cubemapFromEquirectangular);
-    r3d_shader_set_mat4(prepare.cubemapFromEquirectangular, uMatProj, matProj);
-    r3d_shader_bind_sampler2D(prepare.cubemapFromEquirectangular, uTexEquirectangular, panorama.id);
+    R3D_SHADER_USE(prepare.cubemapFromEquirectangular);
+    R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatProj, matProj);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular, panorama.id);
 
     // Set viewport to framebuffer dimensions
     glViewport(0, 0, size, size);
@@ -206,13 +206,12 @@ static TextureCubemap r3d_skybox_load_cubemap_from_panorama(Image image, int siz
     for (int i = 0; i < 6; i++) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemapId, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
-        r3d_shader_set_mat4(prepare.cubemapFromEquirectangular, uMatView, R3D.misc.matCubeViews[i]);
+        R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatView, R3D.misc.matCubeViews[i]);
         r3d_primitive_draw_cube();
     }
 
-    // Unbind texture and disable the shader
-    r3d_shader_unbind_sampler2D(prepare.cubemapFromEquirectangular, uTexEquirectangular);
-    r3d_shader_disable();
+    // Unbind texture
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular);
 
     // Cleanup the working framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -276,9 +275,9 @@ static TextureCubemap r3d_skybox_generate_irradiance(TextureCubemap sky)
     const Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     // Enable and configure irradiance convolution shader
-    r3d_shader_enable(prepare.cubemapIrradiance);
-    r3d_shader_set_mat4(prepare.cubemapIrradiance, uMatProj, matProj);
-    r3d_shader_bind_samplerCube(prepare.cubemapIrradiance, uCubemap, sky.id);
+    R3D_SHADER_USE(prepare.cubemapIrradiance);
+    R3D_SHADER_SET_MAT4(prepare.cubemapIrradiance, uMatProj, matProj);
+    R3D_SHADER_BIND_SAMPLER_CUBE(prepare.cubemapIrradiance, uCubemap, sky.id);
 
     // Set viewport to framebuffer dimensions
     glViewport(0, 0, size, size);
@@ -291,13 +290,12 @@ static TextureCubemap r3d_skybox_generate_irradiance(TextureCubemap sky)
     for (int i = 0; i < 6; i++) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceId, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
-        r3d_shader_set_mat4(prepare.cubemapIrradiance, uMatView, R3D.misc.matCubeViews[i]);
+        R3D_SHADER_SET_MAT4(prepare.cubemapIrradiance, uMatView, R3D.misc.matCubeViews[i]);
         r3d_primitive_draw_cube();
     }
 
-    // Unbind texture and disable the shader
-    r3d_shader_unbind_samplerCube(prepare.cubemapIrradiance, uCubemap);
-    r3d_shader_disable();
+    // Unbind texture
+    R3D_SHADER_UNBIND_SAMPLER_CUBE(prepare.cubemapIrradiance, uCubemap);
 
     // Cleanup the working framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -351,10 +349,10 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
     const Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     // Enable shader for prefiltering
-    r3d_shader_enable(prepare.cubemapPrefilter);
-    r3d_shader_set_mat4(prepare.cubemapPrefilter, uMatProj, matProj);
-    r3d_shader_set_float(prepare.cubemapPrefilter, uResolution, (float)sky.width);
-    r3d_shader_bind_samplerCube(prepare.cubemapPrefilter, uCubemap, sky.id);
+    R3D_SHADER_USE(prepare.cubemapPrefilter);
+    R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatProj, matProj);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uResolution, (float)sky.width);
+    R3D_SHADER_BIND_SAMPLER_CUBE(prepare.cubemapPrefilter, uCubemap, sky.id);
 
     // Configure framebuffer and rendering parameters
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -368,20 +366,19 @@ static TextureCubemap r3d_skybox_generate_prefilter(TextureCubemap sky)
 
         glViewport(0, 0, mipWidth, mipHeight);
         float roughness = (float)mip / (float)(MAX_MIP_LEVELS - 1);
-        r3d_shader_set_float(prepare.cubemapPrefilter, uRoughness, roughness);
+        R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uRoughness, roughness);
 
         // Render all faces of the cubemap
         for (int i = 0; i < 6; i++) {
-            r3d_shader_set_mat4(prepare.cubemapPrefilter, uMatView, R3D.misc.matCubeViews[i]);
+            R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatView, R3D.misc.matCubeViews[i]);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterId, mip);
             glClear(GL_DEPTH_BUFFER_BIT);
             r3d_primitive_draw_cube();
         }
     }
 
-    // Unbind texture and disable the shader
-    r3d_shader_unbind_samplerCube(prepare.cubemapPrefilter, uCubemap);
-    r3d_shader_disable();
+    // Unbind texture
+    R3D_SHADER_UNBIND_SAMPLER_CUBE(prepare.cubemapPrefilter, uCubemap);
 
     // Cleanup the working framebuffer
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

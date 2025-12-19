@@ -16,54 +16,50 @@
 // SHADER MANAGEMENT MACROS
 // ========================================
 
-#define r3d_shader_enable(shader_name) do {                                                         \
+#define R3D_SHADER_USE(shader_name) do {                                                            \
     if (R3D_MOD_SHADER.shader_name.id == 0) {                                                       \
         R3D_MOD_SHADER_LOADER.shader_name();                                                        \
     }                                                                                               \
     glUseProgram(R3D_MOD_SHADER.shader_name.id);                                                    \
 } while(0)
 
-#define r3d_shader_disable() do {                                                                   \
-    glUseProgram(0);                                                                                \
-} while(0)
-
-#define r3d_shader_bind_sampler1D(shader_name, uniform, texId) do {                                 \
+#define R3D_SHADER_BIND_SAMPLER_1D(shader_name, uniform, texId) do {                                \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot1D);                       \
     glBindTexture(GL_TEXTURE_1D, (texId));                                                          \
 } while(0)
 
-#define r3d_shader_bind_sampler2D(shader_name, uniform, texId) do {                                 \
+#define R3D_SHADER_BIND_SAMPLER_2D(shader_name, uniform, texId) do {                                \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2D);                       \
     glBindTexture(GL_TEXTURE_2D, (texId));                                                          \
 } while(0)
 
-#define r3d_shader_bind_sampler2D_opt(shader_name, uniform, texId, altTex) do {                     \
+#define R3D_SHADER_BIND_SAMPLER_2D_OPT(shader_name, uniform, texId, altTex) do {                    \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2D);                       \
     if (texId != 0) glBindTexture(GL_TEXTURE_2D, (texId));                                          \
     else glBindTexture(GL_TEXTURE_2D, R3D.texture.altTex);                                          \
 } while(0)
 
-#define r3d_shader_bind_samplerCube(shader_name, uniform, texId) do {                               \
+#define R3D_SHADER_BIND_SAMPLER_CUBE(shader_name, uniform, texId) do {                              \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCube);                     \
     glBindTexture(GL_TEXTURE_CUBE_MAP, (texId));                                                    \
 } while(0)
 
-#define r3d_shader_unbind_sampler1D(shader_name, uniform) do {                                      \
+#define R3D_SHADER_UNBIND_SAMPLER_1D(shader_name, uniform) do {                                     \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot1D);                       \
     glBindTexture(GL_TEXTURE_1D, 0);                                                                \
 } while(0)
 
-#define r3d_shader_unbind_sampler2D(shader_name, uniform) do {                                      \
+#define R3D_SHADER_UNBIND_SAMPLER_2D(shader_name, uniform) do {                                     \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2D);                       \
     glBindTexture(GL_TEXTURE_2D, 0);                                                                \
 } while(0)
 
-#define r3d_shader_unbind_samplerCube(shader_name, uniform) do {                                    \
+#define R3D_SHADER_UNBIND_SAMPLER_CUBE(shader_name, uniform) do {                                   \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCube);                     \
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);                                                          \
 } while(0)
 
-#define r3d_shader_set_int(shader_name, uniform, value) do {                                        \
+#define R3D_SHADER_SET_INT(shader_name, uniform, value) do {                                        \
     if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                                        \
         R3D_MOD_SHADER.shader_name.uniform.val = (value);                                           \
         glUniform1i(                                                                                \
@@ -73,7 +69,7 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_float(shader_name, uniform, value) do {                                      \
+#define R3D_SHADER_SET_FLOAT(shader_name, uniform, value) do {                                      \
     if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                                        \
         R3D_MOD_SHADER.shader_name.uniform.val = (value);                                           \
         glUniform1f(                                                                                \
@@ -83,7 +79,7 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_vec2(shader_name, uniform, ...) do {                                         \
+#define R3D_SHADER_SET_VEC2(shader_name, uniform, ...) do {                                         \
     const Vector2 tmp = (__VA_ARGS__);                                                              \
     if (!Vector2Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
@@ -94,7 +90,7 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_vec3(shader_name, uniform, ...) do {                                         \
+#define R3D_SHADER_SET_VEC3(shader_name, uniform, ...) do {                                         \
     const Vector3 tmp = (__VA_ARGS__);                                                              \
     if (!Vector3Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
@@ -105,7 +101,7 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_vec4(shader_name, uniform, ...) do {                                         \
+#define R3D_SHADER_SET_VEC4(shader_name, uniform, ...) do {                                         \
     const Vector4 tmp = (__VA_ARGS__);                                                              \
     if (!Vector4Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
@@ -116,7 +112,7 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_col3(shader_name, uniform, value) do {                                       \
+#define R3D_SHADER_SET_COL3(shader_name, uniform, value) do {                                       \
     const Vector3 v = {                                                                             \
         (value).r / 255.0f,                                                                         \
         (value).g / 255.0f,                                                                         \
@@ -131,7 +127,7 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_col4(shader_name, uniform, value) do {                                       \
+#define R3D_SHADER_SET_COL4(shader_name, uniform, value) do {                                       \
     const Vector4 v = {                                                                             \
         (value).r / 255.0f,                                                                         \
         (value).g / 255.0f,                                                                         \
@@ -147,11 +143,11 @@
     }                                                                                               \
 } while(0)
 
-#define r3d_shader_set_mat4(shader_name, uniform, value) do {                                       \
+#define R3D_SHADER_SET_MAT4(shader_name, uniform, value) do {                                       \
     glUniformMatrix4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, GL_TRUE, (float*)(&(value)));     \
 } while(0)
 
-#define r3d_shader_set_mat4_v(shader_name, uniform, array, count) do {                              \
+#define R3D_SHADER_SET_MAT4_V(shader_name, uniform, array, count) do {                              \
     glUniformMatrix4fv(R3D_MOD_SHADER.shader_name.uniform.loc, (count), GL_TRUE, (float*)(array));  \
 } while(0)
 

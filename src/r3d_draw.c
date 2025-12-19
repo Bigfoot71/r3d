@@ -699,9 +699,9 @@ void r3d_pass_scene_shadows(void)
 
                 /* --- Setup shader --- */
 
-                r3d_shader_enable(scene.depthCube);
-                r3d_shader_set_float(scene.depthCube, uFar, light->data->far);
-                r3d_shader_set_vec3(scene.depthCube, uViewPosition, light->data->position);
+                R3D_SHADER_USE(scene.depthCube);
+                R3D_SHADER_SET_FLOAT(scene.depthCube, uFar, light->data->far);
+                R3D_SHADER_SET_VEC3(scene.depthCube, uViewPosition, light->data->position);
 
                 /* --- Render geometries for each face of the cubemap --- */
 
@@ -749,7 +749,7 @@ void r3d_pass_scene_shadows(void)
 
                     /* --- The bone matrices texture may have been bind during drawcalls, so UNBIND! --- */
 
-                    r3d_shader_unbind_sampler1D(scene.depthCube, uTexBoneMatrices);
+                    R3D_SHADER_UNBIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices);
                 }
             }
             else
@@ -757,7 +757,7 @@ void r3d_pass_scene_shadows(void)
                 /* --- Setup dir/spot shadow map pass --- */
 
                 glClear(GL_DEPTH_BUFFER_BIT);   // Clear depth buffer for these types of light
-                r3d_shader_enable(scene.depth);
+                R3D_SHADER_USE(scene.depth);
 
                 /* --- Calculate view/projection matrix --- */
 
@@ -807,68 +807,52 @@ void r3d_pass_scene_shadows(void)
 
                 /* --- The bone matrices texture may have been bind during drawcalls, so UNBIND! --- */
 
-                r3d_shader_unbind_sampler1D(scene.depth, uTexBoneMatrices);
+                R3D_SHADER_UNBIND_SAMPLER_1D(scene.depth, uTexBoneMatrices);
             }
         }
     }
-    rlDisableFramebuffer();
-    r3d_shader_disable();
-
-    // Reset face to cull
-    rlSetCullFace(RL_CULL_FACE_BACK);
 }
 
 void r3d_pass_scene_geometry(void)
 {
     R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
-    {
-        glViewport(0, 0, R3D.state.resolution.width, R3D.state.resolution.height);
+    R3D_SHADER_USE(scene.geometry);
 
-        glDepthFunc(GL_LEQUAL);
-        glDisable(GL_BLEND);
+    glDepthFunc(GL_LEQUAL);
+    glDisable(GL_BLEND);
 
-        /* --- Draw geometries --- */
-
-        r3d_shader_enable(scene.geometry);
-        {
-            for (size_t i = 0; i < R3D.container.aDrawDeferredInst.count; i++) {
-                const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferredInst, i);
-                r3d_drawcall_raster_geometry(call, &R3D.state.transform.viewProj);
-            }
-
-            for (size_t i = 0; i < R3D.container.aDrawDeferred.count; i++) {
-                const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferred, i);
-                r3d_drawcall_raster_geometry(call, &R3D.state.transform.viewProj);
-            }
-
-            // NOTE: The storage texture of the matrices may have been bind during drawcalls
-            r3d_shader_unbind_sampler1D(scene.geometry, uTexBoneMatrices);
-        }
-        r3d_shader_disable();
+    for (size_t i = 0; i < R3D.container.aDrawDeferredInst.count; i++) {
+        const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferredInst, i);
+        r3d_drawcall_raster_geometry(call, &R3D.state.transform.viewProj);
     }
+
+    for (size_t i = 0; i < R3D.container.aDrawDeferred.count; i++) {
+        const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDeferred, i);
+        r3d_drawcall_raster_geometry(call, &R3D.state.transform.viewProj);
+    }
+
+    // NOTE: The storage texture of the matrices may have been bind during drawcalls
+    R3D_SHADER_UNBIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices);
 }
 
 void r3d_pass_scene_decals(void)
 {
     R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
+    R3D_SHADER_USE(scene.decal);
 
-    r3d_shader_enable(scene.decal);
-    {
-        r3d_shader_bind_sampler2D(scene.decal, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-        for (size_t i = 0; i < R3D.container.aDrawDecalsInst.count; i++) {
-            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecalsInst, i);
-            r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
-        }
-
-        for (size_t i = 0; i < R3D.container.aDrawDecals.count; i++) {
-            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecals, i);
-            r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
-        }
-
-        r3d_shader_unbind_sampler2D(scene.decal, uTexDepth);
+    for (size_t i = 0; i < R3D.container.aDrawDecalsInst.count; i++) {
+        const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecalsInst, i);
+        r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
     }
-    r3d_shader_disable();
+
+    for (size_t i = 0; i < R3D.container.aDrawDecals.count; i++) {
+        const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawDecals, i);
+        r3d_drawcall_raster_decal(call, &R3D.state.transform.viewProj);
+    }
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexDepth);
 }
 
 r3d_target_t r3d_pass_prepare_ssao(void)
@@ -882,59 +866,55 @@ r3d_target_t r3d_pass_prepare_ssao(void)
     r3d_target_t ssaoTarget = R3D_TARGET_SSAO_0;
     R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
 
-    r3d_shader_enable(prepare.ssao);
-    {
-        r3d_shader_set_mat4(prepare.ssao, uMatInvProj, R3D.state.transform.invProj);
-        r3d_shader_set_mat4(prepare.ssao, uMatProj, R3D.state.transform.proj);
-        r3d_shader_set_mat4(prepare.ssao, uMatView, R3D.state.transform.view);
+    R3D_SHADER_USE(prepare.ssao);
 
-        r3d_shader_set_float(prepare.ssao, uRadius, R3D.env.ssaoRadius);
-        r3d_shader_set_float(prepare.ssao, uBias, R3D.env.ssaoBias);
-        r3d_shader_set_float(prepare.ssao, uIntensity, R3D.env.ssaoIntensity);
-        r3d_shader_set_float(prepare.ssao, uPower, R3D.env.ssaoPower);
+    R3D_SHADER_SET_MAT4(prepare.ssao, uMatInvProj, R3D.state.transform.invProj);
+    R3D_SHADER_SET_MAT4(prepare.ssao, uMatProj, R3D.state.transform.proj);
+    R3D_SHADER_SET_MAT4(prepare.ssao, uMatView, R3D.state.transform.view);
 
-        r3d_shader_bind_sampler2D(prepare.ssao, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-        r3d_shader_bind_sampler2D(prepare.ssao, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-        r3d_shader_bind_sampler1D(prepare.ssao, uTexKernel, R3D.texture.ssaoKernel);
-        r3d_shader_bind_sampler2D(prepare.ssao, uTexNoise, R3D.texture.ssaoNoise);
+    R3D_SHADER_SET_FLOAT(prepare.ssao, uRadius, R3D.env.ssaoRadius);
+    R3D_SHADER_SET_FLOAT(prepare.ssao, uBias, R3D.env.ssaoBias);
+    R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.env.ssaoIntensity);
+    R3D_SHADER_SET_FLOAT(prepare.ssao, uPower, R3D.env.ssaoPower);
 
-        r3d_primitive_bind_and_draw_screen();
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER_1D(prepare.ssao, uTexKernel, R3D.texture.ssaoKernel);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNoise, R3D.texture.ssaoNoise);
 
-        r3d_shader_unbind_sampler2D(prepare.ssao, uTexDepth);
-        r3d_shader_unbind_sampler2D(prepare.ssao, uTexNormal);
-        r3d_shader_unbind_sampler1D(prepare.ssao, uTexKernel);
-        r3d_shader_unbind_sampler2D(prepare.ssao, uTexNoise);
-    }
-    r3d_shader_disable();
+    r3d_primitive_bind_and_draw_screen();
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexDepth);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_1D(prepare.ssao, uTexKernel);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexNoise);
 
     /* --- Blur SSAO --- */
 
-    r3d_shader_enable(prepare.ssaoBlur);
+    R3D_SHADER_USE(prepare.ssaoBlur);
+
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssaoBlur, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssaoBlur, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_SET_MAT4(prepare.ssaoBlur, uMatInvProj, R3D.state.transform.invProj);
+
+    for (int i = 0; i < R3D.env.ssaoIterations; i++)
     {
-        r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-        r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-        r3d_shader_set_mat4(prepare.ssaoBlur, uMatInvProj, R3D.state.transform.invProj);
+        // Horizontal pass
+        R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
+        R3D_SHADER_BIND_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion, r3d_target_get(ssaoTarget));
+        R3D_SHADER_SET_VEC2(prepare.ssaoBlur, uDirection, (Vector2) { 1.0, 0 });
+        r3d_primitive_bind_and_draw_screen();
 
-        for (int i = 0; i < R3D.env.ssaoIterations; i++)
-        {
-            // Horizontal pass
-            R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
-            r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexOcclusion, r3d_target_get(ssaoTarget));
-            r3d_shader_set_vec2(prepare.ssaoBlur, uDirection, (Vector2) { 1.0, 0 });
-            r3d_primitive_bind_and_draw_screen();
-
-            // Vertical pass
-            R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
-            r3d_shader_bind_sampler2D(prepare.ssaoBlur, uTexOcclusion, r3d_target_get(ssaoTarget));
-            r3d_shader_set_vec2(prepare.ssaoBlur, uDirection, (Vector2) { 0, 1.0 });
-            r3d_primitive_bind_and_draw_screen();
-        }
-
-        r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexOcclusion);
-        r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexNormal);
-        r3d_shader_unbind_sampler2D(prepare.ssaoBlur, uTexDepth);
+        // Vertical pass
+        R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
+        R3D_SHADER_BIND_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion, r3d_target_get(ssaoTarget));
+        R3D_SHADER_SET_VEC2(prepare.ssaoBlur, uDirection, (Vector2) { 0, 1.0 });
+        r3d_primitive_bind_and_draw_screen();
     }
-    r3d_shader_disable();
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssaoBlur, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssaoBlur, uTexDepth);
 
     return r3d_target_swap_ssao(ssaoTarget);
 }
@@ -951,37 +931,34 @@ void r3d_pass_deferred_ambient(r3d_target_t ssaoSource)
     if (R3D.env.useSky)
     {
         R3D_TARGET_BIND(R3D_TARGET_LIGHTING);
+        R3D_SHADER_USE(deferred.ambientIbl);
 
-        r3d_shader_enable(deferred.ambientIbl);
-        {
-            r3d_shader_bind_sampler2D(deferred.ambientIbl, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-            r3d_shader_bind_sampler2D(deferred.ambientIbl, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-            r3d_shader_bind_sampler2D(deferred.ambientIbl, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-            r3d_shader_bind_sampler2D_opt(deferred.ambientIbl, uTexSSAO, r3d_target_get(ssaoSource), white);
-            r3d_shader_bind_sampler2D(deferred.ambientIbl, uTexORM, r3d_target_get(R3D_TARGET_ORM));
-            r3d_shader_bind_samplerCube(deferred.ambientIbl, uCubeIrradiance, R3D.env.sky.irradiance.id);
-            r3d_shader_bind_samplerCube(deferred.ambientIbl, uCubePrefilter, R3D.env.sky.prefilter.id);
-            r3d_shader_bind_sampler2D(deferred.ambientIbl, uTexBrdfLut, R3D.texture.iblBrdfLut);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+        R3D_SHADER_BIND_SAMPLER_2D_OPT(deferred.ambientIbl, uTexSSAO, r3d_target_get(ssaoSource), white);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexORM, r3d_target_get(R3D_TARGET_ORM));
+        R3D_SHADER_BIND_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, R3D.env.sky.irradiance.id);
+        R3D_SHADER_BIND_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, R3D.env.sky.prefilter.id);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, R3D.texture.iblBrdfLut);
 
-            r3d_shader_set_vec3(deferred.ambientIbl, uViewPosition, R3D.state.transform.viewPos);
-            r3d_shader_set_mat4(deferred.ambientIbl, uMatInvProj, R3D.state.transform.invProj);
-            r3d_shader_set_mat4(deferred.ambientIbl, uMatInvView, R3D.state.transform.invView);
-            r3d_shader_set_vec4(deferred.ambientIbl, uQuatSkybox, R3D.env.quatSky);
-            r3d_shader_set_float(deferred.ambientIbl, uSkyboxAmbientIntensity, R3D.env.skyAmbientIntensity);
-            r3d_shader_set_float(deferred.ambientIbl, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
+        R3D_SHADER_SET_VEC3(deferred.ambientIbl, uViewPosition, R3D.state.transform.viewPos);
+        R3D_SHADER_SET_MAT4(deferred.ambientIbl, uMatInvProj, R3D.state.transform.invProj);
+        R3D_SHADER_SET_MAT4(deferred.ambientIbl, uMatInvView, R3D.state.transform.invView);
+        R3D_SHADER_SET_VEC4(deferred.ambientIbl, uQuatSkybox, R3D.env.quatSky);
+        R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uSkyboxAmbientIntensity, R3D.env.skyAmbientIntensity);
+        R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
 
-            r3d_primitive_bind_and_draw_screen();
+        r3d_primitive_bind_and_draw_screen();
 
-            r3d_shader_unbind_sampler2D(deferred.ambientIbl, uTexAlbedo);
-            r3d_shader_unbind_sampler2D(deferred.ambientIbl, uTexNormal);
-            r3d_shader_unbind_sampler2D(deferred.ambientIbl, uTexDepth);
-            r3d_shader_unbind_sampler2D(deferred.ambientIbl, uTexSSAO);
-            r3d_shader_unbind_sampler2D(deferred.ambientIbl, uTexORM);
-            r3d_shader_unbind_samplerCube(deferred.ambientIbl, uCubeIrradiance);
-            r3d_shader_unbind_samplerCube(deferred.ambientIbl, uCubePrefilter);
-            r3d_shader_unbind_sampler2D(deferred.ambientIbl, uTexBrdfLut);
-        }
-        r3d_shader_disable();
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexAlbedo);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexNormal);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexDepth);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexSSAO);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexORM);
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance);
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut);
     }
 
     /* --- If no skybox, calculate simple ambient contribution --- */
@@ -991,21 +968,19 @@ void r3d_pass_deferred_ambient(r3d_target_t ssaoSource)
         R3D_TARGET_CLEAR(R3D_TARGET_SPECULAR);
         R3D_TARGET_BIND(R3D_TARGET_DIFFUSE, R3D_TARGET_DEPTH);
 
-        r3d_shader_enable(deferred.ambient);
-        {
-            r3d_shader_bind_sampler2D(deferred.ambient, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-            r3d_shader_bind_sampler2D_opt(deferred.ambient, uTexSSAO, r3d_target_get(ssaoSource), white);
-            r3d_shader_bind_sampler2D(deferred.ambient, uTexORM, r3d_target_get(R3D_TARGET_ORM));
+        R3D_SHADER_USE(deferred.ambient);
 
-            r3d_shader_set_vec3(deferred.ambient, uAmbientLight, R3D.env.ambientLight);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
+        R3D_SHADER_BIND_SAMPLER_2D_OPT(deferred.ambient, uTexSSAO, r3d_target_get(ssaoSource), white);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexORM, r3d_target_get(R3D_TARGET_ORM));
 
-            r3d_primitive_bind_and_draw_screen();
+        R3D_SHADER_SET_VEC3(deferred.ambient, uAmbientLight, R3D.env.ambientLight);
 
-            r3d_shader_unbind_sampler2D(deferred.ambient, uTexAlbedo);
-            r3d_shader_unbind_sampler2D(deferred.ambient, uTexSSAO);
-            r3d_shader_unbind_sampler2D(deferred.ambient, uTexORM);
-        }
-        r3d_shader_disable();
+        r3d_primitive_bind_and_draw_screen();
+
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexAlbedo);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexSSAO);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexORM);
     }
 }
 
@@ -1027,18 +1002,18 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
 
     /* --- Enable shader and setup constant stuff --- */
 
-    r3d_shader_enable(deferred.lighting);
+    R3D_SHADER_USE(deferred.lighting);
 
-    r3d_shader_bind_sampler2D(deferred.lighting, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-    r3d_shader_bind_sampler2D(deferred.lighting, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-    r3d_shader_bind_sampler2D(deferred.lighting, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-    r3d_shader_bind_sampler2D_opt(deferred.lighting, uTexSSAO, r3d_target_get(ssaoSource), white);
-    r3d_shader_bind_sampler2D(deferred.lighting, uTexORM, r3d_target_get(R3D_TARGET_ORM));
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER_2D_OPT(deferred.lighting, uTexSSAO, r3d_target_get(ssaoSource), white);
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexORM, r3d_target_get(R3D_TARGET_ORM));
 
-    r3d_shader_set_vec3(deferred.lighting, uViewPosition, R3D.state.transform.viewPos);
-    r3d_shader_set_mat4(deferred.lighting, uMatInvProj, R3D.state.transform.invProj);
-    r3d_shader_set_mat4(deferred.lighting, uMatInvView, R3D.state.transform.invView);
-    r3d_shader_set_float(deferred.lighting, uSSAOLightAffect, R3D.env.ssaoLightAffect);
+    R3D_SHADER_SET_VEC3(deferred.lighting, uViewPosition, R3D.state.transform.viewPos);
+    R3D_SHADER_SET_MAT4(deferred.lighting, uMatInvProj, R3D.state.transform.invProj);
+    R3D_SHADER_SET_MAT4(deferred.lighting, uMatInvView, R3D.state.transform.invView);
+    R3D_SHADER_SET_FLOAT(deferred.lighting, uSSAOLightAffect, R3D.env.ssaoLightAffect);
 
     /* --- Calculate lighting contributions --- */
 
@@ -1080,51 +1055,51 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
         glScissor(x, y, w, h);
 
         // Sending data common to each type of light
-        r3d_shader_set_vec3(deferred.lighting, uLight.color, light->data->color);
-        r3d_shader_set_float(deferred.lighting, uLight.specular, light->data->specular);
-        r3d_shader_set_float(deferred.lighting, uLight.energy, light->data->energy);
-        r3d_shader_set_int(deferred.lighting, uLight.type, light->data->type);
+        R3D_SHADER_SET_VEC3(deferred.lighting, uLight.color, light->data->color);
+        R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.specular, light->data->specular);
+        R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.energy, light->data->energy);
+        R3D_SHADER_SET_INT(deferred.lighting, uLight.type, light->data->type);
 
         // Sending specific data according to the type of light
         if (light->data->type == R3D_LIGHT_DIR) {
-            r3d_shader_set_vec3(deferred.lighting, uLight.direction, light->data->direction);
+            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.direction, light->data->direction);
         }
         else if (light->data->type == R3D_LIGHT_SPOT) {
-            r3d_shader_set_vec3(deferred.lighting, uLight.position, light->data->position);
-            r3d_shader_set_vec3(deferred.lighting, uLight.direction, light->data->direction);
-            r3d_shader_set_float(deferred.lighting, uLight.range, light->data->range);
-            r3d_shader_set_float(deferred.lighting, uLight.attenuation, light->data->attenuation);
-            r3d_shader_set_float(deferred.lighting, uLight.innerCutOff, light->data->innerCutOff);
-            r3d_shader_set_float(deferred.lighting, uLight.outerCutOff, light->data->outerCutOff);
+            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->data->position);
+            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.direction, light->data->direction);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.range, light->data->range);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.attenuation, light->data->attenuation);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.innerCutOff, light->data->innerCutOff);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.outerCutOff, light->data->outerCutOff);
         }
         else if (light->data->type == R3D_LIGHT_OMNI) {
-            r3d_shader_set_vec3(deferred.lighting, uLight.position, light->data->position);
-            r3d_shader_set_float(deferred.lighting, uLight.range, light->data->range);
-            r3d_shader_set_float(deferred.lighting, uLight.attenuation, light->data->attenuation);
+            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->data->position);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.range, light->data->range);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.attenuation, light->data->attenuation);
         }
 
         // Sending shadow map data
         if (light->data->shadow.enabled) {
             if (light->data->type == R3D_LIGHT_OMNI) {
-                r3d_shader_bind_samplerCube(deferred.lighting, uLight.shadowCubemap, light->data->shadow.map.depth);
+                R3D_SHADER_BIND_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap, light->data->shadow.map.depth);
             }
             else {
-                r3d_shader_set_float(deferred.lighting, uLight.shadowMapTxlSz, light->data->shadow.map.texelSize);
-                r3d_shader_bind_sampler2D(deferred.lighting, uLight.shadowMap, light->data->shadow.map.depth);
-                r3d_shader_set_mat4(deferred.lighting, uLight.matVP, light->data->shadow.matVP);
+                R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowMapTxlSz, light->data->shadow.map.texelSize);
+                R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uLight.shadowMap, light->data->shadow.map.depth);
+                R3D_SHADER_SET_MAT4(deferred.lighting, uLight.matVP, light->data->shadow.matVP);
                 if (light->data->type == R3D_LIGHT_DIR) {
-                    r3d_shader_set_vec3(deferred.lighting, uLight.position, light->data->position);
+                    R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->data->position);
                 }
             }
-            r3d_shader_set_float(deferred.lighting, uLight.shadowSoftness, light->data->shadow.softness);
-            r3d_shader_set_float(deferred.lighting, uLight.shadowDepthBias, light->data->shadow.depthBias);
-            r3d_shader_set_float(deferred.lighting, uLight.shadowSlopeBias, light->data->shadow.slopeBias);
-            r3d_shader_set_float(deferred.lighting, uLight.near, light->data->near);
-            r3d_shader_set_float(deferred.lighting, uLight.far, light->data->far);
-            r3d_shader_set_int(deferred.lighting, uLight.shadow, true);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowSoftness, light->data->shadow.softness);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowDepthBias, light->data->shadow.depthBias);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowSlopeBias, light->data->shadow.slopeBias);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.near, light->data->near);
+            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.far, light->data->far);
+            R3D_SHADER_SET_INT(deferred.lighting, uLight.shadow, true);
         }
         else {
-            r3d_shader_set_int(deferred.lighting, uLight.shadow, false);
+            R3D_SHADER_SET_INT(deferred.lighting, uLight.shadow, false);
         }
 
         // Accumulate this light!
@@ -1133,13 +1108,13 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
 
     /* --- Unbind all textures --- */
 
-    r3d_shader_unbind_sampler2D(deferred.lighting, uTexAlbedo);
-    r3d_shader_unbind_sampler2D(deferred.lighting, uTexNormal);
-    r3d_shader_unbind_sampler2D(deferred.lighting, uTexDepth);
-    r3d_shader_unbind_sampler2D(deferred.lighting, uTexORM);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uTexAlbedo);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uTexDepth);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uTexORM);
 
-    r3d_shader_unbind_samplerCube(deferred.lighting, uLight.shadowCubemap);
-    r3d_shader_unbind_sampler2D(deferred.lighting, uLight.shadowMap);
+    R3D_SHADER_UNBIND_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uLight.shadowMap);
 
     /* --- Reset undesired state --- */
 
@@ -1155,21 +1130,19 @@ void r3d_pass_deferred_compose(r3d_target_t sceneTarget)
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
 
-    r3d_shader_enable(deferred.compose);
-    {
-        r3d_shader_bind_sampler2D(deferred.compose, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-        r3d_shader_bind_sampler2D(deferred.compose, uTexEmission, r3d_target_get(R3D_TARGET_EMISSION));
-        r3d_shader_bind_sampler2D(deferred.compose, uTexDiffuse, r3d_target_get(R3D_TARGET_DIFFUSE));
-        r3d_shader_bind_sampler2D(deferred.compose, uTexSpecular, r3d_target_get(R3D_TARGET_SPECULAR));
+    R3D_SHADER_USE(deferred.compose);
 
-        r3d_primitive_bind_and_draw_screen();
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uTexEmission, r3d_target_get(R3D_TARGET_EMISSION));
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uTexDiffuse, r3d_target_get(R3D_TARGET_DIFFUSE));
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uTexSpecular, r3d_target_get(R3D_TARGET_SPECULAR));
 
-        r3d_shader_unbind_sampler2D(deferred.compose, uTexAlbedo);
-        r3d_shader_unbind_sampler2D(deferred.compose, uTexEmission);
-        r3d_shader_unbind_sampler2D(deferred.compose, uTexDiffuse);
-        r3d_shader_unbind_sampler2D(deferred.compose, uTexSpecular);
-    }
-    r3d_shader_disable();
+    r3d_primitive_bind_and_draw_screen();
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexAlbedo);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexEmission);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexDiffuse);
+    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexSpecular);
 }
 
 static void r3d_pass_scene_forward_filter_and_send_lights(const r3d_drawcall_t* call)
@@ -1192,54 +1165,54 @@ static void r3d_pass_scene_forward_filter_and_send_lights(const r3d_drawcall_t* 
         lightCount++;
 
         // Send common data
-        r3d_shader_set_int(scene.forward, uLights[i].enabled, true);
-        r3d_shader_set_int(scene.forward, uLights[i].type, light->data->type);
-        r3d_shader_set_vec3(scene.forward, uLights[i].color, light->data->color);
-        r3d_shader_set_float(scene.forward, uLights[i].specular, light->data->specular);
-        r3d_shader_set_float(scene.forward, uLights[i].energy, light->data->energy);
+        R3D_SHADER_SET_INT(scene.forward, uLights[i].enabled, true);
+        R3D_SHADER_SET_INT(scene.forward, uLights[i].type, light->data->type);
+        R3D_SHADER_SET_VEC3(scene.forward, uLights[i].color, light->data->color);
+        R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].specular, light->data->specular);
+        R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].energy, light->data->energy);
 
         // Send specific data
         if (light->data->type == R3D_LIGHT_DIR) {
-            r3d_shader_set_vec3(scene.forward, uLights[i].direction, light->data->direction);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].direction, light->data->direction);
         }
         else if (light->data->type == R3D_LIGHT_SPOT) {
-            r3d_shader_set_vec3(scene.forward, uLights[i].position, light->data->position);
-            r3d_shader_set_vec3(scene.forward, uLights[i].direction, light->data->direction);
-            r3d_shader_set_float(scene.forward, uLights[i].range, light->data->range);
-            r3d_shader_set_float(scene.forward, uLights[i].attenuation, light->data->attenuation);
-            r3d_shader_set_float(scene.forward, uLights[i].innerCutOff, light->data->innerCutOff);
-            r3d_shader_set_float(scene.forward, uLights[i].outerCutOff, light->data->outerCutOff);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].position, light->data->position);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].direction, light->data->direction);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].range, light->data->range);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].attenuation, light->data->attenuation);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].innerCutOff, light->data->innerCutOff);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].outerCutOff, light->data->outerCutOff);
         }
         else if (light->data->type == R3D_LIGHT_OMNI) {
-            r3d_shader_set_vec3(scene.forward, uLights[i].position, light->data->position);
-            r3d_shader_set_float(scene.forward, uLights[i].range, light->data->range);
-            r3d_shader_set_float(scene.forward, uLights[i].attenuation, light->data->attenuation);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].position, light->data->position);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].range, light->data->range);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].attenuation, light->data->attenuation);
         }
 
         // Send shadow map data
         if (light->data->shadow.enabled) {
             if (light->data->type == R3D_LIGHT_OMNI) {
-                r3d_shader_bind_samplerCube(scene.forward, uShadowMapCube[i], light->data->shadow.map.depth);
+                R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uShadowMapCube[i], light->data->shadow.map.depth);
             }
             else {
-                r3d_shader_set_float(scene.forward, uLights[i].shadowMapTxlSz, light->data->shadow.map.texelSize);
-                r3d_shader_bind_sampler2D(scene.forward, uShadowMap2D[i], light->data->shadow.map.depth);
-                r3d_shader_set_mat4(scene.forward, uMatLightVP[i], light->data->shadow.matVP);
+                R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowMapTxlSz, light->data->shadow.map.texelSize);
+                R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uShadowMap2D[i], light->data->shadow.map.depth);
+                R3D_SHADER_SET_MAT4(scene.forward, uMatLightVP[i], light->data->shadow.matVP);
             }
-            r3d_shader_set_float(scene.forward, uLights[i].shadowSoftness, light->data->shadow.softness);
-            r3d_shader_set_float(scene.forward, uLights[i].shadowDepthBias, light->data->shadow.depthBias);
-            r3d_shader_set_float(scene.forward, uLights[i].shadowSlopeBias, light->data->shadow.slopeBias);
-            r3d_shader_set_float(scene.forward, uLights[i].near, light->data->near);
-            r3d_shader_set_float(scene.forward, uLights[i].far, light->data->far);
-            r3d_shader_set_int(scene.forward, uLights[i].shadow, true);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowSoftness, light->data->shadow.softness);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowDepthBias, light->data->shadow.depthBias);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowSlopeBias, light->data->shadow.slopeBias);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].near, light->data->near);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].far, light->data->far);
+            R3D_SHADER_SET_INT(scene.forward, uLights[i].shadow, true);
         }
         else {
-            r3d_shader_set_int(scene.forward, uLights[i].shadow, false);
+            R3D_SHADER_SET_INT(scene.forward, uLights[i].shadow, false);
         }
     }
 
     for (int i = lightCount; i < R3D_SHADER_FORWARD_NUM_LIGHTS; i++) {
-        r3d_shader_set_int(scene.forward, uLights[i].enabled, false);
+        R3D_SHADER_SET_INT(scene.forward, uLights[i].enabled, false);
     }
 }
 
@@ -1262,54 +1235,54 @@ static void r3d_pass_scene_forward_instanced_filter_and_send_lights(const r3d_dr
         lightCount++;
 
         // Send common data
-        r3d_shader_set_int(scene.forward, uLights[i].enabled, true);
-        r3d_shader_set_int(scene.forward, uLights[i].type, light->data->type);
-        r3d_shader_set_vec3(scene.forward, uLights[i].color, light->data->color);
-        r3d_shader_set_float(scene.forward, uLights[i].specular, light->data->specular);
-        r3d_shader_set_float(scene.forward, uLights[i].energy, light->data->energy);
+        R3D_SHADER_SET_INT(scene.forward, uLights[i].enabled, true);
+        R3D_SHADER_SET_INT(scene.forward, uLights[i].type, light->data->type);
+        R3D_SHADER_SET_VEC3(scene.forward, uLights[i].color, light->data->color);
+        R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].specular, light->data->specular);
+        R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].energy, light->data->energy);
 
         // Send specific data
         if (light->data->type == R3D_LIGHT_DIR) {
-            r3d_shader_set_vec3(scene.forward, uLights[i].direction, light->data->direction);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].direction, light->data->direction);
         }
         else if (light->data->type == R3D_LIGHT_SPOT) {
-            r3d_shader_set_vec3(scene.forward, uLights[i].position, light->data->position);
-            r3d_shader_set_vec3(scene.forward, uLights[i].direction, light->data->direction);
-            r3d_shader_set_float(scene.forward, uLights[i].range, light->data->range);
-            r3d_shader_set_float(scene.forward, uLights[i].attenuation, light->data->attenuation);
-            r3d_shader_set_float(scene.forward, uLights[i].innerCutOff, light->data->innerCutOff);
-            r3d_shader_set_float(scene.forward, uLights[i].outerCutOff, light->data->outerCutOff);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].position, light->data->position);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].direction, light->data->direction);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].range, light->data->range);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].attenuation, light->data->attenuation);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].innerCutOff, light->data->innerCutOff);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].outerCutOff, light->data->outerCutOff);
         }
         else if (light->data->type == R3D_LIGHT_OMNI) {
-            r3d_shader_set_vec3(scene.forward, uLights[i].position, light->data->position);
-            r3d_shader_set_float(scene.forward, uLights[i].range, light->data->range);
-            r3d_shader_set_float(scene.forward, uLights[i].attenuation, light->data->attenuation);
+            R3D_SHADER_SET_VEC3(scene.forward, uLights[i].position, light->data->position);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].range, light->data->range);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].attenuation, light->data->attenuation);
         }
 
         // Send shadow map data
         if (light->data->shadow.enabled) {
             if (light->data->type == R3D_LIGHT_OMNI) {
-                r3d_shader_bind_samplerCube(scene.forward, uShadowMapCube[i], light->data->shadow.map.depth);
+                R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uShadowMapCube[i], light->data->shadow.map.depth);
             }
             else {
-                r3d_shader_set_float(scene.forward, uLights[i].shadowMapTxlSz, light->data->shadow.map.texelSize);
-                r3d_shader_bind_sampler2D(scene.forward, uShadowMap2D[i], light->data->shadow.map.depth);
-                r3d_shader_set_mat4(scene.forward, uMatLightVP[i], light->data->shadow.matVP);
+                R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowMapTxlSz, light->data->shadow.map.texelSize);
+                R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uShadowMap2D[i], light->data->shadow.map.depth);
+                R3D_SHADER_SET_MAT4(scene.forward, uMatLightVP[i], light->data->shadow.matVP);
             }
-            r3d_shader_set_float(scene.forward, uLights[i].shadowSoftness, light->data->shadow.softness);
-            r3d_shader_set_float(scene.forward, uLights[i].shadowDepthBias, light->data->shadow.depthBias);
-            r3d_shader_set_float(scene.forward, uLights[i].shadowSlopeBias, light->data->shadow.slopeBias);
-            r3d_shader_set_float(scene.forward, uLights[i].near, light->data->near);
-            r3d_shader_set_float(scene.forward, uLights[i].far, light->data->far);
-            r3d_shader_set_int(scene.forward, uLights[i].shadow, true);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowSoftness, light->data->shadow.softness);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowDepthBias, light->data->shadow.depthBias);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].shadowSlopeBias, light->data->shadow.slopeBias);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].near, light->data->near);
+            R3D_SHADER_SET_FLOAT(scene.forward, uLights[i].far, light->data->far);
+            R3D_SHADER_SET_INT(scene.forward, uLights[i].shadow, true);
         }
         else {
-            r3d_shader_set_int(scene.forward, uLights[i].shadow, false);
+            R3D_SHADER_SET_INT(scene.forward, uLights[i].shadow, false);
         }
     }
 
     for (int i = lightCount; i < R3D_SHADER_FORWARD_NUM_LIGHTS; i++) {
-        r3d_shader_set_int(scene.forward, uLights[i].enabled, false);
+        R3D_SHADER_SET_INT(scene.forward, uLights[i].enabled, false);
     }
 }
 
@@ -1317,57 +1290,52 @@ void r3d_pass_scene_forward(r3d_target_t sceneTarget)
 {
     // NOTE: Material outputs are necessary for certain post-process passes such as SSR
     R3D_TARGET_BIND(sceneTarget, R3D_TARGET_ALBEDO, R3D_TARGET_NORMAL, R3D_TARGET_ORM, R3D_TARGET_DEPTH);
+    R3D_SHADER_USE(scene.forward);
 
     glDepthFunc(GL_LEQUAL);
 
-    /* --- Process all draw calls --- */
+    if (R3D.env.useSky) {
+        R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uCubeIrradiance, R3D.env.sky.irradiance.id);
+        R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uCubePrefilter, R3D.env.sky.prefilter.id);
+        R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexBrdfLut, R3D.texture.iblBrdfLut);
 
-    r3d_shader_enable(scene.forward);
-    {
-        if (R3D.env.useSky) {
-            r3d_shader_bind_samplerCube(scene.forward, uCubeIrradiance, R3D.env.sky.irradiance.id);
-            r3d_shader_bind_samplerCube(scene.forward, uCubePrefilter, R3D.env.sky.prefilter.id);
-            r3d_shader_bind_sampler2D(scene.forward, uTexBrdfLut, R3D.texture.iblBrdfLut);
-
-            r3d_shader_set_vec4(scene.forward, uQuatSkybox, R3D.env.quatSky);
-            r3d_shader_set_int(scene.forward, uHasSkybox, true);
-            r3d_shader_set_float(scene.forward, uSkyboxAmbientIntensity, R3D.env.skyAmbientIntensity);
-            r3d_shader_set_float(scene.forward, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
-        }
-        else {
-            r3d_shader_set_vec3(scene.forward, uAmbientLight, R3D.env.ambientLight);
-            r3d_shader_set_int(scene.forward, uHasSkybox, false);
-        }
-
-        r3d_shader_set_vec3(scene.forward, uViewPosition, R3D.state.transform.viewPos);
-
-        for (int i = 0; i < R3D.container.aDrawForwardInst.count; i++) {
-            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForwardInst, i);
-            r3d_pass_scene_forward_instanced_filter_and_send_lights(call);
-            r3d_drawcall_raster_forward(call, &R3D.state.transform.viewProj);
-        }
-
-        for (int i = 0; i < R3D.container.aDrawForward.count; i++) {
-            const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForward, i);
-            r3d_pass_scene_forward_filter_and_send_lights(call);
-            r3d_drawcall_raster_forward(call, &R3D.state.transform.viewProj);
-        }
-
-        if (R3D.env.useSky) {
-            r3d_shader_unbind_samplerCube(scene.forward, uCubeIrradiance);
-            r3d_shader_unbind_samplerCube(scene.forward, uCubePrefilter);
-            r3d_shader_unbind_sampler2D(scene.forward, uTexBrdfLut);
-        }
-
-        for (int i = 0; i < R3D_SHADER_FORWARD_NUM_LIGHTS; i++) {
-            r3d_shader_unbind_samplerCube(scene.forward, uShadowMapCube[i]);
-            r3d_shader_unbind_sampler2D(scene.forward, uShadowMap2D[i]);
-        }
-
-        // NOTE: The storage texture of the matrices may have been bind during drawcalls
-        r3d_shader_unbind_sampler1D(scene.forward, uTexBoneMatrices);
+        R3D_SHADER_SET_VEC4(scene.forward, uQuatSkybox, R3D.env.quatSky);
+        R3D_SHADER_SET_INT(scene.forward, uHasSkybox, true);
+        R3D_SHADER_SET_FLOAT(scene.forward, uSkyboxAmbientIntensity, R3D.env.skyAmbientIntensity);
+        R3D_SHADER_SET_FLOAT(scene.forward, uSkyboxReflectIntensity, R3D.env.skyReflectIntensity);
     }
-    r3d_shader_disable();
+    else {
+        R3D_SHADER_SET_VEC3(scene.forward, uAmbientLight, R3D.env.ambientLight);
+        R3D_SHADER_SET_INT(scene.forward, uHasSkybox, false);
+    }
+
+    R3D_SHADER_SET_VEC3(scene.forward, uViewPosition, R3D.state.transform.viewPos);
+
+    for (int i = 0; i < R3D.container.aDrawForwardInst.count; i++) {
+        const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForwardInst, i);
+        r3d_pass_scene_forward_instanced_filter_and_send_lights(call);
+        r3d_drawcall_raster_forward(call, &R3D.state.transform.viewProj);
+    }
+
+    for (int i = 0; i < R3D.container.aDrawForward.count; i++) {
+        const r3d_drawcall_t* call = r3d_array_at(&R3D.container.aDrawForward, i);
+        r3d_pass_scene_forward_filter_and_send_lights(call);
+        r3d_drawcall_raster_forward(call, &R3D.state.transform.viewProj);
+    }
+
+    if (R3D.env.useSky) {
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.forward, uCubeIrradiance);
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.forward, uCubePrefilter);
+        R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uTexBrdfLut);
+    }
+
+    for (int i = 0; i < R3D_SHADER_FORWARD_NUM_LIGHTS; i++) {
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.forward, uShadowMapCube[i]);
+        R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uShadowMap2D[i]);
+    }
+
+    // NOTE: The storage texture of the matrices may have been bind during drawcalls
+    R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uTexBoneMatrices);
 }
 
 void r3d_pass_scene_background(r3d_target_t sceneTarget)
@@ -1380,27 +1348,23 @@ void r3d_pass_scene_background(r3d_target_t sceneTarget)
     glDisable(GL_BLEND);
 
     if (R3D.env.useSky) {
+        R3D_SHADER_USE(scene.skybox);
         glDisable(GL_CULL_FACE);
 
-        r3d_shader_enable(scene.skybox);
-        {
-            r3d_shader_bind_samplerCube(scene.skybox, uCubeSky, R3D.env.sky.cubemap.id);
-            r3d_shader_set_float(scene.skybox, uSkyIntensity, R3D.env.skyBackgroundIntensity);
-            r3d_shader_set_mat4(scene.skybox, uMatView, R3D.state.transform.view);
-            r3d_shader_set_mat4(scene.skybox, uMatProj, R3D.state.transform.proj);
-            r3d_shader_set_vec4(scene.skybox, uRotation, R3D.env.quatSky);
+        R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uCubeSky, R3D.env.sky.cubemap.id);
+        R3D_SHADER_SET_FLOAT(scene.skybox, uSkyIntensity, R3D.env.skyBackgroundIntensity);
+        R3D_SHADER_SET_MAT4(scene.skybox, uMatView, R3D.state.transform.view);
+        R3D_SHADER_SET_MAT4(scene.skybox, uMatProj, R3D.state.transform.proj);
+        R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.env.quatSky);
 
-            r3d_primitive_draw_cube();
+        r3d_primitive_draw_cube();
 
-            r3d_shader_unbind_samplerCube(scene.skybox, uCubeSky);
-        }
-        r3d_shader_disable();
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uCubeSky);
     }
     else {
-        r3d_shader_enable(scene.background);
-        r3d_shader_set_vec4(scene.background, uColor, R3D.env.backgroundColor);
+        R3D_SHADER_USE(scene.background);
+        R3D_SHADER_SET_VEC4(scene.background, uColor, R3D.env.backgroundColor);
         r3d_primitive_bind_and_draw_screen();
-        r3d_shader_disable();
     }
 }
 
@@ -1417,37 +1381,35 @@ r3d_target_t r3d_pass_post_ssr(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
 
-    r3d_shader_enable(post.ssr);
-    {
-        r3d_shader_bind_sampler2D(post.ssr, uTexColor, r3d_target_get(sceneTarget));
-        r3d_shader_bind_sampler2D(post.ssr, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-        r3d_shader_bind_sampler2D(post.ssr, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-        r3d_shader_bind_sampler2D(post.ssr, uTexORM, r3d_target_get(R3D_TARGET_ORM));
-        r3d_shader_bind_sampler2D(post.ssr, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_USE(post.ssr);
 
-        r3d_shader_set_int(post.ssr, uMaxRaySteps, R3D.env.ssrMaxRaySteps);
-        r3d_shader_set_int(post.ssr, uBinarySearchSteps, R3D.env.ssrBinarySearchSteps);
-        r3d_shader_set_float(post.ssr, uRayMarchLength, R3D.env.ssrRayMarchLength);
-        r3d_shader_set_float(post.ssr, uDepthThickness, R3D.env.ssrDepthThickness);
-        r3d_shader_set_float(post.ssr, uDepthTolerance, R3D.env.ssrDepthTolerance);
-        r3d_shader_set_float(post.ssr, uEdgeFadeStart, R3D.env.ssrEdgeFadeStart);
-        r3d_shader_set_float(post.ssr, uEdgeFadeEnd, R3D.env.ssrEdgeFadeEnd);
+    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexColor, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexORM, r3d_target_get(R3D_TARGET_ORM));
+    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-        r3d_shader_set_mat4(post.ssr, uMatView, R3D.state.transform.view);
-        r3d_shader_set_mat4(post.ssr, uMatInvProj, R3D.state.transform.invProj);
-        r3d_shader_set_mat4(post.ssr, uMatInvView, R3D.state.transform.invView);
-        r3d_shader_set_mat4(post.ssr, uMatViewProj, R3D.state.transform.viewProj);
-        r3d_shader_set_vec3(post.ssr, uViewPosition, R3D.state.transform.viewPos);
+    R3D_SHADER_SET_INT(post.ssr, uMaxRaySteps, R3D.env.ssrMaxRaySteps);
+    R3D_SHADER_SET_INT(post.ssr, uBinarySearchSteps, R3D.env.ssrBinarySearchSteps);
+    R3D_SHADER_SET_FLOAT(post.ssr, uRayMarchLength, R3D.env.ssrRayMarchLength);
+    R3D_SHADER_SET_FLOAT(post.ssr, uDepthThickness, R3D.env.ssrDepthThickness);
+    R3D_SHADER_SET_FLOAT(post.ssr, uDepthTolerance, R3D.env.ssrDepthTolerance);
+    R3D_SHADER_SET_FLOAT(post.ssr, uEdgeFadeStart, R3D.env.ssrEdgeFadeStart);
+    R3D_SHADER_SET_FLOAT(post.ssr, uEdgeFadeEnd, R3D.env.ssrEdgeFadeEnd);
 
-        r3d_primitive_bind_and_draw_screen();
+    R3D_SHADER_SET_MAT4(post.ssr, uMatView, R3D.state.transform.view);
+    R3D_SHADER_SET_MAT4(post.ssr, uMatInvProj, R3D.state.transform.invProj);
+    R3D_SHADER_SET_MAT4(post.ssr, uMatInvView, R3D.state.transform.invView);
+    R3D_SHADER_SET_MAT4(post.ssr, uMatViewProj, R3D.state.transform.viewProj);
+    R3D_SHADER_SET_VEC3(post.ssr, uViewPosition, R3D.state.transform.viewPos);
 
-        r3d_shader_unbind_sampler2D(post.ssr, uTexColor);
-        r3d_shader_unbind_sampler2D(post.ssr, uTexAlbedo);
-        r3d_shader_unbind_sampler2D(post.ssr, uTexNormal);
-        r3d_shader_unbind_sampler2D(post.ssr, uTexORM);
-        r3d_shader_unbind_sampler2D(post.ssr, uTexDepth);
-    }
-    r3d_shader_disable();
+    r3d_primitive_bind_and_draw_screen();
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexColor);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexAlbedo);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexORM);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexDepth);
 
     return sceneTarget;
 }
@@ -1455,27 +1417,24 @@ r3d_target_t r3d_pass_post_ssr(r3d_target_t sceneTarget)
 r3d_target_t r3d_pass_post_fog(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.fog);
 
-    r3d_shader_enable(post.fog);
-    {
-        r3d_shader_bind_sampler2D(post.fog, uTexColor, r3d_target_get(sceneTarget));
-        r3d_shader_bind_sampler2D(post.fog, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER_2D(post.fog, uTexColor, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER_2D(post.fog, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-        r3d_shader_set_float(post.fog, uNear, (float)rlGetCullDistanceNear());
-        r3d_shader_set_float(post.fog, uFar, (float)rlGetCullDistanceFar());
-        r3d_shader_set_int(post.fog, uFogMode, R3D.env.fogMode);
-        r3d_shader_set_vec3(post.fog, uFogColor, R3D.env.fogColor);
-        r3d_shader_set_float(post.fog, uFogStart, R3D.env.fogStart);
-        r3d_shader_set_float(post.fog, uFogEnd, R3D.env.fogEnd);
-        r3d_shader_set_float(post.fog, uFogDensity, R3D.env.fogDensity);
-        r3d_shader_set_float(post.fog, uSkyAffect, R3D.env.fogSkyAffect);
+    R3D_SHADER_SET_FLOAT(post.fog, uNear, (float)rlGetCullDistanceNear());
+    R3D_SHADER_SET_FLOAT(post.fog, uFar, (float)rlGetCullDistanceFar());
+    R3D_SHADER_SET_INT(post.fog, uFogMode, R3D.env.fogMode);
+    R3D_SHADER_SET_VEC3(post.fog, uFogColor, R3D.env.fogColor);
+    R3D_SHADER_SET_FLOAT(post.fog, uFogStart, R3D.env.fogStart);
+    R3D_SHADER_SET_FLOAT(post.fog, uFogEnd, R3D.env.fogEnd);
+    R3D_SHADER_SET_FLOAT(post.fog, uFogDensity, R3D.env.fogDensity);
+    R3D_SHADER_SET_FLOAT(post.fog, uSkyAffect, R3D.env.fogSkyAffect);
 
-        r3d_primitive_bind_and_draw_screen();
+    r3d_primitive_bind_and_draw_screen();
 
-        r3d_shader_unbind_sampler2D(post.fog, uTexColor);
-        r3d_shader_unbind_sampler2D(post.fog, uTexDepth);
-    }
-    r3d_shader_disable();
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.fog, uTexColor);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.fog, uTexDepth);
 
     return sceneTarget;
 }
@@ -1483,26 +1442,23 @@ r3d_target_t r3d_pass_post_fog(r3d_target_t sceneTarget)
 r3d_target_t r3d_pass_post_dof(r3d_target_t sceneTarget)	
 {
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.dof);
 
-    r3d_shader_enable(post.dof);
-    {
-        r3d_shader_bind_sampler2D(post.dof, uTexColor, r3d_target_get(sceneTarget));
-        r3d_shader_bind_sampler2D(post.dof, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER_2D(post.dof, uTexColor, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER_2D(post.dof, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-        r3d_shader_set_vec2(post.dof, uTexelSize, R3D.state.resolution.texel);
-        r3d_shader_set_float(post.dof, uNear, (float)rlGetCullDistanceNear());
-        r3d_shader_set_float(post.dof, uFar, (float)rlGetCullDistanceFar());
-        r3d_shader_set_float(post.dof, uFocusPoint, R3D.env.dofFocusPoint);
-        r3d_shader_set_float(post.dof, uFocusScale, R3D.env.dofFocusScale);
-        r3d_shader_set_float(post.dof, uMaxBlurSize, R3D.env.dofMaxBlurSize);
-        r3d_shader_set_int(post.dof, uDebugMode, R3D.env.dofDebugMode);
+    R3D_SHADER_SET_VEC2(post.dof, uTexelSize, R3D.state.resolution.texel);
+    R3D_SHADER_SET_FLOAT(post.dof, uNear, (float)rlGetCullDistanceNear());
+    R3D_SHADER_SET_FLOAT(post.dof, uFar, (float)rlGetCullDistanceFar());
+    R3D_SHADER_SET_FLOAT(post.dof, uFocusPoint, R3D.env.dofFocusPoint);
+    R3D_SHADER_SET_FLOAT(post.dof, uFocusScale, R3D.env.dofFocusScale);
+    R3D_SHADER_SET_FLOAT(post.dof, uMaxBlurSize, R3D.env.dofMaxBlurSize);
+    R3D_SHADER_SET_INT(post.dof, uDebugMode, R3D.env.dofDebugMode);
 
-        r3d_primitive_bind_and_draw_screen();
+    r3d_primitive_bind_and_draw_screen();
 
-        r3d_shader_unbind_sampler2D(post.dof, uTexColor);
-        r3d_shader_unbind_sampler2D(post.dof, uTexDepth);
-    }
-    r3d_shader_disable();
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.dof, uTexColor);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.dof, uTexDepth);
 
     return sceneTarget;
 }
@@ -1516,94 +1472,89 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_TARGET_BIND(R3D_TARGET_BLOOM);
 
-    r3d_shader_enable(prepare.bloomDown);
+    /* --- Bloom: Karis average before downsampling --- */
+
+    R3D_SHADER_USE(prepare.bloomDown);
+
+    r3d_mod_target_get_resolution(&srcW, &srcH, 0);
+    r3d_target_set_mip_level(0, 0);
+
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, sceneSourceID);
+
+    R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
+    R3D_SHADER_SET_VEC4(prepare.bloomDown, uPrefilter, R3D.env.bloomPrefilter);
+    R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, 0);
+
+    r3d_primitive_bind_and_draw_screen();
+
+    /* --- Bloom: Downsampling --- */
+
+    // It's okay to sample the target here
+    // Given that we'll be sampling a different level from where we're writing
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
+
+    for (int dstLevel = 1; dstLevel < mipCount; dstLevel++)
     {
-        /* --- Bloom: Karis average before downsampling --- */
+        r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel - 1);
+        r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
 
-        r3d_mod_target_get_resolution(&srcW, &srcH, 0);
-        r3d_target_set_mip_level(0, 0);
+        r3d_target_set_mip_level(0, dstLevel);
+        glViewport(0, 0, dstW, dstH);
 
-        r3d_shader_bind_sampler2D(prepare.bloomDown, uTexture, sceneSourceID);
-
-        r3d_shader_set_vec2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
-        r3d_shader_set_vec4(prepare.bloomDown, uPrefilter, R3D.env.bloomPrefilter);
-        r3d_shader_set_int(prepare.bloomDown, uDstLevel, 0);
+        R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
+        R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, dstLevel);
 
         r3d_primitive_bind_and_draw_screen();
-
-        /* --- Bloom: Downsampling --- */
-
-        // It's okay to sample the target here
-        // Given that we'll be sampling a different level from where we're writing
-        r3d_shader_bind_sampler2D(prepare.bloomDown, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
-
-        for (int dstLevel = 1; dstLevel < mipCount; dstLevel++)
-        {
-            r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel - 1);
-            r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
-
-            r3d_target_set_mip_level(0, dstLevel);
-            glViewport(0, 0, dstW, dstH);
-
-            r3d_shader_set_vec2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
-            r3d_shader_set_int(prepare.bloomDown, uDstLevel, dstLevel);
-
-            r3d_primitive_bind_and_draw_screen();
-        }
-
-        r3d_shader_unbind_sampler2D(prepare.bloomDown, uTexture);
     }
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomDown, uTexture);
 
     /* --- Bloom: Upsampling --- */
 
-    r3d_shader_enable(prepare.bloomUp);
+    R3D_SHADER_USE(prepare.bloomUp);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glBlendEquation(GL_FUNC_ADD);
+
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomUp, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
+
+    for (int dstLevel = mipCount - 2; dstLevel >= 0; dstLevel--)
     {
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        glBlendEquation(GL_FUNC_ADD);
+        r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel + 1);
+        r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
 
-        r3d_shader_bind_sampler2D(prepare.bloomUp, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
+        r3d_target_set_mip_level(0, dstLevel);
+        glViewport(0, 0, dstW, dstH);
 
-        for (int dstLevel = mipCount - 2; dstLevel >= 0; dstLevel--)
-        {
-            r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel + 1);
-            r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
+        R3D_SHADER_SET_FLOAT(prepare.bloomUp, uSrcLevel, dstLevel + 1);
+        R3D_SHADER_SET_VEC2(prepare.bloomUp, uFilterRadius, (Vector2) {
+            (float)R3D.env.bloomFilterRadius / srcW,
+            (float)R3D.env.bloomFilterRadius / srcH
+        });
 
-            r3d_target_set_mip_level(0, dstLevel);
-            glViewport(0, 0, dstW, dstH);
-
-            r3d_shader_set_float(prepare.bloomUp, uSrcLevel, dstLevel + 1);
-            r3d_shader_set_vec2(prepare.bloomUp, uFilterRadius, (Vector2) {
-                (float)R3D.env.bloomFilterRadius / srcW,
-                (float)R3D.env.bloomFilterRadius / srcH
-            });
-
-            r3d_primitive_bind_and_draw_screen();
-        }
-
-        r3d_shader_unbind_sampler2D(prepare.bloomUp, uTexture);
-
-        glDisable(GL_BLEND);
+        r3d_primitive_bind_and_draw_screen();
     }
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomUp, uTexture);
+
+    glDisable(GL_BLEND);
 
     /* --- Apply bloom to the scene --- */
 
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.bloom);
 
-    r3d_shader_enable(post.bloom);
-    {
-        r3d_shader_bind_sampler2D(post.bloom, uTexColor, sceneSourceID);
-        r3d_shader_bind_sampler2D(post.bloom, uTexBloomBlur, r3d_target_get(R3D_TARGET_BLOOM));
+    R3D_SHADER_BIND_SAMPLER_2D(post.bloom, uTexColor, sceneSourceID);
+    R3D_SHADER_BIND_SAMPLER_2D(post.bloom, uTexBloomBlur, r3d_target_get(R3D_TARGET_BLOOM));
 
-        r3d_shader_set_int(post.bloom, uBloomMode, R3D.env.bloomMode);
-        r3d_shader_set_float(post.bloom, uBloomIntensity, R3D.env.bloomIntensity);
+    R3D_SHADER_SET_INT(post.bloom, uBloomMode, R3D.env.bloomMode);
+    R3D_SHADER_SET_FLOAT(post.bloom, uBloomIntensity, R3D.env.bloomIntensity);
 
-        r3d_primitive_bind_and_draw_screen();
+    r3d_primitive_bind_and_draw_screen();
 
-        r3d_shader_unbind_sampler2D(post.bloom, uTexColor);
-        r3d_shader_unbind_sampler2D(post.bloom, uTexBloomBlur);
-    }
-    r3d_shader_disable();
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.bloom, uTexColor);
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.bloom, uTexBloomBlur);
 
     return sceneTarget;
 }
@@ -1611,23 +1562,20 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
 r3d_target_t r3d_pass_post_output(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.output);
 
-    r3d_shader_enable(post.output);
-    {
-        r3d_shader_bind_sampler2D(post.output, uTexColor, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER_2D(post.output, uTexColor, r3d_target_get(sceneTarget));
 
-        r3d_shader_set_float(post.output, uTonemapExposure, R3D.env.tonemapExposure);
-        r3d_shader_set_float(post.output, uTonemapWhite, R3D.env.tonemapWhite);
-        r3d_shader_set_int(post.output, uTonemapMode, R3D.env.tonemapMode);
-        r3d_shader_set_float(post.output, uBrightness, R3D.env.brightness);
-        r3d_shader_set_float(post.output, uContrast, R3D.env.contrast);
-        r3d_shader_set_float(post.output, uSaturation, R3D.env.saturation);
+    R3D_SHADER_SET_FLOAT(post.output, uTonemapExposure, R3D.env.tonemapExposure);
+    R3D_SHADER_SET_FLOAT(post.output, uTonemapWhite, R3D.env.tonemapWhite);
+    R3D_SHADER_SET_INT(post.output, uTonemapMode, R3D.env.tonemapMode);
+    R3D_SHADER_SET_FLOAT(post.output, uBrightness, R3D.env.brightness);
+    R3D_SHADER_SET_FLOAT(post.output, uContrast, R3D.env.contrast);
+    R3D_SHADER_SET_FLOAT(post.output, uSaturation, R3D.env.saturation);
 
-        r3d_primitive_bind_and_draw_screen();
+    r3d_primitive_bind_and_draw_screen();
 
-        r3d_shader_unbind_sampler2D(post.output, uTexColor);
-    }
-    r3d_shader_disable();
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.output, uTexColor);
 
     return sceneTarget;
 }
@@ -1635,24 +1583,22 @@ r3d_target_t r3d_pass_post_output(r3d_target_t sceneTarget)
 r3d_target_t r3d_pass_post_fxaa(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.fxaa);
 
-    r3d_shader_enable(post.fxaa);
-    {
-        r3d_shader_bind_sampler2D(post.fxaa, uTexture, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER_2D(post.fxaa, uTexture, r3d_target_get(sceneTarget));
 
-        r3d_shader_set_vec2(post.fxaa, uTexelSize, R3D.state.resolution.texel);
-        r3d_primitive_bind_and_draw_screen();
+    R3D_SHADER_SET_VEC2(post.fxaa, uTexelSize, R3D.state.resolution.texel);
+    r3d_primitive_bind_and_draw_screen();
 
-        r3d_shader_unbind_sampler2D(post.fxaa, uTexture);
-    }
-    r3d_shader_disable();
+    R3D_SHADER_UNBIND_SAMPLER_2D(post.fxaa, uTexture);
 
     return sceneTarget;
 }
 
 void r3d_reset_raylib_state(void)
 {
-    rlDisableFramebuffer();
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glUseProgram(0);
 
     glViewport(0, 0, GetRenderWidth(), GetRenderHeight());
 
