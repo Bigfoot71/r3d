@@ -1,4 +1,4 @@
-/* r3d_mod_primitive.c -- Internal R3D primitive drawing module.
+/* r3d_primitive.c -- Internal R3D primitive drawing module.
  *
  * Copyright (c) 2025 Le Juez Victor
  *

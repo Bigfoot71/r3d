@@ -1,4 +1,4 @@
-/* r3d_mod_target.c -- Internal R3D render target module.
+/* r3d_target.c -- Internal R3D render target module.
  *
  * Copyright (c) 2025 Le Juez Victor
  *

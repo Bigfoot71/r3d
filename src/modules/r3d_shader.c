@@ -1,4 +1,4 @@
-/* r3d_mod_shader.c -- Internal R3D shader module.
+/* r3d_shader.c -- Internal R3D shader module.
  *
  * Copyright (c) 2025 Le Juez Victor
  *
