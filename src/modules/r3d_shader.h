@@ -23,6 +23,15 @@
     glUseProgram(R3D_MOD_SHADER.shader_name.id);                                                    \
 } while(0)
 
+#define R3D_SHADER_SLOT_SAMPLER_1D(shader_name, uniform)                                            \
+    R3D_MOD_SHADER.shader_name.uniform.slot1D                                                       \
+
+#define R3D_SHADER_SLOT_SAMPLER_2D(shader_name, uniform)                                            \
+    R3D_MOD_SHADER.shader_name.uniform.slot2D                                                       \
+
+#define R3D_SHADER_SLOT_SAMPLER_CUBE(shader_name, uniform)                                          \
+    R3D_MOD_SHADER.shader_name.uniform.slotCube                                                     \
+
 #define R3D_SHADER_BIND_SAMPLER_1D(shader_name, uniform, texId) do {                                \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot1D);                       \
     glBindTexture(GL_TEXTURE_1D, (texId));                                                          \
