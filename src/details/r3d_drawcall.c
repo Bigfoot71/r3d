@@ -19,6 +19,7 @@
 
 #include "./r3d_drawcall.h"
 
+#include "../modules/r3d_texture.h"
 #include "../modules/r3d_shader.h"
 #include "./r3d_frustum.h"
 #include "../r3d_state.h"
@@ -118,14 +119,14 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     /* --- Set forward material data --- */
 
     if (forward) {
-        R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
+        R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
         R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
-        R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.depth, uTexAlbedo, call->material.albedo.texture.id, white);
+        R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
     }
     else {
-        R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, 1.0f);
+        R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, r3d_texture_get(R3D_TEXTURE_WHITE));
         R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, 0.0f);
-        R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D.texture.white);
+        R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, 1.0f);
     }
 
     /* --- Applying material parameters that are independent of shaders --- */
@@ -186,14 +187,14 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     /* --- Set forward material data --- */
 
     if (forward) {
-        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
+        R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
         R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
-        R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.depthCube, uTexAlbedo, call->material.albedo.texture.id, white);
+        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
     }
     else {
-        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, 1.0f);
+        R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, r3d_texture_get(R3D_TEXTURE_WHITE));
         R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, 0.0f);
-        R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, R3D.texture.white);
+        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, 1.0f);
     }
 
     /* --- Applying material parameters that are independent of shaders --- */
@@ -266,10 +267,10 @@ void r3d_drawcall_raster_decal(const r3d_drawcall_t* call, const Matrix* matVP)
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.decal, uTexAlbedo, call->material.albedo.texture.id, white);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.decal, uTexNormal, call->material.normal.texture.id, normal);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.decal, uTexEmission, call->material.emission.texture.id, black);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.decal, uTexORM, call->material.orm.texture.id, white);
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -351,10 +352,10 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.geometry, uTexAlbedo, call->material.albedo.texture.id, white);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.geometry, uTexNormal, call->material.normal.texture.id, normal);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.geometry, uTexEmission, call->material.emission.texture.id, black);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.geometry, uTexORM, call->material.orm.texture.id, white);
+    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -431,10 +432,10 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.forward, uTexAlbedo, call->material.albedo.texture.id, white);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.forward, uTexNormal, call->material.normal.texture.id, normal);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.forward, uTexEmission, call->material.emission.texture.id, black);
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(scene.forward, uTexORM, call->material.orm.texture.id, white);
+    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
 
     /* --- Applying material parameters that are independent of shaders --- */
 

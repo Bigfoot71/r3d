@@ -21,6 +21,7 @@
 #include "./details/r3d_light.h"
 
 #include "./modules/r3d_primitive.h"
+#include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
@@ -127,8 +128,8 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
 
     // Initialize modules
     r3d_mod_primitive_init();
+    r3d_mod_texture_init();
     r3d_mod_target_init(resWidth, resHeight);
-    r3d_textures_load();
     r3d_storages_load();
     r3d_mod_shader_init();
 
@@ -139,8 +140,8 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
 void R3D_Close(void)
 {
     r3d_mod_primitive_quit();
+    r3d_mod_texture_quit();
     r3d_mod_target_quit();
-    r3d_textures_unload();
     r3d_storages_unload();
     r3d_mod_shader_quit();
 

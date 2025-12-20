@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_utils.h>
 
+#include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
 #include "./r3d_state.h"
 
@@ -18,7 +19,7 @@
 Texture2D R3D_GetWhiteTexture(void)
 {
     Texture2D texture = { 0 };
-    texture.id = R3D.texture.white;
+    texture.id = r3d_texture_get(R3D_TEXTURE_WHITE);
     texture.width = 1;
     texture.height = 1;
     texture.mipmaps = 1;
@@ -29,7 +30,7 @@ Texture2D R3D_GetWhiteTexture(void)
 Texture2D R3D_GetBlackTexture(void)
 {
     Texture2D texture = { 0 };
-    texture.id = R3D.texture.black;
+    texture.id = r3d_texture_get(R3D_TEXTURE_BLACK);
     texture.width = 1;
     texture.height = 1;
     texture.mipmaps = 1;
@@ -40,7 +41,7 @@ Texture2D R3D_GetBlackTexture(void)
 Texture2D R3D_GetNormalTexture(void)
 {
     Texture2D texture = { 0 };
-    texture.id = R3D.texture.normal;
+    texture.id = r3d_texture_get(R3D_TEXTURE_NORMAL);
     texture.width = 1;
     texture.height = 1;
     texture.mipmaps = 1;

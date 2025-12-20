@@ -33,12 +33,6 @@
     glBindTexture(GL_TEXTURE_2D, (texId));                                                          \
 } while(0)
 
-#define R3D_SHADER_BIND_SAMPLER_2D_OPT(shader_name, uniform, texId, altTex) do {                    \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2D);                       \
-    if (texId != 0) glBindTexture(GL_TEXTURE_2D, (texId));                                          \
-    else glBindTexture(GL_TEXTURE_2D, R3D.texture.altTex);                                          \
-} while(0)
-
 #define R3D_SHADER_BIND_SAMPLER_CUBE(shader_name, uniform, texId) do {                              \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCube);                     \
     glBindTexture(GL_TEXTURE_CUBE_MAP, (texId));                                                    \

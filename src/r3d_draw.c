@@ -19,6 +19,7 @@
 #include "./details/r3d_math.h"
 
 #include "./modules/r3d_primitive.h"
+#include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./r3d_state.h"
@@ -880,8 +881,8 @@ r3d_target_t r3d_pass_prepare_ssao(void)
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_1D(prepare.ssao, uTexKernel, R3D.texture.ssaoKernel);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNoise, R3D.texture.ssaoNoise);
+    R3D_SHADER_BIND_SAMPLER_1D(prepare.ssao, uTexKernel, r3d_texture_get(R3D_TEXTURE_SSAO_KERNEL));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNoise, r3d_texture_get(R3D_TEXTURE_SSAO_NOISE));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
@@ -937,11 +938,11 @@ void r3d_pass_deferred_ambient(r3d_target_t ssaoSource)
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-        R3D_SHADER_BIND_SAMPLER_2D_OPT(deferred.ambientIbl, uTexSSAO, r3d_target_get(ssaoSource), white);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexSSAO, R3D_TEXTURE_SELECT(r3d_target_get(ssaoSource), WHITE));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexORM, r3d_target_get(R3D_TARGET_ORM));
         R3D_SHADER_BIND_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, R3D.env.sky.irradiance.id);
         R3D_SHADER_BIND_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, R3D.env.sky.prefilter.id);
-        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, R3D.texture.iblBrdfLut);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
         R3D_SHADER_SET_VEC3(deferred.ambientIbl, uViewPosition, R3D.state.transform.viewPos);
         R3D_SHADER_SET_MAT4(deferred.ambientIbl, uMatInvProj, R3D.state.transform.invProj);
@@ -972,7 +973,7 @@ void r3d_pass_deferred_ambient(r3d_target_t ssaoSource)
         R3D_SHADER_USE(deferred.ambient);
 
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-        R3D_SHADER_BIND_SAMPLER_2D_OPT(deferred.ambient, uTexSSAO, r3d_target_get(ssaoSource), white);
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexSSAO, R3D_TEXTURE_SELECT(r3d_target_get(ssaoSource), WHITE));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexORM, r3d_target_get(R3D_TARGET_ORM));
 
         R3D_SHADER_SET_VEC3(deferred.ambient, uAmbientLight, R3D.env.ambientLight);
@@ -1008,7 +1009,7 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
     R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
     R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-    R3D_SHADER_BIND_SAMPLER_2D_OPT(deferred.lighting, uTexSSAO, r3d_target_get(ssaoSource), white);
+    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexSSAO, R3D_TEXTURE_SELECT(r3d_target_get(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uTexORM, r3d_target_get(R3D_TARGET_ORM));
 
     R3D_SHADER_SET_VEC3(deferred.lighting, uViewPosition, R3D.state.transform.viewPos);
@@ -1298,7 +1299,7 @@ void r3d_pass_scene_forward(r3d_target_t sceneTarget)
     if (R3D.env.useSky) {
         R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uCubeIrradiance, R3D.env.sky.irradiance.id);
         R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uCubePrefilter, R3D.env.sky.prefilter.id);
-        R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexBrdfLut, R3D.texture.iblBrdfLut);
+        R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexBrdfLut, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
         R3D_SHADER_SET_VEC4(scene.forward, uQuatSkybox, R3D.env.quatSky);
         R3D_SHADER_SET_INT(scene.forward, uHasSkybox, true);

@@ -119,16 +119,6 @@ extern struct R3D_State {
 
     } env;
 
-    // Default textures
-    struct {
-        GLuint white;
-        GLuint black;
-        GLuint normal;
-        GLuint ssaoNoise;
-        GLuint ssaoKernel;
-        GLuint iblBrdfLut;
-    } texture;
-
     // Storages
     struct {
         GLuint texMatrices[3];  // Stores 4x4 matrices for GPU skinning (triple-buffered to avoid GPU stalls)
@@ -197,20 +187,8 @@ void r3d_storage_bind_and_upload_matrices(const Matrix* matrices, int count, int
 
 /* === Main loading functions === */
 
-void r3d_textures_load(void);
-void r3d_textures_unload(void);
-
 void r3d_storages_load(void);
 void r3d_storages_unload(void);
-
-/* === Texture loading functions === */
-
-void r3d_texture_load_white(void);
-void r3d_texture_load_black(void);
-void r3d_texture_load_normal(void);
-void r3d_texture_load_ssao_noise(void);
-void r3d_texture_load_ssao_kernel(void);
-void r3d_texture_load_ibl_brdf_lut(void);
 
 /* === Storage loading functions === */
 

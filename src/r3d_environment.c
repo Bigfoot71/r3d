@@ -77,15 +77,6 @@ void R3D_GetSkyboxIntensity(float* background, float* ambient, float* reflection
 void R3D_SetSSAO(bool enabled)
 {
 	R3D.env.ssaoEnabled = enabled;
-
-	if (enabled) {
-		if (R3D.texture.ssaoNoise == 0) {
-        	r3d_texture_load_ssao_noise();
-		}
-		if (R3D.texture.ssaoKernel == 0) {
-			r3d_texture_load_ssao_kernel();
-		}
-	}
 }
 
 bool R3D_GetSSAO(void)
