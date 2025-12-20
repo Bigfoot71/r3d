@@ -44,7 +44,7 @@ GLuint r3d_texture_get(r3d_texture_t texture);
 // MODULE FUNCTIONS
 // ========================================
 
-void r3d_mod_texture_init(void);
+bool r3d_mod_texture_init(void);
 void r3d_mod_texture_quit(void);
 
 #endif // R3D_MODULE_TEXTURE_H

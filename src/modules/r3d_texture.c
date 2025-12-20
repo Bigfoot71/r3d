@@ -182,10 +182,11 @@ GLuint r3d_texture_get(r3d_texture_t texture)
 // MODULE FUNCTIONS
 // ========================================
 
-void r3d_mod_texture_init(void)
+bool r3d_mod_texture_init(void)
 {
     memset(&R3D_MOD_TEXTURE, 0, sizeof(R3D_MOD_TEXTURE));
     glGenTextures(R3D_TEXTURE_COUNT, R3D_MOD_TEXTURE.textures);
+    return true;
 }
 
 void r3d_mod_texture_quit(void)
