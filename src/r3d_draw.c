@@ -722,14 +722,14 @@ void r3d_pass_scene_shadows(void)
                     for (size_t k = 0; k < R3D.container.aDrawDeferredInst.count; k++) {
                         r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawDeferredInst.data + k;
                         if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                            r3d_drawcall_raster_depth_cube(call, false, true, &matVP);
+                            r3d_drawcall_raster_depth_cube(call, true, &matVP);
                         }
                     }
 
                     for (size_t k = 0; k < R3D.container.aDrawForwardInst.count; k++) {
                         r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawForwardInst.data + k;
                         if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                            r3d_drawcall_raster_depth_cube(call, true, true, &matVP);
+                            r3d_drawcall_raster_depth_cube(call, true, &matVP);
                         }
                     }
 
@@ -738,14 +738,14 @@ void r3d_pass_scene_shadows(void)
                     for (size_t k = 0; k < R3D.container.aDrawDeferred.count; k++) {
                         r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawDeferred.data + k;
                         if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                            r3d_drawcall_raster_depth_cube(call, false, true, &matVP);
+                            r3d_drawcall_raster_depth_cube(call, true, &matVP);
                         }
                     }
 
                     for (size_t k = 0; k < R3D.container.aDrawForward.count; k++) {
                         r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawForward.data + k;
                         if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                            r3d_drawcall_raster_depth_cube(call, true, true, &matVP);
+                            r3d_drawcall_raster_depth_cube(call, true, &matVP);
                         }
                     }
 
@@ -782,13 +782,13 @@ void r3d_pass_scene_shadows(void)
                 for (size_t j = 0; j < R3D.container.aDrawDeferredInst.count; j++) {
                     r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawDeferredInst.data + j;
                     if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                        r3d_drawcall_raster_depth(call, false, true, &matVP);
+                        r3d_drawcall_raster_depth(call, true, &matVP);
                     }
                 }
                 for (size_t j = 0; j < R3D.container.aDrawForwardInst.count; j++) {
                     r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawForwardInst.data + j;
                     if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                        r3d_drawcall_raster_depth(call, true, true, &matVP);
+                        r3d_drawcall_raster_depth(call, true, &matVP);
                     }
                 }
 
@@ -797,13 +797,13 @@ void r3d_pass_scene_shadows(void)
                 for (size_t j = 0; j < R3D.container.aDrawDeferred.count; j++) {
                     r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawDeferred.data + j;
                     if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                        r3d_drawcall_raster_depth(call, false, true, &matVP);
+                        r3d_drawcall_raster_depth(call, true, &matVP);
                     }
                 }
                 for (size_t j = 0; j < R3D.container.aDrawForward.count; j++) {
                     r3d_drawcall_t* call = (r3d_drawcall_t*)R3D.container.aDrawForward.data + j;
                     if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                        r3d_drawcall_raster_depth(call, true, true, &matVP);
+                        r3d_drawcall_raster_depth(call, true, &matVP);
                     }
                 }
 

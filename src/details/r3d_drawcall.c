@@ -87,7 +87,7 @@ bool r3d_drawcall_instanced_geometry_is_visible(const r3d_drawcall_t* call)
     return r3d_frustum_is_obb_in(&R3D.state.frustum.shape, &call->instanced.allAabb, &call->transform);
 }
 
-void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool shadow, const Matrix* matVP)
+void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool shadow, const Matrix* matVP)
 {
     /* --- Send matrices --- */
 
@@ -116,18 +116,11 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     R3D_SHADER_SET_VEC2(scene.depth, uTexCoordOffset, call->material.uvOffset);
     R3D_SHADER_SET_VEC2(scene.depth, uTexCoordScale, call->material.uvScale);
 
-    /* --- Set forward material data --- */
+    /* --- Set transparency material data --- */
 
-    if (forward) {
-        R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-        R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
-        R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
-    }
-    else {
-        R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, r3d_texture_get(R3D_TEXTURE_WHITE));
-        R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, 0.0f);
-        R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, 1.0f);
-    }
+    R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
+    R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -155,7 +148,7 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool forward, bool sh
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.depth, uTexAlbedo);
 }
 
-void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bool shadow, const Matrix* matVP)
+void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool shadow, const Matrix* matVP)
 {
     /* --- Send matrices --- */
 
@@ -184,18 +177,11 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool forward, bo
     R3D_SHADER_SET_VEC2(scene.depthCube, uTexCoordOffset, call->material.uvOffset);
     R3D_SHADER_SET_VEC2(scene.depthCube, uTexCoordScale, call->material.uvScale);
 
-    /* --- Set forward material data --- */
+    /* --- Set transparency material data --- */
 
-    if (forward) {
-        R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
-        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
-    }
-    else {
-        R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, r3d_texture_get(R3D_TEXTURE_WHITE));
-        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, 0.0f);
-        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, 1.0f);
-    }
+    R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
+    R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
