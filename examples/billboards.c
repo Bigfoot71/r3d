@@ -39,7 +39,6 @@ const char* Init(void)
     meshBillboard.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     matBillboard = R3D_GetDefaultMaterial();
-    matBillboard.blendMode = R3D_BLEND_ALPHA;
     matBillboard.billboardMode = R3D_BILLBOARD_Y_AXIS;
     matBillboard.albedo.texture = LoadTexture(RESOURCES_PATH "tree.png");
 
