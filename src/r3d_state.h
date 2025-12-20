@@ -30,10 +30,6 @@
 #include "./details/containers/r3d_array.h"
 #include "./details/containers/r3d_registry.h"
 
-/* === Defines === */
-
-#define R3D_STORAGE_MATRIX_CAPACITY  256
-
 /* === Global R3D State === */
 
 extern struct R3D_State {
@@ -119,11 +115,6 @@ extern struct R3D_State {
 
     } env;
 
-    // Storages
-    struct {
-        GLuint texMatrices[3];  // Stores 4x4 matrices for GPU skinning (triple-buffered to avoid GPU stalls)
-    } storage;
-
     // State data
     struct {
 
@@ -178,20 +169,6 @@ extern struct R3D_State {
 
 /* === Helper functions === */
 
-bool r3d_texture_is_default(GLuint id);
 void r3d_calculate_bloom_prefilter_data(void);
-
-/* === Storage functions === */
-
-void r3d_storage_bind_and_upload_matrices(const Matrix* matrices, int count, int slot);
-
-/* === Main loading functions === */
-
-void r3d_storages_load(void);
-void r3d_storages_unload(void);
-
-/* === Storage loading functions === */
-
-void r3d_storage_load_tex_matrices(void);
 
 #endif // R3D_STATE_H

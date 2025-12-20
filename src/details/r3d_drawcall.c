@@ -20,6 +20,7 @@
 #include "./r3d_drawcall.h"
 
 #include "../modules/r3d_texture.h"
+#include "../modules/r3d_storage.h"
 #include "../modules/r3d_shader.h"
 #include "./r3d_frustum.h"
 #include "../r3d_state.h"
@@ -52,7 +53,7 @@ static int r3d_drawcall_compare_front_to_back(const void* a, const void* b);
 static int r3d_drawcall_compare_back_to_front(const void* a, const void* b);
 
 // Upload matrices function
-static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call);
+static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call, int bindingSlot);
 
 /* === Function definitions === */
 
@@ -97,8 +98,8 @@ void r3d_drawcall_raster_depth(const r3d_drawcall_t* call, bool shadow, const Ma
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_drawcall_upload_matrices(call, R3D_SHADER_SLOT_SAMPLER_1D(scene.depth, uTexBoneMatrices));
         R3D_SHADER_SET_INT(scene.depth, uSkinning, true);
-        r3d_drawcall_upload_matrices(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.depth, uSkinning, false);
@@ -158,8 +159,8 @@ void r3d_drawcall_raster_depth_cube(const r3d_drawcall_t* call, bool shadow, con
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_drawcall_upload_matrices(call, R3D_SHADER_SLOT_SAMPLER_1D(scene.depthCube, uTexBoneMatrices));
         R3D_SHADER_SET_INT(scene.depthCube, uSkinning, true);
-        r3d_drawcall_upload_matrices(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.depthCube, uSkinning, false);
@@ -300,8 +301,8 @@ void r3d_drawcall_raster_geometry(const r3d_drawcall_t* call, const Matrix* matV
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_drawcall_upload_matrices(call, R3D_SHADER_SLOT_SAMPLER_1D(scene.geometry, uTexBoneMatrices));
         R3D_SHADER_SET_INT(scene.geometry, uSkinning, true);
-        r3d_drawcall_upload_matrices(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.geometry, uSkinning, false);
@@ -380,8 +381,8 @@ void r3d_drawcall_raster_forward(const r3d_drawcall_t* call, const Matrix* matVP
     /* --- Send skinning related data --- */
 
     if (call->player != NULL || R3D_IsSkeletonValid(&call->skeleton)) {
+        r3d_drawcall_upload_matrices(call, R3D_SHADER_SLOT_SAMPLER_1D(scene.forward, uTexBoneMatrices));
         R3D_SHADER_SET_INT(scene.forward, uSkinning, true);
-        r3d_drawcall_upload_matrices(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.forward, uSkinning, false);
@@ -704,7 +705,7 @@ int r3d_drawcall_compare_back_to_front(const void* a, const void* b)
 }
 
 // Upload matrices function
-static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call)
+static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call, int bindingSlot)
 {
     const R3D_Skeleton* skeleton = NULL;
     const Matrix* currentPose = NULL;
@@ -718,13 +719,7 @@ static void r3d_drawcall_upload_matrices(const r3d_drawcall_t* call)
         currentPose = call->skeleton.bindPose;
     }
 
-    static Matrix bones[256];
+    static Matrix bones[R3D_STORAGE_MAX_BONE_MATRICES];
     r3d_matrix_multiply_batch(bones, skeleton->boneOffsets, currentPose, skeleton->boneCount);
-
-    // WARNING: Pay attention to any changes in the binding slot for uTexBoneMatrices.
-    //          In theory, being the only texture sampled in the vertex shader,
-    //          it should be kept in the first slot '0' for consistency.
-
-    const int bindingSlot = 0;
-    r3d_storage_bind_and_upload_matrices(bones, skeleton->boneCount, bindingSlot);
+    r3d_storage_use(R3D_STORAGE_BONE_MATRICES, bindingSlot, bones, skeleton->boneCount);
 }
