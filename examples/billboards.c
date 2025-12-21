@@ -1,6 +1,8 @@
 #include "./common.h"
+#include "r3d/r3d_environment.h"
 #include "r3d/r3d_lighting.h"
 #include "r3d/r3d_material.h"
+#include "raylib.h"
 #include "raymath.h"
 
 /* === Resources === */
@@ -25,7 +27,7 @@ const char* Init(void)
 
     /* --- Set the background color --- */
 
-    R3D_SetBackgroundColor(SKYBLUE);
+    R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
 
     /* --- Setup the ground mesh / material --- */
 

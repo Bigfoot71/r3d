@@ -9,6 +9,7 @@
 #ifndef R3D_ANIMATION_H
 #define R3D_ANIMATION_H
 
+#include "./r3d_platform.h"
 #include "./r3d_skeleton.h"
 #include <raylib.h>
 

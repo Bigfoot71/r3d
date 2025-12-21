@@ -20,17 +20,17 @@ const char* Init(void)
 
     /* --- Configure default post process settings --- */
 
-    R3D_SetSSAO(true);
-    R3D_SetSSAORadius(4.0f);
-    R3D_SetSSAOIntensity(1.25f);
-    R3D_SetSSAOPower(1.5f);
+    R3D_ENVIRONMENT_SET(ssao.enabled, true);
+    R3D_ENVIRONMENT_SET(ssao.radius, 4.0f);
+    R3D_ENVIRONMENT_SET(ssao.intensity, 1.25f);
+    R3D_ENVIRONMENT_SET(ssao.power, 1.5f);
 
-    R3D_SetBloomMode(R3D_BLOOM_MIX);
+    R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
 
     /* --- Set default background and ambient color (when no skybox is activated) --- */
 
-    R3D_SetBackgroundColor(SKYBLUE);
-    R3D_SetAmbientColor(DARKGRAY);
+    R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
+    R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
     /* --- Load Sponza scene --- */
 
@@ -80,21 +80,21 @@ void Update(float delta)
     /* --- Skybox toggling --- */
 
     if (IsKeyPressed(KEY_ZERO)) {
-        if (sky) R3D_DisableSkybox();
-        else R3D_EnableSkybox(skybox);
+        if (sky) R3D_ENVIRONMENT_SET(background.sky, (R3D_Skybox) {0});
+        else R3D_ENVIRONMENT_SET(background.sky, skybox);
         sky = !sky;
     }
 
     /* --- SSAO toggling --- */
 
     if (IsKeyPressed(KEY_ONE)) {
-        R3D_SetSSAO(!R3D_GetSSAO());
+        R3D_ENVIRONMENT_SET(ssao.enabled, !R3D_ENVIRONMENT_GET(ssao.enabled));
     }
 
     /* --- Fog toggling --- */
 
     if (IsKeyPressed(KEY_TWO)) {
-        R3D_SetFogMode(R3D_GetFogMode() == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
+        R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
     }
 
     /* --- FXAA toggling --- */
@@ -108,12 +108,12 @@ void Update(float delta)
     /* --- Tonemapping setter --- */
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        R3D_Tonemap tonemap = R3D_GetTonemapMode();
-        R3D_SetTonemapMode((tonemap + R3D_TONEMAP_COUNT - 1) % R3D_TONEMAP_COUNT);
+        R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
+        R3D_ENVIRONMENT_SET(tonemap.mode, (tonemap + R3D_TONEMAP_COUNT - 1) % R3D_TONEMAP_COUNT);
     }
     if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-        R3D_Tonemap tonemap = R3D_GetTonemapMode();
-        R3D_SetTonemapMode((tonemap + 1) % R3D_TONEMAP_COUNT);
+        R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
+        R3D_ENVIRONMENT_SET(tonemap.mode, (tonemap + 1) % R3D_TONEMAP_COUNT);
     }
 }
 
@@ -134,7 +134,7 @@ void Draw(void)
 
     /* --- Indicates which tonemapping is used --- */
 
-    R3D_Tonemap tonemap = R3D_GetTonemapMode();
+    R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
 
     switch (tonemap) {
     case R3D_TONEMAP_LINEAR: {

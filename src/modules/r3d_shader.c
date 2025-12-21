@@ -308,15 +308,15 @@ void r3d_mod_shader_load_scene_forward(void)
     GET_LOCATION(scene.forward, uOcclusion);
     GET_LOCATION(scene.forward, uRoughness);
     GET_LOCATION(scene.forward, uMetalness);
-    GET_LOCATION(scene.forward, uAmbientLight);
+    GET_LOCATION(scene.forward, uAmbientColor);
     GET_LOCATION(scene.forward, uEmissionColor);
     GET_LOCATION(scene.forward, uCubeIrradiance);
     GET_LOCATION(scene.forward, uCubePrefilter);
     GET_LOCATION(scene.forward, uTexBrdfLut);
     GET_LOCATION(scene.forward, uQuatSkybox);
     GET_LOCATION(scene.forward, uHasSkybox);
-    GET_LOCATION(scene.forward, uSkyboxAmbientIntensity);
-    GET_LOCATION(scene.forward, uSkyboxReflectIntensity);
+    GET_LOCATION(scene.forward, uAmbientEnergy);
+    GET_LOCATION(scene.forward, uReflectEnergy);
     GET_LOCATION(scene.forward, uAlphaCutoff);
     GET_LOCATION(scene.forward, uViewPosition);
     GET_LOCATION(scene.forward, uFar);
@@ -376,7 +376,7 @@ void r3d_mod_shader_load_scene_skybox(void)
     GET_LOCATION(scene.skybox, uMatProj);
     GET_LOCATION(scene.skybox, uMatView);
     GET_LOCATION(scene.skybox, uRotation);
-    GET_LOCATION(scene.skybox, uSkyIntensity);
+    GET_LOCATION(scene.skybox, uSkyEnergy);
     GET_LOCATION(scene.skybox, uCubeSky);
 
     USE_SHADER(scene.skybox);
@@ -486,8 +486,8 @@ void r3d_mod_shader_load_deferred_ambient_ibl(void)
     GET_LOCATION(deferred.ambientIbl, uCubePrefilter);
     GET_LOCATION(deferred.ambientIbl, uTexBrdfLut);
     GET_LOCATION(deferred.ambientIbl, uQuatSkybox);
-    GET_LOCATION(deferred.ambientIbl, uSkyboxAmbientIntensity);
-    GET_LOCATION(deferred.ambientIbl, uSkyboxReflectIntensity);
+    GET_LOCATION(deferred.ambientIbl, uAmbientEnergy);
+    GET_LOCATION(deferred.ambientIbl, uReflectEnergy);
     GET_LOCATION(deferred.ambientIbl, uViewPosition);
     GET_LOCATION(deferred.ambientIbl, uMatInvProj);
     GET_LOCATION(deferred.ambientIbl, uMatInvView);
@@ -513,7 +513,8 @@ void r3d_mod_shader_load_deferred_ambient(void)
     GET_LOCATION(deferred.ambient, uTexAlbedo);
     GET_LOCATION(deferred.ambient, uTexSSAO);
     GET_LOCATION(deferred.ambient, uTexORM);
-    GET_LOCATION(deferred.ambient, uAmbientLight);
+    GET_LOCATION(deferred.ambient, uAmbientColor);
+    GET_LOCATION(deferred.ambient, uAmbientEnergy);
 
     USE_SHADER(deferred.ambient);
 

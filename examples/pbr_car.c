@@ -1,4 +1,5 @@
 #include "./common.h"
+#include "r3d/r3d_skybox.h"
 
 /* === Resources === */
 
@@ -22,19 +23,19 @@ const char* Init(void)
 
     /* --- Setup background color and ambient light --- */
 
-    R3D_SetBackgroundColor(BLACK);
-    R3D_SetAmbientColor(DARKGRAY);
+    R3D_ENVIRONMENT_SET(background.color, BLACK);
+    R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
     /* --- Setup post processing parameters --- */
 
-    R3D_SetSSR(true);
+    R3D_ENVIRONMENT_SET(ssr.enabled, true);
 
-    R3D_SetSSAO(true);
-    R3D_SetSSAORadius(2.0f);
+    R3D_ENVIRONMENT_SET(ssao.enabled, true);
+    R3D_ENVIRONMENT_SET(ssao.radius, 2.0f);
 
-    R3D_SetBloomIntensity(0.1f);
-    R3D_SetBloomMode(R3D_BLOOM_MIX);
-    R3D_SetTonemapMode(R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(bloom.intensity, 0.1f);
+    R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
 
     /* --- Load the car model and apply scaling on import --- */
 
@@ -84,13 +85,13 @@ void Update(float delta)
     UpdateCamera(&camera, CAMERA_FREE);
 
     if (IsKeyPressed(KEY_O)) {
-        R3D_SetSSAO(!R3D_GetSSAO());
+        R3D_ENVIRONMENT_SET(ssao.enabled, !R3D_ENVIRONMENT_GET(ssao.enabled));
     }
 
     if (IsKeyPressed(KEY_T)) {
         showSkybox = !showSkybox;
-        if (showSkybox) R3D_EnableSkybox(skybox);
-        else R3D_DisableSkybox();
+        if (showSkybox) R3D_ENVIRONMENT_SET(background.sky, skybox);
+        else R3D_ENVIRONMENT_SET(background.sky, (R3D_Skybox) {0});
     }
 }
 

@@ -200,6 +200,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_target.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_shader.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_light.c"
+    "${R3D_ROOT_PATH}/src/modules/r3d_cache.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_draw.c"
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
@@ -215,7 +216,6 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_particles.c"
     "${R3D_ROOT_PATH}/src/r3d_skeleton.c"
     "${R3D_ROOT_PATH}/src/r3d_skybox.c"
-    "${R3D_ROOT_PATH}/src/r3d_state.c"
     "${R3D_ROOT_PATH}/src/r3d_utils.c"
 )
 

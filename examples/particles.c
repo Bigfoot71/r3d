@@ -21,12 +21,12 @@ const char* Init(void)
 
     /* --- Setup the background color and ambient light --- */
 
-    R3D_SetBackgroundColor((Color) { 4, 4, 4 });
-    R3D_SetAmbientColor(BLACK);
+    R3D_ENVIRONMENT_SET(background.color, (Color) { 4, 4, 4 });
+    R3D_ENVIRONMENT_SET(ambient.color, BLACK);
 
     /* --- Activate bloom in additive mode --- */
 
-    R3D_SetBloomMode(R3D_BLOOM_ADDITIVE);
+    R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_ADDITIVE);
 
     /* --- Gen a sphere as particle mesh --- */
 

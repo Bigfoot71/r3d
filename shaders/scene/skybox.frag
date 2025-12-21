@@ -11,11 +11,11 @@
 in vec3 vPosition;
 
 uniform samplerCube uCubeSky;
-uniform float uSkyIntensity;
+uniform float uSkyEnergy;
 
 layout(location = 0) out vec3 FragColor;
 
 void main()
 {
-    FragColor = texture(uCubeSky, vPosition).rgb * uSkyIntensity;
+    FragColor = texture(uCubeSky, vPosition).rgb * uSkyEnergy;
 }

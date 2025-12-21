@@ -10,7 +10,7 @@
 
 #include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
-#include "./r3d_state.h"
+#include "./modules/r3d_cache.h"
 
 // ========================================
 // PUBLIC API
@@ -73,22 +73,22 @@ Texture2D R3D_GetBufferDepth(void)
 
 Matrix R3D_GetMatrixView(void)
 {
-    return R3D.state.transform.view;
+    return R3D_CACHE_GET(viewport.view);
 }
 
 Matrix R3D_GetMatrixInvView(void)
 {
-    return R3D.state.transform.invView;
+    return R3D_CACHE_GET(viewport.invView);
 }
 
 Matrix R3D_GetMatrixProjection(void)
 {
-    return R3D.state.transform.proj;
+    return R3D_CACHE_GET(viewport.proj);
 }
 
 Matrix R3D_GetMatrixInvProjection(void)
 {
-    return R3D.state.transform.invProj;
+    return R3D_CACHE_GET(viewport.invProj);
 }
 
 void R3D_DrawBufferAlbedo(float x, float y, float w, float h)

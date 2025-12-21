@@ -9,7 +9,7 @@
 #ifndef R3D_UTILS_H
 #define R3D_UTILS_H
 
-#include "./r3d_api.h"
+#include "./r3d_platform.h"
 #include <raylib.h>
 
 /**

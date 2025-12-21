@@ -11,9 +11,9 @@ static float hueCube = 0.0f;
 
 /* === Local Functions === */
 
-static const char* getBloomModeName(R3D_Bloom mode)
+static const char* GetBloomModeName(void)
 {
-    switch (R3D_GetBloomMode()) {
+    switch (R3D_ENVIRONMENT_GET(bloom.mode)) {
         case R3D_BLOOM_DISABLED:
             return "Disabled";
         case R3D_BLOOM_MIX:
@@ -38,9 +38,9 @@ const char* Init(void)
 
     /* --- Setup the default bloom parameters --- */
 
-    R3D_SetTonemapMode(R3D_TONEMAP_ACES);
-    R3D_SetBloomMode(R3D_BLOOM_MIX);
-    R3D_SetBackgroundColor(BLACK);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
+    R3D_ENVIRONMENT_SET(background.color, BLACK);
 
     /* --- Load a cube mesh and setup its material --- */
 
@@ -77,18 +77,18 @@ void Update(float delta)
                        (IsKeyPressedRepeat(KEY_LEFT) || IsKeyPressed(KEY_LEFT));
 
     if (intensityDir != 0) {
-        R3D_SetBloomIntensity(R3D_GetBloomIntensity() + intensityDir * 0.01f);
+        R3D_ENVIRONMENT_SET(bloom.intensity, R3D_ENVIRONMENT_GET(bloom.intensity) + intensityDir * 0.01f);
     }
 
     int radiusDir = (IsKeyPressedRepeat(KEY_UP) || IsKeyPressed(KEY_UP)) -
                     (IsKeyPressedRepeat(KEY_DOWN) || IsKeyPressed(KEY_DOWN));
 
     if (radiusDir != 0) {
-        R3D_SetBloomFilterRadius(R3D_GetBloomFilterRadius() + radiusDir);
+        R3D_ENVIRONMENT_SET(bloom.filterRadius, R3D_ENVIRONMENT_GET(bloom.filterRadius) + radiusDir * 0.1f);
     }
 
     if (IsKeyPressed(KEY_SPACE)) {
-        R3D_SetBloomMode((R3D_GetBloomMode() + 1) % (R3D_BLOOM_SCREEN + 1));
+        R3D_ENVIRONMENT_SET(bloom.mode, (R3D_ENVIRONMENT_GET(bloom.mode) + 1) % (R3D_BLOOM_SCREEN + 1));
     }
 }
 
@@ -103,15 +103,15 @@ void Draw(void)
     const char* infoStr;
     int infoLen;
 
-    infoStr = TextFormat("Mode: %s", getBloomModeName(R3D_GetBloomMode()));
+    infoStr = TextFormat("Mode: %s", GetBloomModeName());
     infoLen = MeasureText(infoStr, 20);
     DrawText(infoStr, GetScreenWidth() - infoLen - 10, 10, 20, LIME);
 
-    infoStr = TextFormat("Intensity: %.2f", R3D_GetBloomIntensity());
+    infoStr = TextFormat("Intensity: %.2f", R3D_ENVIRONMENT_GET(bloom.intensity));
     infoLen = MeasureText(infoStr, 20);
     DrawText(infoStr, GetScreenWidth() - infoLen - 10, 40, 20, LIME);
 
-    infoStr = TextFormat("Filter Radius: %i", R3D_GetBloomFilterRadius());
+    infoStr = TextFormat("Filter Radius: %.2f", R3D_ENVIRONMENT_GET(bloom.filterRadius));
     infoLen = MeasureText(infoStr, 20);
     DrawText(infoStr, GetScreenWidth() - infoLen - 10, 70, 20, LIME);
 }

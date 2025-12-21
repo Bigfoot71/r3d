@@ -10,9 +10,9 @@
 #define R3D_DRAW_H
 
 #include "./r3d_particles.h"
+#include "./r3d_platform.h"
 #include "./r3d_model.h"
 #include "./r3d_decal.h"
-#include "./r3d_api.h"
 #include <raylib.h>
 
 /**

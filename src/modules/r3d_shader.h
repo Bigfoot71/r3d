@@ -327,15 +327,15 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
-    r3d_shader_uniform_vec3_t uAmbientLight;
+    r3d_shader_uniform_vec3_t uAmbientColor;
     r3d_shader_uniform_vec3_t uEmissionColor;
     r3d_shader_uniform_samplerCube_t uCubeIrradiance;
     r3d_shader_uniform_samplerCube_t uCubePrefilter;
     r3d_shader_uniform_sampler2D_t uTexBrdfLut;
     r3d_shader_uniform_vec4_t uQuatSkybox;
     r3d_shader_uniform_int_t uHasSkybox;
-    r3d_shader_uniform_float_t uSkyboxAmbientIntensity;
-    r3d_shader_uniform_float_t uSkyboxReflectIntensity;
+    r3d_shader_uniform_float_t uAmbientEnergy;
+    r3d_shader_uniform_float_t uReflectEnergy;
     struct {
         r3d_shader_uniform_vec3_t color;
         r3d_shader_uniform_vec3_t position;
@@ -399,7 +399,7 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_vec4_t uRotation;
-    r3d_shader_uniform_float_t uSkyIntensity;
+    r3d_shader_uniform_float_t uSkyEnergy;
     r3d_shader_uniform_samplerCube_t uCubeSky;
 } r3d_shader_scene_skybox_t;
 
@@ -414,8 +414,8 @@ typedef struct {
     r3d_shader_uniform_samplerCube_t uCubePrefilter;
     r3d_shader_uniform_sampler2D_t uTexBrdfLut;
     r3d_shader_uniform_vec4_t uQuatSkybox;
-    r3d_shader_uniform_float_t uSkyboxAmbientIntensity;
-    r3d_shader_uniform_float_t uSkyboxReflectIntensity;
+    r3d_shader_uniform_float_t uAmbientEnergy;
+    r3d_shader_uniform_float_t uReflectEnergy;
     r3d_shader_uniform_vec3_t uViewPosition;
     r3d_shader_uniform_mat4_t uMatInvProj;
     r3d_shader_uniform_mat4_t uMatInvView;
@@ -426,7 +426,8 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_sampler2D_t uTexSSAO;
     r3d_shader_uniform_sampler2D_t uTexORM;
-    r3d_shader_uniform_vec3_t uAmbientLight;
+    r3d_shader_uniform_vec3_t uAmbientColor;
+    r3d_shader_uniform_float_t uAmbientEnergy;
 } r3d_shader_deferred_ambient_t;
 
 typedef struct {

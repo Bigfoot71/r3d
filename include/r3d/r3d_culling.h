@@ -9,7 +9,7 @@
 #ifndef R3D_CULLING_H
 #define R3D_CULLING_H
 
-#include "./r3d_api.h"
+#include "./r3d_platform.h"
 #include <raylib.h>
 
 /**
@@ -104,52 +104,6 @@ R3DAPI bool R3D_IsAABBInFrustum(BoundingBox aabb);
  * @see R3D_IsAABBInFrustum()
  */
 R3DAPI bool R3D_IsOBBInFrustum(BoundingBox aabb, Matrix transform);
-
-/**
- * @brief Fast pre-filtering test for point inside frustum bounding box.
- *
- * Performs an AABB check using the frustum's bounding volume.
- * Useful for quick rejection before precise tests.
- *
- * @param position The 3D point to test.
- * @return `true` if inside the frustum AABB, `false` otherwise.
- *
- * @note May return false positives, never false negatives.
- * @warning Only checks against a loose AABB, not actual frustum planes.
- * @see R3D_IsPointInFrustum()
- */
-R3DAPI bool R3D_IsPointInFrustumBoundingBox(Vector3 position);
-
-/**
- * @brief Fast pre-filtering test for sphere inside frustum bounding box.
- *
- * Performs a quick check using the frustum's AABB to approximate intersection.
- *
- * @param position The center of the sphere.
- * @param radius Radius of the sphere.
- * @return `true` if possibly intersecting the frustum AABB, `false` otherwise.
- *
- * @note Faster but less accurate than full frustum testing.
- * @warning May produce false positives.
- * @see R3D_IsSphereInFrustum()
- */
-R3DAPI bool R3D_IsSphereInFrustumBoundingBox(Vector3 position, float radius);
-
-/**
- * @brief Fast pre-filtering test for AABB inside frustum bounding box.
- *
- * Performs a bounding box vs bounding box intersection to quickly eliminate non-visible objects.
- * Useful as an initial coarse check before calling full frustum tests.
- *
- * @param aabb The bounding box to test.
- * @return `true` if intersecting the frustum AABB, `false` otherwise.
- *
- * @note False positives possible, but never false negatives.
- * @warning Does not use actual frustum planes.
- * @note No OBB variant exists due to computational cost.
- * @see R3D_IsAABBInFrustum()
- */
-R3DAPI bool R3D_IsAABBInFrustumBoundingBox(BoundingBox aabb);
 
 #ifdef __cplusplus
 } // extern "C"

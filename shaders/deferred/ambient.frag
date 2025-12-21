@@ -35,8 +35,8 @@ uniform samplerCube uCubeIrradiance;
 uniform samplerCube uCubePrefilter;
 uniform sampler2D uTexBrdfLut;
 uniform vec4 uQuatSkybox;
-uniform float uSkyboxAmbientIntensity;
-uniform float uSkyboxReflectIntensity;
+uniform float uAmbientEnergy;
+uniform float uReflectEnergy;
 
 uniform vec3 uViewPosition;
 uniform mat4 uMatInvProj;
@@ -100,7 +100,7 @@ void main()
 
     vec3 Nr = M_Rotate3D(N, uQuatSkybox);
     FragDiffuse = kD * texture(uCubeIrradiance, Nr).rgb;
-    FragDiffuse *= occlusion * uSkyboxAmbientIntensity;
+    FragDiffuse *= occlusion * uAmbientEnergy;
 
     /* Skybox reflection - IBL specular amélioré */
 
@@ -118,7 +118,7 @@ void main()
     float edgeFade = mix(1.0, pow(NdotV, 0.5), roughness);
     specular *= edgeFade;
 
-    FragSpecular = specular * uSkyboxReflectIntensity;
+    FragSpecular = specular * uReflectEnergy;
 }
 
 #else
@@ -132,7 +132,8 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexSSAO;
 uniform sampler2D uTexORM;
-uniform vec3 uAmbientLight;
+uniform vec3 uAmbientColor;
+uniform float uAmbientEnergy;
 
 /* === Fragments === */
 
@@ -164,8 +165,9 @@ void main()
 
     vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
     vec3 kD = (1.0 - F0) * (1.0 - metalness);
-    vec3 ambient = kD * uAmbientLight;
-    ambient += F0 * uAmbientLight;
+    vec3 ambient = kD * uAmbientColor;
+    ambient += F0 * uAmbientColor;
+    ambient *= uAmbientEnergy;
     ambient *= occlusion;
 
     /* --- Output --- */

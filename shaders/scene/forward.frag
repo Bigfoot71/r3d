@@ -64,7 +64,7 @@ uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
 
-uniform vec3 uAmbientLight;
+uniform vec3 uAmbientColor;
 uniform vec3 uEmissionColor;
 
 uniform samplerCube uCubeIrradiance;
@@ -72,8 +72,8 @@ uniform samplerCube uCubePrefilter;
 uniform sampler2D uTexBrdfLut;
 uniform vec4 uQuatSkybox;
 uniform bool uHasSkybox;
-uniform float uSkyboxAmbientIntensity;
-uniform float uSkyboxReflectIntensity;
+uniform float uAmbientEnergy;
+uniform float uReflectEnergy;
 
 uniform Light uLights[LIGHT_FORWARD_COUNT];
 
@@ -336,7 +336,7 @@ void main()
 
     /* Compute ambient - (IBL diffuse) */
 
-    vec3 ambient = uAmbientLight;
+    vec3 ambient = uAmbientColor;
 
     if (uHasSkybox)
     {
@@ -345,7 +345,7 @@ void main()
 
         vec3 Nr = M_Rotate3D(N, uQuatSkybox);
         ambient = kD * texture(uCubeIrradiance, Nr).rgb;
-        ambient *= uSkyboxAmbientIntensity;
+        ambient *= uAmbientEnergy;
     }
     else
     {
@@ -354,7 +354,7 @@ void main()
         //       but it's to at least simulate some specularity, otherwise the 
         //       result would look poor for metals...
         ambient = (1.0 - F0) * (1.0 - metalness) * ambient;
-        ambient += F0 * uAmbientLight;
+        ambient += F0 * uAmbientColor * uAmbientEnergy;
     }
 
     /* Compute ambient occlusion map */
@@ -384,7 +384,7 @@ void main()
         float edgeFade = mix(1.0, pow(cNdotV, 0.5), roughness);
         spec *= edgeFade;
 
-        specular += spec * uSkyboxReflectIntensity;
+        specular += spec * uReflectEnergy;
     }
 
     /* Compute the final diffuse color, including ambient and diffuse lighting contributions */

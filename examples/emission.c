@@ -15,11 +15,11 @@ void ToggleLight(void)
 {
     if (R3D_IsLightActive(light)) {
         R3D_SetLightActive(light, false);
-        R3D_SetAmbientColor(BLACK);
+        R3D_ENVIRONMENT_SET(ambient.color, BLACK);
     }
     else {
         R3D_SetLightActive(light, true);
-        R3D_SetAmbientColor(DARKGRAY);
+        R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
     }
 }
 
@@ -34,19 +34,19 @@ const char* Init(void)
 
     /* --- Configure the background color and ambient lighting --- */
 
-    R3D_SetBackgroundColor(BLACK);
-    R3D_SetAmbientColor(DARKGRAY);
+    R3D_ENVIRONMENT_SET(background.color, BLACK);
+    R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
     /* --- Configure the post process parameters --- */
 
-    R3D_SetTonemapMode(R3D_TONEMAP_ACES);
-    R3D_SetTonemapExposure(0.8f);
-    R3D_SetTonemapWhite(2.5f);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(tonemap.exposure, 0.8f);
+    R3D_ENVIRONMENT_SET(tonemap.white, 2.5f);
 
-    R3D_SetBloomMode(R3D_BLOOM_ADDITIVE);
-    R3D_SetBloomSoftThreshold(0.2f);
-    R3D_SetBloomIntensity(0.2f);
-    R3D_SetBloomThreshold(0.6f);
+    R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_ADDITIVE);
+    R3D_ENVIRONMENT_SET(bloom.softThreshold, 0.2f);
+    R3D_ENVIRONMENT_SET(bloom.threshold, 0.6f);
+    R3D_ENVIRONMENT_SET(bloom.intensity, 0.2f);
 
     /* --- Loads the main model of the scene --- */
 

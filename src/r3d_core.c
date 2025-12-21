@@ -21,88 +21,22 @@
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
+#include "./modules/r3d_cache.h"
 #include "./modules/r3d_draw.h"
-#include "./r3d_state.h"
 
 // ========================================
 // PUBLIC API
 // ========================================
 
-void R3D_Init(int resWidth, int resHeight, unsigned int flags)
+void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
 {
-    // Set parameter flags
-    R3D.state.flags = flags;
-
-    // Environment data
-    R3D.env.backgroundColor = (Vector4) {0.2f, 0.2f, 0.2f, 1.0f};
-    R3D.env.ambientColor = (Color) {0, 0, 0, 255};
-    R3D.env.ambientEnergy = 1.0f;
-    R3D.env.ambientLight = (Vector3) {0.0f, 0.0f, 0.0f};
-    R3D.env.quatSky = QuaternionIdentity();
-    R3D.env.useSky = false;
-    R3D.env.skyBackgroundIntensity = 1.0f;
-    R3D.env.skyAmbientIntensity = 1.0f;
-    R3D.env.skyReflectIntensity = 1.0f;
-    R3D.env.ssaoEnabled = false;
-    R3D.env.ssaoRadius = 0.5f;
-    R3D.env.ssaoBias = 0.025f;
-    R3D.env.ssaoIterations = 1;
-    R3D.env.ssaoIntensity = 1.0f;
-    R3D.env.ssaoPower = 1.0f;
-    R3D.env.ssaoLightAffect = 0.0f;
-    R3D.env.bloomMode = R3D_BLOOM_DISABLED;
-    R3D.env.bloomLevels = 7;
-    R3D.env.bloomIntensity = 0.05f;
-    R3D.env.bloomFilterRadius = 1;
-    R3D.env.bloomThreshold = 0.0f;
-    R3D.env.bloomSoftThreshold = 0.5f;
-    R3D.env.fogMode = R3D_FOG_DISABLED;
-    R3D.env.ssrEnabled = false;
-    R3D.env.ssrMaxRaySteps = 64;
-    R3D.env.ssrBinarySearchSteps = 8;
-    R3D.env.ssrRayMarchLength = 8.0f;
-    R3D.env.ssrDepthThickness = 0.2f;
-    R3D.env.ssrDepthTolerance = 0.005f;
-    R3D.env.ssrEdgeFadeStart = 0.7f;
-    R3D.env.ssrEdgeFadeEnd = 1.0f;
-    R3D.env.fogColor = (Vector3) { 1.0f, 1.0f, 1.0f };
-    R3D.env.fogStart = 1.0f;
-    R3D.env.fogEnd = 50.0f;
-    R3D.env.fogDensity = 0.05f;
-    R3D.env.fogSkyAffect = 0.5f;
-    R3D.env.dofMode = R3D_DOF_DISABLED;
-    R3D.env.dofFocusPoint = 10.0f;
-    R3D.env.dofFocusScale = 1.0f;
-    R3D.env.dofMaxBlurSize = 20.0f;
-    R3D.env.dofDebugMode = false;
-    R3D.env.tonemapMode = R3D_TONEMAP_LINEAR;
-    R3D.env.tonemapExposure = 1.0f;
-    R3D.env.tonemapWhite = 1.0f;
-    R3D.env.brightness = 1.0f;
-    R3D.env.contrast = 1.0f;
-    R3D.env.saturation = 1.0f;
-
-    // Init default loading parameters
-    R3D.state.loading.textureFilter = TEXTURE_FILTER_TRILINEAR;
-
-    // Init default rendering layers
-    R3D.state.layers = R3D_LAYER_ALL;
-
-    // Init misc data
-    R3D.misc.matCubeViews[0] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  1.0f,  0.0f,  0.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
-    R3D.misc.matCubeViews[1] = MatrixLookAt((Vector3) { 0 }, (Vector3) { -1.0f,  0.0f,  0.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
-    R3D.misc.matCubeViews[2] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  1.0f,  0.0f }, (Vector3) { 0.0f,  0.0f,  1.0f });
-    R3D.misc.matCubeViews[3] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f, -1.0f,  0.0f }, (Vector3) { 0.0f,  0.0f, -1.0f });
-    R3D.misc.matCubeViews[4] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f,  1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
-    R3D.misc.matCubeViews[5] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f, -1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
-
-    // Initialize modules
     r3d_mod_primitive_init();
     r3d_mod_texture_init();
     r3d_mod_storage_init();
     r3d_mod_target_init(resWidth, resHeight);
     r3d_mod_shader_init();
     r3d_mod_light_init();
+    r3d_mod_cache_init(flags);
     r3d_mod_draw_init();
 
     // Defines suitable clipping plane distances for r3d
@@ -117,42 +51,23 @@ void R3D_Close(void)
     r3d_mod_target_quit();
     r3d_mod_shader_quit();
     r3d_mod_light_quit();
+    r3d_mod_cache_quit();
     r3d_mod_draw_quit();
 }
 
-bool R3D_HasState(unsigned int flag)
+bool R3D_HasState(R3D_Flags flags)
 {
-    return R3D.state.flags & flag;
+    return R3D_CACHE_FLAGS_HAS(state, flags);
 }
 
-void R3D_SetState(unsigned int flags)
+void R3D_SetState(R3D_Flags flags)
 {
-    if (flags & R3D_FLAG_8_BIT_NORMALS) {
-        TraceLog(LOG_WARNING, "R3D: Cannot set 'R3D_FLAG_8_BIT_NORMALS'; this flag must be set during R3D initialization");
-        flags &= ~R3D_FLAG_8_BIT_NORMALS;
-    }
-
-    if (flags & R3D_FLAG_LOW_PRECISION_BUFFERS) {
-        TraceLog(LOG_WARNING, "R3D: Cannot set 'R3D_FLAG_LOW_PRECISION_BUFFERS'; this flag must be set during R3D initialization");
-        flags &= ~R3D_FLAG_LOW_PRECISION_BUFFERS;
-    }
-
-    R3D.state.flags |= flags;
+    R3D_CACHE_FLAGS_ASSIGN(state, flags);
 }
 
-void R3D_ClearState(unsigned int flags)
+void R3D_ClearState(R3D_Flags flags)
 {
-    if (flags & R3D_FLAG_8_BIT_NORMALS) {
-        TraceLog(LOG_WARNING, "R3D: Cannot clear 'R3D_FLAG_8_BIT_NORMALS'; this flag must be set during R3D initialization");
-        flags &= ~R3D_FLAG_8_BIT_NORMALS;
-    }
-
-    if (flags & R3D_FLAG_LOW_PRECISION_BUFFERS) {
-        TraceLog(LOG_WARNING, "R3D: Cannot clear 'R3D_FLAG_LOW_PRECISION_BUFFERS'; this flag must be set during R3D initialization");
-        flags &= ~R3D_FLAG_LOW_PRECISION_BUFFERS;
-    }
-
-    R3D.state.flags &= ~flags;
+    R3D_CACHE_FLAGS_CLEAR(state, flags);
 }
 
 void R3D_GetResolution(int* width, int* height)
@@ -179,25 +94,25 @@ void R3D_UpdateResolution(int width, int height)
 
 void R3D_SetTextureFilter(TextureFilter filter)
 {
-    R3D.state.loading.textureFilter = filter;
+    R3D_CACHE_SET(textureFilter, filter);
 }
 
 R3D_Layer R3D_GetActiveLayers(void)
 {
-    return R3D.state.layers;
+    return R3D_CACHE_GET(layers);
 }
 
-void R3D_SetActiveLayers(R3D_Layer layers)
+void R3D_SetActiveLayers(R3D_Layer bitfield)
 {
-    R3D.state.layers = layers;
+    R3D_CACHE_SET(layers, bitfield);
 }
 
 void R3D_EnableLayers(R3D_Layer bitfield)
 {
-    R3D.state.layers |= bitfield;
+    R3D_CACHE_FLAGS_ASSIGN(layers, bitfield);
 }
 
 void R3D_DisableLayers(R3D_Layer bitfield)
 {
-    R3D.state.layers &= ~bitfield;
+    R3D_CACHE_FLAGS_CLEAR(layers, bitfield);
 }

@@ -21,7 +21,6 @@
 #define R3D_H
 
 #include "r3d_animation.h"
-#include "r3d_api.h"
 #include "r3d_core.h"
 #include "r3d_culling.h"
 #include "r3d_curves.h"
