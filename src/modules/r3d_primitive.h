@@ -10,6 +10,7 @@
 #define R3D_MODULE_PRIMTIVE_H
 
 #include <raylib.h>
+#include <stddef.h>
 
 // ========================================
 // PRIMITIVE ENUM
@@ -17,8 +18,8 @@
 
 typedef enum {
     R3D_PRIMITIVE_DUMMY,        //< Calls glDrawArrays with 3 vertices without an attached VBO/EBO
-    R3D_PRIMITIVE_QUAD,         //< Draws a quad with dimensions 2.0 (-1.0 .. +1.0)
-    R3D_PRIMITIVE_CUBE,         //< Draws a cube with dimensions 2.0 (-1.0 .. +1.0)
+    R3D_PRIMITIVE_QUAD,         //< Draws a quad with dimensions 1.0 (-0.5 .. +0.5)
+    R3D_PRIMITIVE_CUBE,         //< Draws a cube with dimensions 1.0 (-0.5 .. +0.5)
     R3D_PRIMITIVE_COUNT
 } r3d_primitive_t;
 
@@ -43,6 +44,10 @@ typedef enum {
 // ========================================
 
 void r3d_primitive_draw(r3d_primitive_t primitive);
+
+void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transforms, size_t transStride, 
+                                  const void* colors, size_t colStride, size_t instanceCount,
+                                  int locInstanceModel, int locInstanceColor);
 
 // ========================================
 // MODULE FUNCTIONS

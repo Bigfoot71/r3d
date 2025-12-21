@@ -92,10 +92,10 @@ void load_dummy(primitive_buffer_t* buf)
 void load_quad(primitive_buffer_t* buf)
 {
     static const R3D_Vertex VERTS[] = {
-        {{-1, 1, 0}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-1,-1, 0}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1, 1, 0}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1,-1, 0}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f, 0.5f, 0}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f, 0}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f, 0}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f, 0}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
     };
     static const GLubyte INDICES[] = {0, 1, 2, 1, 3, 2};
     
@@ -106,35 +106,35 @@ void load_cube(primitive_buffer_t* buf)
 {
     static const R3D_Vertex VERTS[] = {
         // Front (Z+)
-        {{-1, 1, 1}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-1,-1, 1}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1, 1, 1}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1,-1, 1}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f, 0.5f, 0.5f}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f, 0.5f}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f, 0.5f}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f, 0.5f}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
         // Back (Z-)
-        {{-1, 1,-1}, {1, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
-        {{-1,-1,-1}, {1, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
-        {{ 1, 1,-1}, {0, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
-        {{ 1,-1,-1}, {0, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{-0.5f, 0.5f,-0.5f}, {1, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{-0.5f,-0.5f,-0.5f}, {1, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{ 0.5f, 0.5f,-0.5f}, {0, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{ 0.5f,-0.5f,-0.5f}, {0, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
         // Left (X-)
-        {{-1, 1,-1}, {0, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
-        {{-1,-1,-1}, {0, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
-        {{-1, 1, 1}, {1, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
-        {{-1,-1, 1}, {1, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f, 0.5f,-0.5f}, {0, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f,-0.5f,-0.5f}, {0, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f, 0.5f, 0.5f}, {1, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f,-0.5f, 0.5f}, {1, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
         // Right (X+)
-        {{ 1, 1, 1}, {0, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
-        {{ 1,-1, 1}, {0, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
-        {{ 1, 1,-1}, {1, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
-        {{ 1,-1,-1}, {1, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f, 0.5f, 0.5f}, {0, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f,-0.5f, 0.5f}, {0, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f, 0.5f,-0.5f}, {1, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f,-0.5f,-0.5f}, {1, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
         // Top (Y+)
-        {{-1, 1,-1}, {0, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-1, 1, 1}, {0, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1, 1,-1}, {1, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1, 1, 1}, {1, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f, 0.5f,-0.5f}, {0, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f, 0.5f, 0.5f}, {0, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f,-0.5f}, {1, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f, 0.5f}, {1, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
         // Bottom (Y-)
-        {{-1,-1, 1}, {0, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-1,-1,-1}, {0, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1,-1, 1}, {1, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 1,-1,-1}, {1, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f, 0.5f}, {0, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f,-0.5f}, {0, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f, 0.5f}, {1, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f,-0.5f}, {1, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
     };
     static const GLubyte INDICES[] = {
         0,1,2, 2,1,3,   4,5,6, 6,5,7,   8,9,10, 10,9,11,
@@ -161,6 +161,75 @@ void r3d_primitive_draw(r3d_primitive_t primitive)
     } else {
         glDrawArrays(GL_TRIANGLES, 0, 3); // dummy
     }
+}
+
+void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transforms, size_t transStride, 
+                                   const void* colors, size_t colStride, size_t instanceCount,
+                                   int locInstanceModel, int locInstanceColor)
+{
+    // NOTE: All this mess here will be reviewed with the instance buffers
+
+    primitive_buffer_t* buf = &R3D_MOD_PRIMITIVE.buffers[primitive];
+
+    // NOTE: The loader leaves the vao bound
+    if (buf->vao == 0) LOADERS[primitive](buf);
+    else glBindVertexArray(buf->vao);
+
+    unsigned int vboTransforms = 0;
+    unsigned int vboColors = 0;
+
+    // Enable the attribute for the transformation matrix (decomposed into 4 vec4 vectors)
+    if (locInstanceModel >= 0 && transforms) {
+        size_t stride = (transStride == 0) ? sizeof(Matrix) : transStride;
+
+        // Create and bind VBO for transforms
+        glGenBuffers(1, &vboTransforms);
+        glBindBuffer(GL_ARRAY_BUFFER, vboTransforms);
+        glBufferData(GL_ARRAY_BUFFER, instanceCount * stride, transforms, GL_DYNAMIC_DRAW);
+
+        for (int i = 0; i < 4; i++) {
+            glEnableVertexAttribArray(locInstanceModel + i);
+            glVertexAttribPointer(locInstanceModel + i, 4, GL_FLOAT, GL_FALSE, (int)stride, (void*)(i * sizeof(Vector4)));
+            glVertexAttribDivisor(locInstanceModel + i, 1);
+        }
+    }
+
+    // Handle per-instance colors if available
+    if (locInstanceColor >= 0 && colors) {
+        size_t stride = (colStride == 0) ? sizeof(Color) : colStride;
+
+        // Create and bind VBO for colors
+        glGenBuffers(1, &vboColors);
+        glBindBuffer(GL_ARRAY_BUFFER, vboColors);
+        glBufferData(GL_ARRAY_BUFFER, instanceCount * stride, colors, GL_DYNAMIC_DRAW);
+
+        glEnableVertexAttribArray(locInstanceColor);
+        glVertexAttribPointer(locInstanceColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, (int)stride, (void*)0);
+        glVertexAttribDivisor(locInstanceColor, 1);
+    }
+
+    // Draw the geometry (instanced)
+    if (buf->indexCount > 0) {
+        glDrawElementsInstanced(GL_TRIANGLES, buf->indexCount, GL_UNSIGNED_BYTE, 0, (int)instanceCount);
+    } else {
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 3, (int)instanceCount);
+    }
+
+    // Clean up instanced data
+    if (vboTransforms > 0) {
+        for (int i = 0; i < 4; i++) {
+            glDisableVertexAttribArray(locInstanceModel + i);
+            glVertexAttribDivisor(locInstanceModel + i, 0);
+        }
+        glDeleteBuffers(1, &vboTransforms);
+    }
+    if (vboColors > 0) {
+        glDisableVertexAttribArray(locInstanceColor);
+        glVertexAttribDivisor(locInstanceColor, 0);
+        glDeleteBuffers(1, &vboColors);
+    }
+
+    glBindVertexArray(0);
 }
 
 bool r3d_mod_primitive_init(void)
