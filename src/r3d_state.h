@@ -129,8 +129,6 @@ extern struct R3D_State {
     // Misc data
     struct {
         Matrix matCubeViews[6];
-        // REVIEW: We could use internal primitive rendering (?)
-        R3D_Mesh meshDecalBounds;   //< Unit cube used for decal projection
     } misc;
 
 } R3D;

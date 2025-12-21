@@ -96,9 +96,6 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.misc.matCubeViews[4] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f,  1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
     R3D.misc.matCubeViews[5] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  0.0f,  0.0f, -1.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
 
-    R3D.misc.meshDecalBounds = R3D_GenMeshCube(1.0f, 1.0f, 1.0f);
-    R3D.misc.meshDecalBounds.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
-
     // Initialize modules
     r3d_mod_primitive_init();
     r3d_mod_texture_init();
@@ -121,8 +118,6 @@ void R3D_Close(void)
     r3d_mod_shader_quit();
     r3d_mod_light_quit();
     r3d_mod_draw_quit();
-
-    R3D_UnloadMesh(&R3D.misc.meshDecalBounds);
 }
 
 bool R3D_HasState(unsigned int flag)

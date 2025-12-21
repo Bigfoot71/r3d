@@ -438,8 +438,10 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
 
     drawCall.transform = transform;
     drawCall.material = decal->material;
-    drawCall.material.depthMode = R3D_DEPTH_READ_ONLY;
-    drawCall.mesh = R3D.misc.meshDecalBounds;
+
+    drawCall.mesh.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
+    drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
+    drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
 
     r3d_draw_push(&drawCall, R3D_DRAW_DECAL);
 }
@@ -450,8 +452,10 @@ void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransf
 
     drawCall.transform = MatrixIdentity();
     drawCall.material = decal->material;
-    drawCall.material.depthMode = R3D_DEPTH_READ_ONLY;
-    drawCall.mesh = R3D.misc.meshDecalBounds;
+
+    drawCall.mesh.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
+    drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
+    drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
 
     // TODO: Move aabb evaluation to potential Pro version of this function
     drawCall.instanced.allAabb = (BoundingBox) {
@@ -667,7 +671,6 @@ void raster_decal(const r3d_draw_call_t* call, const Matrix* matVP)
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_blend_mode(call->material.blendMode);
-    r3d_draw_apply_depth_mode(call->material.depthMode);
 
     /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
     // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
@@ -678,11 +681,19 @@ void raster_decal(const r3d_draw_call_t* call, const Matrix* matVP)
 
     if (R3D_DRAW_HAS_INSTANCES(call)) {
         R3D_SHADER_SET_INT(scene.decal, uInstancing, true);
-        r3d_draw_instanced(call, 10, -1);
+        r3d_primitive_draw_instanced(
+            R3D_PRIMITIVE_CUBE,
+            call->instanced.transforms,
+            call->instanced.transStride,
+            call->instanced.colors,
+            call->instanced.colStride,
+            call->instanced.count,
+            10, 14
+        );
     }
     else {
         R3D_SHADER_SET_INT(scene.decal, uInstancing, false);
-        r3d_draw(call);
+        r3d_primitive_draw(R3D_PRIMITIVE_CUBE);
     }
 
     /* --- Unbind all bound texture maps --- */
@@ -926,6 +937,9 @@ void pass_scene_decals(void)
 {
     R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
     R3D_SHADER_USE(scene.decal);
+
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
