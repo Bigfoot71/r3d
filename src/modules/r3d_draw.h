@@ -32,25 +32,25 @@
  * Check whether there are any deferred draw calls queued for the current frame.
  * Includes both instanced and non-instanced variants.
  */
-#define R3D_DRAW_HAS_DEFERRED                                  \
-    R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||   \
+#define R3D_DRAW_HAS_DEFERRED                                   \
+    R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||    \
     R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numDrawCalls > 0
 
 /*
  * Check whether there are any forward draw calls queued for the current frame.
  * Includes both instanced and non-instanced variants.
  */
-#define R3D_DRAW_HAS_FORWARD                                   \
-    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||    \
+#define R3D_DRAW_HAS_FORWARD                                    \
+    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||     \
     R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0
 
 /*
  * Check whether there are any decal draw calls queued for the current frame.
  * Includes both instanced and non-instanced variants.
  */
-#define R3D_DRAW_HAS_DECAL                                     \
-    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||    \
-    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0
+#define R3D_DRAW_HAS_DECAL                                      \
+    R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numDrawCalls > 0 ||       \
+    R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numDrawCalls > 0
 
 /*
  * Iterate over multiple draw lists in the order specified by the variadic arguments.
