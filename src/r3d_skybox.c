@@ -19,6 +19,8 @@
 
 #include <r3d/r3d_skybox.h>
 #include <raymath.h>
+#include <stdlib.h>
+#include <stddef.h>
 #include <assert.h>
 #include <rlgl.h>
 #include <glad.h>

@@ -26,26 +26,11 @@
 #include <r3d/r3d_mesh.h>
 #include <glad.h>
 
-#include "./details/containers/r3d_array.h"
 #include "./details/r3d_frustum.h"
 
 /* === Global R3D State === */
 
 extern struct R3D_State {
-
-    // Containers
-    struct {
-
-        r3d_array_t aDrawDeferred;          //< Contains all deferred draw calls
-        r3d_array_t aDrawDeferredInst;      //< Contains all deferred instanced draw calls
-
-        r3d_array_t aDrawForward;           //< Contains all forward draw calls
-        r3d_array_t aDrawForwardInst;       //< Contains all forward instanced draw calls
-
-        r3d_array_t aDrawDecals;            //< Contains all decal draw calls
-        r3d_array_t aDrawDecalsInst;        //< Contains all instanced decal draw calls
-
-    } container;
 
     // Environment data
     struct {
