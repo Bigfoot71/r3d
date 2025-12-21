@@ -11,7 +11,7 @@
 #include <r3d/r3d_model.h>
 #include <r3d/r3d_mesh.h>
 
-#include "./details/importer/r3d_importer.h"
+#include "./importer/r3d_importer.h"
 #include "./r3d_state.h"
 
 // ========================================

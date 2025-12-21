@@ -7,8 +7,6 @@
  */
 
 #include "./r3d_importer.h"
-#include "../r3d_image.h"
-#include "raylib.h"
 
 #include <assimp/GltfMaterial.h>
 #include <assimp/material.h>
@@ -18,6 +16,8 @@
 #include <threads.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "../details/r3d_image.h"
 
 #ifdef _WIN32
 #   define NOGDI

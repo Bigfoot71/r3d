@@ -10,7 +10,7 @@
 #include <raymath.h>
 #include <string.h>
 
-#include "./details/importer/r3d_importer.h"
+#include "./importer/r3d_importer.h"
 #include "./details/r3d_math.h"
 
 // ========================================

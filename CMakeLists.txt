@@ -186,12 +186,12 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 add_library(${PROJECT_NAME}
-    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_animation.c"
-    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer.c"
-    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_material.c"
-    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_mesh.c"
-    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_skeleton.c"
-    "${R3D_ROOT_PATH}/src/details/importer/r3d_importer_texture.c"
+    "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
+    "${R3D_ROOT_PATH}/src/importer/r3d_importer.c"
+    "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
+    "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
+    "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
+    "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
     "${R3D_ROOT_PATH}/src/details/r3d_frustum.c"
     "${R3D_ROOT_PATH}/src/details/r3d_image.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_primitive.c"

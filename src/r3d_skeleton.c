@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#include "./details/importer/r3d_importer.h"
+#include "./importer/r3d_importer.h"
 
 // ========================================
 // PUBLIC API

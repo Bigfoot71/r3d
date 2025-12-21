@@ -7,7 +7,6 @@
  */
 
 #include "./r3d_importer.h"
-#include "../r3d_math.h"
 
 #include <r3d/r3d_mesh_data.h>
 #include <r3d/r3d_mesh.h>
@@ -16,6 +15,8 @@
 #include <assimp/mesh.h>
 #include <string.h>
 #include <float.h>
+
+#include "../details/r3d_math.h"
 
 // ========================================
 // CONSTANTS

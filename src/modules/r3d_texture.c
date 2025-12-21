@@ -12,7 +12,7 @@
 #include <string.h>
 #include <glad.h>
 
-#include "../details/misc/r3d_half.h"
+#include "../details/r3d_half.h"
 
 // ========================================
 // TEXTURE DATA INCLUDES
