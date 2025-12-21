@@ -338,15 +338,15 @@ R3D_Light r3d_light_new(R3D_LightType type)
     return index;
 }
 
-void r3d_light_delete(R3D_Light light)
+void r3d_light_delete(R3D_Light index)
 {
-    if (light < 0) return;
+    if (index < 0) return;
 
     bool lightFound = false;
 
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
     for (int i = 0; i < validLights->count; i++) {
-        if (light == validLights->lights[i]) {
+        if (index == validLights->lights[i]) {
             int numToMove = validLights->count - i - 1;
             if (numToMove > 0) {
                 memmove(
@@ -366,16 +366,16 @@ void r3d_light_delete(R3D_Light light)
     }
 
     r3d_light_array_t* freeLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_FREE];
-    freeLights->lights[freeLights->count++] = light;
+    freeLights->lights[freeLights->count++] = index;
 }
 
-bool r3d_light_is_valid(R3D_Light light)
+bool r3d_light_is_valid(R3D_Light index)
 {
-    if (light < 0) return false;
+    if (index < 0) return false;
 
     const r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
     for (int i = 0; i < validLights->count; i++) {
-        if (light == validLights->lights[i]) {
+        if (index == validLights->lights[i]) {
             return true;
         }
     }
@@ -383,10 +383,10 @@ bool r3d_light_is_valid(R3D_Light light)
     return false;
 }
 
-r3d_light_t* r3d_light_get(R3D_Light light)
+r3d_light_t* r3d_light_get(R3D_Light index)
 {
-    if (r3d_light_is_valid(light)) {
-        return &R3D_MOD_LIGHT.lights[light];
+    if (r3d_light_is_valid(index)) {
+        return &R3D_MOD_LIGHT.lights[index];
     }
 
     return NULL;

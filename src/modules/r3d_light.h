@@ -81,18 +81,18 @@ R3D_Light r3d_light_new(R3D_LightType type);
  * Delete a light and return it to the free list.
  * The handle becomes invalid after this call.
  */
-void r3d_light_delete(R3D_Light light);
+void r3d_light_delete(R3D_Light index);
 
 /*
  * Check whether a light handle refers to a valid light.
  */
-bool r3d_light_is_valid(R3D_Light light);
+bool r3d_light_is_valid(R3D_Light index);
 
 /*
  * Retrieve the internal light structure from a handle.
  * Returns NULL if the handle is invalid.
  */
-r3d_light_t* r3d_light_get(R3D_Light light);
+r3d_light_t* r3d_light_get(R3D_Light index);
 
 /*
  * Internal helper to iterate over lights by category.
