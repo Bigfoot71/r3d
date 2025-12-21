@@ -332,23 +332,31 @@ void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int l
     // Enable the attribute for the transformation matrix (decomposed into 4 vec4 vectors)
     if (locInstanceModel >= 0 && call->instanced.transforms) {
         size_t stride = (call->instanced.transStride == 0) ? sizeof(Matrix) : call->instanced.transStride;
-        vboTransforms = rlLoadVertexBuffer(call->instanced.transforms, (int)(call->instanced.count * stride), true);
-        rlEnableVertexBuffer(vboTransforms);
+
+        // Create and bind VBO for transforms
+        glGenBuffers(1, &vboTransforms);
+        glBindBuffer(GL_ARRAY_BUFFER, vboTransforms);
+        glBufferData(GL_ARRAY_BUFFER, call->instanced.count * stride, call->instanced.transforms, GL_DYNAMIC_DRAW);
+
         for (int i = 0; i < 4; i++) {
-            rlSetVertexAttribute(locInstanceModel + i, 4, RL_FLOAT, false, (int)stride, i * sizeof(Vector4));
-            rlSetVertexAttributeDivisor(locInstanceModel + i, 1);
-            rlEnableVertexAttribute(locInstanceModel + i);
+            glEnableVertexAttribArray(locInstanceModel + i);
+            glVertexAttribPointer(locInstanceModel + i, 4, GL_FLOAT, GL_FALSE, (int)stride, (void*)(i * sizeof(Vector4)));
+            glVertexAttribDivisor(locInstanceModel + i, 1);
         }
     }
 
     // Handle per-instance colors if available
     if (locInstanceColor >= 0 && call->instanced.colors) {
         size_t stride = (call->instanced.colStride == 0) ? sizeof(Color) : call->instanced.colStride;
-        vboColors = rlLoadVertexBuffer(call->instanced.colors, (int)(call->instanced.count * stride), true);
-        rlEnableVertexBuffer(vboColors);
-        rlSetVertexAttribute(locInstanceColor, 4, RL_UNSIGNED_BYTE, true, (int)call->instanced.colStride, 0);
-        rlSetVertexAttributeDivisor(locInstanceColor, 1);
-        rlEnableVertexAttribute(locInstanceColor);
+
+        // Create and bind VBO for colors
+        glGenBuffers(1, &vboColors);
+        glBindBuffer(GL_ARRAY_BUFFER, vboColors);
+        glBufferData(GL_ARRAY_BUFFER, call->instanced.count * stride, call->instanced.colors, GL_DYNAMIC_DRAW);
+
+        glEnableVertexAttribArray(locInstanceColor);
+        glVertexAttribPointer(locInstanceColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, (int)stride, (void*)0);
+        glVertexAttribDivisor(locInstanceColor, 1);
     }
 
     // Draw the geometry
@@ -368,15 +376,15 @@ void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int l
     // Clean up instanced data
     if (vboTransforms > 0) {
         for (int i = 0; i < 4; i++) {
-            rlDisableVertexAttribute(locInstanceModel + i);
-            rlSetVertexAttributeDivisor(locInstanceModel + i, 0);
+            glDisableVertexAttribArray(locInstanceModel + i);
+            glVertexAttribDivisor(locInstanceModel + i, 0);
         }
-        rlUnloadVertexBuffer(vboTransforms);
+        glDeleteBuffers(1, &vboTransforms);
     }
     if (vboColors > 0) {
-        rlDisableVertexAttribute(locInstanceColor);
-        rlSetVertexAttributeDivisor(locInstanceColor, 0);
-        rlUnloadVertexBuffer(vboColors);
+        glDisableVertexAttribArray(locInstanceColor);
+        glVertexAttribDivisor(locInstanceColor, 0);
+        glDeleteBuffers(1, &vboColors);
     }
 
     glBindVertexArray(0);
