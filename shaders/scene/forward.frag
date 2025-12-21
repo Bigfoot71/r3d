@@ -105,7 +105,72 @@ layout(location = 3) out vec4 FragORM;
 
 /* === Shadow functions === */
 
-float ShadowOmni(int i, float cNdotL)
+float ShadowDir(int i, float cNdotL, mat2 diskRot)
+{
+    Light light = uLights[i];
+
+    /* --- Light Space Projection --- */
+
+    vec4 p = vPosLightSpace[i];
+    vec3 projCoords = p.xyz / p.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    /* --- Shadow Bias and Depth Adjustment --- */
+
+    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
+    bias = max(bias, light.shadowDepthBias * projCoords.z);
+    float currentDepth = projCoords.z - bias;
+
+    /* --- Poisson Disk PCF Sampling --- */
+
+    float shadow = 0.0;
+    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
+        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
+        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
+    }
+    shadow /= float(SHADOW_SAMPLES);
+
+    /* --- Apply a fade to the edges of the projection --- */
+
+    vec3 distToBorder = min(projCoords, 1.0 - projCoords);
+    float edgeFade = smoothstep(0.0, 0.15, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
+    shadow = mix(1.0, shadow, edgeFade);
+
+    /* --- Final Shadow Value --- */
+
+    return shadow;
+}
+
+float ShadowSpot(int i, float cNdotL, mat2 diskRot)
+{
+    Light light = uLights[i];
+
+    /* --- Light Space Projection --- */
+
+    vec4 p = vPosLightSpace[i];
+    vec3 projCoords = p.xyz / p.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    /* --- Shadow Bias and Depth Adjustment --- */
+
+    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
+    bias = max(bias, light.shadowDepthBias * projCoords.z);
+    float currentDepth = projCoords.z - bias;
+
+    /* --- Poisson Disk PCF Sampling --- */
+
+    float shadow = 0.0;
+    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
+        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
+        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
+    }
+
+    /* --- Final Shadow Value --- */
+
+    return shadow / float(SHADOW_SAMPLES);
+}
+
+float ShadowOmni(int i, float cNdotL, mat2 diskRot)
 {
     Light light = uLights[i];
 
@@ -125,13 +190,6 @@ float ShadowOmni(int i, float cNdotL)
 
     mat3 OBN = M_OrthonormalBasis(direction);
 
-    /* --- Generate an additional debanding rotation for the poisson disk --- */
-
-    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
-    float sr = sin(r);
-    float cr = cos(r);
-    mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
-
     /* --- Poisson Disk PCF Sampling --- */
 
     float shadow = 0.0;
@@ -140,49 +198,6 @@ float ShadowOmni(int i, float cNdotL)
         vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
         float sampleDepth = texture(uShadowMapCube[i], sampleDir).r * light.far;
         shadow += step(currentDepth, sampleDepth);
-    }
-
-    /* --- Final Shadow Value --- */
-
-    return shadow / float(SHADOW_SAMPLES);
-}
-
-float Shadow(int i, float cNdotL)
-{
-    Light light = uLights[i];
-
-    /* --- Light Space Projection --- */
-
-    vec4 p = vPosLightSpace[i];
-    vec3 projCoords = p.xyz / p.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    /* --- Shadow Map Bounds Check --- */
-
-    if (any(greaterThan(projCoords.xyz, vec3(1.0))) ||
-        any(lessThan(projCoords.xyz, vec3(0.0)))) {
-        return 1.0;
-    }
-
-    /* --- Shadow Bias and Depth Adjustment --- */
-
-    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
-    bias = max(bias, light.shadowDepthBias * projCoords.z);
-    float currentDepth = projCoords.z - bias;
-
-    /* --- Generate an additional debanding rotation for the poisson disk --- */
-
-    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
-    float sr = sin(r);
-    float cr = cos(r);
-    mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
-
-    /* --- Poisson Disk PCF Sampling --- */
-
-    float shadow = 0.0;
-    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
     }
 
     /* --- Final Shadow Value --- */
@@ -276,15 +291,22 @@ void main()
         vec3 specLight =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
         specLight *= lightColE * light.specular;
 
+        /* --- Calculating a random rotation matrix for shadow debanding --- */
+
+        float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
+        float sr = sin(r), cr = cos(r);
+
+        mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
+
         /* Apply shadow factor if the light casts shadows */
 
         float shadow = 1.0;
+
         if (light.shadow) {
-            if (light.type == LIGHT_OMNI) {
-                shadow = ShadowOmni(i, cNdotL);
-            }
-            else {
-                shadow = Shadow(i, cNdotL);
+            switch (light.type) {
+            case LIGHT_DIR: shadow = ShadowDir(i, cNdotL, diskRot); break;
+            case LIGHT_SPOT: shadow = ShadowSpot(i, cNdotL, diskRot); break;
+            case LIGHT_OMNI: shadow = ShadowOmni(i, cNdotL, diskRot); break;
             }
         }
 
