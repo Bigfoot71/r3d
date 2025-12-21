@@ -157,17 +157,6 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
 R3DAPI void R3D_UpdateResolution(int width, int height);
 
 /**
- * @brief Defines the bounds of the scene for directional light calculations.
- * 
- * This function sets the scene bounds used to determine which areas should be illuminated 
- * by directional lights. It is the user's responsibility to calculate and provide the 
- * correct bounds.
- * 
- * @param sceneBounds The bounding box defining the scene's dimensions.
- */
-R3DAPI void R3D_SetSceneBounds(BoundingBox sceneBounds);
-
-/**
  * @brief Sets the default texture filtering mode.
  * 
  * This function defines the default texture filter that will be applied to all subsequently 

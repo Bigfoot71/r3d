@@ -53,18 +53,13 @@ const char* Init(void)
 
     /* --- Setup the scene lighting --- */
 
-    R3D_SetSceneBounds(
-        (BoundingBox) {
-            .min = { -100, -10, -100 },
-            .max = { +100, +10, +100 }
-        }
-    );
-
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
     {
         R3D_SetLightDirection(light, (Vector3) { -1, -1, -1 });
+        R3D_SetShadowDepthBias(light, 0.01f);
         R3D_EnableShadow(light, 4096);
         R3D_SetLightActive(light, true);
+        R3D_SetLightRange(light, 32.0f);
     }
 
     /* --- Setup the camera --- */

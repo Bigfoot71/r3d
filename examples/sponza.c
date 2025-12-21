@@ -41,10 +41,6 @@ const char* Init(void)
     skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox3.png", CUBEMAP_LAYOUT_AUTO_DETECT);
     //R3D_EnableSkybox(skybox);
 
-    /* --- Set scene bounds, useful if you use directional lights --- */
-
-    R3D_SetSceneBounds(sponza.aabb);
-
     /* --- Configure lights --- */
 
     for (int i = 0; i < 2; i++)

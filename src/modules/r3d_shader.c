@@ -351,7 +351,7 @@ void r3d_mod_shader_load_scene_forward(void)
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, innerCutOff);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, outerCutOff);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowSoftness);
-        GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowMapTxlSz);
+        GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowTexelSize);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowDepthBias);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowSlopeBias);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, type);
@@ -551,7 +551,7 @@ void r3d_mod_shader_load_deferred_lighting(void)
     GET_LOCATION(deferred.lighting, uLight.innerCutOff);
     GET_LOCATION(deferred.lighting, uLight.outerCutOff);
     GET_LOCATION(deferred.lighting, uLight.shadowSoftness);
-    GET_LOCATION(deferred.lighting, uLight.shadowMapTxlSz);
+    GET_LOCATION(deferred.lighting, uLight.shadowTexelSize);
     GET_LOCATION(deferred.lighting, uLight.shadowDepthBias);
     GET_LOCATION(deferred.lighting, uLight.shadowSlopeBias);
     GET_LOCATION(deferred.lighting, uLight.type);

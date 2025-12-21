@@ -349,7 +349,7 @@ typedef struct {
         r3d_shader_uniform_float_t innerCutOff;
         r3d_shader_uniform_float_t outerCutOff;
         r3d_shader_uniform_float_t shadowSoftness;
-        r3d_shader_uniform_float_t shadowMapTxlSz;
+        r3d_shader_uniform_float_t shadowTexelSize;
         r3d_shader_uniform_float_t shadowDepthBias;
         r3d_shader_uniform_float_t shadowSlopeBias;
         r3d_shader_uniform_int_t type;
@@ -447,7 +447,7 @@ typedef struct {
         r3d_shader_uniform_float_t innerCutOff;
         r3d_shader_uniform_float_t outerCutOff;
         r3d_shader_uniform_float_t shadowSoftness;
-        r3d_shader_uniform_float_t shadowMapTxlSz;
+        r3d_shader_uniform_float_t shadowTexelSize;
         r3d_shader_uniform_float_t shadowDepthBias;
         r3d_shader_uniform_float_t shadowSlopeBias;
         r3d_shader_uniform_int_t type;

@@ -28,7 +28,6 @@
 
 #include "./details/r3d_frustum.h"
 #include "./details/containers/r3d_array.h"
-#include "./details/containers/r3d_registry.h"
 
 /* === Global R3D State === */
 
@@ -45,9 +44,6 @@ extern struct R3D_State {
 
         r3d_array_t aDrawDecals;            //< Contains all decal draw calls
         r3d_array_t aDrawDecalsInst;        //< Contains all instanced decal draw calls
-
-        r3d_registry_t rLights;             //< Contains all created lights
-        r3d_array_t aLightBatch;            //< Contains all lights visible on screen
 
     } container;
 
@@ -131,11 +127,6 @@ extern struct R3D_State {
             r3d_frustum_t shape;
             BoundingBox aabb;
         } frustum;
-
-        // Scene data
-        struct {
-            BoundingBox bounds;
-        } scene;
 
         // Resolution
         struct {

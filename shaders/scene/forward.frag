@@ -31,7 +31,7 @@ struct Light
     float innerCutOff;
     float outerCutOff;
     float shadowSoftness;
-    float shadowMapTxlSz;
+    float shadowTexelSize;
     float shadowDepthBias;
     float shadowSlopeBias;
     lowp int type;

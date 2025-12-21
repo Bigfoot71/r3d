@@ -34,7 +34,7 @@ struct Light
     float innerCutOff;              //< Spot light inner cutoff angle
     float outerCutOff;              //< Spot light outer cutoff angle
     float shadowSoftness;           //< Softness factor to simulate a penumbra
-    float shadowMapTxlSz;           //< Size of a texel in the 2D shadow map
+    float shadowTexelSize;           //< Size of a texel in the 2D shadow map
     float shadowDepthBias;          //< Constant depth bias applied to shadow mapping to reduce shadow acne
     float shadowSlopeBias;          //< Additional bias scaled by surface slope to reduce artifacts on angled geometry
     lowp int type;                  //< Light type (dir/spot/omni)

@@ -15,16 +15,15 @@
 #include <assimp/cimport.h>
 #include <float.h>
 
-#include "./details/containers/r3d_registry.h"
 #include "./details/containers/r3d_array.h"
 #include "./details/r3d_drawcall.h"
-#include "./details/r3d_light.h"
 
 #include "./modules/r3d_primitive.h"
 #include "./modules/r3d_texture.h"
 #include "./modules/r3d_storage.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
+#include "./modules/r3d_light.h"
 #include "./r3d_state.h"
 
 // ========================================
@@ -44,15 +43,11 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.container.aDrawDecals = r3d_array_create(128, sizeof(r3d_drawcall_t));
     R3D.container.aDrawDecalsInst = r3d_array_create(128, sizeof(r3d_drawcall_t));
 
-    // Load lights registry
-    R3D.container.rLights = r3d_registry_create(8, sizeof(r3d_light_t));
-    R3D.container.aLightBatch = r3d_array_create(8, sizeof(r3d_light_batched_t));
-
     // Environment data
-    R3D.env.backgroundColor = (Vector4) { 0.2f, 0.2f, 0.2f, 1.0f };
-    R3D.env.ambientColor = (Color){ 0, 0, 0, 255 };
+    R3D.env.backgroundColor = (Vector4) {0.2f, 0.2f, 0.2f, 1.0f};
+    R3D.env.ambientColor = (Color) {0, 0, 0, 255};
     R3D.env.ambientEnergy = 1.0f;
-    R3D.env.ambientLight = (Vector3){ 0.0f, 0.0f, 0.0f };
+    R3D.env.ambientLight = (Vector3) {0.0f, 0.0f, 0.0f};
     R3D.env.quatSky = QuaternionIdentity();
     R3D.env.useSky = false;
     R3D.env.skyBackgroundIntensity = 1.0f;
@@ -104,12 +99,6 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.state.resolution.texel.y = 1.0f / resHeight;
     R3D.state.resolution.maxLevel = 1 + (int)floor(log2((float)fmax(resWidth, resHeight)));
 
-    // Init scene data
-    R3D.state.scene.bounds = (BoundingBox) {
-        (Vector3) { -100, -100, -100 },
-        (Vector3) {  100,  100,  100 }
-    };
-
     // Init default loading parameters
     R3D.state.loading.textureFilter = TEXTURE_FILTER_TRILINEAR;
 
@@ -133,6 +122,7 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     r3d_mod_storage_init();
     r3d_mod_target_init(resWidth, resHeight);
     r3d_mod_shader_init();
+    r3d_mod_light_init();
 
     // Defines suitable clipping plane distances for r3d
     rlSetClipPlanes(0.05f, 4000.0f);
@@ -145,6 +135,7 @@ void R3D_Close(void)
     r3d_mod_storage_quit();
     r3d_mod_target_quit();
     r3d_mod_shader_quit();
+    r3d_mod_light_quit();
 
     r3d_array_destroy(&R3D.container.aDrawForward);
     r3d_array_destroy(&R3D.container.aDrawDeferred);
@@ -152,9 +143,6 @@ void R3D_Close(void)
     r3d_array_destroy(&R3D.container.aDrawDeferredInst);
     r3d_array_destroy(&R3D.container.aDrawDecals);
     r3d_array_destroy(&R3D.container.aDrawDecalsInst);
-
-    r3d_registry_destroy(&R3D.container.rLights);
-    r3d_array_destroy(&R3D.container.aLightBatch);
 
     R3D_UnloadMesh(&R3D.misc.meshDecalBounds);
 }
@@ -221,11 +209,6 @@ void R3D_UpdateResolution(int width, int height)
     R3D.state.resolution.texel.x = 1.0f / width;
     R3D.state.resolution.texel.y = 1.0f / height;
     R3D.state.resolution.maxLevel = 1 + (int)floor(log2((float)fmax(width, height)));
-}
-
-void R3D_SetSceneBounds(BoundingBox sceneBounds)
-{
-    R3D.state.scene.bounds = sceneBounds;
 }
 
 void R3D_SetTextureFilter(TextureFilter filter)
