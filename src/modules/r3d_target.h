@@ -59,6 +59,14 @@ typedef enum {
 // HELPER MACROS
 // ========================================
 
+#define R3D_TARGET_WIDTH        R3D_MOD_TARGET.resW
+#define R3D_TARGET_HEIGHT       R3D_MOD_TARGET.resH
+#define R3D_TARGET_RESOLUTION   R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH
+
+#define R3D_TARGET_TEXEL_WIDTH  R3D_MOD_TARGET.txlW
+#define R3D_TARGET_TEXEL_HEIGHT R3D_MOD_TARGET.txlH
+#define R3D_TARGET_TEXEL_SIZE   R3D_MOD_TARGET.txlW, R3D_MOD_TARGET.txlH
+
 #define R3D_TARGET_CLEAR(...)                                           \
     r3d_target_clear(                                                   \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
@@ -168,6 +176,7 @@ extern struct r3d_mod_target {
 
     RenderTexture screen;
     uint32_t resW, resH;
+    float txlW, txlH;
     bool keepAspect;
     bool blitLinear;
 
@@ -184,6 +193,7 @@ float r3d_mod_target_get_render_aspect(void);
 
 int r3d_mod_target_get_mip_count(void);
 void r3d_mod_target_get_resolution(int* w, int* h, int level);
+void r3d_mod_target_get_texel_size(float* w, float* h, int level);
 
 void r3d_mod_target_set_blit_screen(const RenderTexture* screen);
 void r3d_mod_target_set_blit_mode(bool keepAspect, bool blitLinear);

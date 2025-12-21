@@ -26,8 +26,8 @@
 #include <r3d/r3d_mesh.h>
 #include <glad.h>
 
-#include "./details/r3d_frustum.h"
 #include "./details/containers/r3d_array.h"
+#include "./details/r3d_frustum.h"
 
 /* === Global R3D State === */
 
@@ -127,14 +127,6 @@ extern struct R3D_State {
             r3d_frustum_t shape;
             BoundingBox aabb;
         } frustum;
-
-        // Resolution
-        struct {
-            int width;
-            int height;
-            int maxLevel;   //< Maximum mipmap level
-            Vector2 texel;  //< Texel size
-        } resolution;
 
         // Loading param
         struct {

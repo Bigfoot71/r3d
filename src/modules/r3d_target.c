@@ -293,8 +293,12 @@ bool r3d_mod_target_init(int resW, int resH)
     glGenTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
 
     R3D_MOD_TARGET.currentFbo = -1;
+
     R3D_MOD_TARGET.resW = resW;
     R3D_MOD_TARGET.resH = resH;
+
+    R3D_MOD_TARGET.txlW = 1.0f / resW;
+    R3D_MOD_TARGET.txlH = 1.0f / resH;
 
     return true;
 }
@@ -338,14 +342,24 @@ int r3d_mod_target_get_mip_count(void)
 
 void r3d_mod_target_get_resolution(int* w, int* h, int level)
 {
-    *w = R3D_MOD_TARGET.resW;
-    *h = R3D_MOD_TARGET.resH;
+    if (w) *w = R3D_MOD_TARGET.resW;
+    if (h) *h = R3D_MOD_TARGET.resH;
 
     if (level > 0) {
-        *w = *w >> level;
-        *h = *h >> level;
-        *w = *w > 1 ? *w : 1;
-        *h = *h > 1 ? *h : 1;
+        if (w) *w = *w >> level, *w = *w > 1 ? *w : 1;
+        if (h) *h = *h >> level, *h = *h > 1 ? *h : 1;
+    }
+}
+
+void r3d_mod_target_get_texel_size(float* w, float* h, int level)
+{
+    if (w) *w = R3D_MOD_TARGET.txlW;
+    if (h) *h = R3D_MOD_TARGET.txlH;
+
+    if (level > 0) {
+        float scale = (float)(1 << level);
+        if (w) *w *= scale;
+        if (h) *h *= scale;
     }
 }
 

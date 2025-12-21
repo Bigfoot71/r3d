@@ -32,9 +32,9 @@ static void init_light(r3d_light_t* light, R3D_LightType type)
     light->aabb.min = (Vector3) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
     light->aabb.max = (Vector3) {+FLT_MAX, +FLT_MAX, +FLT_MAX};
 
-    light->color = (Vector3){ 1, 1, 1 };
-    light->position = (Vector3){ 0 };
-    light->direction = (Vector3){ 0, 0, -1 };
+    light->color = (Vector3) {1, 1, 1};
+    light->position = (Vector3) {0};
+    light->direction = (Vector3) {0, 0, -1};
 
     light->specular = 0.5f;
     light->energy = 1.0f;

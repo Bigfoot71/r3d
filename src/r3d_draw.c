@@ -950,8 +950,8 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
         int x = 0, y = 0;
-        int w = R3D.state.resolution.width;
-        int h = R3D.state.resolution.height;
+        int w = R3D_TARGET_WIDTH;
+        int h = R3D_TARGET_HEIGHT;
 
         if (light->type != R3D_LIGHT_DIR) {
             Vector3 min = light->aabb.min;
@@ -972,10 +972,10 @@ void r3d_pass_deferred_lights(r3d_target_t ssaoSource)
             }
 
             if (allInside) {
-                x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * R3D.state.resolution.width, 0.0f);
-                y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * R3D.state.resolution.height, 0.0f);
-                w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * R3D.state.resolution.width, (float)R3D.state.resolution.width) - x;
-                h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * R3D.state.resolution.height, (float)R3D.state.resolution.height) - y;
+                x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * R3D_TARGET_WIDTH, 0.0f);
+                y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * R3D_TARGET_HEIGHT, 0.0f);
+                w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * R3D_TARGET_WIDTH, (float)R3D_TARGET_WIDTH) - x;
+                h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * R3D_TARGET_HEIGHT, (float)R3D_TARGET_HEIGHT) - y;
                 assert(w > 0 && h > 0); // This should never happen if the upstream frustum culling of the lights is correct.
             }
         }
@@ -1301,7 +1301,7 @@ r3d_target_t r3d_pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_2D(post.dof, uTexColor, r3d_target_get(sceneTarget));
     R3D_SHADER_BIND_SAMPLER_2D(post.dof, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-    R3D_SHADER_SET_VEC2(post.dof, uTexelSize, R3D.state.resolution.texel);
+    R3D_SHADER_SET_VEC2(post.dof, uTexelSize, (Vector2) {R3D_TARGET_TEXEL_SIZE});
     R3D_SHADER_SET_FLOAT(post.dof, uNear, (float)rlGetCullDistanceNear());
     R3D_SHADER_SET_FLOAT(post.dof, uFar, (float)rlGetCullDistanceFar());
     R3D_SHADER_SET_FLOAT(post.dof, uFocusPoint, R3D.env.dofFocusPoint);
@@ -1322,7 +1322,10 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
     r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
     GLuint sceneSourceID = r3d_target_get(sceneSource);
     int mipCount = r3d_mod_target_get_mip_count();
-    int dstW = 0, dstH = 0, srcW = 0, srcH = 0;
+
+    float txSrcW = 0, txSrcH = 0;
+    int srcW = 0, srcH = 0;
+    int dstW = 0, dstH = 0;
 
     R3D_TARGET_BIND(R3D_TARGET_BLOOM);
 
@@ -1330,12 +1333,13 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE(prepare.bloomDown);
 
+    r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, 0);
     r3d_mod_target_get_resolution(&srcW, &srcH, 0);
     r3d_target_set_mip_level(0, 0);
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, sceneSourceID);
 
-    R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
+    R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {txSrcW, txSrcH});
     R3D_SHADER_SET_VEC4(prepare.bloomDown, uPrefilter, R3D.env.bloomPrefilter);
     R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, 0);
 
@@ -1349,13 +1353,14 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = 1; dstLevel < mipCount; dstLevel++)
     {
+        r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, dstLevel - 1);
         r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel - 1);
         r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
 
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);
 
-        R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {1.0f / srcW, 1.0f / srcH});
+        R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {txSrcW, txSrcH});
         R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, dstLevel);
 
         R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1375,6 +1380,7 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = mipCount - 2; dstLevel >= 0; dstLevel--)
     {
+        r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, dstLevel + 1);
         r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel + 1);
         r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
 
@@ -1383,8 +1389,8 @@ r3d_target_t r3d_pass_post_bloom(r3d_target_t sceneTarget)
 
         R3D_SHADER_SET_FLOAT(prepare.bloomUp, uSrcLevel, dstLevel + 1);
         R3D_SHADER_SET_VEC2(prepare.bloomUp, uFilterRadius, (Vector2) {
-            (float)R3D.env.bloomFilterRadius / srcW,
-            (float)R3D.env.bloomFilterRadius / srcH
+            (float)R3D.env.bloomFilterRadius * txSrcW,
+            (float)R3D.env.bloomFilterRadius * txSrcH
         });
 
         R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1441,7 +1447,7 @@ r3d_target_t r3d_pass_post_fxaa(r3d_target_t sceneTarget)
 
     R3D_SHADER_BIND_SAMPLER_2D(post.fxaa, uTexture, r3d_target_get(sceneTarget));
 
-    R3D_SHADER_SET_VEC2(post.fxaa, uTexelSize, R3D.state.resolution.texel);
+    R3D_SHADER_SET_VEC2(post.fxaa, uTexelSize, (Vector2) {R3D_TARGET_TEXEL_SIZE});
     R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(post.fxaa, uTexture);

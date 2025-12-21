@@ -92,13 +92,6 @@ void R3D_Init(int resWidth, int resHeight, unsigned int flags)
     R3D.env.contrast = 1.0f;
     R3D.env.saturation = 1.0f;
 
-    // Init resolution state
-    R3D.state.resolution.width = resWidth;
-    R3D.state.resolution.height = resHeight;
-    R3D.state.resolution.texel.x = 1.0f / resWidth;
-    R3D.state.resolution.texel.y = 1.0f / resHeight;
-    R3D.state.resolution.maxLevel = 1 + (int)floor(log2((float)fmax(resWidth, resHeight)));
-
     // Init default loading parameters
     R3D.state.loading.textureFilter = TEXTURE_FILTER_TRILINEAR;
 
@@ -184,8 +177,7 @@ void R3D_ClearState(unsigned int flags)
 
 void R3D_GetResolution(int* width, int* height)
 {
-    if (width) *width = R3D.state.resolution.width;
-    if (height) *height = R3D.state.resolution.height;
+    r3d_mod_target_get_resolution(width, height, 0);
 }
 
 void R3D_UpdateResolution(int width, int height)
@@ -195,7 +187,7 @@ void R3D_UpdateResolution(int width, int height)
         return;
     }
 
-    if (width == R3D.state.resolution.width && height == R3D.state.resolution.height) {
+    if (width == R3D_TARGET_WIDTH && height == R3D_TARGET_HEIGHT) {
         return;
     }
 
@@ -203,12 +195,6 @@ void R3D_UpdateResolution(int width, int height)
     //       reallocation if the new resolution is lower
     r3d_mod_target_quit();
     r3d_mod_target_init(width, height);
-
-    R3D.state.resolution.width = width;
-    R3D.state.resolution.height = height;
-    R3D.state.resolution.texel.x = 1.0f / width;
-    R3D.state.resolution.texel.y = 1.0f / height;
-    R3D.state.resolution.maxLevel = 1 + (int)floor(log2((float)fmax(width, height)));
 }
 
 void R3D_SetTextureFilter(TextureFilter filter)

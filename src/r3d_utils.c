@@ -53,8 +53,8 @@ Texture2D R3D_GetBufferNormal(void)
 {
     Texture2D texture = { 0 };
     texture.id = r3d_target_get(R3D_TARGET_NORMAL);
-    texture.width = R3D.state.resolution.width;
-    texture.height = R3D.state.resolution.height;
+    texture.width = R3D_TARGET_WIDTH;
+    texture.height = R3D_TARGET_HEIGHT;
     texture.mipmaps = 1;
     texture.format = PIXELFORMAT_UNCOMPRESSED_R32;
     return texture;
@@ -64,8 +64,8 @@ Texture2D R3D_GetBufferDepth(void)
 {
     Texture2D texture = { 0 };
     texture.id = r3d_target_get(R3D_TARGET_DEPTH);
-    texture.width = R3D.state.resolution.width;
-    texture.height = R3D.state.resolution.height;
+    texture.width = R3D_TARGET_WIDTH;
+    texture.height = R3D_TARGET_HEIGHT;
     texture.mipmaps = 1;
     texture.format = PIXELFORMAT_UNCOMPRESSED_R32;
     return texture;
@@ -95,8 +95,8 @@ void R3D_DrawBufferAlbedo(float x, float y, float w, float h)
 {
     Texture2D tex = {
         .id = r3d_target_get(R3D_TARGET_ALBEDO),
-        .width = R3D.state.resolution.width,
-        .height = R3D.state.resolution.width
+        .width = R3D_TARGET_WIDTH,
+        .height = R3D_TARGET_HEIGHT
     };
 
     DrawTexturePro(
@@ -115,8 +115,8 @@ void R3D_DrawBufferEmission(float x, float y, float w, float h)
 {
     Texture2D tex = {
         .id = r3d_target_get(R3D_TARGET_EMISSION),
-        .width = R3D.state.resolution.width,
-        .height = R3D.state.resolution.height
+        .width = R3D_TARGET_WIDTH,
+        .height = R3D_TARGET_HEIGHT
     };
 
     DrawTexturePro(
@@ -135,8 +135,8 @@ void R3D_DrawBufferNormal(float x, float y, float w, float h)
 {
     Texture2D tex = {
         .id = r3d_target_get(R3D_TARGET_NORMAL),
-        .width = R3D.state.resolution.width,
-        .height = R3D.state.resolution.height
+        .width = R3D_TARGET_WIDTH,
+        .height = R3D_TARGET_HEIGHT
     };
 
     DrawTexturePro(
@@ -155,8 +155,8 @@ void R3D_DrawBufferORM(float x, float y, float w, float h)
 {
     Texture2D tex = {
         .id = r3d_target_get(R3D_TARGET_ORM),
-        .width = R3D.state.resolution.width,
-        .height = R3D.state.resolution.height
+        .width = R3D_TARGET_WIDTH,
+        .height = R3D_TARGET_HEIGHT
     };
 
     DrawTexturePro(
