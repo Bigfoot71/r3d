@@ -21,6 +21,14 @@
 // ========================================
 
 /*
+ * Check whether a draw call has valid instancing data.
+ * Returns true if the draw call contains a non-null instance transform array
+ * and a positive instance count.
+ */
+#define R3D_DRAW_HAS_INSTANCES(call) \
+    (call->instanced.transforms && call->instanced.count > 0)
+
+/*
  * Check whether there are any deferred draw calls queued for the current frame.
  * Includes both instanced and non-instanced variants.
  */

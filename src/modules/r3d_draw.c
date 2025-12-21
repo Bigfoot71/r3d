@@ -117,7 +117,8 @@ static int compare_front_to_back(const void* a, const void* b)
 
 bool is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
 {
-    const BoundingBox* aabb = (call->instanced.transforms) ? &call->instanced.allAabb : &call->mesh.aabb;
+    const BoundingBox* aabb = R3D_DRAW_HAS_INSTANCES(call)
+        ? &call->instanced.allAabb : &call->mesh.aabb;
 
     // Special-case: an infinite AABB is sometimes used internally in R3D to ignore culling.
     // We only check one axis as a fast sentinel; if the box is not truly infinite on all axes,
