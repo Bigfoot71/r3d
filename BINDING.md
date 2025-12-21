@@ -6,5 +6,5 @@ Some people ported R3D to other languages in the form of bindings or wrappers to
 
 | Name                                                                                     | R3D Version   | Language                                                             | License              |
 | :--------------------------------------------------------------------------------------- | :--------------: | :------------------------------------------------------------------: | :------------------: |
-| [R3D](https://github.com/Bigfoot71/r3d)                                              | **0.4**          | [C/C++](https://en.wikipedia.org/wiki/C_(programming_language))      | Zlib                 |
-| [ray4laz](https://github.com/GuvaCode/Ray4Laz)                                  | **0.4**          | [FreePascal](https://en.wikipedia.org/wiki/Free_Pascal)                                     | Zlib                  |
+| [R3D](https://github.com/Bigfoot71/r3d)                                              | **0.5**          | [C/C++](https://en.wikipedia.org/wiki/C_(programming_language))      | Zlib                 |
+| [ray4laz_r3d](https://github.com/GuvaCode/ray4laz_r3d)                                  | **0.5**          | [FreePascal](https://en.wikipedia.org/wiki/Free_Pascal)                                     | MIT                  |
