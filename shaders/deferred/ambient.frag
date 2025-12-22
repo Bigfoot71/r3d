@@ -44,8 +44,8 @@ uniform mat4 uMatInvView;
 
 /* === Fragments === */
 
-layout(location = 0) out vec3 FragDiffuse;
-layout(location = 1) out vec3 FragSpecular;
+layout(location = 0) out vec4 FragDiffuse;
+layout(location = 1) out vec4 FragSpecular;
 
 /* === Misc functions === */
 
@@ -99,8 +99,9 @@ void main()
     vec3 kD = (1.0 - kS) * (1.0 - metalness);
 
     vec3 Nr = M_Rotate3D(N, uQuatSkybox);
-    FragDiffuse = kD * texture(uCubeIrradiance, Nr).rgb;
-    FragDiffuse *= occlusion * uAmbientEnergy;
+    vec3 diffuse = kD * texture(uCubeIrradiance, Nr).rgb;
+
+    FragDiffuse = vec4(diffuse * occlusion * uAmbientEnergy, 1.0);
 
     /* Skybox reflection - IBL specular amélioré */
 
@@ -118,7 +119,7 @@ void main()
     float edgeFade = mix(1.0, pow(NdotV, 0.5), roughness);
     specular *= edgeFade;
 
-    FragSpecular = specular * uReflectEnergy;
+    FragSpecular = vec4(specular * uReflectEnergy, 1.0);
 }
 
 #else
@@ -138,6 +139,7 @@ uniform float uAmbientEnergy;
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragDiffuse;
+layout(location = 1) out vec4 FragSpecular;
 
 /* === Main === */
 
@@ -173,6 +175,7 @@ void main()
     /* --- Output --- */
 
     FragDiffuse = vec4(ambient, 1.0);
+    FragSpecular = vec4(0.0);
 }
 
 #endif

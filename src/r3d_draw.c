@@ -1054,9 +1054,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource)
 
     else
     {
-        R3D_TARGET_CLEAR(R3D_TARGET_SPECULAR);
-        R3D_TARGET_BIND(R3D_TARGET_DIFFUSE, R3D_TARGET_DEPTH);
-
+        R3D_TARGET_BIND(R3D_TARGET_LIGHTING);
         R3D_SHADER_USE(deferred.ambient);
 
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
