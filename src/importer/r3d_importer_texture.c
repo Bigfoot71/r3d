@@ -12,15 +12,10 @@
 #include <assimp/material.h>
 #include <assimp/texture.h>
 
-#include <tinycthread.h>
-#include <stdatomic.h>
-#include <stdlib.h>
-
-#include "../details/r3d_image.h"
-
 #ifdef _WIN32
 #   define NOGDI
 #   define NOUSER
+#   define WIN32_LEAN_AND_MEAN
 #   include <windows.h>
 #   undef near
 #   undef far
@@ -29,6 +24,12 @@
 #else
 #   error "Oops, platform not supported by R3D"
 #endif
+
+#include <tinycthread.h>
+#include <stdatomic.h>
+#include <stdlib.h>
+
+#include "../details/r3d_image.h"
 
 // ========================================
 // INTERNAL STRUCTURES
