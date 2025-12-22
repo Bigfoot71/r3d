@@ -294,9 +294,29 @@ void r3d_target_clear(const r3d_target_t* targets, int count)
         set_viewport(targets[0]);
     }
 
-    glClearDepth(1.0f);
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    bool hasDepth = false;
+    bool hasColor = false;
+    for (int i = 0; i < count; i++) {
+        hasDepth |= (targets[i] == R3D_TARGET_DEPTH);
+        hasColor |= (targets[i] != R3D_TARGET_DEPTH);
+    }
+
+    assert(hasDepth || hasColor);
+    GLenum bitfield = GL_NONE;
+
+    if (hasColor) {
+        bitfield |= GL_COLOR_BUFFER_BIT;
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    }
+
+    if (hasDepth) {
+        bitfield |= GL_DEPTH_BUFFER_BIT;
+        glDepthMask(GL_TRUE);
+        glClearDepth(1.0f);
+    }
+
+    glClear(bitfield);
 }
 
 void r3d_target_bind(const r3d_target_t* targets, int count)
