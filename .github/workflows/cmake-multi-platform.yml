@@ -97,17 +97,17 @@ jobs:
     - name: Configure CMake (MinGW)
       if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
       shell: msys2 {0}
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }}
-        -G "Ninja"
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        -DR3D_RAYLIB_VENDORED=ON
-        -DR3D_ASSIMP_VENDORED=ON
-        -DR3D_BUILD_EXAMPLES=ON
-        -DR3D_BUILD_DOCS=OFF
-        -S ${{ github.workspace }}
+      run: |
+        cmake -B build \
+        -G "Ninja" \
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+        -DR3D_RAYLIB_VENDORED=ON \
+        -DR3D_ASSIMP_VENDORED=ON \
+        -DR3D_BUILD_EXAMPLES=ON \
+        -DR3D_BUILD_DOCS=OFF \
+        -S .
 
     - name: Configure CMake (Non-MinGW)
       if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
@@ -125,7 +125,7 @@ jobs:
     - name: Build (MinGW)
       if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
       shell: msys2 {0}
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel
+      run: cmake --build build --config ${{ matrix.build_type }} --parallel
 
     - name: Build (Non-MinGW)
       if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
@@ -134,7 +134,7 @@ jobs:
     - name: Test (MinGW)
       if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
       shell: msys2 {0}
-      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      working-directory: build
       run: ctest --build-config ${{ matrix.build_type }}
 
     - name: Test (Non-MinGW)
