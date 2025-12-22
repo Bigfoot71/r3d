@@ -533,8 +533,6 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
         r3d_draw_apply_cull_mode(call->material.cullMode);
     }
 
-    r3d_draw_apply_depth_mode(call->material.depthMode);
-
     /* --- Rendering the object corresponding to the draw call --- */
 
     if (R3D_DRAW_HAS_INSTANCES(call)) {
@@ -582,9 +580,9 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
 
     /* --- Set transparency material data --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
-    R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
+    R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
+    R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -594,8 +592,6 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     else {
         r3d_draw_apply_cull_mode(call->material.cullMode);
     }
-
-    r3d_draw_apply_depth_mode(call->material.depthMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -861,7 +857,9 @@ void raster_forward(const r3d_draw_call_t* call, const Matrix* matVP)
 
 void pass_scene_shadow(void)
 {
+    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
@@ -871,42 +869,39 @@ void pass_scene_shadow(void)
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, light->shadowMap.fbo);
-        {
-            glViewport(0, 0, light->shadowMap.resolution, light->shadowMap.resolution);
+        glViewport(0, 0, light->shadowMap.resolution, light->shadowMap.resolution);
 
-            if (light->type == R3D_LIGHT_OMNI) {
-                R3D_SHADER_USE(scene.depthCube);
-                R3D_SHADER_SET_FLOAT(scene.depthCube, uFar, light->far);
-                R3D_SHADER_SET_VEC3(scene.depthCube, uViewPosition, light->position);
+        if (light->type == R3D_LIGHT_OMNI) {
+            R3D_SHADER_USE(scene.depthCube);
+            R3D_SHADER_SET_FLOAT(scene.depthCube, uFar, light->far);
+            R3D_SHADER_SET_VEC3(scene.depthCube, uViewPosition, light->position);
 
-                for (int iFace = 0; iFace < 6; iFace++)
-                {
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + iFace, light->shadowMap.tex, 0);
-                    glClear(GL_DEPTH_BUFFER_BIT);
-
-                    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED, R3D_DRAW_DEFERRED_INST, R3D_DRAW_FORWARD, R3D_DRAW_FORWARD_INST) {
-                        if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                            raster_depth_cube(call, true, &light->matVP[iFace]);
-                        }
-                    }
-
-                    // The bone matrices texture may have been bind during drawcalls, so UNBIND!
-                    R3D_SHADER_UNBIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices);
-                }
-            }
-            else {
+            for (int iFace = 0; iFace < 6; iFace++) {
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + iFace, light->shadowMap.tex, 0);
                 glClear(GL_DEPTH_BUFFER_BIT);
-                R3D_SHADER_USE(scene.depth);
 
                 R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED, R3D_DRAW_DEFERRED_INST, R3D_DRAW_FORWARD, R3D_DRAW_FORWARD_INST) {
                     if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
-                        raster_depth(call, true, &light->matVP[0]);
+                        raster_depth_cube(call, true, &light->matVP[iFace]);
                     }
                 }
-
-                // The bone matrices texture may have been bind during drawcalls, so UNBIND!
-                R3D_SHADER_UNBIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices);
             }
+
+            // The bone matrices texture may have been bind during drawcalls, so UNBIND!
+            R3D_SHADER_UNBIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices);
+        }
+        else {
+            glClear(GL_DEPTH_BUFFER_BIT);
+            R3D_SHADER_USE(scene.depth);
+
+            R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED, R3D_DRAW_DEFERRED_INST, R3D_DRAW_FORWARD, R3D_DRAW_FORWARD_INST) {
+                if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
+                    raster_depth(call, true, &light->matVP[0]);
+                }
+            }
+
+            // The bone matrices texture may have been bind during drawcalls, so UNBIND!
+            R3D_SHADER_UNBIND_SAMPLER_1D(scene.depth, uTexBoneMatrices);
         }
     }
 }
