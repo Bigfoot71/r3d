@@ -29,7 +29,7 @@
   * multiple index arrays per category
     Perform sorting and culling on the index arrays rather than directly on the draw call structures themselves.
 
-* [ ] **Environment API Refactor**
+* [x] **Environment API Refactor**
   Replace all environment-related functions with a single `R3D_Environment` structure, while keeping a global environment state.
   See: https://github.com/Bigfoot71/r3d/discussions/117
 
