@@ -1,4 +1,5 @@
 #include "./common.h"
+#include "raylib.h"
 
 // TODO: Adding bloom prefilter settings here
 
@@ -40,6 +41,8 @@ const char* Init(void)
 
     R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
+    R3D_ENVIRONMENT_SET(bloom.levels, 1.0f);
+
     R3D_ENVIRONMENT_SET(background.color, BLACK);
 
     /* --- Load a cube mesh and setup its material --- */
@@ -67,9 +70,8 @@ void Update(float delta)
 {
     UpdateCamera(&camera, CAMERA_ORBITAL);
 
-    int hueDir = IsMouseButtonDown(MOUSE_BUTTON_RIGHT) - IsMouseButtonDown(MOUSE_BUTTON_LEFT);
-    if (hueDir != 0) {
-        hueCube = Wrap(hueCube + hueDir * 90.0f * delta, 0, 360);
+    if (IsKeyDown(KEY_C)) {
+        hueCube = Wrap(hueCube + 45.0f * delta, 0, 360);
         material.emission.color = ColorFromHSV(hueCube, 1.0f, 1.0f);
     }
 
@@ -85,6 +87,11 @@ void Update(float delta)
 
     if (radiusDir != 0) {
         R3D_ENVIRONMENT_SET(bloom.filterRadius, R3D_ENVIRONMENT_GET(bloom.filterRadius) + radiusDir * 0.1f);
+    }
+
+    int levelDir = IsMouseButtonDown(MOUSE_BUTTON_RIGHT) - IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+    if (levelDir != 0) {
+        R3D_ENVIRONMENT_SET(bloom.levels, Clamp(R3D_ENVIRONMENT_GET(bloom.levels) + levelDir * 0.01f, 0.0f, 1.0f));
     }
 
     if (IsKeyPressed(KEY_SPACE)) {
@@ -114,6 +121,10 @@ void Draw(void)
     infoStr = TextFormat("Filter Radius: %.2f", R3D_ENVIRONMENT_GET(bloom.filterRadius));
     infoLen = MeasureText(infoStr, 20);
     DrawText(infoStr, GetScreenWidth() - infoLen - 10, 70, 20, LIME);
+
+    infoStr = TextFormat("Levels: %.2f", R3D_ENVIRONMENT_GET(bloom.levels));
+    infoLen = MeasureText(infoStr, 20);
+    DrawText(infoStr, GetScreenWidth() - infoLen - 10, 100, 20, LIME);
 }
 
 void Close(void)

@@ -1500,6 +1500,12 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
         prefilter.w = 0.25f / (knee + 0.00001f),
     };
 
+    /* --- Adjust max mip count --- */
+
+    int maxLevel = (int)((float)mipCount * R3D_CACHE_GET(environment.bloom.levels) + 0.5f);
+    if (maxLevel > mipCount) maxLevel = mipCount;
+    else if (maxLevel < 1) maxLevel = 1;
+
     /* --- Bloom: Karis average before downsampling --- */
 
     R3D_SHADER_USE(prepare.bloomDown);
@@ -1522,7 +1528,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     // Given that we'll be sampling a different level from where we're writing
     R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
 
-    for (int dstLevel = 1; dstLevel < mipCount; dstLevel++)
+    for (int dstLevel = 1; dstLevel < maxLevel; dstLevel++)
     {
         r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, dstLevel - 1);
         r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel - 1);
@@ -1549,7 +1555,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomUp, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
 
-    for (int dstLevel = mipCount - 2; dstLevel >= 0; dstLevel--)
+    for (int dstLevel = maxLevel - 2; dstLevel >= 0; dstLevel--)
     {
         r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, dstLevel + 1);
         r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel + 1);
