@@ -146,5 +146,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: r3d-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.c_compiler }}
-        path: ${{ steps.strings.outputs.build-output-dir }}
+        path: |
+          ${{ steps.strings.outputs.build-output-dir }}/**/*.dll
+          ${{ steps.strings.outputs.build-output-dir }}/**/*.so
+          ${{ steps.strings.outputs.build-output-dir }}/**/*.a
+          ${{ steps.strings.outputs.build-output-dir }}/**/*.lib
+          ${{ steps.strings.outputs.build-output-dir }}/**/*.dylib
         retention-days: 14
