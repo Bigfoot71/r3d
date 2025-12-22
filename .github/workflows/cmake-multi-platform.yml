@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
 
-      # Build matrix: Windows (MSVC), Linux (GCC + Clang)
+      # Build matrix: Windows (MSVC + MinGW), Linux (GCC + Clang)
       matrix:
         os: [ubuntu-latest, windows-latest]
         build_type: [Release]
@@ -40,6 +40,9 @@ jobs:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
+          - os: windows-latest
+            c_compiler: gcc
+            cpp_compiler: g++
           - os: ubuntu-latest
             c_compiler: gcc
             cpp_compiler: g++
@@ -47,8 +50,6 @@ jobs:
             c_compiler: clang
             cpp_compiler: clang++
         exclude:
-          - os: windows-latest
-            c_compiler: gcc
           - os: windows-latest
             c_compiler: clang
           - os: ubuntu-latest
@@ -59,6 +60,17 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: 'recursive'
+
+    - name: Setup MinGW-w64
+      if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-ninja
 
     - name: Install dependencies for Ubuntu
       if: runner.os == 'Linux'
@@ -82,7 +94,23 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Configure CMake
+    - name: Configure CMake (MinGW)
+      if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
+      shell: msys2 {0}
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -G "Ninja"
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DR3D_RAYLIB_VENDORED=ON
+        -DR3D_ASSIMP_VENDORED=ON
+        -DR3D_BUILD_EXAMPLES=ON
+        -DR3D_BUILD_DOCS=OFF
+        -S ${{ github.workspace }}
+
+    - name: Configure CMake (Non-MinGW)
+      if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
@@ -94,10 +122,23 @@ jobs:
         -DR3D_BUILD_DOCS=OFF
         -S ${{ github.workspace }}
 
-    - name: Build
+    - name: Build (MinGW)
+      if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
+      shell: msys2 {0}
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel
 
-    - name: Test
+    - name: Build (Non-MinGW)
+      if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel
+
+    - name: Test (MinGW)
+      if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
+      shell: msys2 {0}
+      working-directory: ${{ steps.strings.outputs.build-output-dir }}
+      run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Test (Non-MinGW)
+      if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: ctest --build-config ${{ matrix.build_type }}
 
