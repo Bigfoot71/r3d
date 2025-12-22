@@ -210,7 +210,7 @@ void r3d_draw_apply_cull_mode(R3D_CullMode mode);
  * Assumes GL_BLEND is already enabled and only sets the blend equations.
  * The MIX blend mode always uses standard alpha blending.
  */
-void r3d_draw_apply_blend_mode(R3D_BlendMode blend);
+void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transparency);
 
 /*
  * Configure face culling for shadow rendering depending on shadow casting mode.

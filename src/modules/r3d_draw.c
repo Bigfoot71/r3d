@@ -31,7 +31,7 @@ struct r3d_draw R3D_MOD_DRAW;
     ((call)->material.transparencyMode == R3D_TRANSPARENCY_PREPASS)
 
 #define IS_CALL_FORWARD(call)                                           \
-    ((call)->material.transparencyMode != R3D_TRANSPARENCY_DISABLED ||  \
+    ((call)->material.transparencyMode == R3D_TRANSPARENCY_ALPHA ||     \
      (call)->material.blendMode != R3D_BLEND_MIX)
 
 // ========================================
@@ -286,14 +286,19 @@ void r3d_draw_apply_cull_mode(R3D_CullMode mode)
     }
 }
 
-void r3d_draw_apply_blend_mode(R3D_BlendMode blend)
+void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transparency)
 {
     switch (blend) {
     case R3D_BLEND_MIX:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         break;
     case R3D_BLEND_ADDITIVE:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        if (transparency == R3D_TRANSPARENCY_DISABLED) {
+            glBlendFunc(GL_ONE, GL_ONE);
+        }
+        else {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        }
         break;
     case R3D_BLEND_MULTIPLY:
         glBlendFunc(GL_DST_COLOR, GL_ZERO);

@@ -654,7 +654,7 @@ void raster_decal(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(call->material.blendMode);
+    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
 
     /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
     // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
@@ -825,7 +825,7 @@ void raster_forward(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(call->material.blendMode);
+    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
     r3d_draw_apply_cull_mode(call->material.cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
