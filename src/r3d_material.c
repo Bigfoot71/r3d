@@ -40,11 +40,12 @@ R3D_Material R3D_GetDefaultMaterial(void)
     material.orm.metalness = 0.0f;
 
     // Misc
-    material.blendMode = R3D_BLEND_OPAQUE;
-    material.cullMode = R3D_CULL_BACK;
+    material.transparencyMode = R3D_TRANSPARENCY_DISABLED;
     material.billboardMode = R3D_BILLBOARD_DISABLED;
-    material.uvOffset = (Vector2) { 0.0f, 0.0f };
-    material.uvScale = (Vector2) { 1.0f, 1.0f };
+    material.blendMode = R3D_BLEND_MIX;
+    material.cullMode = R3D_CULL_BACK;
+    material.uvOffset = (Vector2) {0.0f, 0.0f};
+    material.uvScale = (Vector2) {1.0f, 1.0f};
     material.alphaCutoff = 0.01f;
 
     return material;

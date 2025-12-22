@@ -134,7 +134,14 @@ static int get_or_create_fbo(const r3d_target_t* targets, int count)
     }
 
     fbo->count = count;
-    glDrawBuffers(locCount, glColor);
+
+    if (locCount > 0) {
+        glDrawBuffers(locCount, glColor);
+    }
+    else {
+        glDrawBuffer(GL_NONE);
+        glReadBuffer(GL_NONE);
+    }
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {

@@ -23,7 +23,6 @@
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_cache.h"
-#include "r3d/r3d_core.h"
 #include "./modules/r3d_draw.h"
 
 // ========================================
@@ -44,24 +43,7 @@
 // INTERNAL FUNCTIONS
 // ========================================
 
-static void upload_bone_matrices(const r3d_draw_call_t* call, int bindingSlot)
-{
-    const R3D_Skeleton* skeleton = NULL;
-    const Matrix* currentPose = NULL;
-
-    if (call->player != NULL) {
-        skeleton = &call->player->skeleton;
-        currentPose = call->player->currentPose;
-    }
-    else {
-        skeleton = &call->skeleton;
-        currentPose = call->skeleton.bindPose;
-    }
-
-    static Matrix bones[R3D_STORAGE_MAX_BONE_MATRICES];
-    r3d_matrix_multiply_batch(bones, skeleton->boneOffsets, currentPose, skeleton->boneCount);
-    r3d_storage_use(R3D_STORAGE_BONE_MATRICES, bindingSlot, bones, skeleton->boneCount);
-}
+static void upload_bone_matrices(const r3d_draw_call_t* call, int bindingSlot);
 
 static void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
 static void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
@@ -79,6 +61,7 @@ static void pass_deferred_ambient(r3d_target_t ssaoSource);
 static void pass_deferred_lights(r3d_target_t ssaoSource);
 static void pass_deferred_compose(r3d_target_t sceneTarget);
 
+static void pass_scene_prepass(void);
 static void pass_scene_forward(r3d_target_t sceneTarget);
 static void pass_scene_background(r3d_target_t sceneTarget);
 
@@ -166,13 +149,12 @@ void R3D_End(void)
     }
 
     if (R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_OPAQUE_SORTING)) {
-        r3d_draw_sort_list(R3D_DRAW_DEFERRED, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_BACK_TO_FRONT);
-        r3d_draw_sort_list(R3D_DRAW_DEFERRED_INST, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_BACK_TO_FRONT);
+        r3d_draw_sort_list(R3D_DRAW_DEFERRED, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_FRONT_TO_BACK);
     }
 
     if (R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_TRANSPARENT_SORTING)) {
-        r3d_draw_sort_list(R3D_DRAW_FORWARD, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_FRONT_TO_BACK);
-        r3d_draw_sort_list(R3D_DRAW_FORWARD_INST, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_FRONT_TO_BACK);
+        r3d_draw_sort_list(R3D_DRAW_PREPASS, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_BACK_TO_FRONT);
+        r3d_draw_sort_list(R3D_DRAW_FORWARD, R3D_CACHE_GET(viewport.viewPosition), R3D_DRAW_SORT_BACK_TO_FRONT);
     }
 
     /* --- Opaque and decal rendering with deferred lighting and composition --- */
@@ -204,7 +186,8 @@ void R3D_End(void)
 
     pass_scene_background(sceneTarget);
 
-    if (R3D_DRAW_HAS_FORWARD) {
+    if (R3D_DRAW_HAS_FORWARD || R3D_DRAW_HAS_PREPASS) {
+        if (R3D_DRAW_HAS_PREPASS) pass_scene_prepass();
         pass_scene_forward(sceneTarget);
     }
 
@@ -253,12 +236,7 @@ void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix tra
     drawCall.transform = transform;
     drawCall.material = material ? *material : R3D_GetDefaultMaterial();
 
-    if (drawCall.material.blendMode == R3D_BLEND_OPAQUE) {
-        r3d_draw_push(&drawCall, R3D_DRAW_DEFERRED);
-    }
-    else {
-        r3d_draw_push(&drawCall, R3D_DRAW_FORWARD);
-    }
+    r3d_draw_push(&drawCall, false);
 }
 
 void R3D_DrawMeshInstanced(const R3D_Mesh* mesh, const R3D_Material* material, const Matrix* instanceTransforms, int instanceCount)
@@ -303,12 +281,7 @@ void R3D_DrawMeshInstancedPro(const R3D_Mesh* mesh, const R3D_Material* material
     drawCall.instanced.colors = instanceColors;
     drawCall.instanced.count = instanceCount;
 
-    if (drawCall.material.blendMode == R3D_BLEND_OPAQUE) {
-        r3d_draw_push(&drawCall, R3D_DRAW_DEFERRED_INST);
-    }
-    else {
-        r3d_draw_push(&drawCall, R3D_DRAW_FORWARD_INST);
-    }
+    r3d_draw_push(&drawCall, false);
 }
 
 void R3D_DrawModel(const R3D_Model* model, Vector3 position, float scale)
@@ -354,12 +327,7 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
         drawCall.skeleton = model->skeleton;
         drawCall.material = material ? *material : R3D_GetDefaultMaterial();
 
-        if (drawCall.material.blendMode == R3D_BLEND_OPAQUE) {
-            r3d_draw_push(&drawCall, R3D_DRAW_DEFERRED);
-        }
-        else {
-            r3d_draw_push(&drawCall, R3D_DRAW_FORWARD);
-        }
+        r3d_draw_push(&drawCall, false);
     }
 }
 
@@ -417,12 +385,7 @@ void R3D_DrawModelInstancedPro(const R3D_Model* model,
         drawCall.instanced.colors = instanceColors;
         drawCall.instanced.count = instanceCount;
 
-        if (drawCall.material.blendMode == R3D_BLEND_OPAQUE) {
-            r3d_draw_push(&drawCall, R3D_DRAW_DEFERRED_INST);
-        }
-        else {
-            r3d_draw_push(&drawCall, R3D_DRAW_FORWARD_INST);
-        }
+        r3d_draw_push(&drawCall, false);
     }
 }
 
@@ -437,7 +400,7 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
     drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
     drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
 
-    r3d_draw_push(&drawCall, R3D_DRAW_DECAL);
+    r3d_draw_push(&drawCall, true);
 }
 
 void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransforms, int instanceCount)
@@ -463,7 +426,7 @@ void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransf
     drawCall.instanced.colors = NULL;
     drawCall.instanced.count = instanceCount;
 
-    r3d_draw_push(&drawCall, R3D_DRAW_DECAL_INST);
+    r3d_draw_push(&drawCall, true);
 }
 
 void R3D_DrawParticleSystem(const R3D_ParticleSystem* system, const R3D_Mesh* mesh, const R3D_Material* material)
@@ -488,6 +451,25 @@ void R3D_DrawParticleSystemEx(const R3D_ParticleSystem* system, const R3D_Mesh* 
 // ========================================
 // INTERNAL FUNCTIONS
 // ========================================
+
+static void upload_bone_matrices(const r3d_draw_call_t* call, int bindingSlot)
+{
+    const R3D_Skeleton* skeleton = NULL;
+    const Matrix* currentPose = NULL;
+
+    if (call->player != NULL) {
+        skeleton = &call->player->skeleton;
+        currentPose = call->player->currentPose;
+    }
+    else {
+        skeleton = &call->skeleton;
+        currentPose = call->skeleton.bindPose;
+    }
+
+    static Matrix bones[R3D_STORAGE_MAX_BONE_MATRICES];
+    r3d_matrix_multiply_batch(bones, skeleton->boneOffsets, currentPose, skeleton->boneCount);
+    r3d_storage_use(R3D_STORAGE_BONE_MATRICES, bindingSlot, bones, skeleton->boneCount);
+}
 
 void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 {
@@ -522,7 +504,13 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
-    R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
+
+    if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
+        R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, shadow ? 0.1f : 0.99f);
+    }
+    else {
+        R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, call->material.alphaCutoff);
+    }
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -582,7 +570,13 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
-    R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
+
+    if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
+        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, shadow ? 0.1f : 0.99f);
+    }
+    else {
+        R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, call->material.alphaCutoff);
+    }
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -660,7 +654,7 @@ void raster_decal(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(call->material.blendMode);
+    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
 
     /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
     // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
@@ -753,7 +747,6 @@ void raster_geometry(const r3d_draw_call_t* call, const Matrix* matVP)
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_cull_mode(call->material.cullMode);
-    r3d_draw_apply_depth_mode(call->material.depthMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -832,9 +825,8 @@ void raster_forward(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
+    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
     r3d_draw_apply_cull_mode(call->material.cullMode);
-    r3d_draw_apply_blend_mode(call->material.blendMode);
-    r3d_draw_apply_depth_mode(call->material.depthMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -860,7 +852,6 @@ void pass_scene_shadow(void)
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
@@ -880,7 +871,7 @@ void pass_scene_shadow(void)
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + iFace, light->shadowMap.tex, 0);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
-                R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED, R3D_DRAW_DEFERRED_INST, R3D_DRAW_FORWARD, R3D_DRAW_FORWARD_INST) {
+                R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
                     if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
                         raster_depth_cube(call, true, &light->matVP[iFace]);
                     }
@@ -894,7 +885,7 @@ void pass_scene_shadow(void)
             glClear(GL_DEPTH_BUFFER_BIT);
             R3D_SHADER_USE(scene.depth);
 
-            R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED, R3D_DRAW_DEFERRED_INST, R3D_DRAW_FORWARD, R3D_DRAW_FORWARD_INST) {
+            R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
                 if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
                     raster_depth(call, true, &light->matVP[0]);
                 }
@@ -911,10 +902,12 @@ void pass_scene_geometry(void)
     R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
     R3D_SHADER_USE(scene.geometry);
 
+    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED, R3D_DRAW_DEFERRED_INST) {
+    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED) {
         raster_geometry(call, &R3D_CACHE_GET(viewport.viewProj));
     }
 
@@ -927,12 +920,14 @@ void pass_scene_decals(void)
     R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
     R3D_SHADER_USE(scene.decal);
 
+    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DECAL, R3D_DRAW_DECAL_INST) {
+    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DECAL_INST, R3D_DRAW_DECAL) {
         raster_decal(call, &R3D_CACHE_GET(viewport.viewProj));
     }
 
@@ -1226,6 +1221,23 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexSpecular);
 }
 
+void pass_scene_prepass(void)
+{
+    R3D_TARGET_BIND(R3D_TARGET_DEPTH);
+    R3D_SHADER_USE(scene.depth);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
+
+    R3D_DRAW_FOR_EACH(call, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
+        raster_depth(call, false, &R3D_CACHE_GET(viewport.viewProj));
+    }
+
+    // NOTE: The storage texture of the matrices may have been bind during drawcalls
+    R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uTexBoneMatrices);
+}
+
 static void pass_scene_forward_send_lights(const r3d_draw_call_t* call)
 {
     int iLight = 0;
@@ -1299,7 +1311,10 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     R3D_TARGET_BIND(sceneTarget, R3D_TARGET_ALBEDO, R3D_TARGET_NORMAL, R3D_TARGET_ORM, R3D_TARGET_DEPTH);
     R3D_SHADER_USE(scene.forward);
 
+    glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_BLEND);
 
     if (R3D_CACHE_GET(environment.background.sky.cubemap.id) != 0) {
         R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uCubeIrradiance, R3D_CACHE_GET(environment.background.sky.irradiance.id));
@@ -1319,7 +1334,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     R3D_SHADER_SET_VEC3(scene.forward, uViewPosition, R3D_CACHE_GET(viewport.viewPosition));
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_FORWARD, R3D_DRAW_FORWARD_INST) {
+    R3D_DRAW_FOR_EACH(call, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS, R3D_DRAW_FORWARD_INST, R3D_DRAW_FORWARD) {
         pass_scene_forward_send_lights(call);
         raster_forward(call, &R3D_CACHE_GET(viewport.viewProj));
     }

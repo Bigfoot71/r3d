@@ -92,20 +92,18 @@ static void load_material(R3D_Material* material, const r3d_importer_t* importer
         }
     }
 
-    // Handle glTF alpha cutoff
-    float alphaCutoff;
-    if (aiGetMaterialFloat(aiMat, AI_MATKEY_GLTF_ALPHACUTOFF, &alphaCutoff) == AI_SUCCESS) {
-        material->alphaCutoff = alphaCutoff;
-    }
-
     // Handle glTF alpha mode
     struct aiString alphaMode;
     if (aiGetMaterialString(aiMat, AI_MATKEY_GLTF_ALPHAMODE, &alphaMode) == AI_SUCCESS) {
         if (strcmp(alphaMode.data, "MASK") == 0) {
-            material->blendMode = R3D_BLEND_OPAQUE; //< Alpha cutoff supported in geometry.frag
+            float alphaCutoff;
+            if (aiGetMaterialFloat(aiMat, AI_MATKEY_GLTF_ALPHACUTOFF, &alphaCutoff) == AI_SUCCESS) {
+                material->alphaCutoff = alphaCutoff;
+            }
         }
         else if (strcmp(alphaMode.data, "BLEND") == 0) {
-            material->blendMode = R3D_BLEND_ALPHA;
+            material->transparencyMode = R3D_TRANSPARENCY_PREPASS;
+            material->blendMode = R3D_BLEND_MIX;
         }
     }
 
@@ -114,19 +112,16 @@ static void load_material(R3D_Material* material, const r3d_importer_t* importer
     if (aiGetMaterialInteger(aiMat, AI_MATKEY_BLEND_FUNC, &blendFunc) == AI_SUCCESS) {
         switch (blendFunc) {
         case aiBlendMode_Default:
-            material->blendMode = R3D_BLEND_ALPHA;
+            material->transparencyMode = R3D_TRANSPARENCY_PREPASS;
+            material->blendMode = R3D_BLEND_MIX;
             break;
         case aiBlendMode_Additive:
+            material->transparencyMode = R3D_TRANSPARENCY_ALPHA;
             material->blendMode = R3D_BLEND_ADDITIVE;
             break;
         default:
             break;
         }
-    }
-
-    // Handle depth mode from blend mode
-    if (material->blendMode != R3D_BLEND_OPAQUE) {
-        material->depthMode = R3D_DEPTH_READ_ONLY;
     }
 
     // Handle cull mode from two-sided property
