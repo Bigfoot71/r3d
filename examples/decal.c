@@ -125,7 +125,6 @@ const char* Init(void)
 
     decal.material = R3D_GetDefaultMaterial();
     decal.material.albedo.texture = texture;
-    decal.material.blendMode = R3D_BLEND_ALPHA;
 
     /* --- Create a plane along with the transformation matrices to place them to represent a room --- */
 

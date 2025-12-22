@@ -24,6 +24,17 @@
 struct r3d_draw R3D_MOD_DRAW;
 
 // ========================================
+// HELPER MACROS
+// ========================================
+
+#define IS_CALL_PREPASS(call)                                           \
+    ((call)->material.transparencyMode == R3D_TRANSPARENCY_PREPASS)
+
+#define IS_CALL_FORWARD(call)                                           \
+    ((call)->material.transparencyMode != R3D_TRANSPARENCY_DISABLED ||  \
+     (call)->material.blendMode != R3D_BLEND_MIX)
+
+// ========================================
 // INTERNAL LIST FUNCTIONS
 // ========================================
 
@@ -198,15 +209,23 @@ void r3d_draw_clear(void)
     R3D_MOD_DRAW.numDrawCalls = 0;
 }
 
-void r3d_draw_push(const r3d_draw_call_t* call, r3d_draw_list_enum_t list)
+void r3d_draw_push(const r3d_draw_call_t* call, bool decal)
 {
     if (R3D_MOD_DRAW.numDrawCalls >= R3D_MOD_DRAW.capDrawCalls) {
         if (!growth_arrays()) {
             TraceLog(LOG_FATAL, "R3D: Bad alloc on draw push");
+            return;
         }
     }
 
     int drawIndex = R3D_MOD_DRAW.numDrawCalls++;
+    r3d_draw_list_enum_t list = R3D_DRAW_DEFERRED;
+
+    if (decal) list = R3D_DRAW_DECAL;
+    else if (IS_CALL_PREPASS(call)) list = R3D_DRAW_PREPASS;
+    else if (IS_CALL_FORWARD(call)) list = R3D_DRAW_FORWARD;
+
+    if (R3D_DRAW_HAS_INSTANCES(call)) list += 4;
 
     R3D_MOD_DRAW.drawCalls[drawIndex] = *call;
     int listIndex = R3D_MOD_DRAW.list[list].numDrawCalls++;
@@ -231,11 +250,11 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     int (*compare_func)(const void *a, const void *b) = NULL;
 
     switch (mode) {
-    case R3D_DRAW_SORT_BACK_TO_FRONT:
-        compare_func = compare_back_to_front;
-        break;
     case R3D_DRAW_SORT_FRONT_TO_BACK:
         compare_func = compare_front_to_back;
+        break;
+    case R3D_DRAW_SORT_BACK_TO_FRONT:
+        compare_func = compare_back_to_front;
         break;
     default:
         assert(false);
@@ -267,47 +286,22 @@ void r3d_draw_apply_cull_mode(R3D_CullMode mode)
     }
 }
 
-void r3d_draw_apply_blend_mode(R3D_BlendMode mode)
+void r3d_draw_apply_blend_mode(R3D_BlendMode blend)
 {
-    switch (mode) {
-    case R3D_BLEND_OPAQUE:
-        glDisable(GL_BLEND);
-        break;
-    case R3D_BLEND_ALPHA:
-        glEnable(GL_BLEND);
+    switch (blend) {
+    case R3D_BLEND_MIX:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         break;
     case R3D_BLEND_ADDITIVE:
-        glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         break;
     case R3D_BLEND_MULTIPLY:
-        glEnable(GL_BLEND);
         glBlendFunc(GL_DST_COLOR, GL_ZERO);
         break;
     case R3D_BLEND_PREMULTIPLIED_ALPHA:
-        glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         break;
     default:
-        break;
-    }
-}
-
-void r3d_draw_apply_depth_mode(R3D_DepthMode mode)
-{
-    switch (mode) {
-    case R3D_DEPTH_DISABLED:
-        glDisable(GL_DEPTH_TEST);
-        break;
-    case R3D_DEPTH_READ_ONLY:
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_FALSE);
-        break;
-    default:
-    case R3D_DEPTH_READ_WRITE:
-        glEnable(GL_DEPTH_TEST);
-        glDepthMask(GL_TRUE);
         break;
     }
 }

@@ -33,24 +33,32 @@
  * Includes both instanced and non-instanced variants.
  */
 #define R3D_DRAW_HAS_DEFERRED                                   \
-    R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||    \
-    R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numDrawCalls > 0
+    (R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||   \
+    R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numDrawCalls > 0)
+
+/*
+ * Check whether there are any prepass draw calls queued for the current frame.
+ * Includes both instanced and non-instanced variants.
+ */
+#define R3D_DRAW_HAS_PREPASS                                    \
+    (R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numDrawCalls > 0 ||    \
+    R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numDrawCalls > 0)
 
 /*
  * Check whether there are any forward draw calls queued for the current frame.
  * Includes both instanced and non-instanced variants.
  */
 #define R3D_DRAW_HAS_FORWARD                                    \
-    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||     \
-    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0
+    (R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||    \
+    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0)
 
 /*
  * Check whether there are any decal draw calls queued for the current frame.
  * Includes both instanced and non-instanced variants.
  */
 #define R3D_DRAW_HAS_DECAL                                      \
-    R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numDrawCalls > 0 ||       \
-    R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numDrawCalls > 0
+    (R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numDrawCalls > 0 ||      \
+    R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numDrawCalls > 0)
 
 /*
  * Iterate over multiple draw lists in the order specified by the variadic arguments.
@@ -79,8 +87,8 @@
  * Used to control draw order for depth testing efficiency or visual correctness.
  */
 typedef enum {
-    R3D_DRAW_SORT_BACK_TO_FRONT,    //< Typically used for opaque geometry
-    R3D_DRAW_SORT_FRONT_TO_BACK,    //< Typically used for transparent geometry
+    R3D_DRAW_SORT_FRONT_TO_BACK,    //< Typically used for opaque geometry
+    R3D_DRAW_SORT_BACK_TO_FRONT,    //< Typically used for transparent geometry
 } r3d_draw_sort_enum_t;
 
 // ========================================
@@ -121,11 +129,13 @@ typedef struct {
  */
 typedef enum {
 
-    R3D_DRAW_DEFERRED,
-    R3D_DRAW_FORWARD,
+    R3D_DRAW_DEFERRED,          //< Fully opaque
+    R3D_DRAW_PREPASS,           //< Forward but with depth prepass
+    R3D_DRAW_FORWARD,           //< Forward only, without prepass
     R3D_DRAW_DECAL,
 
     R3D_DRAW_DEFERRED_INST,
+    R3D_DRAW_PREPASS_INST,
     R3D_DRAW_FORWARD_INST,
     R3D_DRAW_DECAL_INST,
 
@@ -174,10 +184,10 @@ void r3d_draw_quit(void);
 void r3d_draw_clear(void);
 
 /*
- * Push a new draw call into the specified draw list.
+ * Push a new draw call to the right draw call list.
  * The draw call data is copied internally.
  */
-void r3d_draw_push(const r3d_draw_call_t* call, r3d_draw_list_enum_t list);
+void r3d_draw_push(const r3d_draw_call_t* call, bool decal);
 
 /*
  * Perform frustum culling on a draw list.
@@ -196,14 +206,11 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
 void r3d_draw_apply_cull_mode(R3D_CullMode mode);
 
 /*
- * Apply the OpenGL blending state for a draw call.
+ * Applies the OpenGL blend function for the current draw call.
+ * Assumes GL_BLEND is already enabled and only sets the blend equations.
+ * The MIX blend mode always uses standard alpha blending.
  */
-void r3d_draw_apply_blend_mode(R3D_BlendMode mode);
-
-/*
- * Apply the OpenGL depth test and depth write state for a draw call.
- */
-void r3d_draw_apply_depth_mode(R3D_DepthMode mode);
+void r3d_draw_apply_blend_mode(R3D_BlendMode blend);
 
 /*
  * Configure face culling for shadow rendering depending on shadow casting mode.
