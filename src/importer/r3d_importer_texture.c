@@ -12,10 +12,9 @@
 #include <assimp/material.h>
 #include <assimp/texture.h>
 
+#include <tinycthread.h>
 #include <stdatomic.h>
-#include <threads.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "../details/r3d_image.h"
 

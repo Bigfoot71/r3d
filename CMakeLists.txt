@@ -257,6 +257,13 @@ embed_assets(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/assets/brdf_lut_512_rg16_float.raw"
 )
 
+# Add external sources
+
+target_sources(${PROJECT_NAME}
+    PRIVATE
+        "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
+)
+
 # Link project dependencies
 
 target_link_libraries(${PROJECT_NAME}
@@ -274,6 +281,7 @@ endif()
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
+        "${R3D_ROOT_PATH}/external/tinycthread"
         "${R3D_ROOT_PATH}/external/uthash/src"
         "${R3D_ROOT_PATH}/external/glad"
         "${R3D_ROOT_PATH}/include"
@@ -285,11 +293,6 @@ target_include_directories(${PROJECT_NAME}
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
-endif()
-
-if (MSVC)
-    # Why microsoft, why?
-    target_compile_options(${PROJECT_NAME} PRIVATE /experimental:c11atomics)
 endif()
 
 # Doxygen configuration
