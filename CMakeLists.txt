@@ -295,6 +295,12 @@ if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 endif()
 
+# C11 atomics for MSVC
+
+if (MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /experimental:c11atomics)
+endif()
+
 # Doxygen configuration
 
 if(R3D_BUILD_DOCS)
