@@ -200,13 +200,13 @@ void R3D_End(void)
         R3D_TARGET_CLEAR(R3D_TARGET_DEPTH);
     }
 
-    /* --- Then transparent and background rendering --- */
+    /* --- Then background and transparent rendering --- */
+
+    pass_scene_background(sceneTarget);
 
     if (R3D_DRAW_HAS_FORWARD) {
         pass_scene_forward(sceneTarget);
     }
-
-    pass_scene_background(sceneTarget);
 
     /* --- Applying effects over the scene and final blit --- */
 
