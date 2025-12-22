@@ -242,6 +242,9 @@ static r3d_light_shadow_map_t alloc_shadow_map_2d(int resolution)
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadowMap.tex, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         TraceLog(LOG_ERROR, "R3D: Framebuffer creation error for the 2D shadow map");
     }
@@ -276,6 +279,9 @@ static r3d_light_shadow_map_t alloc_shadow_map_cube(int resolution)
 
     glBindFramebuffer(GL_FRAMEBUFFER, shadowMap.fbo);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X, shadowMap.tex, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         TraceLog(LOG_ERROR, "R3D: Framebuffer creation error for the Cube shadow map");
     }
