@@ -28,16 +28,24 @@ typedef enum {
 } r3d_storage_t;
 
 // ========================================
-// STORAGE FUNCTIONS
-// ========================================
-
-void r3d_storage_use(r3d_storage_t storage, int slot, const void* data, int count);
-
-// ========================================
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_storage_init(void);
-void r3d_mod_storage_quit(void);
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_storage_init(void);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_storage_quit(void);
+
+/*
+ * Bind the storage texture to the specified slot, then upload the data to it.
+ */
+void r3d_storage_use(r3d_storage_t storage, int slot, const void* data, int count);
 
 #endif // R3D_MODULE_STORAGE_H

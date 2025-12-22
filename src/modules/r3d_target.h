@@ -28,8 +28,8 @@ typedef enum {
     R3D_TARGET_EMISSION,        //< Full - Mip 1 - RGB[11|11|10]
     R3D_TARGET_NORMAL,          //< Full - Mip 1 - RG[16|16]
     R3D_TARGET_ORM,             //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[11|11|10]
+    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[11|11|10]
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
     R3D_TARGET_BLOOM,           //< Full - Mip N - RGB[16|16|16]
@@ -98,8 +98,95 @@ typedef enum {
 } while(0)
 
 // ========================================
-// TARGET FUNCTIONS
+// FRAMEBUFFER STRUCTURE
 // ========================================
+
+#define R3D_TARGET_MAX_FRAMEBUFFERS 32
+#define R3D_TARGET_MAX_ATTACHMENTS  8
+
+typedef struct {
+    GLuint id;
+    r3d_target_t targets[R3D_TARGET_MAX_ATTACHMENTS];
+    int count;
+} r3d_target_fbo_t;
+
+// ========================================
+// MODULE STATE
+// ========================================
+
+extern struct r3d_target {
+
+    r3d_target_fbo_t fbo[R3D_TARGET_MAX_FRAMEBUFFERS];  //< FBO combination cache. FBOs are automatically generated as needed during bind.
+    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Don't call glBindFramebuffer manually until blit.
+    int fboCount;
+
+    bool targetLoaded[R3D_TARGET_COUNT];
+    GLuint targets[R3D_TARGET_COUNT];
+
+    RenderTexture screen;
+    uint32_t resW, resH;
+    float txlW, txlH;
+    bool keepAspect;
+    bool blitLinear;
+
+} R3D_MOD_TARGET;
+
+// ========================================
+// MODULE FUNCTIONS
+// ========================================
+
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_target_init(int resW, int resH);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_target_quit(void);
+
+/*
+ * Resizes the internal resolution.
+ * Performs a reallocation of all targets already allocated.
+ * Ignore the operation if the new resolution is identical to the one already defined.
+ */
+void r3d_target_resize(int resW, int resH);
+
+/*
+ * Defines the target where the blit is performed.
+ * Also uses the associated data to determine the aspect ratio.
+ * If NULL, the destination will be the default framebuffer (0).
+ */
+void r3d_target_set_blit_screen(const RenderTexture* screen);
+
+/*
+ * Defines the blit configuration for the assigned screen.
+ */
+void r3d_target_set_blit_mode(bool keepAspect, bool blitLinear);
+
+/*
+ * Computes and returns the correct aspect ratio based on the screen target
+ * and its configuration.
+ */
+float r3d_target_get_render_aspect(void);
+
+/*
+ * Returns the total number of mip levels of the internal buffers
+ * based on their full resolution.
+ */
+int r3d_target_get_mip_count(void);
+
+/*
+ * Returns the internal resolution for the specified mip level.
+ */
+void r3d_target_get_resolution(int* w, int* h, int level);
+
+/*
+ * Returns the texel size for the specified mip level.
+ */
+void r3d_target_get_texel_size(float* w, float* h, int level);
 
 /*
  * Returns target '1' if target '0' is provided, otherwise returns target '0'.
@@ -148,54 +235,4 @@ GLuint r3d_target_get(r3d_target_t target);
  */
 void r3d_target_blit(r3d_target_t target);
 
-// ========================================
-// FRAMEBUFFER STRUCTURE
-// ========================================
-
-#define R3D_TARGET_MAX_FRAMEBUFFERS 32
-#define R3D_TARGET_MAX_ATTACHMENTS  8
-
-typedef struct {
-    GLuint id;
-    r3d_target_t targets[R3D_TARGET_MAX_ATTACHMENTS];
-    int count;
-} r3d_target_fbo_t;
-
-// ========================================
-// MODULE STATE
-// ========================================
-
-extern struct r3d_mod_target {
-
-    r3d_target_fbo_t fbo[R3D_TARGET_MAX_FRAMEBUFFERS];  //< FBO combination cache. FBOs are automatically generated as needed during bind.
-    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Don't call glBindFramebuffer manually until blit.
-    int fboCount;
-
-    bool targetLoaded[R3D_TARGET_COUNT];
-    GLuint targets[R3D_TARGET_COUNT];
-
-    RenderTexture screen;
-    uint32_t resW, resH;
-    float txlW, txlH;
-    bool keepAspect;
-    bool blitLinear;
-
-} R3D_MOD_TARGET;
-
-// ========================================
-// MODULE FUNCTIONS
-// ========================================
-
-bool r3d_mod_target_init(int resW, int resH);
-void r3d_mod_target_quit(void);
-
-float r3d_mod_target_get_render_aspect(void);
-
-int r3d_mod_target_get_mip_count(void);
-void r3d_mod_target_get_resolution(int* w, int* h, int level);
-void r3d_mod_target_get_texel_size(float* w, float* h, int level);
-
-void r3d_mod_target_set_blit_screen(const RenderTexture* screen);
-void r3d_mod_target_set_blit_mode(bool keepAspect, bool blitLinear);
-
-#endif /* R3D_MODULE_TARGET_H */
+#endif // R3D_MODULE_TARGET_H

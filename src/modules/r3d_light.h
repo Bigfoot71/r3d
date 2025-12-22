@@ -68,8 +68,42 @@ typedef struct {
 } r3d_light_t;
 
 // ========================================
-// LIGHT FUNCTIONS
+// MODULE STATE
 // ========================================
+
+typedef enum {
+    R3D_LIGHT_ARRAY_VISIBLE,
+    R3D_LIGHT_ARRAY_VALID,
+    R3D_LIGHT_ARRAY_FREE,
+    R3D_LIGHT_ARRAY_COUNT
+} r3d_light_array_enum_t;
+
+typedef struct {
+    R3D_Light* lights;
+    int count;
+} r3d_light_array_t;
+
+extern struct r3d_light {
+    r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
+    r3d_light_t* lights;
+    int capacityLights;
+} R3D_MOD_LIGHT;
+
+// ========================================
+// MODULE FUNCTIONS
+// ========================================
+
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_light_init(void);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_light_quit(void);
 
 /*
  * Create a new light of the given type.
@@ -123,34 +157,5 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
  * The internal update state can be reset after the query.
  */
 bool r3d_light_shadow_should_be_upadted(r3d_light_t* light, bool willBeUpdated);
-
-// ========================================
-// MODULE STATE
-// ========================================
-
-typedef enum {
-    R3D_LIGHT_ARRAY_VISIBLE,
-    R3D_LIGHT_ARRAY_VALID,
-    R3D_LIGHT_ARRAY_FREE,
-    R3D_LIGHT_ARRAY_COUNT
-} r3d_light_array_enum_t;
-
-typedef struct {
-    R3D_Light* lights;
-    int count;
-} r3d_light_array_t;
-
-extern struct r3d_mod_light {
-    r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
-    r3d_light_t* lights;
-    int capacityLights;
-} R3D_MOD_LIGHT;
-
-// ========================================
-// MODULE FUNCTIONS
-// ========================================
-
-bool r3d_mod_light_init(void);
-void r3d_mod_light_quit(void);
 
 #endif // R3D_MODULE_LIGHT_H

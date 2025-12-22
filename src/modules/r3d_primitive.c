@@ -145,8 +145,24 @@ void load_cube(primitive_buffer_t* buf)
 }
 
 // ========================================
-// PUBLIC API
+// MODULE FUNCTIONS
 // ========================================
+
+bool r3d_primitive_init(void)
+{
+    memset(&R3D_MOD_PRIMITIVE, 0, sizeof(R3D_MOD_PRIMITIVE));
+    return true;
+}
+
+void r3d_primitive_quit(void)
+{
+    for (int i = 0; i < R3D_PRIMITIVE_COUNT; i++) {
+        primitive_buffer_t* buf = &R3D_MOD_PRIMITIVE.buffers[i];
+        if (buf->vao) glDeleteVertexArrays(1, &buf->vao);
+        if (buf->vbo) glDeleteBuffers(1, &buf->vbo);
+        if (buf->ebo) glDeleteBuffers(1, &buf->ebo);
+    }
+}
 
 void r3d_primitive_draw(r3d_primitive_t primitive)
 {
@@ -158,7 +174,8 @@ void r3d_primitive_draw(r3d_primitive_t primitive)
 
     if (buf->indexCount > 0) {
         glDrawElements(GL_TRIANGLES, buf->indexCount, GL_UNSIGNED_BYTE, 0);
-    } else {
+    }
+    else {
         glDrawArrays(GL_TRIANGLES, 0, 3); // dummy
     }
 }
@@ -211,7 +228,8 @@ void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transfo
     // Draw the geometry (instanced)
     if (buf->indexCount > 0) {
         glDrawElementsInstanced(GL_TRIANGLES, buf->indexCount, GL_UNSIGNED_BYTE, 0, (int)instanceCount);
-    } else {
+    }
+    else {
         glDrawArraysInstanced(GL_TRIANGLES, 0, 3, (int)instanceCount);
     }
 
@@ -230,20 +248,4 @@ void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transfo
     }
 
     glBindVertexArray(0);
-}
-
-bool r3d_mod_primitive_init(void)
-{
-    memset(&R3D_MOD_PRIMITIVE, 0, sizeof(R3D_MOD_PRIMITIVE));
-    return true;
-}
-
-void r3d_mod_primitive_quit(void)
-{
-    for (int i = 0; i < R3D_PRIMITIVE_COUNT; i++) {
-        primitive_buffer_t* buf = &R3D_MOD_PRIMITIVE.buffers[i];
-        if (buf->vao) glDeleteVertexArrays(1, &buf->vao);
-        if (buf->vbo) glDeleteBuffers(1, &buf->vbo);
-        if (buf->ebo) glDeleteBuffers(1, &buf->ebo);
-    }
 }

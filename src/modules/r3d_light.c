@@ -17,7 +17,7 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_mod_light R3D_MOD_LIGHT;
+struct r3d_light R3D_MOD_LIGHT;
 
 // ========================================
 // INTERNAL LIGHT FUNCTIONS
@@ -309,8 +309,61 @@ bool growth_arrays(void)
 }
 
 // ========================================
-// LIGHT FUNCTIONS
+// MODULE STATE
 // ========================================
+
+bool r3d_light_init(void)
+{
+    memset(&R3D_MOD_LIGHT, 0, sizeof(R3D_MOD_LIGHT));
+
+    const int LIGHT_RESERVE_COUNT = 32;
+
+    R3D_MOD_LIGHT.lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.lights));
+    R3D_MOD_LIGHT.capacityLights = LIGHT_RESERVE_COUNT;
+    if (!R3D_MOD_LIGHT.lights) {
+        TraceLog(LOG_FATAL, "R3D: Failed to init light module; Main light array allocation failed");
+        return false;
+    }
+
+    for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
+        R3D_MOD_LIGHT.arrays[i].lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.arrays[i].lights));
+        if (R3D_MOD_LIGHT.arrays[i].lights == NULL) {
+            TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light array %i allocation failed", i);
+            for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_LIGHT.arrays[j].lights);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void r3d_light_quit(void)
+{
+    r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
+    r3d_light_array_t* freeLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_FREE];
+
+    for (int i = 0; i < validLights->count; i++) {
+        r3d_light_t* light = &R3D_MOD_LIGHT.lights[validLights->lights[i]];
+        if (light->shadowMap.fbo != 0) {
+            glDeleteFramebuffers(1, &light->shadowMap.fbo);
+            glDeleteTextures(1, &light->shadowMap.tex);
+        }
+    }
+
+    for (int i = 0; i < freeLights->count; i++) {
+        r3d_light_t* light = &R3D_MOD_LIGHT.lights[freeLights->lights[i]];
+        if (light->shadowMap.fbo != 0) {
+            glDeleteFramebuffers(1, &light->shadowMap.fbo);
+            glDeleteTextures(1, &light->shadowMap.tex);
+        }
+    }
+
+    for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
+        RL_FREE(R3D_MOD_LIGHT.arrays[i].lights);
+    }
+
+    RL_FREE(R3D_MOD_LIGHT.lights);
+}
 
 R3D_Light r3d_light_new(R3D_LightType type)
 {
@@ -481,61 +534,4 @@ bool r3d_light_shadow_should_be_upadted(r3d_light_t* light, bool willBeUpdated)
     }
 
     return shadowShouldBeUpdated;
-}
-
-// ========================================
-// MODULE STATE
-// ========================================
-
-bool r3d_mod_light_init(void)
-{
-    memset(&R3D_MOD_LIGHT, 0, sizeof(R3D_MOD_LIGHT));
-
-    const int LIGHT_RESERVE_COUNT = 32;
-
-    R3D_MOD_LIGHT.lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.lights));
-    R3D_MOD_LIGHT.capacityLights = LIGHT_RESERVE_COUNT;
-    if (!R3D_MOD_LIGHT.lights) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init light module; Main light array allocation failed");
-        return false;
-    }
-
-    for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
-        R3D_MOD_LIGHT.arrays[i].lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.arrays[i].lights));
-        if (R3D_MOD_LIGHT.arrays[i].lights == NULL) {
-            TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light array %i allocation failed", i);
-            for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_LIGHT.arrays[j].lights);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void r3d_mod_light_quit(void)
-{
-    r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
-    r3d_light_array_t* freeLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_FREE];
-
-    for (int i = 0; i < validLights->count; i++) {
-        r3d_light_t* light = &R3D_MOD_LIGHT.lights[validLights->lights[i]];
-        if (light->shadowMap.fbo != 0) {
-            glDeleteFramebuffers(1, &light->shadowMap.fbo);
-            glDeleteTextures(1, &light->shadowMap.tex);
-        }
-    }
-
-    for (int i = 0; i < freeLights->count; i++) {
-        r3d_light_t* light = &R3D_MOD_LIGHT.lights[freeLights->lights[i]];
-        if (light->shadowMap.fbo != 0) {
-            glDeleteFramebuffers(1, &light->shadowMap.fbo);
-            glDeleteTextures(1, &light->shadowMap.tex);
-        }
-    }
-
-    for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
-        RL_FREE(R3D_MOD_LIGHT.arrays[i].lights);
-    }
-
-    RL_FREE(R3D_MOD_LIGHT.lights);
 }

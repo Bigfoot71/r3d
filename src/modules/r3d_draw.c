@@ -21,7 +21,7 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_mod_draw R3D_MOD_DRAW;
+struct r3d_draw R3D_MOD_DRAW;
 
 // ========================================
 // INTERNAL LIST FUNCTIONS
@@ -153,8 +153,42 @@ GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
 }
 
 // ========================================
-// DRAW FUNCTIONS
+// MODULE FUNCTIONS
 // ========================================
+
+bool r3d_draw_init(void)
+{
+    memset(&R3D_MOD_DRAW, 0, sizeof(R3D_MOD_DRAW));
+
+    const int DRAW_RESERVE_COUNT = 1024;
+
+    R3D_MOD_DRAW.drawCalls = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.drawCalls));
+    if (R3D_MOD_DRAW.drawCalls == NULL) {
+        TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Main draw call array allocation failed");
+        return false;
+    }
+
+    R3D_MOD_DRAW.capDrawCalls = DRAW_RESERVE_COUNT;
+
+    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
+        R3D_MOD_DRAW.list[i].drawCalls = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.list[i].drawCalls));
+        if (R3D_MOD_DRAW.list[i].drawCalls == NULL) {
+            TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw call array %i allocation failed", i);
+            for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_DRAW.list[j].drawCalls);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void r3d_draw_quit(void)
+{
+    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
+        RL_FREE(R3D_MOD_DRAW.list[i].drawCalls);
+    }
+    RL_FREE(R3D_MOD_DRAW.drawCalls);
+}
 
 void r3d_draw_clear(void)
 {
@@ -388,42 +422,4 @@ void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int l
     }
 
     glBindVertexArray(0);
-}
-
-// ========================================
-// MODULE FUNCTIONS
-// ========================================
-
-bool r3d_mod_draw_init(void)
-{
-    memset(&R3D_MOD_DRAW, 0, sizeof(R3D_MOD_DRAW));
-
-    const int DRAW_RESERVE_COUNT = 1024;
-
-    R3D_MOD_DRAW.drawCalls = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.drawCalls));
-    if (R3D_MOD_DRAW.drawCalls == NULL) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Main draw call array allocation failed");
-        return false;
-    }
-
-    R3D_MOD_DRAW.capDrawCalls = DRAW_RESERVE_COUNT;
-
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-        R3D_MOD_DRAW.list[i].drawCalls = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.list[i].drawCalls));
-        if (R3D_MOD_DRAW.list[i].drawCalls == NULL) {
-            TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw call array %i allocation failed", i);
-            for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_DRAW.list[j].drawCalls);
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void r3d_mod_draw_quit(void)
-{
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-        RL_FREE(R3D_MOD_DRAW.list[i].drawCalls);
-    }
-    RL_FREE(R3D_MOD_DRAW.drawCalls);
 }

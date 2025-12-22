@@ -53,7 +53,7 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_mod_shader R3D_MOD_SHADER;
+struct r3d_shader R3D_MOD_SHADER;
 
 // ========================================
 // INTERNAL MACROS
@@ -139,7 +139,7 @@ static char* inject_defines_to_shader_code(const char* code, const char* defines
 // SHADER LOADING FUNCTIONS
 // ========================================
 
-void r3d_mod_shader_load_prepare_ssao(void)
+void r3d_shader_load_prepare_ssao(void)
 {
     LOAD_SHADER(prepare.ssao, SCREEN_VERT, SSAO_FRAG);
 
@@ -163,7 +163,7 @@ void r3d_mod_shader_load_prepare_ssao(void)
     SET_SAMPLER_2D(prepare.ssao, uTexNoise, 3);
 }
     
-void r3d_mod_shader_load_prepare_ssao_blur(void)
+void r3d_shader_load_prepare_ssao_blur(void)
 {
     LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, SSAO_BLUR_FRAG);
 
@@ -180,7 +180,7 @@ void r3d_mod_shader_load_prepare_ssao_blur(void)
     SET_SAMPLER_2D(prepare.ssaoBlur, uTexDepth, 2);
 }
 
-void r3d_mod_shader_load_prepare_bloom_down(void)
+void r3d_shader_load_prepare_bloom_down(void)
 {
     LOAD_SHADER(prepare.bloomDown, SCREEN_VERT, BLOOM_DOWN_FRAG);
 
@@ -194,7 +194,7 @@ void r3d_mod_shader_load_prepare_bloom_down(void)
     SET_SAMPLER_2D(prepare.bloomDown, uTexture, 0);
 }
 
-void r3d_mod_shader_load_prepare_bloom_up(void)
+void r3d_shader_load_prepare_bloom_up(void)
 {
     LOAD_SHADER(prepare.bloomUp, SCREEN_VERT, BLOOM_UP_FRAG);
 
@@ -207,7 +207,7 @@ void r3d_mod_shader_load_prepare_bloom_up(void)
     SET_SAMPLER_2D(prepare.bloomUp, uTexture, 0);
 }
 
-void r3d_mod_shader_load_prepare_cubemap_from_equirectangular(void)
+void r3d_shader_load_prepare_cubemap_from_equirectangular(void)
 {
     LOAD_SHADER(prepare.cubemapFromEquirectangular, CUBEMAP_VERT, CUBEMAP_FROM_EQUIRECTANGULAR_FRAG);
 
@@ -220,7 +220,7 @@ void r3d_mod_shader_load_prepare_cubemap_from_equirectangular(void)
     SET_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular, 0);
 }
 
-void r3d_mod_shader_load_prepare_cubemap_irradiance(void)
+void r3d_shader_load_prepare_cubemap_irradiance(void)
 {
     LOAD_SHADER(prepare.cubemapIrradiance, CUBEMAP_VERT, CUBEMAP_IRRADIANCE_FRAG);
 
@@ -233,7 +233,7 @@ void r3d_mod_shader_load_prepare_cubemap_irradiance(void)
     SET_SAMPLER_CUBE(prepare.cubemapIrradiance, uCubemap, 0);
 }
 
-void r3d_mod_shader_load_prepare_cubemap_prefilter(void)
+void r3d_shader_load_prepare_cubemap_prefilter(void)
 {
     LOAD_SHADER(prepare.cubemapPrefilter, CUBEMAP_VERT, CUBEMAP_PREFILTER_FRAG);
 
@@ -248,7 +248,7 @@ void r3d_mod_shader_load_prepare_cubemap_prefilter(void)
     SET_SAMPLER_CUBE(prepare.cubemapPrefilter, uCubemap, 0);
 }
 
-void r3d_mod_shader_load_scene_geometry(void)
+void r3d_shader_load_scene_geometry(void)
 {
     LOAD_SHADER(scene.geometry, GEOMETRY_VERT, GEOMETRY_FRAG);
 
@@ -284,7 +284,7 @@ void r3d_mod_shader_load_scene_geometry(void)
     SET_SAMPLER_2D(scene.geometry, uTexORM, 4);
 }
 
-void r3d_mod_shader_load_scene_forward(void)
+void r3d_shader_load_scene_forward(void)
 {
     LOAD_SHADER(scene.forward, FORWARD_VERT, FORWARD_FRAG);
 
@@ -363,13 +363,13 @@ void r3d_mod_shader_load_scene_forward(void)
     }
 }
 
-void r3d_mod_shader_load_scene_background(void)
+void r3d_shader_load_scene_background(void)
 {
     LOAD_SHADER(scene.background, SCREEN_VERT, COLOR_FRAG);
     GET_LOCATION(scene.background, uColor);
 }
 
-void r3d_mod_shader_load_scene_skybox(void)
+void r3d_shader_load_scene_skybox(void)
 {
     LOAD_SHADER(scene.skybox, SKYBOX_VERT, SKYBOX_FRAG);
 
@@ -384,7 +384,7 @@ void r3d_mod_shader_load_scene_skybox(void)
     SET_SAMPLER_CUBE(scene.skybox, uCubeSky, 0);
 }
 
-void r3d_mod_shader_load_scene_depth(void)
+void r3d_shader_load_scene_depth(void)
 {
     LOAD_SHADER(scene.depth, DEPTH_VERT, DEPTH_FRAG);
 
@@ -407,7 +407,7 @@ void r3d_mod_shader_load_scene_depth(void)
     SET_SAMPLER_2D(scene.depth, uTexAlbedo, 1);
 }
 
-void r3d_mod_shader_load_scene_depth_cube(void)
+void r3d_shader_load_scene_depth_cube(void)
 {
     LOAD_SHADER(scene.depthCube, DEPTH_CUBE_VERT, DEPTH_CUBE_FRAG);
 
@@ -432,7 +432,7 @@ void r3d_mod_shader_load_scene_depth_cube(void)
     SET_SAMPLER_2D(scene.depthCube, uTexAlbedo, 1);
 }
 
-void r3d_mod_shader_load_scene_decal(void)
+void r3d_shader_load_scene_decal(void)
 {
     LOAD_SHADER(scene.decal, DECAL_VERT, DECAL_FRAG);
 
@@ -468,7 +468,7 @@ void r3d_mod_shader_load_scene_decal(void)
     SET_SAMPLER_2D(scene.decal, uTexDepth, 4);
 }
 
-void r3d_mod_shader_load_deferred_ambient_ibl(void)
+void r3d_shader_load_deferred_ambient_ibl(void)
 {
     const char* defines[] = {"IBL"};
     char* fsCode = inject_defines_to_shader_code(AMBIENT_FRAG, defines, 1);
@@ -506,7 +506,7 @@ void r3d_mod_shader_load_deferred_ambient_ibl(void)
 
 }
 
-void r3d_mod_shader_load_deferred_ambient(void)
+void r3d_shader_load_deferred_ambient(void)
 {
     LOAD_SHADER(deferred.ambient, SCREEN_VERT, AMBIENT_FRAG);
 
@@ -523,7 +523,7 @@ void r3d_mod_shader_load_deferred_ambient(void)
     SET_SAMPLER_2D(deferred.ambient, uTexORM, 2);
 }
 
-void r3d_mod_shader_load_deferred_lighting(void)
+void r3d_shader_load_deferred_lighting(void)
 {
     LOAD_SHADER(deferred.lighting, SCREEN_VERT, LIGHTING_FRAG);
 
@@ -570,7 +570,7 @@ void r3d_mod_shader_load_deferred_lighting(void)
     SET_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap, 6);
 }
 
-void r3d_mod_shader_load_deferred_compose(void)
+void r3d_shader_load_deferred_compose(void)
 {
     LOAD_SHADER(deferred.compose, SCREEN_VERT, COMPOSE_FRAG);
 
@@ -587,7 +587,7 @@ void r3d_mod_shader_load_deferred_compose(void)
     SET_SAMPLER_2D(deferred.compose, uTexSpecular, 3);
 }
 
-void r3d_mod_shader_load_post_bloom(void)
+void r3d_shader_load_post_bloom(void)
 {
     LOAD_SHADER(post.bloom, SCREEN_VERT, BLOOM_FRAG);
 
@@ -602,7 +602,7 @@ void r3d_mod_shader_load_post_bloom(void)
     SET_SAMPLER_2D(post.bloom, uTexBloomBlur, 1);
 }
 
-void r3d_mod_shader_load_post_ssr(void)
+void r3d_shader_load_post_ssr(void)
 {
     LOAD_SHADER(post.ssr, SCREEN_VERT, SSR_FRAG);
 
@@ -633,7 +633,7 @@ void r3d_mod_shader_load_post_ssr(void)
     SET_SAMPLER_2D(post.ssr, uTexDepth, 4);
 }
 
-void r3d_mod_shader_load_post_fog(void)
+void r3d_shader_load_post_fog(void)
 {
     LOAD_SHADER(post.fog, SCREEN_VERT, FOG_FRAG);
 
@@ -654,7 +654,7 @@ void r3d_mod_shader_load_post_fog(void)
     SET_SAMPLER_2D(post.fog, uTexDepth, 1);
 }
 
-void r3d_mod_shader_load_post_dof(void)
+void r3d_shader_load_post_dof(void)
 {
     LOAD_SHADER(post.dof, SCREEN_VERT, DOF_FRAG);
 
@@ -674,7 +674,7 @@ void r3d_mod_shader_load_post_dof(void)
     SET_SAMPLER_2D(post.dof, uTexDepth, 1);
 }
 
-void r3d_mod_shader_load_post_output(void)
+void r3d_shader_load_post_output(void)
 {
     LOAD_SHADER(post.output, SCREEN_VERT, OUTPUT_FRAG);
 
@@ -691,7 +691,7 @@ void r3d_mod_shader_load_post_output(void)
     SET_SAMPLER_2D(post.output, uTexColor, 0);
 }
 
-void r3d_mod_shader_load_post_fxaa(void)
+void r3d_shader_load_post_fxaa(void)
 {
     LOAD_SHADER(post.fxaa, SCREEN_VERT, FXAA_FRAG);
 
@@ -707,13 +707,13 @@ void r3d_mod_shader_load_post_fxaa(void)
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_shader_init()
+bool r3d_shader_init()
 {
     memset(&R3D_MOD_SHADER, 0, sizeof(R3D_MOD_SHADER));
     return true;
 }
 
-void r3d_mod_shader_quit()
+void r3d_shader_quit()
 {
     UNLOAD_SHADER(prepare.ssao);
     UNLOAD_SHADER(prepare.ssaoBlur);

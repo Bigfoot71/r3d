@@ -71,7 +71,7 @@ typedef struct {
  * Global cache for frequently accessed renderer state.
  * Reduces parameter passing and provides centralized access to common data.
  */
-extern struct r3d_mod_cache {
+extern struct r3d_cache {
     R3D_Environment environment;    //< Current environment settings
     r3d_viewport_t viewport;        //< Current viewport state
 
@@ -86,7 +86,16 @@ extern struct r3d_mod_cache {
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_cache_init(R3D_Flags flags);
-void r3d_mod_cache_quit(void);
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_cache_init(R3D_Flags flags);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_cache_quit(void);
 
 #endif // R3D_MODULE_CACHE_H

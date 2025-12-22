@@ -30,14 +30,14 @@
 
 void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
 {
-    r3d_mod_primitive_init();
-    r3d_mod_texture_init();
-    r3d_mod_storage_init();
-    r3d_mod_target_init(resWidth, resHeight);
-    r3d_mod_shader_init();
-    r3d_mod_light_init();
-    r3d_mod_cache_init(flags);
-    r3d_mod_draw_init();
+    r3d_primitive_init();
+    r3d_texture_init();
+    r3d_storage_init();
+    r3d_target_init(resWidth, resHeight);
+    r3d_shader_init();
+    r3d_light_init();
+    r3d_cache_init(flags);
+    r3d_draw_init();
 
     // Defines suitable clipping plane distances for r3d
     rlSetClipPlanes(0.05f, 4000.0f);
@@ -45,14 +45,14 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
 
 void R3D_Close(void)
 {
-    r3d_mod_primitive_quit();
-    r3d_mod_texture_quit();
-    r3d_mod_storage_quit();
-    r3d_mod_target_quit();
-    r3d_mod_shader_quit();
-    r3d_mod_light_quit();
-    r3d_mod_cache_quit();
-    r3d_mod_draw_quit();
+    r3d_primitive_quit();
+    r3d_texture_quit();
+    r3d_storage_quit();
+    r3d_target_quit();
+    r3d_shader_quit();
+    r3d_light_quit();
+    r3d_cache_quit();
+    r3d_draw_quit();
 }
 
 bool R3D_HasState(R3D_Flags flags)
@@ -72,7 +72,7 @@ void R3D_ClearState(R3D_Flags flags)
 
 void R3D_GetResolution(int* width, int* height)
 {
-    r3d_mod_target_get_resolution(width, height, 0);
+    r3d_target_get_resolution(width, height, 0);
 }
 
 void R3D_UpdateResolution(int width, int height)
@@ -82,14 +82,7 @@ void R3D_UpdateResolution(int width, int height)
         return;
     }
 
-    if (width == R3D_TARGET_WIDTH && height == R3D_TARGET_HEIGHT) {
-        return;
-    }
-
-    // TODO: Add a texture resizing function that avoids
-    //       reallocation if the new resolution is lower
-    r3d_mod_target_quit();
-    r3d_mod_target_init(width, height);
+    r3d_target_resize(width, height);
 }
 
 void R3D_SetTextureFilter(TextureFilter filter)

@@ -23,7 +23,7 @@
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_cache.h"
-#include "r3d/r3d_environment.h"
+#include "r3d/r3d_core.h"
 #include "./modules/r3d_draw.h"
 
 // ========================================
@@ -103,7 +103,12 @@ void R3D_Begin(Camera3D camera)
 
 void R3D_BeginEx(Camera3D camera, const RenderTexture* target)
 {
-    r3d_mod_target_set_blit_screen(target);
+    r3d_target_set_blit_screen(target);
+
+    r3d_target_set_blit_mode(
+        R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_ASPECT_KEEP),
+        R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_BLIT_LINEAR)
+    );
 
     /* --- Render the rlgl batch before proceeding --- */
 
@@ -118,7 +123,7 @@ void R3D_BeginEx(Camera3D camera, const RenderTexture* target)
     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
     Matrix proj = R3D_MATRIX_IDENTITY;
 
-    float aspect = r3d_mod_target_get_render_aspect();
+    float aspect = r3d_target_get_render_aspect();
 
     if (camera.projection == CAMERA_PERSPECTIVE) {
         proj = MatrixPerspective(camera.fovy * DEG2RAD, aspect,
@@ -1478,7 +1483,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 {
     r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
     GLuint sceneSourceID = r3d_target_get(sceneSource);
-    int mipCount = r3d_mod_target_get_mip_count();
+    int mipCount = r3d_target_get_mip_count();
 
     float txSrcW = 0, txSrcH = 0;
     int srcW = 0, srcH = 0;
@@ -1510,8 +1515,8 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE(prepare.bloomDown);
 
-    r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, 0);
-    r3d_mod_target_get_resolution(&srcW, &srcH, 0);
+    r3d_target_get_texel_size(&txSrcW, &txSrcH, 0);
+    r3d_target_get_resolution(&srcW, &srcH, 0);
     r3d_target_set_mip_level(0, 0);
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, sceneSourceID);
@@ -1530,9 +1535,9 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = 1; dstLevel < maxLevel; dstLevel++)
     {
-        r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, dstLevel - 1);
-        r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel - 1);
-        r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
+        r3d_target_get_texel_size(&txSrcW, &txSrcH, dstLevel - 1);
+        r3d_target_get_resolution(&srcW, &srcH, dstLevel - 1);
+        r3d_target_get_resolution(&dstW, &dstH, dstLevel);
 
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);
@@ -1557,9 +1562,9 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = maxLevel - 2; dstLevel >= 0; dstLevel--)
     {
-        r3d_mod_target_get_texel_size(&txSrcW, &txSrcH, dstLevel + 1);
-        r3d_mod_target_get_resolution(&srcW, &srcH, dstLevel + 1);
-        r3d_mod_target_get_resolution(&dstW, &dstH, dstLevel);
+        r3d_target_get_texel_size(&txSrcW, &txSrcH, dstLevel + 1);
+        r3d_target_get_resolution(&srcW, &srcH, dstLevel + 1);
+        r3d_target_get_resolution(&dstW, &dstH, dstLevel);
 
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);

@@ -550,7 +550,7 @@ typedef struct {
 // MODULE STATE
 // ========================================
 
-extern struct r3d_mod_shader {
+extern struct r3d_shader {
 
     // Prepare shaders
     struct {
@@ -600,32 +600,32 @@ extern struct r3d_mod_shader {
 
 typedef void (*r3d_shader_loader_func)(void);
 
-void r3d_mod_shader_load_prepare_ssao(void);
-void r3d_mod_shader_load_prepare_ssao_blur(void);
-void r3d_mod_shader_load_prepare_bloom_down(void);
-void r3d_mod_shader_load_prepare_bloom_up(void);
-void r3d_mod_shader_load_prepare_cubemap_from_equirectangular(void);
-void r3d_mod_shader_load_prepare_cubemap_irradiance(void);
-void r3d_mod_shader_load_prepare_cubemap_prefilter(void);
-void r3d_mod_shader_load_scene_geometry(void);
-void r3d_mod_shader_load_scene_forward(void);
-void r3d_mod_shader_load_scene_background(void);
-void r3d_mod_shader_load_scene_skybox(void);
-void r3d_mod_shader_load_scene_depth(void);
-void r3d_mod_shader_load_scene_depth_cube(void);
-void r3d_mod_shader_load_scene_decal(void);
-void r3d_mod_shader_load_deferred_ambient_ibl(void);
-void r3d_mod_shader_load_deferred_ambient(void);
-void r3d_mod_shader_load_deferred_lighting(void);
-void r3d_mod_shader_load_deferred_compose(void);
-void r3d_mod_shader_load_post_bloom(void);
-void r3d_mod_shader_load_post_ssr(void);
-void r3d_mod_shader_load_post_fog(void);
-void r3d_mod_shader_load_post_dof(void);
-void r3d_mod_shader_load_post_output(void);
-void r3d_mod_shader_load_post_fxaa(void);
+void r3d_shader_load_prepare_ssao(void);
+void r3d_shader_load_prepare_ssao_blur(void);
+void r3d_shader_load_prepare_bloom_down(void);
+void r3d_shader_load_prepare_bloom_up(void);
+void r3d_shader_load_prepare_cubemap_from_equirectangular(void);
+void r3d_shader_load_prepare_cubemap_irradiance(void);
+void r3d_shader_load_prepare_cubemap_prefilter(void);
+void r3d_shader_load_scene_geometry(void);
+void r3d_shader_load_scene_forward(void);
+void r3d_shader_load_scene_background(void);
+void r3d_shader_load_scene_skybox(void);
+void r3d_shader_load_scene_depth(void);
+void r3d_shader_load_scene_depth_cube(void);
+void r3d_shader_load_scene_decal(void);
+void r3d_shader_load_deferred_ambient_ibl(void);
+void r3d_shader_load_deferred_ambient(void);
+void r3d_shader_load_deferred_lighting(void);
+void r3d_shader_load_deferred_compose(void);
+void r3d_shader_load_post_bloom(void);
+void r3d_shader_load_post_ssr(void);
+void r3d_shader_load_post_fog(void);
+void r3d_shader_load_post_dof(void);
+void r3d_shader_load_post_output(void);
+void r3d_shader_load_post_fxaa(void);
 
-static const struct r3d_mod_shader_loader {
+static const struct r3d_shader_loader {
 
     // Prepare shaders
     struct {
@@ -670,39 +670,39 @@ static const struct r3d_mod_shader_loader {
 } R3D_MOD_SHADER_LOADER = {
 
     .prepare = {
-        .ssao = r3d_mod_shader_load_prepare_ssao,
-        .ssaoBlur = r3d_mod_shader_load_prepare_ssao_blur,
-        .bloomDown = r3d_mod_shader_load_prepare_bloom_down,
-        .bloomUp = r3d_mod_shader_load_prepare_bloom_up,
-        .cubemapFromEquirectangular = r3d_mod_shader_load_prepare_cubemap_from_equirectangular,
-        .cubemapIrradiance = r3d_mod_shader_load_prepare_cubemap_irradiance,
-        .cubemapPrefilter = r3d_mod_shader_load_prepare_cubemap_prefilter,
+        .ssao = r3d_shader_load_prepare_ssao,
+        .ssaoBlur = r3d_shader_load_prepare_ssao_blur,
+        .bloomDown = r3d_shader_load_prepare_bloom_down,
+        .bloomUp = r3d_shader_load_prepare_bloom_up,
+        .cubemapFromEquirectangular = r3d_shader_load_prepare_cubemap_from_equirectangular,
+        .cubemapIrradiance = r3d_shader_load_prepare_cubemap_irradiance,
+        .cubemapPrefilter = r3d_shader_load_prepare_cubemap_prefilter,
     },
 
     .scene = {
-        .geometry = r3d_mod_shader_load_scene_geometry,
-        .forward = r3d_mod_shader_load_scene_forward,
-        .background = r3d_mod_shader_load_scene_background,
-        .skybox = r3d_mod_shader_load_scene_skybox,
-        .depth = r3d_mod_shader_load_scene_depth,
-        .depthCube = r3d_mod_shader_load_scene_depth_cube,
-        .decal = r3d_mod_shader_load_scene_decal,
+        .geometry = r3d_shader_load_scene_geometry,
+        .forward = r3d_shader_load_scene_forward,
+        .background = r3d_shader_load_scene_background,
+        .skybox = r3d_shader_load_scene_skybox,
+        .depth = r3d_shader_load_scene_depth,
+        .depthCube = r3d_shader_load_scene_depth_cube,
+        .decal = r3d_shader_load_scene_decal,
     },
 
     .deferred = {
-        .ambientIbl = r3d_mod_shader_load_deferred_ambient_ibl,
-        .ambient = r3d_mod_shader_load_deferred_ambient,
-        .lighting = r3d_mod_shader_load_deferred_lighting,
-        .compose = r3d_mod_shader_load_deferred_compose,
+        .ambientIbl = r3d_shader_load_deferred_ambient_ibl,
+        .ambient = r3d_shader_load_deferred_ambient,
+        .lighting = r3d_shader_load_deferred_lighting,
+        .compose = r3d_shader_load_deferred_compose,
     },
 
     .post = {
-        .bloom = r3d_mod_shader_load_post_bloom,
-        .ssr = r3d_mod_shader_load_post_ssr,
-        .fog = r3d_mod_shader_load_post_fog,
-        .output = r3d_mod_shader_load_post_output,
-        .fxaa = r3d_mod_shader_load_post_fxaa,
-        .dof = r3d_mod_shader_load_post_dof,
+        .bloom = r3d_shader_load_post_bloom,
+        .ssr = r3d_shader_load_post_ssr,
+        .fog = r3d_shader_load_post_fog,
+        .output = r3d_shader_load_post_output,
+        .fxaa = r3d_shader_load_post_fxaa,
+        .dof = r3d_shader_load_post_dof,
     },
 
 };
@@ -711,7 +711,16 @@ static const struct r3d_mod_shader_loader {
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_shader_init();
-void r3d_mod_shader_quit();
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_shader_init();
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_shader_quit();
 
 #endif // R3D_MODULE_SHADER_H

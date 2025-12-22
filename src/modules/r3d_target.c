@@ -16,7 +16,7 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_mod_target R3D_MOD_TARGET;
+struct r3d_target R3D_MOD_TARGET;
 
 // ========================================
 // TARGET LOADING FUNCTION
@@ -35,9 +35,9 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_EMISSION] = { GL_R11F_G11F_B10F,    GL_RGB,             GL_FLOAT,          1.0f, GL_NEAREST,              GL_NEAREST, false },
     [R3D_TARGET_NORMAL]   = { GL_RG16F,             GL_RG,              GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
     [R3D_TARGET_ORM]      = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_DEPTH]    = { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT,          1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_DIFFUSE]  = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_SPECULAR] = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
+    [R3D_TARGET_DEPTH]    = { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,   1.0f, GL_NEAREST,              GL_NEAREST, false },
+    [R3D_TARGET_DIFFUSE]  = { GL_R11F_G11F_B10F,    GL_RGB,             GL_FLOAT,          1.0f, GL_NEAREST,              GL_NEAREST, false },
+    [R3D_TARGET_SPECULAR] = { GL_R11F_G11F_B10F,    GL_RGB,             GL_FLOAT,          1.0f, GL_NEAREST,              GL_NEAREST, false },
     [R3D_TARGET_SSAO_0]   = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_SSAO_1]   = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_BLOOM]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true  },
@@ -57,9 +57,9 @@ static void target_load(r3d_target_t target)
     glTexImage2D(GL_TEXTURE_2D, 0, config->internalFormat, w, h, 0, config->format, config->type, NULL);
     if (config->mipmaps) {
         int wLevel = 0, hLevel = 0;
-        int levels = r3d_mod_target_get_mip_count();
+        int levels = r3d_target_get_mip_count();
         for (int i = 1; i < levels; ++i) {
-            r3d_mod_target_get_resolution(&wLevel, &hLevel, i);
+            r3d_target_get_resolution(&wLevel, &hLevel, i);
             glTexImage2D(GL_TEXTURE_2D, i, config->internalFormat, wLevel, hLevel, 0, config->format, config->type, NULL);
         }
     }
@@ -153,8 +153,121 @@ static void set_viewport(r3d_target_t target)
 }
 
 // ========================================
-// TARGET FUNCTIONS
+// MODULE FUNCTIONS
 // ========================================
+
+bool r3d_target_init(int resW, int resH)
+{
+    memset(&R3D_MOD_TARGET, 0, sizeof(R3D_MOD_TARGET));
+
+    glGenTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
+
+    R3D_MOD_TARGET.currentFbo = -1;
+
+    R3D_MOD_TARGET.resW = resW;
+    R3D_MOD_TARGET.resH = resH;
+
+    R3D_MOD_TARGET.txlW = 1.0f / resW;
+    R3D_MOD_TARGET.txlH = 1.0f / resH;
+
+    return true;
+}
+
+void r3d_target_quit(void)
+{
+    glDeleteTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
+
+    for (int i = 0; i < R3D_MOD_TARGET.fboCount; i++) {
+        glDeleteFramebuffers(1, &R3D_MOD_TARGET.fbo[i].id);
+    }
+}
+
+void r3d_target_resize(int resW, int resH)
+{
+    assert(resW > 0 && resH > 0);
+
+    if (R3D_MOD_TARGET.resW == resW && R3D_MOD_TARGET.resH == resH) {
+        return;
+    }
+
+    R3D_MOD_TARGET.resW = resW;
+    R3D_MOD_TARGET.resH = resH;
+
+    R3D_MOD_TARGET.txlW = 1.0f / resW;
+    R3D_MOD_TARGET.txlH = 1.0f / resH;
+
+    // TODO: Avoid reallocating targets if the new dimensions
+    //       are smaller than the allocated dimensions?
+
+    for (int i = 0; i < R3D_TARGET_COUNT; i++) {
+        if (R3D_MOD_TARGET.targetLoaded[i]) {
+            target_load(i);
+        }
+    }
+}
+
+void r3d_target_set_blit_screen(const RenderTexture* screen)
+{
+    if (screen != NULL) R3D_MOD_TARGET.screen = *screen;
+    else R3D_MOD_TARGET.screen.id = 0;
+}
+
+void r3d_target_set_blit_mode(bool keepAspect, bool blitLinear)
+{
+    R3D_MOD_TARGET.keepAspect = keepAspect;
+    R3D_MOD_TARGET.blitLinear = blitLinear;
+}
+
+float r3d_target_get_render_aspect(void)
+{
+    float aspect = 1.0f;
+
+    if (R3D_MOD_TARGET.keepAspect) {
+        aspect = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+    }
+    else {
+        if (R3D_MOD_TARGET.screen.id != 0) {
+            const Texture2D* target = &R3D_MOD_TARGET.screen.texture;
+            aspect = (float)target->width / target->height;
+        }
+        else {
+            aspect = (float)GetRenderWidth() / GetRenderHeight();
+        }
+    }
+
+    return aspect;
+}
+
+int r3d_target_get_mip_count(void)
+{
+    int w = R3D_MOD_TARGET.resW;
+    int h = R3D_MOD_TARGET.resH;
+
+    return 1 + (int)floorf(log2f(w > h ? w : h));
+}
+
+void r3d_target_get_resolution(int* w, int* h, int level)
+{
+    if (w) *w = R3D_MOD_TARGET.resW;
+    if (h) *h = R3D_MOD_TARGET.resH;
+
+    if (level > 0) {
+        if (w) *w = *w >> level, *w = *w > 1 ? *w : 1;
+        if (h) *h = *h >> level, *h = *h > 1 ? *h : 1;
+    }
+}
+
+void r3d_target_get_texel_size(float* w, float* h, int level)
+{
+    if (w) *w = R3D_MOD_TARGET.txlW;
+    if (h) *h = R3D_MOD_TARGET.txlH;
+
+    if (level > 0) {
+        float scale = (float)(1 << level);
+        if (w) *w *= scale;
+        if (h) *h *= scale;
+    }
+}
 
 r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao)
 {
@@ -280,97 +393,4 @@ void r3d_target_blit(r3d_target_t target)
             GL_NEAREST
         );
     }
-}
-
-// ========================================
-// MODULE FUNCTIONS
-// ========================================
-
-bool r3d_mod_target_init(int resW, int resH)
-{
-    memset(&R3D_MOD_TARGET, 0, sizeof(R3D_MOD_TARGET));
-
-    glGenTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
-
-    R3D_MOD_TARGET.currentFbo = -1;
-
-    R3D_MOD_TARGET.resW = resW;
-    R3D_MOD_TARGET.resH = resH;
-
-    R3D_MOD_TARGET.txlW = 1.0f / resW;
-    R3D_MOD_TARGET.txlH = 1.0f / resH;
-
-    return true;
-}
-
-void r3d_mod_target_quit(void)
-{
-    glDeleteTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
-
-    for (int i = 0; i < R3D_MOD_TARGET.fboCount; i++) {
-        glDeleteFramebuffers(1, &R3D_MOD_TARGET.fbo[i].id);
-    }
-}
-
-float r3d_mod_target_get_render_aspect(void)
-{
-    float aspect = 1.0f;
-
-    if (R3D_MOD_TARGET.keepAspect) {
-        aspect = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
-    }
-    else {
-        if (R3D_MOD_TARGET.screen.id != 0) {
-            const Texture2D* target = &R3D_MOD_TARGET.screen.texture;
-            aspect = (float)target->width / target->height;
-        }
-        else {
-            aspect = (float)GetRenderWidth() / GetRenderHeight();
-        }
-    }
-
-    return aspect;
-}
-
-int r3d_mod_target_get_mip_count(void)
-{
-    int w = R3D_MOD_TARGET.resW;
-    int h = R3D_MOD_TARGET.resH;
-
-    return 1 + (int)floorf(log2f(w > h ? w : h));
-}
-
-void r3d_mod_target_get_resolution(int* w, int* h, int level)
-{
-    if (w) *w = R3D_MOD_TARGET.resW;
-    if (h) *h = R3D_MOD_TARGET.resH;
-
-    if (level > 0) {
-        if (w) *w = *w >> level, *w = *w > 1 ? *w : 1;
-        if (h) *h = *h >> level, *h = *h > 1 ? *h : 1;
-    }
-}
-
-void r3d_mod_target_get_texel_size(float* w, float* h, int level)
-{
-    if (w) *w = R3D_MOD_TARGET.txlW;
-    if (h) *h = R3D_MOD_TARGET.txlH;
-
-    if (level > 0) {
-        float scale = (float)(1 << level);
-        if (w) *w *= scale;
-        if (h) *h *= scale;
-    }
-}
-
-void r3d_mod_target_set_blit_screen(const RenderTexture* screen)
-{
-    if (screen != NULL) R3D_MOD_TARGET.screen = *screen;
-    else R3D_MOD_TARGET.screen.id = 0;
-}
-
-void r3d_mod_target_set_blit_mode(bool keepAspect, bool blitLinear)
-{
-    R3D_MOD_TARGET.keepAspect = keepAspect;
-    R3D_MOD_TARGET.blitLinear = blitLinear;
 }

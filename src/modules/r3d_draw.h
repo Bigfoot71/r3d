@@ -145,7 +145,7 @@ typedef struct {
  * Global internal state of the draw module.
  * Owns the draw call storage and per-pass draw lists.
  */
-extern struct r3d_mod_draw {
+extern struct r3d_draw {
     r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];
     r3d_draw_call_t* drawCalls;
     int capDrawCalls;
@@ -153,8 +153,20 @@ extern struct r3d_mod_draw {
 } R3D_MOD_DRAW;
 
 // ========================================
-// DRAW FUNCTIONS
+// MODULE FUNCTIONS
 // ========================================
+
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_draw_init(void);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_draw_quit(void);
 
 /*
  * Clear all draw lists and reset the draw call buffer for the next frame.
@@ -208,12 +220,5 @@ void r3d_draw(const r3d_draw_call_t* call);
  * Instance data is uploaded and bound internally.
  */
 void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int locInstanceColor);
-
-// ========================================
-// MODULE FUNCTIONS
-// ========================================
-
-bool r3d_mod_draw_init(void);
-void r3d_mod_draw_quit(void);
 
 #endif // R3D_MODULE_DRAW_H

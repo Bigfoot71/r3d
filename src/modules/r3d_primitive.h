@@ -40,20 +40,32 @@ typedef enum {
 } while(0)
 
 // ========================================
-// PRIMITIVE FUNCTIONS
-// ========================================
-
-void r3d_primitive_draw(r3d_primitive_t primitive);
-
-void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transforms, size_t transStride, 
-                                  const void* colors, size_t colStride, size_t instanceCount,
-                                  int locInstanceModel, int locInstanceColor);
-
-// ========================================
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_primitive_init(void);
-void r3d_mod_primitive_quit(void);
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_primitive_init(void);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_primitive_quit(void);
+
+/*
+ * Bind, draws the primitive, and unbind the VAO of the primitive.
+ */
+void r3d_primitive_draw(r3d_primitive_t primitive);
+
+/*
+ * Bind, draws the primitive, and unbind the VAO of the primitive.
+ * Handles the binding of the instance buffer, just like `r3d_draw_instanced()`
+ */
+void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transforms, size_t transStride, 
+                                  const void* colors, size_t colStride, size_t instanceCount,
+                                  int locInstanceModel, int locInstanceColor);
 
 #endif // R3D_MODULE_PRIMTIVE_H

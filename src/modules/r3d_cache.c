@@ -14,13 +14,13 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_mod_cache R3D_MOD_CACHE;
+struct r3d_cache R3D_MOD_CACHE;
 
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_cache_init(R3D_Flags flags)
+bool r3d_cache_init(R3D_Flags flags)
 {
     R3D_MOD_CACHE.matCubeViews[0] = MatrixLookAt((Vector3) { 0 }, (Vector3) {  1.0f,  0.0f,  0.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
     R3D_MOD_CACHE.matCubeViews[1] = MatrixLookAt((Vector3) { 0 }, (Vector3) { -1.0f,  0.0f,  0.0f }, (Vector3) { 0.0f, -1.0f,  0.0f });
@@ -38,7 +38,7 @@ bool r3d_mod_cache_init(R3D_Flags flags)
     return true;
 }
 
-void r3d_mod_cache_quit(void)
+void r3d_cache_quit(void)
 {
     (void)0; // do nothing for now...
 }

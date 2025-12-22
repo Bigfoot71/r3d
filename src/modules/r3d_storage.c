@@ -25,7 +25,7 @@ typedef struct {
     int current;
 } storage_buffer_t;
 
-static struct r3d_mod_storage {
+static struct r3d_storage {
     storage_buffer_t buffers[R3D_STORAGE_COUNT];
     bool loaded[R3D_STORAGE_COUNT];
 } R3D_MOD_STORAGE;
@@ -82,8 +82,24 @@ void upload_bone_matrices(GLuint id, int slot, const void* data, int count)
 }
 
 // ========================================
-// STORAGE FUNCTIONS
+// MODULE FUNCTIONS
 // ========================================
+
+bool r3d_storage_init(void)
+{
+    memset(&R3D_MOD_STORAGE, 0, sizeof(R3D_MOD_STORAGE));
+    for (int i = 0; i < R3D_STORAGE_COUNT; i++) {
+        glGenTextures(RING_BUFFER_COUNT, R3D_MOD_STORAGE.buffers[i].textures);
+    }
+    return true;
+}
+
+void r3d_storage_quit(void)
+{
+    for (int i = 0; i < R3D_STORAGE_COUNT; i++) {
+        glDeleteTextures(RING_BUFFER_COUNT, R3D_MOD_STORAGE.buffers[i].textures);
+    }
+}
 
 void r3d_storage_use(r3d_storage_t storage, int slot, const void* data, int count)
 {
@@ -97,24 +113,4 @@ void r3d_storage_use(r3d_storage_t storage, int slot, const void* data, int coun
     UPLOADERS[storage](id, slot, data, count);
 
     buffer->current = (buffer->current + 1) % RING_BUFFER_COUNT;
-}
-
-// ========================================
-// MODULE FUNCTIONS
-// ========================================
-
-bool r3d_mod_storage_init(void)
-{
-    memset(&R3D_MOD_STORAGE, 0, sizeof(R3D_MOD_STORAGE));
-    for (int i = 0; i < R3D_STORAGE_COUNT; i++) {
-        glGenTextures(RING_BUFFER_COUNT, R3D_MOD_STORAGE.buffers[i].textures);
-    }
-    return true;
-}
-
-void r3d_mod_storage_quit(void)
-{
-    for (int i = 0; i < R3D_STORAGE_COUNT; i++) {
-        glDeleteTextures(RING_BUFFER_COUNT, R3D_MOD_STORAGE.buffers[i].textures);
-    }
 }

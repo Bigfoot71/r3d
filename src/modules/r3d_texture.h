@@ -34,17 +34,30 @@ typedef enum {
     ((id) != 0) ? (id) : r3d_texture_get(R3D_TEXTURE_##or)  \
 
 // ========================================
-// TEXTURE FUNCTIONS
-// ========================================
-
-bool r3d_texture_is_default(GLuint id);
-GLuint r3d_texture_get(r3d_texture_t texture);
-
-// ========================================
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_mod_texture_init(void);
-void r3d_mod_texture_quit(void);
+/*
+ * Module initialization function.
+ * Called once during `R3D_Init()`
+ */
+bool r3d_texture_init(void);
+
+/*
+ * Module deinitialization function.
+ * Called once during `R3D_Close()`
+ */
+void r3d_texture_quit(void);
+
+/*
+ * Indicates whether the provided texture ID corresponds to a texture
+ * owned by this module.
+ */
+bool r3d_texture_is_default(GLuint id);
+
+/*
+ * Returns the texture ID of the texture specified as a parameter.
+ */
+GLuint r3d_texture_get(r3d_texture_t texture);
 
 #endif // R3D_MODULE_TEXTURE_H
