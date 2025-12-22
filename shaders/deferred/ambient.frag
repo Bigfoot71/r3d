@@ -35,9 +35,8 @@ uniform samplerCube uCubeIrradiance;
 uniform samplerCube uCubePrefilter;
 uniform sampler2D uTexBrdfLut;
 uniform vec4 uQuatSkybox;
-uniform float uSkyboxAmbientIntensity;
-uniform float uSkyboxReflectIntensity;
-uniform float uSSAOPower;
+uniform float uAmbientEnergy;
+uniform float uReflectEnergy;
 
 uniform vec3 uViewPosition;
 uniform mat4 uMatInvProj;
@@ -45,8 +44,8 @@ uniform mat4 uMatInvView;
 
 /* === Fragments === */
 
-layout(location = 0) out vec3 FragDiffuse;
-layout(location = 1) out vec3 FragSpecular;
+layout(location = 0) out vec4 FragDiffuse;
+layout(location = 1) out vec4 FragSpecular;
 
 /* === Misc functions === */
 
@@ -67,19 +66,14 @@ void main()
     
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
+
     float occlusion = orm.r;
     float roughness = orm.g;
     float metalness = orm.b;
 
     /* Sample SSAO buffer and modulate occlusion value */
 
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-
-    if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-
-    occlusion *= ssao;
+    occlusion *= texture(uTexSSAO, vTexCoord).r;
 
     /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
 
@@ -105,8 +99,9 @@ void main()
     vec3 kD = (1.0 - kS) * (1.0 - metalness);
 
     vec3 Nr = M_Rotate3D(N, uQuatSkybox);
-    FragDiffuse = kD * texture(uCubeIrradiance, Nr).rgb;
-    FragDiffuse *= occlusion * uSkyboxAmbientIntensity;
+    vec3 diffuse = kD * texture(uCubeIrradiance, Nr).rgb;
+
+    FragDiffuse = vec4(diffuse * occlusion * uAmbientEnergy, 1.0);
 
     /* Skybox reflection - IBL specular amélioré */
 
@@ -124,7 +119,7 @@ void main()
     float edgeFade = mix(1.0, pow(NdotV, 0.5), roughness);
     specular *= edgeFade;
 
-    FragSpecular = specular * uSkyboxReflectIntensity;
+    FragSpecular = vec4(specular * uReflectEnergy, 1.0);
 }
 
 #else
@@ -138,18 +133,19 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexSSAO;
 uniform sampler2D uTexORM;
-uniform vec3 uAmbientLight;
-uniform float uSSAOPower;
+uniform vec3 uAmbientColor;
+uniform float uAmbientEnergy;
 
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragDiffuse;
+layout(location = 1) out vec4 FragSpecular;
 
 /* === Main === */
 
 void main()
 {
-    /* --- Material properties --- */
+    /* Sample albedo and ORM texture and extract values */
 
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
@@ -158,15 +154,9 @@ void main()
     float roughness = orm.g;
     float metalness = orm.b;
 
-    /* --- Ambient occlusion (SSAO) --- */
+    /* Sample SSAO buffer and modulate occlusion value */
 
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-
-	if (uSSAOPower != 1.0) {
-        ssao = pow(ssao, uSSAOPower);
-    }
-
-	occlusion *= ssao;
+	occlusion *= texture(uTexSSAO, vTexCoord).r;
 
     /* --- Ambient lighting --- */
 
@@ -177,13 +167,15 @@ void main()
 
     vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
     vec3 kD = (1.0 - F0) * (1.0 - metalness);
-    vec3 ambient = kD * uAmbientLight;
-    ambient += F0 * uAmbientLight;
+    vec3 ambient = kD * uAmbientColor;
+    ambient += F0 * uAmbientColor;
+    ambient *= uAmbientEnergy;
     ambient *= occlusion;
 
     /* --- Output --- */
 
     FragDiffuse = vec4(ambient, 1.0);
+    FragSpecular = vec4(0.0);
 }
 
 #endif

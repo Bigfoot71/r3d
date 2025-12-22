@@ -23,6 +23,7 @@ noperspective in vec2 vTexCoord;
 
 uniform sampler2D uTexture;
 uniform vec2 uFilterRadius;
+uniform float uSrcLevel;        //< Which mip we are sampling from
 
 layout (location = 0) out vec3 FragColor;
 
@@ -40,17 +41,17 @@ void main()
     // d - e - f
     // g - h - i
     // === ('e' is the current texel) ===
-    vec3 a = texture(uTexture, vec2(vTexCoord.x - x, vTexCoord.y + y)).rgb;
-    vec3 b = texture(uTexture, vec2(vTexCoord.x,     vTexCoord.y + y)).rgb;
-    vec3 c = texture(uTexture, vec2(vTexCoord.x + x, vTexCoord.y + y)).rgb;
+    vec3 a = textureLod(uTexture, vec2(vTexCoord.x - x, vTexCoord.y + y), uSrcLevel).rgb;
+    vec3 b = textureLod(uTexture, vec2(vTexCoord.x,     vTexCoord.y + y), uSrcLevel).rgb;
+    vec3 c = textureLod(uTexture, vec2(vTexCoord.x + x, vTexCoord.y + y), uSrcLevel).rgb;
 
-    vec3 d = texture(uTexture, vec2(vTexCoord.x - x, vTexCoord.y)).rgb;
-    vec3 e = texture(uTexture, vec2(vTexCoord.x,     vTexCoord.y)).rgb;
-    vec3 f = texture(uTexture, vec2(vTexCoord.x + x, vTexCoord.y)).rgb;
+    vec3 d = textureLod(uTexture, vec2(vTexCoord.x - x, vTexCoord.y), uSrcLevel).rgb;
+    vec3 e = textureLod(uTexture, vec2(vTexCoord.x,     vTexCoord.y), uSrcLevel).rgb;
+    vec3 f = textureLod(uTexture, vec2(vTexCoord.x + x, vTexCoord.y), uSrcLevel).rgb;
 
-    vec3 g = texture(uTexture, vec2(vTexCoord.x - x, vTexCoord.y - y)).rgb;
-    vec3 h = texture(uTexture, vec2(vTexCoord.x,     vTexCoord.y - y)).rgb;
-    vec3 iT = texture(uTexture, vec2(vTexCoord.x + x, vTexCoord.y - y)).rgb;
+    vec3 g = textureLod(uTexture, vec2(vTexCoord.x - x, vTexCoord.y - y), uSrcLevel).rgb;
+    vec3 h = textureLod(uTexture, vec2(vTexCoord.x,     vTexCoord.y - y), uSrcLevel).rgb;
+    vec3 i = textureLod(uTexture, vec2(vTexCoord.x + x, vTexCoord.y - y), uSrcLevel).rgb;
 
     // Apply weighted distribution, by using a 3x3 tent filter:
     //  1   | 1 2 1 |
@@ -58,6 +59,6 @@ void main()
     // 16   | 1 2 1 |
     FragColor = e*4.0;
     FragColor += (b+d+f+h)*2.0;
-    FragColor += (a+c+g+iT);
+    FragColor += (a+c+g+i);
     FragColor *= 1.0 / 16.0;
 }

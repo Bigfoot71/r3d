@@ -7,11 +7,12 @@
  */
 
 #include "./r3d_importer.h"
-#include "../r3d_math.h"
 
 #include <assimp/mesh.h>
 #include <raylib.h>
 #include <string.h>
+
+#include "../details/r3d_math.h"
 
 // ========================================
 // INTERNAL CONTEXT

@@ -36,7 +36,7 @@ const char* Init(void)
     /* --- Load and enable a skybox --- */
 
     skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox1.png", CUBEMAP_LAYOUT_AUTO_DETECT);
-    R3D_EnableSkybox(skybox);
+    R3D_ENVIRONMENT_SET(background.sky, skybox);
 
     /* --- Setup the camera --- */
 

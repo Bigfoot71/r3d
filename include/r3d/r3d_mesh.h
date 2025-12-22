@@ -10,8 +10,8 @@
 #define R3D_MESH_H
 
 #include "./r3d_mesh_data.h"
+#include "./r3d_platform.h"
 #include "./r3d_core.h"
-#include "./r3d_api.h"
 #include <raylib.h>
 
 /**

@@ -9,7 +9,7 @@
 #ifndef R3D_UTILS_H
 #define R3D_UTILS_H
 
-#include "./r3d_api.h"
+#include "./r3d_platform.h"
 #include <raylib.h>
 
 /**
@@ -56,15 +56,6 @@ R3DAPI Texture2D R3D_GetNormalTexture(void);
 // ----------------------------------------
 // UTILS: Render Texture Retrieval Functions
 // ----------------------------------------
-
-/**
- * @brief Retrieves the final scene color buffer.
- *
- * This texture stores the final rendered scene as a 24-bit RGB buffer.
- *
- * @return The final color buffer texture.
- */
-R3DAPI Texture2D R3D_GetBufferColor(void);
 
 /**
  * @brief Retrieves the buffer containing the scene's normal data.
@@ -193,32 +184,6 @@ R3DAPI void R3D_DrawBufferNormal(float x, float y, float w, float h);
  * @param h Height of the drawn buffer.
  */
 R3DAPI void R3D_DrawBufferORM(float x, float y, float w, float h);
-
-/**
- * @brief Renders the SSAO (Screen Space Ambient Occlusion) buffer to the screen.
- *
- * Displays the SSAO buffer, showing ambient occlusion data in grayscale.
- * Must be called outside of `R3D_Begin` and `R3D_End`.
- *
- * @param x X position to draw the buffer.
- * @param y Y position to draw the buffer.
- * @param w Width of the drawn buffer.
- * @param h Height of the drawn buffer.
- */
-R3DAPI void R3D_DrawBufferSSAO(float x, float y, float w, float h);
-
-/**
- * @brief Renders the bloom buffer to the screen.
- *
- * Displays the bloom effect buffer, showing the extracted bright areas after blur processing.
- * Must be called outside of `R3D_Begin` and `R3D_End`.
- *
- * @param x X position to draw the buffer.
- * @param y Y position to draw the buffer.
- * @param w Width of the drawn buffer.
- * @param h Height of the drawn buffer.
- */
-R3DAPI void R3D_DrawBufferBloom(float x, float y, float w, float h);
 
 #ifdef __cplusplus
 } // extern "C"

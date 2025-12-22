@@ -18,6 +18,7 @@ layout(location = 3) in vec4 aColor;
 layout(location = 4) in vec4 aTangent;
 
 layout(location = 10) in mat4 iMatModel;
+layout(location = 14) in vec4 iColor;
 
 /* === Uniforms === */
 
@@ -52,7 +53,7 @@ void main()
 
     vFinalMatModel = matModel;
 
-    vColor = aColor * uAlbedoColor;
+    vColor = aColor * iColor * uAlbedoColor;
     vEmission = uEmissionColor * uEmissionEnergy;
 
     vec3 position = vec3(matModel * vec4(aPosition, 1.0));

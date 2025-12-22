@@ -1,4 +1,5 @@
 #include "./common.h"
+#include "r3d/r3d_environment.h"
 #include "rcamera.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -24,11 +25,13 @@ const char* Init(void)
 
     /* --- Enable and configure DOF --- */
 
-    R3D_SetDofMode(R3D_DOF_ENABLED);
-    R3D_SetDofFocusPoint(2.0f);
-    R3D_SetDofFocusScale(3.0f);
-    R3D_SetDofMaxBlurSize(20.0f);
-    R3D_SetDofDebugMode(0);
+    R3D_ENVIRONMENT_SET(background.color, BLACK);
+
+    R3D_ENVIRONMENT_SET(dof.mode, R3D_DOF_ENABLED);
+    R3D_ENVIRONMENT_SET(dof.focusPoint, 2.0f);
+    R3D_ENVIRONMENT_SET(dof.focusScale, 3.0f);
+    R3D_ENVIRONMENT_SET(dof.maxBlurSize, 20.0f);
+    R3D_ENVIRONMENT_SET(dof.debugMode, false);
 
     /* --- Setup scene lighting --- */
 
@@ -87,19 +90,19 @@ void Update(float delta)
     float mouseWheel = GetMouseWheelMove();
 
     float focusPoint = 0.5f + (5.0f - (mousePosition.y / GetScreenHeight()) * 5.0f);
-    R3D_SetDofFocusPoint(focusPoint);
+    R3D_ENVIRONMENT_SET(dof.focusPoint, focusPoint);
 
     float focusScale = 0.5f + (5.0f - (mousePosition.x / GetScreenWidth()) * 5.0f);
-    R3D_SetDofFocusScale(focusScale);
+    R3D_ENVIRONMENT_SET(dof.focusScale, focusScale);
 
     if (mouseWheel != 0.0f) {
-        float maxBlurSize = R3D_GetDofMaxBlurSize();
+        float maxBlurSize = R3D_ENVIRONMENT_GET(dof.maxBlurSize);
         maxBlurSize += mouseWheel * 0.1f;
-        R3D_SetDofMaxBlurSize(maxBlurSize);
+        R3D_ENVIRONMENT_SET(dof.maxBlurSize, maxBlurSize);
     }
 
     if (IsKeyPressed(KEY_F1)) {
-        R3D_SetDofDebugMode(!R3D_GetDofDebugMode());
+        R3D_ENVIRONMENT_SET(dof.debugMode, !R3D_ENVIRONMENT_GET(dof.debugMode));
     }
 }
 
@@ -112,7 +115,6 @@ void Draw(void)
     /* --- Render R3D scene --- */
 
     R3D_Begin(camDefault);
-        R3D_SetBackgroundColor((Color){0, 0, 0, 255});
         R3D_DrawMeshInstancedEx(&meshSphere, &matDefault, instances, instanceColors, INSTANCE_COUNT);
     R3D_End();
 
@@ -120,7 +122,9 @@ void Draw(void)
 
     char dofText[128];
     snprintf(dofText, sizeof(dofText), "Focus Point: %.2f\nFocus Scale: %.2f\nMax Blur Size: %.2f\nDebug Mode: %d",
-        R3D_GetDofFocusPoint(), R3D_GetDofFocusScale(), R3D_GetDofMaxBlurSize(), R3D_GetDofDebugMode());
+        R3D_ENVIRONMENT_GET(dof.focusPoint), R3D_ENVIRONMENT_GET(dof.focusScale),
+        R3D_ENVIRONMENT_GET(dof.maxBlurSize), R3D_ENVIRONMENT_GET(dof.debugMode));
+
     DrawText(dofText, 10, 30, 20, WHITE);
 
     /* --- Print instructions --- */

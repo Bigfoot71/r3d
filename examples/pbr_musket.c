@@ -20,9 +20,9 @@ const char* Init(void)
 
     /* --- Setup tonemapping --- */
 
-    R3D_SetTonemapMode(R3D_TONEMAP_ACES);
-    R3D_SetTonemapExposure(0.75f);
-    R3D_SetTonemapWhite(1.25f);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(tonemap.exposure, 0.75f);
+    R3D_ENVIRONMENT_SET(tonemap.white, 1.25f);
 
     /* --- Load model --- */
 
@@ -37,7 +37,7 @@ const char* Init(void)
     /* --- Load and enable the skybox --- */
 
     skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox2.png", CUBEMAP_LAYOUT_AUTO_DETECT);
-    R3D_EnableSkybox(skybox);
+    R3D_ENVIRONMENT_SET(background.sky, skybox);
 
     /* --- Setup the scene lighting --- */
 

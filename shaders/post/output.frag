@@ -32,6 +32,7 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexColor;        //< Scene color texture
 uniform float uTonemapExposure;     //< Tonemap exposure
 uniform float uTonemapWhite;        //< Tonemap white point, not used with AGX
+uniform int uTonemapMode;           //< Tonemap mode used (e.g. TONEMAP_LINEAR)
 uniform float uBrightness;          //< Brightness adjustment
 uniform float uContrast;            //< Contrast adjustment
 uniform float uSaturation;          //< Saturation adjustment
@@ -170,15 +171,22 @@ vec3 Tonemapping(vec3 color, float exposure, float pWhite) // inputs are LINEAR
 
     color *= exposure;
 
-#if TONEMAPPER == TONEMAP_REINHARD
-    color = TonemapReinhard(max(vec3(0.0), color), pWhite);
-#elif TONEMAPPER == TONEMAP_FILMIC
-    color = TonemapFilmic(max(vec3(0.0), color), pWhite);
-#elif TONEMAPPER == TONEMAP_ACES
-    color = TonemapACES(max(vec3(0.0), color), pWhite);
-#elif TONEMAPPER == TONEMAP_AGX
-    color = TonemapAgX(color);
-#endif
+    switch (uTonemapMode) {
+    case TONEMAP_REINHARD:
+        color = TonemapReinhard(max(vec3(0.0), color), pWhite);
+        break;
+    case TONEMAP_FILMIC:
+        color = TonemapFilmic(max(vec3(0.0), color), pWhite);
+        break;
+    case TONEMAP_ACES:
+        color = TonemapACES(max(vec3(0.0), color), pWhite);
+        break;
+    case TONEMAP_AGX:
+        color = TonemapAgX(color);
+        break;
+    default:
+        break;
+    }
 
     return color;
 }

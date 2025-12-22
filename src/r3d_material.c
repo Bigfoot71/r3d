@@ -10,7 +10,7 @@
 #include <r3d/r3d_utils.h>
 #include <glad.h>
 
-#include "./r3d_state.h"
+#include "./modules/r3d_texture.h"
 
 // ========================================
 // PUBLIC API

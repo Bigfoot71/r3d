@@ -9,7 +9,7 @@
 #ifndef R3D_LIGHTING_H
 #define R3D_LIGHTING_H
 
-#include "./r3d_api.h"
+#include "./r3d_platform.h"
 #include <raylib.h>
 #include <stdint.h>
 
@@ -49,11 +49,12 @@ typedef enum R3D_ShadowUpdateMode {
 // ========================================
 
 /**
- * @brief Represents a unique identifier for a light in R3D.
+ * @brief Unique identifier for an R3D light.
  *
- * This ID is used to reference a specific light when calling R3D lighting functions.
+ * ID type used to reference a light.
+ * A negative value indicates an invalid light.
  */
-typedef uint32_t R3D_Light;
+typedef int32_t R3D_Light;
 
 // ========================================
 // PUBLIC API
@@ -306,14 +307,13 @@ R3DAPI void R3D_SetLightSpecular(R3D_Light id, float specular);
 R3DAPI float R3D_GetLightRange(R3D_Light id);
 
 /**
- * @brief Sets the range of a light.
+ * @brief Sets the range parameter of a light.
  *
- * This function sets the range of the specified light.
- * The range determines how far the light can illuminate the scene before it fades out.
- * Only applicable to spot lights or omni-lights.
+ * For spot and omni lights, this defines the maximum illumination distance.
+ * For directional lights, this defines the shadow rendering radius around the camera.
  *
  * @param id The ID of the light.
- * @param range The new range to set for the light.
+ * @param range The range value to apply.
  */
 R3DAPI void R3D_SetLightRange(R3D_Light id, float range);
 
@@ -392,27 +392,29 @@ R3DAPI void R3D_SetLightOuterCutOff(R3D_Light id, float degrees);
 // ----------------------------------------
 
 /**
- * @brief Enables shadow casting for a light and sets the resolution of its shadow map.
+ * @brief Enables shadow casting for a light and sets its shadow map resolution.
  *
- * This function enables shadow casting for a specified light and allocates a shadow map with the specified resolution.
- * Shadows can be rendered from the light based on this shadow map.
+ * Allocates a shadow map at the given resolution and enables shadow rendering.
+ * This function can be called multiple times to resize the shadow map, but doing so
+ * reallocates GPU resources and has a performance cost.
  *
- * @param id The ID of the light for which shadows should be enabled.
- * @param resolution The resolution of the shadow map to be used by the light.
+ * @param id The ID of the light.
+ * @param resolution The shadow map resolution.
+ *
+ * @note Shadow maps are memory-intensive. High resolutions (e.g. 4K) consume significant
+ * GPU memory; creating many high-resolution shadow maps may lead crashes...
  */
 R3DAPI void R3D_EnableShadow(R3D_Light id, int resolution);
 
 /**
- * @brief Disables shadow casting for a light and optionally destroys its shadow map.
+ * @brief Disables shadow casting for a light.
  *
- * This function disables shadow casting for the specified light and optionally frees the memory
- * used by its shadow map. If `destroyMap` is true, the shadow map will be destroyed, otherwise,
- * the map will be retained but the light will no longer cast shadows.
+ * Disables shadow rendering for the light. The shadow map is preserved in memory,
+ * and may be reused later, even if the light itself is destroyed.
  *
- * @param id The ID of the light for which shadows should be disabled.
- * @param destroyMap Whether or not to destroy the shadow map associated with the light.
+ * @param id The ID of the light.
  */
-R3DAPI void R3D_DisableShadow(R3D_Light id, bool destroyMap);
+R3DAPI void R3D_DisableShadow(R3D_Light id);
 
 /**
  * @brief Checks if shadow casting is enabled for a light.
@@ -423,16 +425,6 @@ R3DAPI void R3D_DisableShadow(R3D_Light id, bool destroyMap);
  * @return True if shadow casting is enabled, false otherwise.
  */
 R3DAPI bool R3D_IsShadowEnabled(R3D_Light id);
-
-/**
- * @brief Checks if a light has an associated shadow map.
- *
- * This function checks if the specified light has a shadow map allocated for it.
- *
- * @param id The ID of the light.
- * @return True if the light has a shadow map, false otherwise.
- */
-R3DAPI bool R3D_HasShadowMap(R3D_Light id);
 
 /**
  * @brief Gets the shadow map update mode of a light.

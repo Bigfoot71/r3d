@@ -12,6 +12,7 @@
 #include "./r3d_animation.h"
 #include "./r3d_material.h"
 #include "./r3d_skeleton.h"
+#include "./r3d_platform.h"
 #include "./r3d_mesh.h"
 
 /**

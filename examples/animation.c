@@ -27,15 +27,15 @@ const char* Init(void)
 
     /* --- Enable post-processing effects --- */
 
-    R3D_SetSSAO(true);
-    R3D_SetBloomIntensity(0.03f);
-    R3D_SetBloomMode(R3D_BLOOM_ADDITIVE);
-    R3D_SetTonemapMode(R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(ssao.enabled, true);
+    R3D_ENVIRONMENT_SET(bloom.intensity, 0.03f);
+    R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_ADDITIVE);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
 
     /* --- Set background and ambient lighting colors --- */
 
-    R3D_SetBackgroundColor(BLACK);
-    R3D_SetAmbientColor((Color) { 7, 7, 7, 255 });
+    R3D_ENVIRONMENT_SET(background.color, BLACK);
+    R3D_ENVIRONMENT_SET(ambient.color, (Color) { 7, 7, 7, 255 });
 
     /* --- Generate a plane to serve as the ground and setup its material --- */
 

@@ -1,4 +1,5 @@
 #include "./common.h"
+#include "r3d/r3d_environment.h"
 
 /* === Resources === */
 
@@ -24,7 +25,7 @@ const char* Init(void)
 
     /* --- Setup the scene lighting --- */
 
-    R3D_SetAmbientColor((Color) { 10, 10, 10, 255 });
+    R3D_ENVIRONMENT_SET(ambient.color, (Color) { 10, 10, 10, 255 });
 
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
     {

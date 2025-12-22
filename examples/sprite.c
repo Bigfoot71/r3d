@@ -51,7 +51,6 @@ const char* Init(void)
     meshSprite.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     matSprite = R3D_GetDefaultMaterial();
-    matSprite.blendMode = R3D_BLEND_ALPHA;
     matSprite.billboardMode = R3D_BILLBOARD_Y_AXIS;
     matSprite.albedo.texture = LoadTexture(RESOURCES_PATH "spritesheet.png");
 

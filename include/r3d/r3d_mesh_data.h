@@ -9,7 +9,7 @@
 #ifndef R3D_MESH_DATA_H
 #define R3D_MESH_DATA_H
 
-#include "./r3d_api.h"
+#include "./r3d_platform.h"
 #include <raylib.h>
 #include <stdint.h>
 

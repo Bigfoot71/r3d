@@ -1,6 +1,8 @@
 #include "./common.h"
+#include "r3d/r3d_environment.h"
 #include "r3d/r3d_lighting.h"
 #include "r3d/r3d_material.h"
+#include "raylib.h"
 #include "raymath.h"
 
 /* === Resources === */
@@ -25,7 +27,7 @@ const char* Init(void)
 
     /* --- Set the background color --- */
 
-    R3D_SetBackgroundColor(SKYBLUE);
+    R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
 
     /* --- Setup the ground mesh / material --- */
 
@@ -39,7 +41,6 @@ const char* Init(void)
     meshBillboard.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     matBillboard = R3D_GetDefaultMaterial();
-    matBillboard.blendMode = R3D_BLEND_ALPHA;
     matBillboard.billboardMode = R3D_BILLBOARD_Y_AXIS;
     matBillboard.albedo.texture = LoadTexture(RESOURCES_PATH "tree.png");
 
@@ -54,18 +55,13 @@ const char* Init(void)
 
     /* --- Setup the scene lighting --- */
 
-    R3D_SetSceneBounds(
-        (BoundingBox) {
-            .min = { -100, -10, -100 },
-            .max = { +100, +10, +100 }
-        }
-    );
-
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
     {
         R3D_SetLightDirection(light, (Vector3) { -1, -1, -1 });
+        R3D_SetShadowDepthBias(light, 0.01f);
         R3D_EnableShadow(light, 4096);
         R3D_SetLightActive(light, true);
+        R3D_SetLightRange(light, 32.0f);
     }
 
     /* --- Setup the camera --- */

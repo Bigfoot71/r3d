@@ -9,7 +9,7 @@
 #ifndef R3D_CORE_H
 #define R3D_CORE_H
 
-#include "./r3d_api.h"
+#include "./r3d_platform.h"
 #include <raylib.h>
 #include <stdint.h>
 
@@ -29,15 +29,13 @@
  */
 typedef uint32_t R3D_Flags;
 
-#define R3D_FLAG_NONE                   0           /**< No special rendering flags */
-#define R3D_FLAG_FXAA                   (1 << 0)    /**< Enables Fast Approximate Anti-Aliasing (FXAA) */
-#define R3D_FLAG_BLIT_LINEAR            (1 << 1)    /**< Uses linear filtering when blitting the final image */
-#define R3D_FLAG_ASPECT_KEEP            (1 << 2)    /**< Maintains the aspect ratio of the internal resolution when blitting the final image */
-#define R3D_FLAG_8_BIT_NORMALS          (1 << 3)    /**< Use 8-bit precision for the normals buffer (deferred); default is 16-bit float */
-#define R3D_FLAG_NO_FRUSTUM_CULLING     (1 << 4)    /**< Disables internal frustum culling. Manual culling is allowed, but may break shadow visibility if objects casting shadows are skipped. */
-#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 5)    /**< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments. Be careful, in 'force forward' mode this flag will also sort opaque objects in 'near-to-far' but in the same sorting pass. */
-#define R3D_FLAG_OPAQUE_SORTING         (1 << 6)    /**< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting. Please note, in 'force forward' mode this flag has no effect, see transparent sorting. */
-#define R3D_FLAG_LOW_PRECISION_BUFFERS  (1 << 7)    /**< Use 32-bit HDR formats like R11G11B10F for intermediate color buffers instead of full 16-bit floats. Saves memory and bandwidth. */
+#define R3D_FLAG_NONE                   0           ///< No special rendering flags
+#define R3D_FLAG_FXAA                   (1 << 0)    ///< Enables Fast Approximate Anti-Aliasing (FXAA)
+#define R3D_FLAG_BLIT_LINEAR            (1 << 1)    ///< Uses linear filtering when blitting the final image
+#define R3D_FLAG_ASPECT_KEEP            (1 << 2)    ///< Maintains the aspect ratio of the internal resolution when blitting the final image
+#define R3D_FLAG_NO_FRUSTUM_CULLING     (1 << 3)    ///< Disables internal frustum culling. Manual culling is allowed, but may break shadow visibility if objects casting shadows are skipped.
+#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 4)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments. Be careful, in 'force forward' mode this flag will also sort opaque objects in 'near-to-far' but in the same sorting pass.
+#define R3D_FLAG_OPAQUE_SORTING         (1 << 5)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting. Please note, in 'force forward' mode this flag has no effect, see transparent sorting.
 
 /**
  * @brief Bitfield type used to specify rendering layers for 3D objects.
@@ -94,7 +92,7 @@ extern "C" {
  * @param resHeight Height of the internal resolution.
  * @param flags Flags indicating internal behavior (modifiable via R3D_SetState).
  */
-R3DAPI void R3D_Init(int resWidth, int resHeight, unsigned int flags);
+R3DAPI void R3D_Init(int resWidth, int resHeight, R3D_Flags flags);
 
 /**
  * @brief Closes the rendering engine and deallocates all resources.
@@ -107,10 +105,10 @@ R3DAPI void R3D_Close(void);
 /**
  * @brief Checks if a specific internal state flag is set.
  * 
- * @param flag The state flag to check.
- * @return True if the flag is set, false otherwise.
+ * @param flags The state flags to check.
+ * @return True if the flags are set, false otherwise.
  */
-R3DAPI bool R3D_HasState(unsigned int flag);
+R3DAPI bool R3D_HasState(R3D_Flags flags);
 
 /**
  * @brief Sets internal state flags for the rendering engine.
@@ -120,7 +118,7 @@ R3DAPI bool R3D_HasState(unsigned int flag);
  * 
  * @param flags The flags to set.
  */
-R3DAPI void R3D_SetState(unsigned int flags);
+R3DAPI void R3D_SetState(R3D_Flags flags);
 
 /**
  * @brief Clears specific internal state flags.
@@ -130,7 +128,7 @@ R3DAPI void R3D_SetState(unsigned int flags);
  * 
  * @param flags The flags to clear.
  */
-R3DAPI void R3D_ClearState(unsigned int flags);
+R3DAPI void R3D_ClearState(R3D_Flags flags);
 
 /**
  * @brief Gets the current internal resolution.
@@ -155,17 +153,6 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
  * @warning This function may be slow due to the destruction and recreation of framebuffers.
  */
 R3DAPI void R3D_UpdateResolution(int width, int height);
-
-/**
- * @brief Defines the bounds of the scene for directional light calculations.
- * 
- * This function sets the scene bounds used to determine which areas should be illuminated 
- * by directional lights. It is the user's responsibility to calculate and provide the 
- * correct bounds.
- * 
- * @param sceneBounds The bounding box defining the scene's dimensions.
- */
-R3DAPI void R3D_SetSceneBounds(BoundingBox sceneBounds);
 
 /**
  * @brief Sets the default texture filtering mode.
@@ -199,9 +186,9 @@ R3DAPI R3D_Layer R3D_GetActiveLayers(void);
  *
  * Replaces the current set of active layers with the given bitfield.
  *
- * @param layers Bitfield representing the layers to activate.
+ * @param bitfield Bitfield representing the layers to activate.
  */
-R3DAPI void R3D_SetActiveLayers(R3D_Layer layers);
+R3DAPI void R3D_SetActiveLayers(R3D_Layer bitfield);
 
 /**
  * @brief Enable one or more layers without affecting other active layers.

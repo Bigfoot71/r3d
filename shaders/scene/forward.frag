@@ -31,7 +31,7 @@ struct Light
     float innerCutOff;
     float outerCutOff;
     float shadowSoftness;
-    float shadowMapTxlSz;
+    float shadowTexelSize;
     float shadowDepthBias;
     float shadowSlopeBias;
     lowp int type;
@@ -64,7 +64,7 @@ uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
 
-uniform vec3 uAmbientLight;
+uniform vec3 uAmbientColor;
 uniform vec3 uEmissionColor;
 
 uniform samplerCube uCubeIrradiance;
@@ -72,8 +72,8 @@ uniform samplerCube uCubePrefilter;
 uniform sampler2D uTexBrdfLut;
 uniform vec4 uQuatSkybox;
 uniform bool uHasSkybox;
-uniform float uSkyboxAmbientIntensity;
-uniform float uSkyboxReflectIntensity;
+uniform float uAmbientEnergy;
+uniform float uReflectEnergy;
 
 uniform Light uLights[LIGHT_FORWARD_COUNT];
 
@@ -105,7 +105,72 @@ layout(location = 3) out vec4 FragORM;
 
 /* === Shadow functions === */
 
-float ShadowOmni(int i, float cNdotL)
+float ShadowDir(int i, float cNdotL, mat2 diskRot)
+{
+    Light light = uLights[i];
+
+    /* --- Light Space Projection --- */
+
+    vec4 p = vPosLightSpace[i];
+    vec3 projCoords = p.xyz / p.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    /* --- Shadow Bias and Depth Adjustment --- */
+
+    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
+    bias = max(bias, light.shadowDepthBias * projCoords.z);
+    float currentDepth = projCoords.z - bias;
+
+    /* --- Poisson Disk PCF Sampling --- */
+
+    float shadow = 0.0;
+    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
+        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
+        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
+    }
+    shadow /= float(SHADOW_SAMPLES);
+
+    /* --- Apply a fade to the edges of the projection --- */
+
+    vec3 distToBorder = min(projCoords, 1.0 - projCoords);
+    float edgeFade = smoothstep(0.0, 0.15, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
+    shadow = mix(1.0, shadow, edgeFade);
+
+    /* --- Final Shadow Value --- */
+
+    return shadow;
+}
+
+float ShadowSpot(int i, float cNdotL, mat2 diskRot)
+{
+    Light light = uLights[i];
+
+    /* --- Light Space Projection --- */
+
+    vec4 p = vPosLightSpace[i];
+    vec3 projCoords = p.xyz / p.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    /* --- Shadow Bias and Depth Adjustment --- */
+
+    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
+    bias = max(bias, light.shadowDepthBias * projCoords.z);
+    float currentDepth = projCoords.z - bias;
+
+    /* --- Poisson Disk PCF Sampling --- */
+
+    float shadow = 0.0;
+    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
+        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
+        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
+    }
+
+    /* --- Final Shadow Value --- */
+
+    return shadow / float(SHADOW_SAMPLES);
+}
+
+float ShadowOmni(int i, float cNdotL, mat2 diskRot)
 {
     Light light = uLights[i];
 
@@ -125,13 +190,6 @@ float ShadowOmni(int i, float cNdotL)
 
     mat3 OBN = M_OrthonormalBasis(direction);
 
-    /* --- Generate an additional debanding rotation for the poisson disk --- */
-
-    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
-    float sr = sin(r);
-    float cr = cos(r);
-    mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
-
     /* --- Poisson Disk PCF Sampling --- */
 
     float shadow = 0.0;
@@ -140,49 +198,6 @@ float ShadowOmni(int i, float cNdotL)
         vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
         float sampleDepth = texture(uShadowMapCube[i], sampleDir).r * light.far;
         shadow += step(currentDepth, sampleDepth);
-    }
-
-    /* --- Final Shadow Value --- */
-
-    return shadow / float(SHADOW_SAMPLES);
-}
-
-float Shadow(int i, float cNdotL)
-{
-    Light light = uLights[i];
-
-    /* --- Light Space Projection --- */
-
-    vec4 p = vPosLightSpace[i];
-    vec3 projCoords = p.xyz / p.w;
-    projCoords = projCoords * 0.5 + 0.5;
-
-    /* --- Shadow Map Bounds Check --- */
-
-    if (any(greaterThan(projCoords.xyz, vec3(1.0))) ||
-        any(lessThan(projCoords.xyz, vec3(0.0)))) {
-        return 1.0;
-    }
-
-    /* --- Shadow Bias and Depth Adjustment --- */
-
-    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
-    bias = max(bias, light.shadowDepthBias * projCoords.z);
-    float currentDepth = projCoords.z - bias;
-
-    /* --- Generate an additional debanding rotation for the poisson disk --- */
-
-    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
-    float sr = sin(r);
-    float cr = cos(r);
-    mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
-
-    /* --- Poisson Disk PCF Sampling --- */
-
-    float shadow = 0.0;
-    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
     }
 
     /* --- Final Shadow Value --- */
@@ -276,15 +291,22 @@ void main()
         vec3 specLight =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
         specLight *= lightColE * light.specular;
 
+        /* --- Calculating a random rotation matrix for shadow debanding --- */
+
+        float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
+        float sr = sin(r), cr = cos(r);
+
+        mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
+
         /* Apply shadow factor if the light casts shadows */
 
         float shadow = 1.0;
+
         if (light.shadow) {
-            if (light.type == LIGHT_OMNI) {
-                shadow = ShadowOmni(i, cNdotL);
-            }
-            else {
-                shadow = Shadow(i, cNdotL);
+            switch (light.type) {
+            case LIGHT_DIR: shadow = ShadowDir(i, cNdotL, diskRot); break;
+            case LIGHT_SPOT: shadow = ShadowSpot(i, cNdotL, diskRot); break;
+            case LIGHT_OMNI: shadow = ShadowOmni(i, cNdotL, diskRot); break;
             }
         }
 
@@ -314,7 +336,7 @@ void main()
 
     /* Compute ambient - (IBL diffuse) */
 
-    vec3 ambient = uAmbientLight;
+    vec3 ambient = uAmbientColor;
 
     if (uHasSkybox)
     {
@@ -323,7 +345,7 @@ void main()
 
         vec3 Nr = M_Rotate3D(N, uQuatSkybox);
         ambient = kD * texture(uCubeIrradiance, Nr).rgb;
-        ambient *= uSkyboxAmbientIntensity;
+        ambient *= uAmbientEnergy;
     }
     else
     {
@@ -332,7 +354,7 @@ void main()
         //       but it's to at least simulate some specularity, otherwise the 
         //       result would look poor for metals...
         ambient = (1.0 - F0) * (1.0 - metalness) * ambient;
-        ambient += F0 * uAmbientLight;
+        ambient += F0 * uAmbientColor * uAmbientEnergy;
     }
 
     /* Compute ambient occlusion map */
@@ -362,7 +384,7 @@ void main()
         float edgeFade = mix(1.0, pow(cNdotV, 0.5), roughness);
         spec *= edgeFade;
 
-        specular += spec * uSkyboxReflectIntensity;
+        specular += spec * uReflectEnergy;
     }
 
     /* Compute the final diffuse color, including ambient and diffuse lighting contributions */

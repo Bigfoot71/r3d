@@ -10,8 +10,6 @@
 #include <raymath.h>
 #include <stdlib.h>
 
-#include "./details/containers/r3d_array.h"
-
 // ========================================
 // PUBLIC API
 // ========================================
@@ -20,7 +18,7 @@ R3D_InterpolationCurve R3D_LoadInterpolationCurve(int capacity)
 {
     R3D_InterpolationCurve curve;
 
-    curve.keyframes = RL_MALLOC(capacity * sizeof(R3D_Keyframe));
+    curve.keyframes = RL_MALLOC(capacity * sizeof(*curve.keyframes));
     curve.capacity = capacity;
     curve.count = 0;
 
@@ -36,25 +34,19 @@ void R3D_UnloadInterpolationCurve(R3D_InterpolationCurve curve)
 
 bool R3D_AddKeyframe(R3D_InterpolationCurve* curve, float time, float value)
 {
-    r3d_array_t array = {
-        .data = curve->keyframes,
-        .count = curve->count,
-        .capacity = curve->capacity,
-        .elem_size = sizeof(R3D_Keyframe)
+    if (curve->count >= curve->capacity) {
+        unsigned int newCapacity = 2 * curve->capacity;
+        void* newKeyFrames = RL_REALLOC(curve->keyframes, newCapacity * sizeof(*curve->keyframes));
+        if (newKeyFrames == NULL) return false;
+        curve->keyframes = newKeyFrames;
+        curve->capacity = newCapacity;
+    }
+
+    curve->keyframes[curve->count++] = (R3D_Keyframe) {
+        .time = time, .value = value
     };
 
-    R3D_Keyframe keyFrame = {
-        .time = time,
-        .value = value
-    };
-
-    int result = r3d_array_push_back(&array, &keyFrame);
-
-    curve->keyframes = array.data;
-    curve->capacity = (unsigned int)array.capacity;
-    curve->count = (unsigned int)array.count;
-
-    return result == R3D_ARRAY_SUCCESS;
+    return true;
 }
 
 float R3D_EvaluateCurve(R3D_InterpolationCurve curve, float time)

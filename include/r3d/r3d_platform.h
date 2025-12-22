@@ -28,4 +28,12 @@
 #   define R3DAPI extern
 #endif
 
+#ifndef R3D_LITERAL
+#   ifdef __cplusplus
+#       define R3D_LITERAL(type) type
+#   else
+#       define R3D_LITERAL(type) (type)
+#   endif
+#endif
+
 #endif // R3D_API_H

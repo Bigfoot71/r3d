@@ -2,13 +2,13 @@
 
 ## **v0.6**
 
-* [ ] **Modular State System and On-Demand Resource Loading**
+* [x] **Modular State System and On-Demand Resource Loading**
   Replace `r3d_state.h` with a modular system, split by responsibility, with internal on-demand loading management.
   For example, introduce a *shader cache* that loads all shaders lazily when they are first requested during rendering.
   Apply the same approach to render targets and any other applicable resources.
   Note: some "details" like `details/r3d_light.c` or `details/r3d_primitives.c` could also become modules with lazy loading.
 
-* [ ] **Light Module Refactor and Optimization**
+* [x] **Light Module Refactor and Optimization**
   Alongside the modularization of lights:
 
   * Simplify their update system, including the flag indicating whether shadows need updating.
@@ -19,15 +19,19 @@
   * Add helper functions for testing light influence, e.g. checking if a bounding box is illuminated by a light.
   * Consider adding a real frustum culling by light for shadows, rather than the current crude tests.
 
-* [ ] **Draw Call System Refactor**
+* [x] **Draw Call System Refactor**
   Migrate all content from `details/r3d_drawcall.h` into `r3d_draw.c`.
 
-* [ ] **Unified Draw Call Storage and Index-Based Sorting**
+* [x] **Unified Draw Call Storage and Index-Based Sorting**
   Replace multiple draw call arrays and in-place object sorting with:
 
   * a single array containing all draw calls
   * multiple index arrays per category
     Perform sorting and culling on the index arrays rather than directly on the draw call structures themselves.
+
+* [x] **Environment API Refactor**
+  Replace all environment-related functions with a single `R3D_Environment` structure, while keeping a global environment state.
+  See: https://github.com/Bigfoot71/r3d/discussions/117
 
 ## **v0.7**
 
@@ -36,10 +40,6 @@
 
 * [ ] **Merge Scene Vertex Shaders**
   Merge all vertex shaders used by the `scene` module into a single unified vertex shader.
-
-* [ ] **Environment API Refactor**
-  Replace all environment-related functions with a single `R3D_Environment` structure, while keeping a global environment state.
-  See: https://github.com/Bigfoot71/r3d/discussions/117
 
 * [ ] **Skybox Revision and Reflection Probes**
   Revise the skybox system and add support for reflection probes, including probe blending.
