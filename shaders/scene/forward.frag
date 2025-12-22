@@ -209,17 +209,10 @@ float ShadowOmni(int i, float cNdotL, mat2 diskRot)
 
 void main()
 {
-    /* Sample albedo texture */
+    /* Sample material maps */
 
     vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
-    if (albedo.a < uAlphaCutoff) discard;
-
-    /* Sample emission texture */
-
     vec3 emission = uEmissionEnergy * (uEmissionColor * texture(uTexEmission, vTexCoord).rgb);
-
-    /* Sample ORM texture and extract values */
-
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
     float occlusion = uOcclusion * orm.x;
