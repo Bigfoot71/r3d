@@ -102,9 +102,9 @@ typedef struct R3D_Material {
         float metalness;        ///< Metalness multiplier.
     } orm;
 
-    R3D_BlendMode blendMode;              ///< Blend mode used for rendering the material.
-    R3D_DepthMode depthMode;              ///< Depth mode used for rendering the material. Not taken into account for decals.
-    R3D_CullMode cullMode;                ///< Face culling mode used for the material.
+    R3D_BlendMode blendMode;              ///< Blend mode used for rendering.
+    R3D_DepthMode depthMode;              ///< Depth mode used for rendering (ignored for shadows and decals; disable shadows at mesh level to avoid shadow map writes).
+    R3D_CullMode cullMode;                ///< Face culling mode used for rendering.
 
     R3D_BillboardMode billboardMode;      ///< Billboard mode applied to the object.
 
