@@ -102,7 +102,7 @@ static void load_material(R3D_Material* material, const r3d_importer_t* importer
     struct aiString alphaMode;
     if (aiGetMaterialString(aiMat, AI_MATKEY_GLTF_ALPHAMODE, &alphaMode) == AI_SUCCESS) {
         if (strcmp(alphaMode.data, "MASK") == 0) {
-            material->blendMode = R3D_BLEND_OPAQUE; // Performed during pre-pass
+            material->blendMode = R3D_BLEND_OPAQUE; //< Alpha cutoff supported in geometry.frag
         }
         else if (strcmp(alphaMode.data, "BLEND") == 0) {
             material->blendMode = R3D_BLEND_ALPHA;
@@ -122,6 +122,11 @@ static void load_material(R3D_Material* material, const r3d_importer_t* importer
         default:
             break;
         }
+    }
+
+    // Handle depth mode from blend mode
+    if (material->blendMode != R3D_BLEND_OPAQUE) {
+        material->depthMode = R3D_DEPTH_READ_ONLY;
     }
 
     // Handle cull mode from two-sided property
