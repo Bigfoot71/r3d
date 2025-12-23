@@ -59,8 +59,8 @@ struct r3d_shader R3D_MOD_SHADER;
 // INTERNAL MACROS
 // ========================================
 
-#define LOAD_SHADER(shader_name, vs_code, fs_code) do {                         \
-    R3D_MOD_SHADER.shader_name.id = rlLoadShaderCode(vs_code, fs_code);         \
+#define LOAD_SHADER(shader_name, vsCode, fsCode) do {                           \
+    R3D_MOD_SHADER.shader_name.id = load_shader(vsCode, fsCode);                \
     if (R3D_MOD_SHADER.shader_name.id == 0) {                                   \
         TraceLog(LOG_ERROR, "R3D: Failed to load shader '" #shader_name "'");   \
         assert(false);                                                          \
@@ -134,6 +134,82 @@ struct r3d_shader R3D_MOD_SHADER;
 // ========================================
 
 static char* inject_defines_to_shader_code(const char* code, const char* defines[], int count);
+
+// ========================================
+// SHADER COMPLING / LINKING FUNCTIONS
+// ========================================
+
+static GLuint compile_shader(const char* source, GLenum shaderType)
+{
+    GLuint shader = glCreateShader(shaderType);
+    if (shader == 0) {
+        TraceLog(LOG_ERROR, "R3D: Failed to create shader object");
+        return 0;
+    }
+
+    glShaderSource(shader, 1, &source, NULL);
+    glCompileShader(shader);
+
+    int success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        const char* type_str = (shaderType == GL_VERTEX_SHADER) ? "vertex" : "fragment";
+        TraceLog(LOG_ERROR, "R3D: %s shader compilation failed: %s", type_str, infoLog);
+        glDeleteShader(shader);
+        return 0;
+    }
+
+    return shader;
+}
+
+static GLuint link_shader(GLuint vertShader, GLuint fragShader)
+{
+    GLuint program = glCreateProgram();
+    if (program == 0) {
+        TraceLog(LOG_ERROR, "R3D: Failed to create shader program");
+        return 0;
+    }
+
+    glAttachShader(program, vertShader);
+    glAttachShader(program, fragShader);
+    glLinkProgram(program);
+
+    int success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        TraceLog(LOG_ERROR, "R3D: Shader program linking failed: %s", infoLog);
+        glDeleteProgram(program);
+        return 0;
+    }
+
+    glDetachShader(program, vertShader);
+    glDetachShader(program, fragShader);
+
+    return program;
+}
+
+GLuint load_shader(const char* vsCode, const char* fsCode)
+{
+    GLuint vs = compile_shader(vsCode, GL_VERTEX_SHADER);
+    if (vs == 0) return 0;
+
+    GLuint fs = compile_shader(fsCode, GL_FRAGMENT_SHADER);
+    if (fs == 0) {
+        glDeleteShader(vs);
+        return 0;
+    }
+
+    GLuint program = link_shader(vs, fs);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    return program;
+}
 
 // ========================================
 // SHADER LOADING FUNCTIONS
