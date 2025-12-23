@@ -282,7 +282,7 @@ endif()
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         "${R3D_ROOT_PATH}/external/tinycthread"
-        "${R3D_ROOT_PATH}/external/uthash/src"
+        "${R3D_ROOT_PATH}/external/uthash"
         "${R3D_ROOT_PATH}/external/glad"
         "${R3D_ROOT_PATH}/include"
         "${R3D_RAYLIB_INC_PATH}"
