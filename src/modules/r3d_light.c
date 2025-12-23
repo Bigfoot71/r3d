@@ -499,6 +499,8 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
         R3D_Light index = validLights->lights[i];
         r3d_light_t* light = &R3D_MOD_LIGHT.lights[index];
 
+        if (!light->enabled) continue;
+
         if (light->shadow) {
             update_light_shadow_state(light);
         }
