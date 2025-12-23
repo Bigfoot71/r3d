@@ -14,6 +14,7 @@
 #include <glad.h>
 
 #include "../details/r3d_frustum.h"
+#include "../details/r3d_math.h"
 
 // ========================================
 // HELPER MACROS
@@ -128,6 +129,12 @@ bool r3d_light_is_valid(R3D_Light index);
  * Returns NULL if the handle is invalid.
  */
 r3d_light_t* r3d_light_get(R3D_Light index);
+
+/*
+ * Returns the screen-space rectangle covered by the light's influence.
+ * Supports SPOT and OMNI lights only, asserts the light is not DIR.
+ */
+r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h);
 
 /*
  * Internal helper to iterate over lights by category.

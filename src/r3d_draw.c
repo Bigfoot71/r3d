@@ -1097,38 +1097,12 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
-        int x = 0, y = 0;
-        int w = R3D_TARGET_WIDTH;
-        int h = R3D_TARGET_HEIGHT;
-
+        r3d_rect_t dst = {0, 0, R3D_TARGET_WIDTH, R3D_TARGET_HEIGHT};
         if (light->type != R3D_LIGHT_DIR) {
-            Vector3 min = light->aabb.min;
-            Vector3 max = light->aabb.max;
-
-            Vector2 minNDC = {FLT_MAX, FLT_MAX};
-            Vector2 maxNDC = {-FLT_MAX, -FLT_MAX};
-
-            bool allInside = true;
-            for (int i = 0; i < 8; i++) {
-                Vector4 corner = {(i & 1) ? max.x : min.x, (i & 2) ? max.y : min.y, (i & 4) ? max.z : min.z, 1.0f};
-                Vector4 clip = r3d_vector4_transform(corner, &R3D_CACHE_GET(viewport.viewProj));
-                if (clip.w <= 0.0f) { allInside = false; break; }
-
-                Vector2 ndc = Vector2Scale((Vector2){clip.x, clip.y}, 1.0f / clip.w);
-                minNDC = Vector2Min(minNDC, ndc);
-                maxNDC = Vector2Max(maxNDC, ndc);
-            }
-
-            if (allInside) {
-                x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * R3D_TARGET_WIDTH, 0.0f);
-                y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * R3D_TARGET_HEIGHT, 0.0f);
-                w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * R3D_TARGET_WIDTH, (float)R3D_TARGET_WIDTH) - x;
-                h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * R3D_TARGET_HEIGHT, (float)R3D_TARGET_HEIGHT) - y;
-                assert(w > 0 && h > 0); // This should never happen if the upstream frustum culling of the lights is correct.
-            }
+            dst = r3d_light_get_screen_rect(light, &R3D_CACHE_GET(viewport.viewProj), dst.w, dst.h);
         }
 
-        glScissor(x, y, w, h);
+        glScissor(dst.x, dst.y, dst.w, dst.h);
 
         // Sending data common to each type of light
         R3D_SHADER_SET_VEC3(deferred.lighting, uLight.color, light->color);

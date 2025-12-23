@@ -460,6 +460,41 @@ r3d_light_t* r3d_light_get(R3D_Light index)
     return NULL;
 }
 
+r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h)
+{
+    assert(light->type != R3D_LIGHT_DIR);
+
+    Vector3 min = light->aabb.min;
+    Vector3 max = light->aabb.max;
+
+    Vector2 minNDC = {+FLT_MAX, +FLT_MAX};
+    Vector2 maxNDC = {-FLT_MAX, -FLT_MAX};
+
+    bool allInside = true;
+    for (int i = 0; i < 8; i++) {
+        Vector4 corner = {(i & 1) ? max.x : min.x, (i & 2) ? max.y : min.y, (i & 4) ? max.z : min.z, 1.0f};
+        Vector4 clip = r3d_vector4_transform(corner, viewProj);
+        if (clip.w <= 0.0f) { allInside = false; break; }
+
+        Vector2 ndc = Vector2Scale((Vector2){clip.x, clip.y}, 1.0f / clip.w);
+        minNDC = Vector2Min(minNDC, ndc);
+        maxNDC = Vector2Max(maxNDC, ndc);
+    }
+
+    int x = 0;
+    int y = 0;
+
+    if (allInside) {
+        x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * w, 0.0f);
+        y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * h, 0.0f);
+        w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * w, (float)w) - x;
+        h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * h, (float)h) - y;
+        assert(w > 0 && h > 0); // This should never happen if the upstream frustum culling of the lights is correct.
+    }
+
+    return (r3d_rect_t) {x, y, w, h};
+}
+
 bool r3d_light_iter(r3d_light_t** light, int array_type)
 {
     static int index = 0;
