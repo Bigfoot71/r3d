@@ -9,7 +9,7 @@ R3D is a modern 3D rendering library for <a href="https://www.raylib.com/">rayli
 
 > [!WARNING]
 > **It is recommended to use the pre-release tags.**
-> While you can use the master branch, unexpected (mostly minor) API breaking changes may occur until the first official release is published.
+> While you can use the master branch, unexpected API breaking changes may occur until the first official release is published.
 
 ---
 
@@ -37,33 +37,37 @@ cmake --build .
 ## Quick Start
 
 ```c
-#include <r3d.h>
+#include <r3d/r3d.h>
+#include <raymath.h>
 
 int main(void)
 {
     InitWindow(800, 600, "R3D Example");
+    SetTargetFPS(60);
+
     R3D_Init(800, 600, 0);
 
     // Create scene objects
-    R3D_Mesh mesh = R3D_GenMeshSphere(1.0f, 16, 32, true);
+    R3D_Mesh mesh = R3D_GenMeshSphere(1.0f, 16, 32);
     R3D_Material material = R3D_GetDefaultMaterial();
-    
+
     // Setup lighting
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
-    R3D_SetLightDirection(light, (Vector3){ -1, -1, -1 });
+    R3D_SetLightDirection(light, (Vector3){-1, -1, -1});
     R3D_SetLightActive(light, true);
-    
+
     // Camera setup
     Camera3D camera = {
-        .position = { -3, 3, 3 },
-        .target = { 0, 0, 0 },
-        .up = { 0, 1, 0 },
+        .position = {3, 3, 3},
+        .target = {0, 0, 0},
+        .up = {0, 1, 0},
         .fovy = 60.0f,
         .projection = CAMERA_PERSPECTIVE
     };
 
     // Main loop
     while (!WindowShouldClose()) {
+        UpdateCamera(&camera, CAMERA_ORBITAL);
         BeginDrawing();
         R3D_Begin(camera);
         R3D_DrawMesh(&mesh, &material, MatrixIdentity());
