@@ -44,6 +44,9 @@
 * [ ] **Skybox Revision and Reflection Probes**
   Revise the skybox system and add support for reflection probes, including probe blending.
 
+* [ ] **Skybox Generation Support**
+  Add support for procedural skybox generation.
+
 ## **v0.8**
 
 * [ ] **Add Support for Custom Screen-Space Shaders (Post-Processing)**
