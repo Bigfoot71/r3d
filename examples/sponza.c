@@ -1,179 +1,133 @@
-#include "./common.h"
+#include <r3d/r3d.h>
 
-/* === Resources === */
+#ifndef RESOURCES_PATH
+#	define RESOURCES_PATH "./"
+#endif
 
-static R3D_Model sponza = { 0 };
-static R3D_Skybox skybox = { 0 };
-static Camera3D camera = { 0 };
-static R3D_Light lights[2] = { 0 };
-
-static bool sky = false;
-
-/* === Examples === */
-
-const char* Init(void)
+int main(void)
 {
-    /* --- Initialize R3D with its internal resolution --- */
-
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    // Initialize window
+    InitWindow(800, 450, "[r3d] - Sponza example");
     SetTargetFPS(60);
 
-    /* --- Configure default post process settings --- */
+    // Initialize R3D
+    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
+    // Post-processing setup
     R3D_ENVIRONMENT_SET(ssao.enabled, true);
-    R3D_ENVIRONMENT_SET(ssao.radius, 4.0f);
-    R3D_ENVIRONMENT_SET(ssao.intensity, 1.25f);
+    R3D_ENVIRONMENT_SET(ssao.radius, 2.0f);
     R3D_ENVIRONMENT_SET(ssao.power, 1.5f);
-
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
 
-    /* --- Set default background and ambient color (when no skybox is activated) --- */
-
+    // Background and ambient
     R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
     R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
-    /* --- Load Sponza scene --- */
+    // Load Sponza model
+    R3D_Model sponza = R3D_LoadModel(RESOURCES_PATH "sponza.glb");
 
-    sponza = R3D_LoadModel(RESOURCES_PATH "sponza.glb");
+    // Load skybox (disabled by default)
+    R3D_Skybox skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox3.png", CUBEMAP_LAYOUT_AUTO_DETECT);
+    bool skyEnabled = false;
 
-    /* --- Load skybox (disabled by default) --- */
-
-    skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox3.png", CUBEMAP_LAYOUT_AUTO_DETECT);
-    //R3D_EnableSkybox(skybox);
-
-    /* --- Configure lights --- */
-
-    for (int i = 0; i < 2; i++)
-    {
+    // Setup lights
+    R3D_Light lights[2];
+    for (int i = 0; i < 2; i++) {
         lights[i] = R3D_CreateLight(R3D_LIGHT_OMNI);
-
-        R3D_SetLightPosition(lights[i], (Vector3) { i ? -10.0f : 10.0f, 20.0f, 0.0f });
+        R3D_SetLightPosition(lights[i], (Vector3){ i ? -10.0f : 10.0f, 20.0f, 0.0f });
         R3D_SetLightActive(lights[i], true);
         R3D_SetLightEnergy(lights[i], 4.0f);
-
         R3D_SetShadowUpdateMode(lights[i], R3D_SHADOW_UPDATE_MANUAL);
         R3D_EnableShadow(lights[i], 4096);
     }
 
-    /* --- Configure camera --- */
-
-    camera = (Camera3D){
-        .position = (Vector3) { 8.0f, 1.0f, 0.5f },
-        .target = (Vector3) { 0.0f, 2.0f, -2.0f },
-        .up = (Vector3) { 0.0f, 1.0f, 0.0f },
+    // Setup camera
+    Camera3D camera = {
+        .position = {8.0f, 1.0f, 0.5f},
+        .target = {0.0f, 2.0f, -2.0f},
+        .up = {0.0f, 1.0f, 0.0f},
         .fovy = 60.0f
     };
 
-    /* --- Ready to go! --- */
-
+    // Capture mouse
     DisableCursor();
 
-    return "[r3d] - Sponza example";
-}
+    // Main loop
+    while (!WindowShouldClose())
+    {
+        UpdateCamera(&camera, CAMERA_FREE);
 
-void Update(float delta)
-{
-    /* --- Update the camera via raylib's functions --- */
+        // Toggle skybox
+        if (IsKeyPressed(KEY_ZERO)) {
+            if (skyEnabled) R3D_ENVIRONMENT_SET(background.sky, (R3D_Skybox){0});
+            else R3D_ENVIRONMENT_SET(background.sky, skybox);
+            skyEnabled = !skyEnabled;
+        }
 
-    UpdateCamera(&camera, CAMERA_FREE);
+        // Toggle SSAO
+        if (IsKeyPressed(KEY_ONE)) {
+            R3D_ENVIRONMENT_SET(ssao.enabled, !R3D_ENVIRONMENT_GET(ssao.enabled));
+        }
 
-    /* --- Skybox toggling --- */
+        // Toggle fog
+        if (IsKeyPressed(KEY_TWO)) {
+            R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
+        }
 
-    if (IsKeyPressed(KEY_ZERO)) {
-        if (sky) R3D_ENVIRONMENT_SET(background.sky, (R3D_Skybox) {0});
-        else R3D_ENVIRONMENT_SET(background.sky, skybox);
-        sky = !sky;
+        // Toggle FXAA
+        if (IsKeyPressed(KEY_THREE)) {
+            if (R3D_HasState(R3D_FLAG_FXAA)) R3D_ClearState(R3D_FLAG_FXAA);
+            else R3D_SetState(R3D_FLAG_FXAA);
+        }
+
+        // Cycle tonemapping
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            R3D_Tonemap mode = R3D_ENVIRONMENT_GET(tonemap.mode);
+            R3D_ENVIRONMENT_SET(tonemap.mode, (mode + R3D_TONEMAP_COUNT - 1) % R3D_TONEMAP_COUNT);
+        }
+        if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
+            R3D_Tonemap mode = R3D_ENVIRONMENT_GET(tonemap.mode);
+            R3D_ENVIRONMENT_SET(tonemap.mode, (mode + 1) % R3D_TONEMAP_COUNT);
+        }
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+
+            // Draw Sponza model
+            R3D_Begin(camera);
+                R3D_DrawModel(&sponza, (Vector3){0,0,0}, 1.0f);
+            R3D_End();
+
+            // Draw lights
+            BeginMode3D(camera);
+                DrawSphere(R3D_GetLightPosition(lights[0]), 0.5f, WHITE);
+                DrawSphere(R3D_GetLightPosition(lights[1]), 0.5f, WHITE);
+            EndMode3D();
+
+            // Display tonemapping
+            R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
+            const char* tonemapText = "";
+            switch (tonemap)
+            {
+                case R3D_TONEMAP_LINEAR:    tonemapText = "< TONEMAP LINEAR >"; break;
+                case R3D_TONEMAP_REINHARD:  tonemapText = "< TONEMAP REINHARD >"; break;
+                case R3D_TONEMAP_FILMIC:    tonemapText = "< TONEMAP FILMIC >"; break;
+                case R3D_TONEMAP_ACES:      tonemapText = "< TONEMAP ACES >"; break;
+                case R3D_TONEMAP_AGX:       tonemapText = "< TONEMAP AGX >"; break;
+                default: break;
+            }
+            DrawText(tonemapText, GetScreenWidth() - MeasureText(tonemapText, 20) - 10, 10, 20, LIME);
+
+            DrawFPS(10, 10);
+        EndDrawing();
     }
 
-    /* --- SSAO toggling --- */
-
-    if (IsKeyPressed(KEY_ONE)) {
-        R3D_ENVIRONMENT_SET(ssao.enabled, !R3D_ENVIRONMENT_GET(ssao.enabled));
-    }
-
-    /* --- Fog toggling --- */
-
-    if (IsKeyPressed(KEY_TWO)) {
-        R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
-    }
-
-    /* --- FXAA toggling --- */
-
-    if (IsKeyPressed(KEY_THREE)) {
-        bool fxaa = R3D_HasState(R3D_FLAG_FXAA);
-        if (fxaa) R3D_ClearState(R3D_FLAG_FXAA);
-        else R3D_SetState(R3D_FLAG_FXAA);
-    }
-
-    /* --- Tonemapping setter --- */
-
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
-        R3D_ENVIRONMENT_SET(tonemap.mode, (tonemap + R3D_TONEMAP_COUNT - 1) % R3D_TONEMAP_COUNT);
-    }
-    if (IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) {
-        R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
-        R3D_ENVIRONMENT_SET(tonemap.mode, (tonemap + 1) % R3D_TONEMAP_COUNT);
-    }
-}
-
-void Draw(void)
-{
-    /* --- Render R3D scene --- */
-
-    R3D_Begin(camera);
-        R3D_DrawModel(&sponza, (Vector3) { 0 }, 1.0f);
-    R3D_End();
-
-    /* --- 'Standard' raylib rendering to show where are the lights --- */
-
-    BeginMode3D(camera);
-        DrawSphere(R3D_GetLightPosition(lights[0]), 0.5f, WHITE);
-        DrawSphere(R3D_GetLightPosition(lights[1]), 0.5f, WHITE);
-    EndMode3D();
-
-    /* --- Indicates which tonemapping is used --- */
-
-    R3D_Tonemap tonemap = R3D_ENVIRONMENT_GET(tonemap.mode);
-
-    switch (tonemap) {
-    case R3D_TONEMAP_LINEAR: {
-        const char* txt = "< TONEMAP LINEAR >";
-        DrawText(txt, GetScreenWidth() - MeasureText(txt, 20) - 10, 10, 20, LIME);
-    }
-    break;
-    case R3D_TONEMAP_REINHARD: {
-        const char* txt = "< TONEMAP REINHARD >";
-        DrawText(txt, GetScreenWidth() - MeasureText(txt, 20) - 10, 10, 20, LIME);
-    }
-    break;
-    case R3D_TONEMAP_FILMIC: {
-        const char* txt = "< TONEMAP FILMIC >";
-        DrawText(txt, GetScreenWidth() - MeasureText(txt, 20) - 10, 10, 20, LIME);
-    }
-    break;
-    case R3D_TONEMAP_ACES: {
-        const char* txt = "< TONEMAP ACES >";
-        DrawText(txt, GetScreenWidth() - MeasureText(txt, 20) - 10, 10, 20, LIME);
-
-    } break;
-    case R3D_TONEMAP_AGX: {
-        const char* txt = "< TONEMAP AGX >";
-        DrawText(txt, GetScreenWidth() - MeasureText(txt, 20) - 10, 10, 20, LIME);
-
-    } break;
-    default:
-        break;
-    }
-
-    /* --- I think we understand what's going on here --- */
-
-    DrawFPS(10, 10);
-}
-
-void Close(void)
-{
+    // Cleanup
     R3D_UnloadModel(&sponza, true);
     R3D_UnloadSkybox(skybox);
     R3D_Close();
+
+    CloseWindow();
+
+    return 0;
 }

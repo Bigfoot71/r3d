@@ -1,145 +1,120 @@
-#include "./common.h"
-#include "r3d/r3d_environment.h"
-#include "rcamera.h"
+#include <r3d/r3d.h>
+#include <raymath.h>
 #include <stdlib.h>
 #include <stdio.h>
-
-/* === Resources === */
 
 #define X_INSTANCES 10
 #define Y_INSTANCES 10
 #define INSTANCE_COUNT (X_INSTANCES * Y_INSTANCES)
 
-static R3D_Mesh meshSphere = { 0 };
-static R3D_Material matDefault = { 0 };
-static Camera3D camDefault = { 0 };
-static Matrix instances[INSTANCE_COUNT];
-static Color instanceColors[INSTANCE_COUNT];
-
-/* === Example === */
-
-const char* Init(void)
+int main(void)
 {
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), R3D_FLAG_FXAA);
+    // Initialize window
+    InitWindow(800, 450, "[r3d] - DoF example");
     SetTargetFPS(60);
 
-    /* --- Enable and configure DOF --- */
+    // Initialize R3D with FXAA
+    R3D_Init(GetScreenWidth(), GetScreenHeight(), R3D_FLAG_FXAA);
 
+    // Configure depth of field and background
     R3D_ENVIRONMENT_SET(background.color, BLACK);
-
     R3D_ENVIRONMENT_SET(dof.mode, R3D_DOF_ENABLED);
     R3D_ENVIRONMENT_SET(dof.focusPoint, 2.0f);
     R3D_ENVIRONMENT_SET(dof.focusScale, 3.0f);
     R3D_ENVIRONMENT_SET(dof.maxBlurSize, 20.0f);
     R3D_ENVIRONMENT_SET(dof.debugMode, false);
 
-    /* --- Setup scene lighting --- */
-
+    // Create directional light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
-    R3D_SetLightDirection(light, (Vector3) { 0, -1, 0 });
+    R3D_SetLightDirection(light, (Vector3){0, -1, 0});
     R3D_SetLightActive(light, true);
 
-    /* --- Load sphere mesh and material --- */
+    // Create sphere mesh and default material
+    R3D_Mesh meshSphere = R3D_GenMeshSphere(0.2f, 64, 64);
+    R3D_Material matDefault = R3D_GetDefaultMaterial();
 
-    meshSphere = R3D_GenMeshSphere(0.2f, 64, 64);
-    matDefault = R3D_GetDefaultMaterial();
-
-    /* --- Generate instances --- */
-
-    const float spacing = 0.5f;
-    const float offsetX = (X_INSTANCES * spacing) / 2;
-    const float offsetZ = (Y_INSTANCES * spacing) / 2;
+    // Generate instance matrices and colors
+    Matrix instances[INSTANCE_COUNT];
+    Color instanceColors[INSTANCE_COUNT];
+    float spacing = 0.5f;
+    float offsetX = (X_INSTANCES * spacing) / 2.0f;
+    float offsetZ = (Y_INSTANCES * spacing) / 2.0f;
     int idx = 0;
     for (int x = 0; x < X_INSTANCES; x++) {
         for (int y = 0; y < Y_INSTANCES; y++) {
             instances[idx] = MatrixTranslate(x * spacing - offsetX, 0, y * spacing - offsetZ);
-            instanceColors[idx] = (Color) {
-                (unsigned char)(rand() % 255),
-                (unsigned char)(rand() % 255),
-                (unsigned char)(rand() % 255),
-                255
-            };
+            instanceColors[idx] = (Color){rand()%256, rand()%256, rand()%256, 255};
             idx++;
         }
     }
 
-    /* --- Configure the camera and ready to go! */
-
-    camDefault = (Camera3D) {
-        .position = (Vector3) { 0, 2, 2 },
-        .target = (Vector3) { 0, 0, 0 },
-        .up = (Vector3) { 0, 1, 0 },
-        .fovy = 60,
+    // Setup camera
+    Camera3D camDefault = {
+        .position = {0, 2, 2},
+        .target = {0, 0, 0},
+        .up = {0, 1, 0},
+        .fovy = 60
     };
 
-    return "[r3d] - DoF example";
-}
+    // Main loop
+    while (!WindowShouldClose())
+    {
+        float delta = GetFrameTime();
 
-void Update(float delta)
-{
-    /* --- Rotate camera --- */
+        // Rotate camera
+        Matrix rotation = MatrixRotate(camDefault.up, 0.1f * delta);
+        Vector3 view = Vector3Subtract(camDefault.position, camDefault.target);
+        view = Vector3Transform(view, rotation);
+        camDefault.position = Vector3Add(camDefault.target, view);
 
-    Matrix rotation = MatrixRotate(GetCameraUp(&camDefault), 0.1f * delta);
-    Vector3 view = Vector3Subtract(camDefault.position, camDefault.target);
-    view = Vector3Transform(view, rotation);
-    camDefault.position = Vector3Add(camDefault.target, view);
+        // Adjust DoF based on mouse
+        Vector2 mousePos = GetMousePosition();
+        float focusPoint = 0.5f + (5.0f - (mousePos.y / GetScreenHeight()) * 5.0f);
+        float focusScale = 0.5f + (5.0f - (mousePos.x / GetScreenWidth()) * 5.0f);
+        R3D_ENVIRONMENT_SET(dof.focusPoint, focusPoint);
+        R3D_ENVIRONMENT_SET(dof.focusScale, focusScale);
 
-    /* --- Adjust DoF based on mouse position --- */
+        float mouseWheel = GetMouseWheelMove();
+        if (mouseWheel != 0.0f) {
+            float maxBlur = R3D_ENVIRONMENT_GET(dof.maxBlurSize);
+            R3D_ENVIRONMENT_SET(dof.maxBlurSize, maxBlur + mouseWheel * 0.1f);
+        }
 
-    Vector2 mousePosition = GetMousePosition();
-    float mouseWheel = GetMouseWheelMove();
+        if (IsKeyPressed(KEY_F1)) {
+            R3D_ENVIRONMENT_SET(dof.debugMode, !R3D_ENVIRONMENT_GET(dof.debugMode));
+        }
 
-    float focusPoint = 0.5f + (5.0f - (mousePosition.y / GetScreenHeight()) * 5.0f);
-    R3D_ENVIRONMENT_SET(dof.focusPoint, focusPoint);
+        BeginDrawing();
+            ClearBackground(BLACK);
 
-    float focusScale = 0.5f + (5.0f - (mousePosition.x / GetScreenWidth()) * 5.0f);
-    R3D_ENVIRONMENT_SET(dof.focusScale, focusScale);
+            // Render scene
+            R3D_Begin(camDefault);
+                R3D_DrawMeshInstancedEx(&meshSphere, &matDefault, instances, instanceColors, INSTANCE_COUNT);
+            R3D_End();
 
-    if (mouseWheel != 0.0f) {
-        float maxBlurSize = R3D_ENVIRONMENT_GET(dof.maxBlurSize);
-        maxBlurSize += mouseWheel * 0.1f;
-        R3D_ENVIRONMENT_SET(dof.maxBlurSize, maxBlurSize);
+            // Display DoF values
+            char dofText[128];
+            snprintf(dofText, sizeof(dofText), "Focus Point: %.2f\nFocus Scale: %.2f\nMax Blur Size: %.2f\nDebug Mode: %d",
+                R3D_ENVIRONMENT_GET(dof.focusPoint), R3D_ENVIRONMENT_GET(dof.focusScale),
+                R3D_ENVIRONMENT_GET(dof.maxBlurSize), R3D_ENVIRONMENT_GET(dof.debugMode));
+
+            DrawText(dofText, 10, 30, 20, (Color) {255, 255, 255, 127});
+
+            // Display instructions
+            DrawText("F1: Toggle Debug Mode\nScroll: Adjust Max Blur Size\nMouse Left/Right: Shallow/Deep DoF\nMouse Up/Down: Adjust Focus Point Depth", 300, 10, 20, (Color) {255, 255, 255, 127});
+
+            // Display FPS
+            char fpsText[32];
+            snprintf(fpsText, sizeof(fpsText), "FPS: %d", GetFPS());
+            DrawText(fpsText, 10, 10, 20, (Color) {255, 255, 255, 127});
+
+        EndDrawing();
     }
 
-    if (IsKeyPressed(KEY_F1)) {
-        R3D_ENVIRONMENT_SET(dof.debugMode, !R3D_ENVIRONMENT_GET(dof.debugMode));
-    }
-}
-
-void Draw(void)
-{
-    /* --- Ensure Clear Background --- */
-
-    ClearBackground(BLACK);
-  
-    /* --- Render R3D scene --- */
-
-    R3D_Begin(camDefault);
-        R3D_DrawMeshInstancedEx(&meshSphere, &matDefault, instances, instanceColors, INSTANCE_COUNT);
-    R3D_End();
-
-    /* --- Draw DoF values --- */
-
-    char dofText[128];
-    snprintf(dofText, sizeof(dofText), "Focus Point: %.2f\nFocus Scale: %.2f\nMax Blur Size: %.2f\nDebug Mode: %d",
-        R3D_ENVIRONMENT_GET(dof.focusPoint), R3D_ENVIRONMENT_GET(dof.focusScale),
-        R3D_ENVIRONMENT_GET(dof.maxBlurSize), R3D_ENVIRONMENT_GET(dof.debugMode));
-
-    DrawText(dofText, 10, 30, 20, WHITE);
-
-    /* --- Print instructions --- */
-
-    DrawText("F1: Toggle Debug Mode\nScroll: Adjust Max Blur Size\nMouse Left/Right: Shallow/Deep DoF\nMouse Up/Down: Adjust Focus Point Depth", 300, 10, 20, WHITE);
-
-    /* --- Draw FPS --- */
-
-    char fpsText[32];
-    snprintf(fpsText, sizeof(fpsText), "FPS: %d", GetFPS());
-    DrawText(fpsText, 10, 10, 20, WHITE);
-}
-
-void Close(void)
-{
+    // Cleanup
     R3D_UnloadMesh(&meshSphere);
     R3D_Close();
+    CloseWindow();
+
+    return 0;
 }

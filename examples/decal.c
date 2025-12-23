@@ -1,34 +1,144 @@
-#include "./common.h"
+#include <r3d/r3d.h>
+#include <raymath.h>
+
+#ifndef RESOURCES_PATH
+#	define RESOURCES_PATH "./"
+#endif
 
 #define MAXDECALS 256
 
-/* === Resources === */
+static bool RayCubeIntersection(Ray ray, Vector3 cubePos, Vector3 cubeSize, Vector3* intersectionPoint, Vector3* normal);
+static void DrawTransformedCube(Matrix t, Color c);
 
-static R3D_Mesh meshPlane;
-static R3D_Material materialWalls = { 0 };
-static Texture2D texture = { 0 };
-static R3D_Decal decal = { 0 };
-static Camera3D camera = { 0 };
-static R3D_Light light = { 0 };
+int main(void)
+{
+    InitWindow(800, 450, "[r3d] - Decal example");
+    SetTargetFPS(60);
 
-/* === Data === */
+    // Initialize R3D
+    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
-float roomSize = 32.0f;
-Matrix matRoom[6];
+    // Load decal texture
+    Texture2D texture = LoadTexture(RESOURCES_PATH "decal.png");
 
-Vector3 decalScale = { 3.0f, 3.0f, 3.0f };
-Matrix targetDecalTransform = { 0 };
+    // Create wall material
+    R3D_Material materialWalls = R3D_GetDefaultMaterial();
+    materialWalls.albedo.color = DARKGRAY;
 
-Matrix decalTransforms[MAXDECALS];
+    // Create decal material
+    R3D_Decal decal;
+    decal.material = R3D_GetDefaultMaterial();
+    decal.material.albedo.texture = texture;
 
-int decalCount = 0;
-int decalIndex = 0;
+    // Create room mesh and transforms
+    float roomSize = 32.0f;
+    R3D_Mesh meshPlane = R3D_GenMeshPlane(roomSize, roomSize, 1, 1);
 
-Vector3 targetPosition = { 0 };
+    Matrix matRoom[6];
+    matRoom[0] = MatrixMultiply(MatrixRotateZ(90.0f * DEG2RAD), MatrixTranslate(roomSize / 2.0f, 0.0f, 0.0f));
+    matRoom[1] = MatrixMultiply(MatrixRotateZ(-90.0f * DEG2RAD), MatrixTranslate(-roomSize / 2.0f, 0.0f, 0.0f));
+    matRoom[2] = MatrixMultiply(MatrixRotateX(90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.0f, -roomSize / 2.0f));
+    matRoom[3] = MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.0f, roomSize / 2.0f));
+    matRoom[4] = MatrixMultiply(MatrixRotateX(180.0f * DEG2RAD), MatrixTranslate(0.0f, roomSize / 2.0f, 0.0f));
+    matRoom[5] = MatrixTranslate(0.0f, -roomSize / 2.0f, 0.0f);
 
-/* === Helper Functions === */
+    // Setup light
+    R3D_Light light = R3D_CreateLight(R3D_LIGHT_OMNI);
+    R3D_SetLightEnergy(light, 2.0f);
+    R3D_SetLightActive(light, true);
 
-static bool RayCubeIntersection(Ray ray, Vector3 cubePosition, Vector3 cubeSize, Vector3* intersectionPoint, Vector3* normal) {
+    // Setup camera
+    Camera3D camera = (Camera3D) {
+        .position = (Vector3) {0.0f, 0.0f, 0.0f},
+        .target = (Vector3) {1.0f, 0.0f, 0.0f},
+        .up = (Vector3) {0.0f, 1.0f, 0.0f},
+        .fovy = 70,
+    };
+
+    DisableCursor();
+
+    // Decal state
+    Vector3 decalScale = {3.0f, 3.0f, 3.0f};
+    Matrix targetDecalTransform = MatrixIdentity();
+    Matrix decalTransforms[MAXDECALS];
+    int decalCount = 0;
+    int decalIndex = 0;
+    Vector3 targetPosition = {0};
+
+    // Main loop
+    while (!WindowShouldClose())
+    {
+        float delta = GetFrameTime();
+
+        UpdateCamera(&camera, CAMERA_FREE);
+
+        // Compute ray from camera to target
+        Ray hitRay = {camera.position, Vector3Normalize(Vector3Subtract(camera.target, camera.position))};
+
+        Vector3 hitPoint = {0}, hitNormal = {0};
+        if (RayCubeIntersection(hitRay, Vector3Zero(), (Vector3) { roomSize, roomSize, roomSize }, &hitPoint, &hitNormal)) {
+            targetPosition = hitPoint;
+        }
+
+        // Compute decal transform
+        Matrix translation = MatrixTranslate(targetPosition.x, targetPosition.y, targetPosition.z);
+        Matrix scaling = MatrixScale(decalScale.x, decalScale.y, decalScale.z);
+        Matrix rotation = MatrixIdentity();
+
+        if (hitNormal.x == -1.0f) rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 90.0f * DEG2RAD });
+        else if (hitNormal.x == 1.0f) rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, -90.0f * DEG2RAD });
+        else if (hitNormal.y == -1.0f) rotation = MatrixRotateY(180.0f * DEG2RAD);
+        else if (hitNormal.y == 1.0f) rotation = MatrixRotateZ(180.0f * DEG2RAD);
+        else if (hitNormal.z == -1.0f) rotation = MatrixRotateX(90.0f * DEG2RAD);
+        else if (hitNormal.z == 1.0f) rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 0 });
+
+        targetDecalTransform = MatrixMultiply(MatrixMultiply(scaling, rotation), translation);
+
+        // Apply decal on mouse click
+        if (IsMouseButtonPressed(0)) {
+            decalTransforms[decalIndex] = targetDecalTransform;
+            decalIndex = (decalIndex + 1) % MAXDECALS;
+            if (decalCount < MAXDECALS) decalCount++;
+        }
+
+        // Draw scene
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+
+            R3D_Begin(camera);
+
+            for (int i = 0; i < 6; i++) {
+                R3D_DrawMesh(&meshPlane, &materialWalls, matRoom[i]);
+            }
+
+            if (decalCount > 0) {
+                R3D_DrawDecalInstanced(&decal, decalTransforms, decalCount);
+            }
+
+            R3D_DrawDecal(&decal, targetDecalTransform);
+
+        R3D_End();
+
+        BeginMode3D(camera);
+        DrawTransformedCube(targetDecalTransform, WHITE);
+        EndMode3D();
+
+        DrawText("LEFT CLICK TO APPLY DECAL", 10, 10, 20, LIME);
+
+        EndDrawing();
+    }
+
+    // Cleanup
+    R3D_UnloadMesh(&meshPlane);
+    R3D_Close();
+
+    CloseWindow();
+
+    return 0;
+}
+
+bool RayCubeIntersection(Ray ray, Vector3 cubePosition, Vector3 cubeSize, Vector3* intersectionPoint, Vector3* normal)
+{
     Vector3 halfSize = { cubeSize.x / 2, cubeSize.y / 2, cubeSize.z / 2 };
 
     Vector3 min = { cubePosition.x - halfSize.x, cubePosition.y - halfSize.y, cubePosition.z - halfSize.z };
@@ -80,7 +190,8 @@ static bool RayCubeIntersection(Ray ray, Vector3 cubePosition, Vector3 cubeSize,
     return true;
 }
 
-static void DrawTransformedCube(Matrix transform, Color color) {
+void DrawTransformedCube(Matrix transform, Color color)
+{
     static Vector3 vertices[8] = {
         { -0.5f, -0.5f, -0.5f },
         {  0.5f, -0.5f, -0.5f },
@@ -103,138 +214,4 @@ static void DrawTransformedCube(Matrix transform, Color color) {
         DrawLine3D(transformedVertices[i + 4], transformedVertices[(i + 1) % 4 + 4], color);   // Top
         DrawLine3D(transformedVertices[i], transformedVertices[i + 4], color);                 // Sides
     }
-}
-
-/* === Example === */
-
-const char* Init(void)
-{
-    /* --- Initialize R3D with its internal resolution --- */
-
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
-    SetTargetFPS(60);
-
-    /* --- Load textures --- */
-
-    texture = LoadTexture(RESOURCES_PATH "decal.png");
-
-    /* --- Create materials --- */
-
-    materialWalls = R3D_GetDefaultMaterial();
-    materialWalls.albedo.color = DARKGRAY;
-
-    decal.material = R3D_GetDefaultMaterial();
-    decal.material.albedo.texture = texture;
-
-    /* --- Create a plane along with the transformation matrices to place them to represent a room --- */
-
-    meshPlane = R3D_GenMeshPlane(roomSize, roomSize, 1, 1);
-
-    matRoom[0] = MatrixMultiply(MatrixRotateZ(90.0f * DEG2RAD), MatrixTranslate(roomSize / 2.0f, 0.0f, 0.0f));
-    matRoom[1] = MatrixMultiply(MatrixRotateZ(-90.0f * DEG2RAD), MatrixTranslate(-roomSize / 2.0f, 0.0f, 0.0f));
-    matRoom[2] = MatrixMultiply(MatrixRotateX(90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.0f, -roomSize / 2.0f));
-    matRoom[3] = MatrixMultiply(MatrixRotateX(-90.0f * DEG2RAD), MatrixTranslate(0.0f, 0.0f, roomSize / 2.0f));
-    matRoom[4] = MatrixMultiply(MatrixRotateX(180.0f * DEG2RAD), MatrixTranslate(0.0f, roomSize / 2.0f, 0.0f));
-    matRoom[5] = MatrixTranslate(0.0f, -roomSize / 2.0f, 0.0f);
-
-    /* --- Setup the scene lighting --- */
-
-    light = R3D_CreateLight(R3D_LIGHT_OMNI);
-    R3D_SetLightEnergy(light, 2.0f);
-    R3D_SetLightActive(light, true);
-
-    /* --- Setup the camera --- */
-
-    camera = (Camera3D){
-        .position = (Vector3) { 0.0f, 0.0f, 0.0f },
-        .target = (Vector3) { roomSize / 2.0f, 0.0f, 0.0f },
-        .up = (Vector3) { 0.0f, 1.0f, 0.0f },
-        .fovy = 70,
-    };
-
-    DisableCursor();
-
-    return "[r3d] - Decal example";
-}
-
-void Update(float delta)
-{
-    UpdateCamera(&camera, CAMERA_FREE);
-
-    /* --- Find intersection point of camera target on cube --- */
-
-    Ray hitRay = {
-        .position = camera.position,
-        .direction = Vector3Normalize(Vector3Subtract(camera.target, camera.position))
-    };
-
-    Vector3 hitPoint = { 0 };
-    Vector3 hitNormal = { 0 };
-
-    if (RayCubeIntersection(hitRay, Vector3Zero(), (Vector3) { roomSize, roomSize, roomSize }, &hitPoint, &hitNormal)) {
-        targetPosition = hitPoint;
-    }
-
-    /* --- Create transformation matrix at intersection point --- */
-
-    Matrix translation = MatrixTranslate(targetPosition.x, targetPosition.y, targetPosition.z);
-    Matrix scaling = MatrixScale(decalScale.x, decalScale.y, decalScale.z);
-    Matrix rotation = MatrixIdentity();
-
-    if (hitNormal.x == -1.0f)
-        rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 90.0f * DEG2RAD });
-    else if (hitNormal.x == 1.0f)
-        rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, -90.0f * DEG2RAD });
-    else if (hitNormal.y == -1.0f)
-        rotation = MatrixRotateY(180.0f * DEG2RAD);
-    else if (hitNormal.y == 1.0f)
-        rotation = MatrixRotateZ(180.0f * DEG2RAD);
-    else if (hitNormal.z == -1.0f)
-        rotation = MatrixRotateX(90.0f * DEG2RAD);
-    else if (hitNormal.z == 1.0f)
-        rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 0 });
-
-    targetDecalTransform = MatrixMultiply(MatrixMultiply(scaling, rotation), translation);
-
-    /* --- Input --- */
-
-    if (IsMouseButtonPressed(0)) {
-        decalTransforms[decalIndex] = targetDecalTransform;
-        decalIndex++;
-        if (decalIndex >= MAXDECALS) decalIndex = 0;
-        if (decalCount < MAXDECALS) decalCount++;
-    }
-}
-
-void Draw(void)
-{
-    R3D_Begin(camera);
-
-    /* --- Draw the faces of our "room" --- */
-    for (int i = 0; i < 6; i++) {
-        R3D_DrawMesh(&meshPlane, &materialWalls, matRoom[i]);
-    }
-
-    /* --- Draw applied decals --- */
-    if (decalCount > 0) {
-        R3D_DrawDecalInstanced(&decal, decalTransforms, decalCount);
-    }
-
-    /* --- Draw targeting decal --- */
-    R3D_DrawDecal(&decal, targetDecalTransform);
-
-    R3D_End();
-
-    /* --- Show decal projection box --- */
-    BeginMode3D(camera);
-    DrawTransformedCube(targetDecalTransform, WHITE);
-    EndMode3D();
-
-    DrawText("LEFT CLICK TO APPLY DECAL", 10, 10, 20, LIME);
-}
-
-void Close(void)
-{
-    R3D_UnloadMesh(&meshPlane);
-    R3D_Close();
 }

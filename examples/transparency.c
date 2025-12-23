@@ -1,101 +1,76 @@
-#include "./common.h"
-#include "r3d/r3d_material.h"
+#include <r3d/r3d.h>
 
-/* === Resources === */
-
-static R3D_Model cube = { 0 };
-static R3D_Model plane = { 0 };
-static R3D_Model sphere = { 0 };
-static Camera3D camera = { 0 };
-
-/* === Example === */
-
-const char* Init(void)
+int main(void)
 {
-    /* --- Initialize R3D with its internal resolution --- */
-
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    // Initialize window
+    InitWindow(800, 450, "[r3d] - Transparency example");
     SetTargetFPS(60);
 
-    /* --- Load cube model --- */
+    // Initialize R3D
+    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
-    R3D_Mesh mesh = { 0 };
-
-    mesh = R3D_GenMeshCube(1, 1, 1);
-    cube = R3D_LoadModelFromMesh(&mesh);
-
-    // NOTE: Alpha transparency mode don't cast shadows
+    // Create cube model
+    R3D_Mesh mesh = R3D_GenMeshCube(1, 1, 1);
+    R3D_Model cube = R3D_LoadModelFromMesh(&mesh);
     cube.materials[0].transparencyMode = R3D_TRANSPARENCY_ALPHA;
-
-    //cube.materials[0].transparencyMode = R3D_TRANSPARENCY_PREPASS;
-    //cube.meshes[0].shadowCastMode = R3D_SHADOW_CAST_DISABLED;
-
-    cube.materials[0].albedo.color = (Color){ 100, 100, 255, 100 };
+    cube.materials[0].albedo.color = (Color){100, 100, 255, 100};
     cube.materials[0].orm.occlusion = 1.0f;
     cube.materials[0].orm.roughness = 0.2f;
     cube.materials[0].orm.metalness = 0.2f;
 
-    /* --- Load plane model --- */
-
+    // Create plane model
     mesh = R3D_GenMeshPlane(1000, 1000, 1, 1);
-    plane = R3D_LoadModelFromMesh(&mesh);
-
+    R3D_Model plane = R3D_LoadModelFromMesh(&mesh);
     plane.materials[0].orm.occlusion = 1.0f;
     plane.materials[0].orm.roughness = 1.0f;
     plane.materials[0].orm.metalness = 0.0f;
 
-    /* --- Load sphere model --- */
-
+    // Create sphere model
     mesh = R3D_GenMeshSphere(0.5f, 64, 64);
-    sphere = R3D_LoadModelFromMesh(&mesh);
-
+    R3D_Model sphere = R3D_LoadModelFromMesh(&mesh);
     sphere.materials[0].orm.occlusion = 1.0f;
     sphere.materials[0].orm.roughness = 0.25f;
     sphere.materials[0].orm.metalness = 0.75f;
 
-    /* --- Configure the camera --- */
-
-    camera = (Camera3D){
-        .position = (Vector3) { 0, 2, 2 },
-        .target = (Vector3) { 0, 0, 0 },
-        .up = (Vector3) { 0, 1, 0 },
-        .fovy = 60,
+    // Setup camera
+    Camera3D camera = {
+        .position = {0, 2, 2},
+        .target = {0, 0, 0},
+        .up = {0, 1, 0},
+        .fovy = 60
     };
 
-    /* --- Configure lighting --- */
-
-    R3D_ENVIRONMENT_SET(ambient.color, (Color) { 10, 10, 10, 255 });
-
+    // Setup lighting
+    R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
+    R3D_LightLookAt(light, (Vector3){0, 10, 5}, (Vector3){0});
+    R3D_SetLightActive(light, true);
+    R3D_EnableShadow(light, 4096);
+
+    // Main loop
+    while (!WindowShouldClose())
     {
-        R3D_LightLookAt(light, (Vector3) { 0, 10, 5 }, (Vector3) { 0 });
-        R3D_SetLightActive(light, true);
-        R3D_EnableShadow(light, 4096);
+        UpdateCamera(&camera, CAMERA_ORBITAL);
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+
+            R3D_Begin(camera);
+                R3D_DrawModel(&plane, (Vector3){0, -0.5f, 0}, 1.0f);
+                R3D_DrawModel(&sphere, (Vector3){0, 0, 0}, 1.0f);
+                R3D_DrawModel(&cube, (Vector3){0, 0, 0}, 1.0f);
+            R3D_End();
+
+        EndDrawing();
     }
 
-    return "[r3d] - Transparency example";
-}
-
-void Update(float delta)
-{
-    UpdateCamera(&camera, CAMERA_ORBITAL);
-}
-
-void Draw(void)
-{
-    R3D_Begin(camera);
-    {
-        R3D_DrawModel(&plane, (Vector3) { 0, -0.5f, 0 }, 1.0f);
-        R3D_DrawModel(&sphere, (Vector3) { 0 }, 1.0f);
-        R3D_DrawModel(&cube, (Vector3) { 0 }, 1.0f);
-    }
-    R3D_End();
-}
-
-void Close(void)
-{
+    // Cleanup
     R3D_UnloadModel(&plane, false);
     R3D_UnloadModel(&sphere, false);
-
+    R3D_UnloadModel(&cube, false);
     R3D_Close();
+
+    CloseWindow();
+
+    return 0;
 }
