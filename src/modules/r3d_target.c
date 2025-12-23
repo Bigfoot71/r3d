@@ -89,15 +89,8 @@ static int get_or_create_fbo(const r3d_target_t* targets, int count)
 
     for (int i = 0; i < R3D_MOD_TARGET.fboCount; i++) {
         const r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[i];
-        if (fbo->count == count) {
-            bool match = true;
-            for (int j = 0; j < count; j++) {
-                if (fbo->targets[j] != targets[j]) {
-                    match = false;
-                    break;
-                }
-            }
-            if (match) return i;
+        if (fbo->count == count && memcmp(fbo->targets, targets, count * sizeof(*targets)) == 0) {
+            return i;
         }
     }
 
@@ -342,6 +335,8 @@ void r3d_target_set_mip_level(int attachment, int level)
 
     const r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[R3D_MOD_TARGET.currentFbo];
     r3d_target_t target = fbo->targets[attachment];
+
+    assert(TARGET_CONFIG[target].mipmaps);
 
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment,
