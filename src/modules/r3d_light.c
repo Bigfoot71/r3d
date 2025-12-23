@@ -196,6 +196,15 @@ static void update_light_matrix(r3d_light_t* light, Vector3 viewPosition)
     }
 }
 
+static void update_light_frustum(r3d_light_t* light)
+{
+    int n = (light->type == R3D_LIGHT_OMNI) ? 6 : 1;
+
+    for (int i = 0; i < n; i++) {
+        light->frustum[i] = r3d_frustum_create(light->matVP[i]);
+    }
+}
+
 static void update_light_bounding_box(r3d_light_t* light)
 {
     BoundingBox* aabb = &light->aabb;
@@ -511,11 +520,10 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
             : light->state.matrixShouldBeUpdated;
 
         if (shouldUpdateMatrix) {
-            light->state.matrixShouldBeUpdated = false;
             update_light_matrix(light, viewPosition);
-            if (!isDirectional) {
-                update_light_bounding_box(light);
-            }
+            if (light->shadow) update_light_frustum(light);
+            if (!isDirectional) update_light_bounding_box(light);
+            light->state.matrixShouldBeUpdated = false;
         }
 
         if (r3d_frustum_is_aabb_in(viewFrustum, &light->aabb)) {

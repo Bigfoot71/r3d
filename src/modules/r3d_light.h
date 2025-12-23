@@ -42,6 +42,7 @@ typedef struct {
 
 typedef struct {
     Matrix matVP[6];                        //< View/projection matrix of the light (only [0] for dir/spot, 6 for omni lights)
+    r3d_frustum_t frustum[6];               //< Frustum of the light (only [0] for dir/spot, 6 for omni lights) (calculated only if shadows are enabled)
     BoundingBox aabb;                       //< AABB in world space of the light volume
     r3d_light_state_t state;                //< Light update config
     r3d_light_shadow_map_t shadowMap;       //< 2D or Cube shadow map

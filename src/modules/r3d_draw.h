@@ -190,8 +190,16 @@ void r3d_draw_clear(void);
 void r3d_draw_push(const r3d_draw_call_t* call, bool decal);
 
 /*
- * Perform frustum culling on a draw list.
- * Invisible draw calls are removed from the list.
+ * Indicates if the draw call is visible within the given frustum.
+ * Useful for shadow maps, but for final scene culling, use `r3d_draw_cull_list`,
+ * which generates a complete list of visible draw calls. Can only be called once.
+ */
+bool r3d_draw_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum);
+
+/*
+ * Performs frustum culling on a draw list.
+ * Invisible draw calls are removed, leaving only those visible within the frustum.
+ * Should be called once per list/frame for final scene rendering.
  */
 void r3d_draw_cull_list(r3d_draw_list_enum_t list, const r3d_frustum_t* frustum);
 

@@ -123,27 +123,6 @@ static int compare_front_to_back(const void* a, const void* b)
 }
 
 // ========================================
-// INTERNAL CULLING FUNCTIONS
-// ========================================
-
-bool is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
-{
-    const BoundingBox* aabb = R3D_DRAW_HAS_INSTANCES(call)
-        ? &call->instanced.allAabb : &call->mesh.aabb;
-
-    // Special-case: an infinite AABB is sometimes used internally in R3D to ignore culling.
-    // We only check one axis as a fast sentinel; if the box is not truly infinite on all axes,
-    // any false positive would indicate an external data error rather than a culling issue.
-    if (aabb->min.x == -FLT_MAX) return true;
-
-    if (r3d_matrix_is_identity(&call->transform)) {
-        return r3d_frustum_is_aabb_in(frustum, aabb);
-    }
-
-    return r3d_frustum_is_obb_in(frustum, aabb, &call->transform);
-}
-
-// ========================================
 // INTERNAL DRAW FUNCTIONS
 // ========================================
 
@@ -232,12 +211,29 @@ void r3d_draw_push(const r3d_draw_call_t* call, bool decal)
     R3D_MOD_DRAW.list[list].drawCalls[listIndex] = drawIndex;
 }
 
+bool r3d_draw_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
+{
+    const BoundingBox* aabb = R3D_DRAW_HAS_INSTANCES(call)
+        ? &call->instanced.allAabb : &call->mesh.aabb;
+
+    // Special-case: an infinite AABB is sometimes used internally in R3D to ignore culling.
+    // We only check one axis as a fast sentinel; if the box is not truly infinite on all axes,
+    // any false positive would indicate an external data error rather than a culling issue.
+    if (aabb->min.x == -FLT_MAX) return true;
+
+    if (r3d_matrix_is_identity(&call->transform)) {
+        return r3d_frustum_is_aabb_in(frustum, aabb);
+    }
+
+    return r3d_frustum_is_obb_in(frustum, aabb, &call->transform);
+}
+
 void r3d_draw_cull_list(r3d_draw_list_enum_t list, const r3d_frustum_t* frustum)
 {
     r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
 
     for (int i = drawList->numDrawCalls - 1; i >= 0; i--) {
-        if (!is_visible(&R3D_MOD_DRAW.drawCalls[drawList->drawCalls[i]], frustum)) {
+        if (!r3d_draw_is_visible(&R3D_MOD_DRAW.drawCalls[drawList->drawCalls[i]], frustum)) {
             drawList->drawCalls[i] = drawList->drawCalls[--drawList->numDrawCalls];
         }
     }

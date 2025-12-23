@@ -872,7 +872,7 @@ void pass_scene_shadow(void)
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-                    if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
+                    if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED && r3d_draw_is_visible(call, &light->frustum[iFace])) {
                         raster_depth_cube(call, true, &light->matVP[iFace]);
                     }
                 }
@@ -886,7 +886,7 @@ void pass_scene_shadow(void)
             R3D_SHADER_USE(scene.depth);
 
             R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-                if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED) {
+                if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED && r3d_draw_is_visible(call, &light->frustum[0])) {
                     raster_depth(call, true, &light->matVP[0]);
                 }
             }
