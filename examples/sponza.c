@@ -69,6 +69,7 @@ int main(void)
             R3D_ENVIRONMENT_SET(ssao.enabled, !R3D_ENVIRONMENT_GET(ssao.enabled));
         }
 
+        // Toggle SSIL
         if (IsKeyPressed(KEY_TWO)) {
             R3D_ENVIRONMENT_SET(ssil.enabled, !R3D_ENVIRONMENT_GET(ssil.enabled));
         }
