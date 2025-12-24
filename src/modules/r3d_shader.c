@@ -20,8 +20,9 @@
 #include <shaders/color.frag.h>
 #include <shaders/screen.vert.h>
 #include <shaders/cubemap.vert.h>
+#include <shaders/bilateral_blur.frag.h>
 #include <shaders/ssao.frag.h>
-#include <shaders/ssao_blur.frag.h>
+#include <shaders/ssil.frag.h>
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
@@ -238,22 +239,75 @@ void r3d_shader_load_prepare_ssao(void)
     SET_SAMPLER_1D(prepare.ssao, uTexKernel, 2);
     SET_SAMPLER_2D(prepare.ssao, uTexNoise, 3);
 }
-    
+
 void r3d_shader_load_prepare_ssao_blur(void)
 {
-    LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, SSAO_BLUR_FRAG);
+    const char* defines[] = {"SSAO"};
+    char* fsCode = inject_defines_to_shader_code(BILATERAL_BLUR_FRAG, defines, 1);
 
-    GET_LOCATION(prepare.ssaoBlur, uTexOcclusion);
+    LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, fsCode);
+
+    RL_FREE(fsCode);
+
+    GET_LOCATION(prepare.ssaoBlur, uTexSource);
     GET_LOCATION(prepare.ssaoBlur, uTexNormal);
     GET_LOCATION(prepare.ssaoBlur, uTexDepth);
     GET_LOCATION(prepare.ssaoBlur, uMatInvProj);
+    GET_LOCATION(prepare.ssaoBlur, uMatView);
     GET_LOCATION(prepare.ssaoBlur, uDirection);
 
     USE_SHADER(prepare.ssaoBlur);
 
-    SET_SAMPLER_2D(prepare.ssaoBlur, uTexOcclusion, 0);
+    SET_SAMPLER_2D(prepare.ssaoBlur, uTexSource, 0);
     SET_SAMPLER_2D(prepare.ssaoBlur, uTexNormal, 1);
     SET_SAMPLER_2D(prepare.ssaoBlur, uTexDepth, 2);
+}
+
+void r3d_shader_load_prepare_ssil(void)
+{
+    LOAD_SHADER(prepare.ssil, SCREEN_VERT, SSIL_FRAG);
+
+    GET_LOCATION(prepare.ssil, uTexDepth);
+    GET_LOCATION(prepare.ssil, uTexNormal);
+    GET_LOCATION(prepare.ssil, uTexLight);
+    GET_LOCATION(prepare.ssil, uSampleCount);
+    GET_LOCATION(prepare.ssil, uSampleRadius);
+    GET_LOCATION(prepare.ssil, uSliceCount);
+    GET_LOCATION(prepare.ssil, uHitThickness);
+    GET_LOCATION(prepare.ssil, uAoPower);
+    GET_LOCATION(prepare.ssil, uEnergy);
+    GET_LOCATION(prepare.ssil, uMatInvProj);
+    GET_LOCATION(prepare.ssil, uMatProj);
+    GET_LOCATION(prepare.ssil, uMatView);
+
+    USE_SHADER(prepare.ssil);
+
+    SET_SAMPLER_2D(prepare.ssil, uTexDepth, 0);
+    SET_SAMPLER_2D(prepare.ssil, uTexNormal, 1);
+    SET_SAMPLER_2D(prepare.ssil, uTexLight, 2);
+}
+
+void r3d_shader_load_prepare_ssil_blur(void)
+{
+    const char* defines[] = {"SSIL"};
+    char* fsCode = inject_defines_to_shader_code(BILATERAL_BLUR_FRAG, defines, 1);
+
+    LOAD_SHADER(prepare.ssilBlur, SCREEN_VERT, fsCode);
+
+    RL_FREE(fsCode);
+
+    GET_LOCATION(prepare.ssilBlur, uTexSource);
+    GET_LOCATION(prepare.ssilBlur, uTexNormal);
+    GET_LOCATION(prepare.ssilBlur, uTexDepth);
+    GET_LOCATION(prepare.ssilBlur, uMatInvProj);
+    GET_LOCATION(prepare.ssilBlur, uMatView);
+    GET_LOCATION(prepare.ssilBlur, uDirection);
+
+    USE_SHADER(prepare.ssilBlur);
+
+    SET_SAMPLER_2D(prepare.ssilBlur, uTexSource, 0);
+    SET_SAMPLER_2D(prepare.ssilBlur, uTexNormal, 1);
+    SET_SAMPLER_2D(prepare.ssilBlur, uTexDepth, 2);
 }
 
 void r3d_shader_load_prepare_bloom_down(void)
@@ -557,6 +611,7 @@ void r3d_shader_load_deferred_ambient_ibl(void)
     GET_LOCATION(deferred.ambientIbl, uTexNormal);
     GET_LOCATION(deferred.ambientIbl, uTexDepth);
     GET_LOCATION(deferred.ambientIbl, uTexSSAO);
+    GET_LOCATION(deferred.ambientIbl, uTexSSIL);
     GET_LOCATION(deferred.ambientIbl, uTexORM);
     GET_LOCATION(deferred.ambientIbl, uCubeIrradiance);
     GET_LOCATION(deferred.ambientIbl, uCubePrefilter);
@@ -574,11 +629,12 @@ void r3d_shader_load_deferred_ambient_ibl(void)
     SET_SAMPLER_2D(deferred.ambientIbl, uTexNormal, 1);
     SET_SAMPLER_2D(deferred.ambientIbl, uTexDepth, 2);
     SET_SAMPLER_2D(deferred.ambientIbl, uTexSSAO, 3);
-    SET_SAMPLER_2D(deferred.ambientIbl, uTexORM, 4);
+    SET_SAMPLER_2D(deferred.ambientIbl, uTexSSIL, 4);
+    SET_SAMPLER_2D(deferred.ambientIbl, uTexORM, 5);
 
-    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, 5);
-    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, 6);
-    SET_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, 7);
+    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, 6);
+    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, 7);
+    SET_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, 8);
 
 }
 
@@ -588,6 +644,7 @@ void r3d_shader_load_deferred_ambient(void)
 
     GET_LOCATION(deferred.ambient, uTexAlbedo);
     GET_LOCATION(deferred.ambient, uTexSSAO);
+    GET_LOCATION(deferred.ambient, uTexSSIL);
     GET_LOCATION(deferred.ambient, uTexORM);
     GET_LOCATION(deferred.ambient, uAmbientColor);
     GET_LOCATION(deferred.ambient, uAmbientEnergy);
@@ -596,7 +653,8 @@ void r3d_shader_load_deferred_ambient(void)
 
     SET_SAMPLER_2D(deferred.ambient, uTexAlbedo, 0);
     SET_SAMPLER_2D(deferred.ambient, uTexSSAO, 1);
-    SET_SAMPLER_2D(deferred.ambient, uTexORM, 2);
+    SET_SAMPLER_2D(deferred.ambient, uTexSSIL, 2);
+    SET_SAMPLER_2D(deferred.ambient, uTexORM, 3);
 }
 
 void r3d_shader_load_deferred_lighting(void)
@@ -650,17 +708,13 @@ void r3d_shader_load_deferred_compose(void)
 {
     LOAD_SHADER(deferred.compose, SCREEN_VERT, COMPOSE_FRAG);
 
-    GET_LOCATION(deferred.compose, uTexAlbedo);
-    GET_LOCATION(deferred.compose, uTexEmission);
     GET_LOCATION(deferred.compose, uTexDiffuse);
     GET_LOCATION(deferred.compose, uTexSpecular);
 
     USE_SHADER(deferred.compose);
 
-    SET_SAMPLER_2D(deferred.compose, uTexAlbedo, 0);
-    SET_SAMPLER_2D(deferred.compose, uTexEmission, 1);
-    SET_SAMPLER_2D(deferred.compose, uTexDiffuse, 2);
-    SET_SAMPLER_2D(deferred.compose, uTexSpecular, 3);
+    SET_SAMPLER_2D(deferred.compose, uTexDiffuse, 0);
+    SET_SAMPLER_2D(deferred.compose, uTexSpecular, 1);
 }
 
 void r3d_shader_load_post_bloom(void)
@@ -793,6 +847,8 @@ void r3d_shader_quit()
 {
     UNLOAD_SHADER(prepare.ssao);
     UNLOAD_SHADER(prepare.ssaoBlur);
+    UNLOAD_SHADER(prepare.ssil);
+    UNLOAD_SHADER(prepare.ssilBlur);
     UNLOAD_SHADER(prepare.bloomDown);
     UNLOAD_SHADER(prepare.bloomUp);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
@@ -824,7 +880,7 @@ void r3d_shader_quit()
 // HELPER FUNCTIONS DEFINITIONS
 // ========================================
 
-static char* inject_defines_to_shader_code(const char* code, const char* defines[], int count)
+char* inject_defines_to_shader_code(const char* code, const char* defines[], int count)
 {
     if (!code || count < 0) return NULL;
 

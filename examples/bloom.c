@@ -79,8 +79,6 @@ int main(void)
                 R3D_DrawMesh(&cube, &material, MatrixIdentity());
             R3D_End();
 
-            R3D_DrawBufferEmission(10, 10, 100, 100);
-
             // Draw bloom info
             DrawTextRight(TextFormat("Mode: %s", GetBloomModeName()), 10, 20, LIME);
             DrawTextRight(TextFormat("Intensity: %.2f", R3D_ENVIRONMENT_GET(bloom.intensity)), 40, 20, LIME);

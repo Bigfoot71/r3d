@@ -240,11 +240,11 @@ void main()
     /* Compute diffuse lighting */
 
     vec3 diffuse = L_Diffuse(cLdotH, cNdotV, cNdotL, roughness);
-    diffuse *= lightColE * (1.0 - metalness); // 0.0 for pure metal, 1.0 for dielectric
+    diffuse *= albedo * lightColE * (1.0 - metalness);
 
     /* Compute specular lighting */
 
-    vec3 specular =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
+    vec3 specular = L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
     specular *= lightColE * uLight.specular;
 
     /* --- Calculating a random rotation matrix for shadow debanding --- */

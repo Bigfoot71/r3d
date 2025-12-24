@@ -25,13 +25,14 @@
 typedef enum {
     R3D_TARGET_INVALID = -1,
     R3D_TARGET_ALBEDO,          //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_EMISSION,        //< Full - Mip 1 - RGB[11|11|10]
     R3D_TARGET_NORMAL,          //< Full - Mip 1 - RG[16|16]
     R3D_TARGET_ORM,             //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[11|11|10]
-    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[11|11|10]
+    R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
+    R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
+    R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_BLOOM,           //< Full - Mip N - RGB[16|16|16]
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB[16|16|16]
@@ -43,9 +44,17 @@ typedef enum {
 // HELPER TARGET PACKS
 // ========================================
 
+#define R3D_TARGET_ALL_DEFERRED \
+    R3D_TARGET_ALBEDO,          \
+    R3D_TARGET_NORMAL,          \
+    R3D_TARGET_ORM,             \
+    R3D_TARGET_DIFFUSE,         \
+    R3D_TARGET_SPECULAR,        \
+    R3D_TARGET_DEPTH            \
+
 #define R3D_TARGET_GBUFFER      \
     R3D_TARGET_ALBEDO,          \
-    R3D_TARGET_EMISSION,        \
+    R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_NORMAL,          \
     R3D_TARGET_ORM,             \
     R3D_TARGET_DEPTH            \
@@ -86,6 +95,15 @@ typedef enum {
 #define R3D_TARGET_BIND_AND_SWAP_SSAO(target) do {                      \
     R3D_TARGET_BIND(target);                                            \
     target = r3d_target_swap_ssao(target);                              \
+} while(0)
+
+/*
+ * Binds the target, then swaps to the alternate SSIL target.
+ * Modifies the target parameter to point to the other buffer.
+ */
+#define R3D_TARGET_BIND_AND_SWAP_SSIL(target) do {                      \
+    R3D_TARGET_BIND(target);                                            \
+    target = r3d_target_swap_ssil(target);                              \
 } while(0)
 
 /*
@@ -192,6 +210,11 @@ void r3d_target_get_texel_size(float* w, float* h, int level);
  * Returns target '1' if target '0' is provided, otherwise returns target '0'.
  */
 r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao);
+
+/*
+ * Returns target '1' if target '0' is provided, otherwise returns target '0'.
+ */
+r3d_target_t r3d_target_swap_ssil(r3d_target_t ssil);
 
 /*
  * Returns target '1' if target '0' is provided, otherwise returns target '0'.
