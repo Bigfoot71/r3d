@@ -29,6 +29,7 @@ uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexNormal;
 uniform sampler2D uTexDepth;
 uniform sampler2D uTexSSAO;
+uniform sampler2D uTexSSIL;
 uniform sampler2D uTexORM;
 
 uniform samplerCube uCubeIrradiance;
@@ -62,48 +63,37 @@ vec3 GetPositionFromDepth(float depth)
 
 void main()
 {
-    /* Sample albedo and ORM texture and extract values */
-    
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
-    float occlusion = orm.r;
+    float ssao = texture(uTexSSAO, vTexCoord).r;
+    vec4 ssil = texture(uTexSSIL, vTexCoord);
+
+    float occlusion = orm.r * ssao * ssil.a;
     float roughness = orm.g;
     float metalness = orm.b;
 
-    /* Sample SSAO buffer and modulate occlusion value */
-
-    occlusion *= texture(uTexSSAO, vTexCoord).r;
-
-    /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
-
     vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
-
-    /* Sample world depth and reconstruct world position */
 
     float depth = texture(uTexDepth, vTexCoord).r;
     vec3 position = GetPositionFromDepth(depth);
 
-    /* Sample and decode normal in world space */
-
     vec3 N = M_DecodeOctahedral(texture(uTexNormal, vTexCoord).rg);
-
-    /* Compute view direction and the dot product of the normal and view direction */
-
     vec3 V = normalize(uViewPosition - position);
     float NdotV = max(dot(N, V), 0.0);
 
-    /* Compute ambient - IBL diffuse avec Fresnel amélioré */
+    /* --- Diffuse --- */
 
     vec3 kS = IBL_FresnelSchlickRoughness(NdotV, F0, roughness);
     vec3 kD = (1.0 - kS) * (1.0 - metalness);
 
     vec3 Nr = M_Rotate3D(N, uQuatSkybox);
-    vec3 diffuse = kD * texture(uCubeIrradiance, Nr).rgb;
+    vec3 irradiance = texture(uCubeIrradiance, Nr).rgb;
+    vec3 diffuse = albedo * kD * (irradiance + ssil.rgb);
 
     FragDiffuse = vec4(diffuse * occlusion * uAmbientEnergy, 1.0);
 
-    /* Skybox reflection - IBL specular amélioré */
+    /* --- Specular --- */
 
     vec3 R = M_Rotate3D(reflect(-V, N), uQuatSkybox);
 
@@ -132,6 +122,7 @@ noperspective in vec2 vTexCoord;
 
 uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexSSAO;
+uniform sampler2D uTexSSIL;
 uniform sampler2D uTexORM;
 uniform vec3 uAmbientColor;
 uniform float uAmbientEnergy;
@@ -145,34 +136,15 @@ layout(location = 1) out vec4 FragSpecular;
 
 void main()
 {
-    /* Sample albedo and ORM texture and extract values */
-
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
-    float occlusion = orm.r;
-    float roughness = orm.g;
-    float metalness = orm.b;
+    float ssao = texture(uTexSSAO, vTexCoord).r;
+    vec4 ssil = texture(uTexSSIL, vTexCoord);
 
-    /* Sample SSAO buffer and modulate occlusion value */
-
-	occlusion *= texture(uTexSSAO, vTexCoord).r;
-
-    /* --- Ambient lighting --- */
-
-    // Simplified calculation of diffuse as if NdotV is equal to 1.0 (view facing normal)
-    // NOTE: Small tweak here, we also add F0. It's not physically correct, 
-    //       but it's to at least simulate some specularity, otherwise the 
-    //       result would look poor for metals...
-
-    vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
-    vec3 kD = (1.0 - F0) * (1.0 - metalness);
-    vec3 ambient = kD * uAmbientColor;
-    ambient += F0 * uAmbientColor;
-    ambient *= uAmbientEnergy;
-    ambient *= occlusion;
-
-    /* --- Output --- */
+    vec3 ambient = albedo * (uAmbientColor + ssil.rgb);
+    ambient *= orm.r * ssao * ssil.a;
+    ambient *= (1.0 - orm.b);
 
     FragDiffuse = vec4(ambient, 1.0);
     FragSpecular = vec4(0.0);

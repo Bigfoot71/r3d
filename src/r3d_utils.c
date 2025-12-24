@@ -111,26 +111,6 @@ void R3D_DrawBufferAlbedo(float x, float y, float w, float h)
     );
 }
 
-void R3D_DrawBufferEmission(float x, float y, float w, float h)
-{
-    Texture2D tex = {
-        .id = r3d_target_get(R3D_TARGET_EMISSION),
-        .width = R3D_TARGET_WIDTH,
-        .height = R3D_TARGET_HEIGHT
-    };
-
-    DrawTexturePro(
-        tex, (Rectangle) { 0, 0, (float)tex.width, (float)-tex.height },
-        (Rectangle) { x, y, w, h }, (Vector2) { 0 }, 0, WHITE
-    );
-
-    DrawRectangleLines(
-        (int)(x + 0.5f), (int)(y + 0.5f),
-        (int)(w + 0.5f), (int)(h + 0.5f),
-        (Color) { 255, 0, 0, 255 }
-    );
-}
-
 void R3D_DrawBufferNormal(float x, float y, float w, float h)
 {
     Texture2D tex = {

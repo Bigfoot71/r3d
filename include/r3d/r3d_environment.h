@@ -70,7 +70,15 @@
             .radius = 0.5f,                             \
             .bias = 0.025,                              \
             .lightAffect = 0.0f,                        \
-            .iterations = 1,                            \
+            .enabled = false,                           \
+        },                                              \
+        .ssil = {                                       \
+            .sampleCount = 4,                           \
+            .sliceCount = 4,                            \
+            .sampleRadius = 5.0f,                       \
+            .hitThickness = 0.5f,                       \
+            .aoPower = 1.0f,                            \
+            .energy = 1.0f,                             \
             .enabled = false,                           \
         },                                              \
         .bloom = {                                      \
@@ -202,9 +210,23 @@ typedef struct R3D_EnvSSAO {
     float radius;           ///< Sampling radius in world space (default: 0.5)
     float bias;             ///< Depth bias to prevent self-shadowing artifacts (default: 0.025)
     float lightAffect;      ///< How much SSAO affects direct lighting [0.0-1.0] (default: 0.0)
-    int iterations;         ///< Blur iterations for smoothing (default: 1)
     bool enabled;           ///< Enable/disable SSAO effect (default: false)
 } R3D_EnvSSAO;
+
+/**
+ * @brief Screen Space Indirect Lighting (SSIL) settings.
+ *
+ * Approximates indirect lighting by gathering light from nearby surfaces in screen space.
+ */
+typedef struct R3D_EnvSSIL {
+    int sampleCount;        ///< Number of samples to compute indirect lighting (default: 4)
+    int sliceCount;         ///< Number of depth slices for accumulation (default: 4)
+    float sampleRadius;     ///< Maximum distance to gather light from (default: 5.0)
+    float hitThickness;     ///< Thickness threshold for occluders (default: 0.5)
+    float aoPower;          ///< Exponential falloff for visibility factor (too high = more noise) (default: 1.0)
+    float energy;           ///< Multiplier for indirect light intensity (default: 1.0)
+    bool enabled;           ///< Enable/disable SSIL effect (default: false)
+} R3D_EnvSSIL;
 
 /**
  * @brief Bloom post-processing settings.
@@ -293,6 +315,7 @@ typedef struct R3D_Environment {
     R3D_EnvBackground background;   ///< Background and skybox settings
     R3D_EnvAmbient    ambient;      ///< Ambient lighting configuration
     R3D_EnvSSAO       ssao;         ///< Screen space ambient occlusion
+    R3D_EnvSSIL       ssil;         ///< Screen space indirect lighting
     R3D_EnvBloom      bloom;        ///< Bloom glow effect
     R3D_EnvSSR        ssr;          ///< Screen space reflections
     R3D_EnvFog        fog;          ///< Atmospheric fog

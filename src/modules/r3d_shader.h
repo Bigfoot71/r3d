@@ -197,12 +197,39 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexOcclusion;
+    r3d_shader_uniform_sampler2D_t uTexSource;
     r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_sampler2D_t uTexDepth;
     r3d_shader_uniform_mat4_t uMatInvProj;
+    r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_vec2_t uDirection;
 } r3d_shader_prepare_ssao_blur_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler2D_t uTexDepth;
+    r3d_shader_uniform_sampler2D_t uTexNormal;
+    r3d_shader_uniform_sampler2D_t uTexLight;
+    r3d_shader_uniform_float_t uSampleCount;
+    r3d_shader_uniform_float_t uSampleRadius;
+    r3d_shader_uniform_float_t uSliceCount;
+    r3d_shader_uniform_float_t uHitThickness;
+    r3d_shader_uniform_float_t uAoPower;
+    r3d_shader_uniform_float_t uEnergy;
+    r3d_shader_uniform_mat4_t uMatInvProj;
+    r3d_shader_uniform_mat4_t uMatProj;
+    r3d_shader_uniform_mat4_t uMatView;
+} r3d_shader_prepare_ssil_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler2D_t uTexSource;
+    r3d_shader_uniform_sampler2D_t uTexNormal;
+    r3d_shader_uniform_sampler2D_t uTexDepth;
+    r3d_shader_uniform_mat4_t uMatInvProj;
+    r3d_shader_uniform_mat4_t uMatView;
+    r3d_shader_uniform_vec2_t uDirection;
+} r3d_shader_prepare_ssil_blur_t;
 
 typedef struct {
     unsigned int id;
@@ -383,10 +410,8 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
-
     r3d_shader_uniform_mat4_t uMatInvProj;
     r3d_shader_uniform_mat4_t uMatProj;
-
 } r3d_shader_scene_decal_t;
 
 typedef struct {
@@ -409,6 +434,7 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_sampler2D_t uTexDepth;
     r3d_shader_uniform_sampler2D_t uTexSSAO;
+    r3d_shader_uniform_sampler2D_t uTexSSIL;
     r3d_shader_uniform_sampler2D_t uTexORM;
     r3d_shader_uniform_samplerCube_t uCubeIrradiance;
     r3d_shader_uniform_samplerCube_t uCubePrefilter;
@@ -425,6 +451,7 @@ typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexAlbedo;
     r3d_shader_uniform_sampler2D_t uTexSSAO;
+    r3d_shader_uniform_sampler2D_t uTexSSIL;
     r3d_shader_uniform_sampler2D_t uTexORM;
     r3d_shader_uniform_vec3_t uAmbientColor;
     r3d_shader_uniform_float_t uAmbientEnergy;
@@ -467,8 +494,6 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexAlbedo;
-    r3d_shader_uniform_sampler2D_t uTexEmission;
     r3d_shader_uniform_sampler2D_t uTexDiffuse;
     r3d_shader_uniform_sampler2D_t uTexSpecular;
 } r3d_shader_deferred_compose_t;
@@ -556,6 +581,8 @@ extern struct r3d_shader {
     struct {
         r3d_shader_prepare_ssao_t ssao;
         r3d_shader_prepare_ssao_blur_t ssaoBlur;
+        r3d_shader_prepare_ssil_t ssil;
+        r3d_shader_prepare_ssil_blur_t ssilBlur;
         r3d_shader_prepare_bloom_down_t bloomDown;
         r3d_shader_prepare_bloom_up_t bloomUp;
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
@@ -602,6 +629,8 @@ typedef void (*r3d_shader_loader_func)(void);
 
 void r3d_shader_load_prepare_ssao(void);
 void r3d_shader_load_prepare_ssao_blur(void);
+void r3d_shader_load_prepare_ssil(void);
+void r3d_shader_load_prepare_ssil_blur(void);
 void r3d_shader_load_prepare_bloom_down(void);
 void r3d_shader_load_prepare_bloom_up(void);
 void r3d_shader_load_prepare_cubemap_from_equirectangular(void);
@@ -631,6 +660,8 @@ static const struct r3d_shader_loader {
     struct {
         r3d_shader_loader_func ssao;
         r3d_shader_loader_func ssaoBlur;
+        r3d_shader_loader_func ssil;
+        r3d_shader_loader_func ssilBlur;
         r3d_shader_loader_func bloomDown;
         r3d_shader_loader_func bloomUp;
         r3d_shader_loader_func cubemapFromEquirectangular;
@@ -672,6 +703,8 @@ static const struct r3d_shader_loader {
     .prepare = {
         .ssao = r3d_shader_load_prepare_ssao,
         .ssaoBlur = r3d_shader_load_prepare_ssao_blur,
+        .ssil = r3d_shader_load_prepare_ssil,
+        .ssilBlur = r3d_shader_load_prepare_ssil_blur,
         .bloomDown = r3d_shader_load_prepare_bloom_down,
         .bloomUp = r3d_shader_load_prepare_bloom_up,
         .cubemapFromEquirectangular = r3d_shader_load_prepare_cubemap_from_equirectangular,
