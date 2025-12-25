@@ -175,7 +175,9 @@ void R3D_End(void)
             ssaoSource = pass_prepare_ssao();
         }
 
-        pass_deferred_lights(ssaoSource);
+        if (r3d_light_has_visible()) {
+            pass_deferred_lights(ssaoSource);
+        }
 
         r3d_target_t ssilSource = R3D_TARGET_INVALID;
         if (R3D_CACHE_GET(environment.ssil.enabled)) {

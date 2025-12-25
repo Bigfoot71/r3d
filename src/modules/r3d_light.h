@@ -166,4 +166,13 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
  */
 bool r3d_light_shadow_should_be_upadted(r3d_light_t* light, bool willBeUpdated);
 
+// ========================================
+// INLINE QUERIES
+// ========================================
+
+static inline bool r3d_light_has_visible(void)
+{
+    return R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VISIBLE].count > 0;
+}
+
 #endif // R3D_MODULE_LIGHT_H
