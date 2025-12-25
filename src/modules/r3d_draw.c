@@ -204,7 +204,7 @@ void r3d_draw_push(const r3d_draw_call_t* call, bool decal)
     else if (IS_CALL_PREPASS(call)) list = R3D_DRAW_PREPASS;
     else if (IS_CALL_FORWARD(call)) list = R3D_DRAW_FORWARD;
 
-    if (R3D_DRAW_HAS_INSTANCES(call)) list += 4;
+    if (r3d_draw_has_instances(call)) list += 4;
 
     R3D_MOD_DRAW.drawCalls[drawIndex] = *call;
     int listIndex = R3D_MOD_DRAW.list[list].numDrawCalls++;
@@ -213,7 +213,7 @@ void r3d_draw_push(const r3d_draw_call_t* call, bool decal)
 
 bool r3d_draw_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
 {
-    const BoundingBox* aabb = R3D_DRAW_HAS_INSTANCES(call)
+    const BoundingBox* aabb = r3d_draw_has_instances(call)
         ? &call->instanced.allAabb : &call->mesh.aabb;
 
     // Special-case: an infinite AABB is sometimes used internally in R3D to ignore culling.

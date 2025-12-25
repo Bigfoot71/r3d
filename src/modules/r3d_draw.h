@@ -21,46 +21,6 @@
 // ========================================
 
 /*
- * Check whether a draw call has valid instancing data.
- * Returns true if the draw call contains a non-null instance transform array
- * and a positive instance count.
- */
-#define R3D_DRAW_HAS_INSTANCES(call) \
-    (call->instanced.transforms && call->instanced.count > 0)
-
-/*
- * Check whether there are any deferred draw calls queued for the current frame.
- * Includes both instanced and non-instanced variants.
- */
-#define R3D_DRAW_HAS_DEFERRED                                   \
-    (R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||   \
-    R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numDrawCalls > 0)
-
-/*
- * Check whether there are any prepass draw calls queued for the current frame.
- * Includes both instanced and non-instanced variants.
- */
-#define R3D_DRAW_HAS_PREPASS                                    \
-    (R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numDrawCalls > 0 ||    \
-    R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numDrawCalls > 0)
-
-/*
- * Check whether there are any forward draw calls queued for the current frame.
- * Includes both instanced and non-instanced variants.
- */
-#define R3D_DRAW_HAS_FORWARD                                    \
-    (R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||    \
-    R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0)
-
-/*
- * Check whether there are any decal draw calls queued for the current frame.
- * Includes both instanced and non-instanced variants.
- */
-#define R3D_DRAW_HAS_DECAL                                      \
-    (R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numDrawCalls > 0 ||      \
-    R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numDrawCalls > 0)
-
-/*
  * Iterate over multiple draw lists in the order specified by the variadic arguments.
  * Provides a pointer to each r3d_draw_call_t in sequence.
  *
@@ -235,5 +195,63 @@ void r3d_draw(const r3d_draw_call_t* call);
  * Instance data is uploaded and bound internally.
  */
 void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int locInstanceColor);
+
+// ----------------------------------------
+// INLINE QUERIES
+// ----------------------------------------
+
+/*
+ * Check whether a draw call has valid instancing data.
+ * Returns true if the draw call contains a non-null instance transform array
+ * and a positive instance count.
+ */
+static inline bool r3d_draw_has_instances(const r3d_draw_call_t* call)
+{
+    return call->instanced.transforms && call->instanced.count > 0;
+}
+
+/*
+ * Check whether there are any deferred draw calls queued for the current frame.
+ * Includes both instanced and non-instanced variants.
+ */
+static inline bool r3d_draw_has_deferred(void)
+{
+    return
+        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numDrawCalls > 0;
+}
+
+/*
+ * Check whether there are any prepass draw calls queued for the current frame.
+ * Includes both instanced and non-instanced variants.
+ */
+static inline bool r3d_draw_has_prepass(void)
+{
+    return
+        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numDrawCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numDrawCalls > 0;
+}
+
+/*
+ * Check whether there are any forward draw calls queued for the current frame.
+ * Includes both instanced and non-instanced variants.
+ */
+static inline bool r3d_draw_has_forward(void)
+{
+    return
+        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0;
+}
+
+/*
+ * Check whether there are any decal draw calls queued for the current frame.
+ * Includes both instanced and non-instanced variants.
+ */
+static inline bool r3d_draw_has_decal(void)
+{
+    return
+        R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numDrawCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numDrawCalls > 0;
+}
 
 #endif // R3D_MODULE_DRAW_H

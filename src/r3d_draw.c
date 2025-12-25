@@ -162,11 +162,11 @@ void R3D_End(void)
 
     r3d_target_t sceneTarget = R3D_TARGET_SCENE_0;
 
-    if (R3D_DRAW_HAS_DEFERRED) {
+    if (r3d_draw_has_deferred()) {
         R3D_TARGET_CLEAR(R3D_TARGET_ALL_DEFERRED);
 
         pass_scene_geometry();
-        if (R3D_DRAW_HAS_DECAL) {
+        if (r3d_draw_has_decal()) {
             pass_scene_decals();
         }
 
@@ -200,8 +200,8 @@ void R3D_End(void)
 
     pass_scene_background(sceneTarget);
 
-    if (R3D_DRAW_HAS_FORWARD || R3D_DRAW_HAS_PREPASS) {
-        if (R3D_DRAW_HAS_PREPASS) pass_scene_prepass();
+    if (r3d_draw_has_forward() || r3d_draw_has_prepass()) {
+        if (r3d_draw_has_prepass()) pass_scene_prepass();
         pass_scene_forward(sceneTarget);
     }
 
@@ -533,7 +533,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (R3D_DRAW_HAS_INSTANCES(call)) {
+    if (r3d_draw_has_instances(call)) {
         R3D_SHADER_SET_INT(scene.depth, uInstancing, true);
         r3d_draw_instanced(call, 10, -1);
     }
@@ -599,7 +599,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (R3D_DRAW_HAS_INSTANCES(call)) {
+    if (r3d_draw_has_instances(call)) {
         R3D_SHADER_SET_INT(scene.depthCube, uInstancing, true);
         r3d_draw_instanced(call, 10, -1);
     }
@@ -673,7 +673,7 @@ void raster_decal(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (R3D_DRAW_HAS_INSTANCES(call)) {
+    if (r3d_draw_has_instances(call)) {
         R3D_SHADER_SET_INT(scene.decal, uInstancing, true);
         r3d_primitive_draw_instanced(
             R3D_PRIMITIVE_CUBE,
@@ -760,7 +760,7 @@ void raster_geometry(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (R3D_DRAW_HAS_INSTANCES(call)) {
+    if (r3d_draw_has_instances(call)) {
         R3D_SHADER_SET_INT(scene.geometry, uInstancing, true);
         r3d_draw_instanced(call, 10, 14);
     }
@@ -840,7 +840,7 @@ void raster_forward(const r3d_draw_call_t* call, const Matrix* matVP)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (R3D_DRAW_HAS_INSTANCES(call)) {
+    if (r3d_draw_has_instances(call)) {
         R3D_SHADER_SET_INT(scene.forward, uInstancing, true);
         r3d_draw_instanced(call, 10, 14);
     }
