@@ -57,8 +57,9 @@ static void pass_scene_decals(void);
 
 static r3d_target_t pass_prepare_ssao(void);
 static r3d_target_t pass_prepare_ssil(void);
+static r3d_target_t pass_prepare_ssr(void);
 
-static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource);
+static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssrSource);
 static void pass_deferred_lights(r3d_target_t ssaoSource);
 static void pass_deferred_compose(r3d_target_t sceneTarget);
 
@@ -67,7 +68,6 @@ static void pass_scene_forward(r3d_target_t sceneTarget);
 static void pass_scene_background(r3d_target_t sceneTarget);
 
 static r3d_target_t pass_post_setup(r3d_target_t sceneTarget);
-static r3d_target_t pass_post_ssr(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fog(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
@@ -182,7 +182,12 @@ void R3D_End(void)
             ssilSource = pass_prepare_ssil();
         }
 
-        pass_deferred_ambient(ssaoSource, ssilSource);
+        r3d_target_t ssrSource = R3D_TARGET_INVALID;
+        if (R3D_CACHE_GET(environment.ssr.enabled)) {
+            ssrSource = pass_prepare_ssr();
+        }
+
+        pass_deferred_ambient(ssaoSource, ssilSource, ssrSource);
         pass_deferred_compose(sceneTarget);
     }
     else {
@@ -201,10 +206,6 @@ void R3D_End(void)
     /* --- Applying effects over the scene and final blit --- */
 
     sceneTarget = pass_post_setup(sceneTarget);
-
-    if (R3D_CACHE_GET(environment.ssr.enabled)) {
-        sceneTarget = pass_post_ssr(sceneTarget);
-    }
 
     if (R3D_CACHE_GET(environment.fog.mode) != R3D_FOG_DISABLED) {
         sceneTarget = pass_post_fog(sceneTarget);
@@ -1065,7 +1066,52 @@ r3d_target_t pass_prepare_ssil(void)
     return r3d_target_swap_ssil(ssilTarget);
 }
 
-void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
+r3d_target_t pass_prepare_ssr(void)
+{
+    glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    glDepthMask(GL_FALSE);
+    glDisable(GL_BLEND);
+
+    R3D_TARGET_BIND(R3D_TARGET_SSR);
+    R3D_SHADER_USE(prepare.ssr);
+
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uTexColor, r3d_target_get(R3D_TARGET_DIFFUSE));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uTexORM, r3d_target_get(R3D_TARGET_ORM));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+
+    R3D_SHADER_SET_INT(prepare.ssr, uMaxRaySteps, R3D_CACHE_GET(environment.ssr.maxRaySteps));
+    R3D_SHADER_SET_INT(prepare.ssr, uBinarySearchSteps, R3D_CACHE_GET(environment.ssr.binarySearchSteps));
+    R3D_SHADER_SET_FLOAT(prepare.ssr, uRayMarchLength, R3D_CACHE_GET(environment.ssr.rayMarchLength));
+    R3D_SHADER_SET_FLOAT(prepare.ssr, uDepthThickness, R3D_CACHE_GET(environment.ssr.depthThickness));
+    R3D_SHADER_SET_FLOAT(prepare.ssr, uDepthTolerance, R3D_CACHE_GET(environment.ssr.depthTolerance));
+    R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFadeStart, R3D_CACHE_GET(environment.ssr.edgeFadeStart));
+    R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFadeEnd, R3D_CACHE_GET(environment.ssr.edgeFadeEnd));
+
+    R3D_SHADER_SET_COL3(prepare.ssr, uAmbientColor, R3D_CACHE_GET(environment.ambient.color));
+    R3D_SHADER_SET_FLOAT(prepare.ssr, uAmbientEnergy, R3D_CACHE_GET(environment.ambient.energy));
+
+    R3D_SHADER_SET_MAT4(prepare.ssr, uMatView, R3D_CACHE_GET(viewport.view));
+    R3D_SHADER_SET_MAT4(prepare.ssr, uMatInvProj, R3D_CACHE_GET(viewport.invProj));
+    R3D_SHADER_SET_MAT4(prepare.ssr, uMatInvView, R3D_CACHE_GET(viewport.invView));
+    R3D_SHADER_SET_MAT4(prepare.ssr, uMatViewProj, R3D_CACHE_GET(viewport.viewProj));
+    R3D_SHADER_SET_VEC3(prepare.ssr, uViewPosition, R3D_CACHE_GET(viewport.viewPosition));
+
+    R3D_PRIMITIVE_DRAW_SCREEN();
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uTexColor);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uTexAlbedo);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uTexORM);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uTexDepth);
+
+    r3d_target_gen_mipmap(R3D_TARGET_SSR);
+
+    return R3D_TARGET_SSR;
+}
+
+void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssrSource)
 {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GREATER);
@@ -1088,6 +1134,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexSSAO, R3D_TEXTURE_SELECT(r3d_target_get(ssaoSource), WHITE));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexSSIL, R3D_TEXTURE_SELECT(r3d_target_get(ssilSource), BLACK));
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexSSR, R3D_TEXTURE_SELECT(r3d_target_get(ssrSource), BLANK));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambientIbl, uTexORM, r3d_target_get(R3D_TARGET_ORM));
         R3D_SHADER_BIND_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, R3D_CACHE_GET(environment.background.sky.irradiance.id));
         R3D_SHADER_BIND_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, R3D_CACHE_GET(environment.background.sky.prefilter.id));
@@ -1099,6 +1146,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
         R3D_SHADER_SET_VEC4(deferred.ambientIbl, uQuatSkybox, R3D_CACHE_GET(environment.background.rotation));
         R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uAmbientEnergy, R3D_CACHE_GET(environment.ambient.energy));
         R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uReflectEnergy, R3D_CACHE_GET(environment.ambient.reflect));
+        R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uMipCountSSR, (float)(r3d_target_get_mip_count() - 1));
 
         R3D_PRIMITIVE_DRAW_SCREEN();
 
@@ -1106,6 +1154,8 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexNormal);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexDepth);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexSSAO);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexSSIL);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexSSR);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambientIbl, uTexORM);
         R3D_SHADER_UNBIND_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance);
         R3D_SHADER_UNBIND_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter);
@@ -1122,15 +1172,19 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexSSAO, R3D_TEXTURE_SELECT(r3d_target_get(ssaoSource), WHITE));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexSSIL, R3D_TEXTURE_SELECT(r3d_target_get(ssilSource), BLACK));
+        R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexSSR, R3D_TEXTURE_SELECT(r3d_target_get(ssrSource), BLANK));
         R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uTexORM, r3d_target_get(R3D_TARGET_ORM));
 
         R3D_SHADER_SET_COL3(deferred.ambient, uAmbientColor, R3D_CACHE_GET(environment.ambient.color));
         R3D_SHADER_SET_FLOAT(deferred.ambient, uAmbientEnergy, R3D_CACHE_GET(environment.ambient.energy));
+        R3D_SHADER_SET_FLOAT(deferred.ambient, uMipCountSSR, (float)(r3d_target_get_mip_count() - 1));
 
         R3D_PRIMITIVE_DRAW_SCREEN();
 
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexAlbedo);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexSSAO);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexSSIL);
+        R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexSSR);
         R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uTexORM);
     }
 }
@@ -1442,43 +1496,6 @@ r3d_target_t pass_post_setup(r3d_target_t sceneTarget)
     glDisable(GL_BLEND);
 
     return r3d_target_swap_scene(sceneTarget);
-}
-
-r3d_target_t pass_post_ssr(r3d_target_t sceneTarget)
-{
-    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
-
-    R3D_SHADER_USE(post.ssr);
-
-    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexColor, r3d_target_get(sceneTarget));
-    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexAlbedo, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexORM, r3d_target_get(R3D_TARGET_ORM));
-    R3D_SHADER_BIND_SAMPLER_2D(post.ssr, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-
-    R3D_SHADER_SET_INT(post.ssr, uMaxRaySteps, R3D_CACHE_GET(environment.ssr.maxRaySteps));
-    R3D_SHADER_SET_INT(post.ssr, uBinarySearchSteps, R3D_CACHE_GET(environment.ssr.binarySearchSteps));
-    R3D_SHADER_SET_FLOAT(post.ssr, uRayMarchLength, R3D_CACHE_GET(environment.ssr.rayMarchLength));
-    R3D_SHADER_SET_FLOAT(post.ssr, uDepthThickness, R3D_CACHE_GET(environment.ssr.depthThickness));
-    R3D_SHADER_SET_FLOAT(post.ssr, uDepthTolerance, R3D_CACHE_GET(environment.ssr.depthTolerance));
-    R3D_SHADER_SET_FLOAT(post.ssr, uEdgeFadeStart, R3D_CACHE_GET(environment.ssr.edgeFadeStart));
-    R3D_SHADER_SET_FLOAT(post.ssr, uEdgeFadeEnd, R3D_CACHE_GET(environment.ssr.edgeFadeEnd));
-
-    R3D_SHADER_SET_MAT4(post.ssr, uMatView, R3D_CACHE_GET(viewport.view));
-    R3D_SHADER_SET_MAT4(post.ssr, uMatInvProj, R3D_CACHE_GET(viewport.invProj));
-    R3D_SHADER_SET_MAT4(post.ssr, uMatInvView, R3D_CACHE_GET(viewport.invView));
-    R3D_SHADER_SET_MAT4(post.ssr, uMatViewProj, R3D_CACHE_GET(viewport.viewProj));
-    R3D_SHADER_SET_VEC3(post.ssr, uViewPosition, R3D_CACHE_GET(viewport.viewPosition));
-
-    R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexColor);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexAlbedo);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexNormal);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexORM);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.ssr, uTexDepth);
-
-    return sceneTarget;
 }
 
 r3d_target_t pass_post_fog(r3d_target_t sceneTarget)

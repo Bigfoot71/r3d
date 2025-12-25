@@ -56,6 +56,7 @@ typedef void (*texture_loader_func)(void);
 
 static void load_white(void);
 static void load_black(void);
+static void load_blank(void);
 static void load_normal(void);
 static void load_ssao_noise(void);
 static void load_ssao_kernel(void);
@@ -64,6 +65,7 @@ static void load_ibl_brdf_lut(void);
 static const texture_loader_func LOADERS[] = {
     [R3D_TEXTURE_WHITE] = load_white,
     [R3D_TEXTURE_BLACK] = load_black,
+    [R3D_TEXTURE_BLANK] = load_blank,
     [R3D_TEXTURE_NORMAL] = load_normal,
     [R3D_TEXTURE_SSAO_NOISE] = load_ssao_noise,
     [R3D_TEXTURE_SSAO_KERNEL] = load_ssao_kernel,
@@ -80,6 +82,13 @@ void load_white(void) {
 void load_black(void) {
     const uint8_t px[4] = {0, 0, 0, 255};
     glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_BLACK]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
+    tex_params(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_EDGE);
+}
+
+void load_blank(void) {
+    const uint8_t px[4] = {0, 0, 0, 0};
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_BLANK]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
     tex_params(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_EDGE);
 }

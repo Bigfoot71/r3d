@@ -19,7 +19,16 @@
 struct r3d_target R3D_MOD_TARGET;
 
 // ========================================
-// TARGET LOADING FUNCTION
+// HELPER FUNCTIONS
+// ========================================
+
+static int get_mip_count(int w, int h)
+{
+    return 1 + (int)floorf(log2f(w > h ? w : h));
+}
+
+// ========================================
+// INTERNAL TARGET FUNCTIONS
 // ========================================
 
 typedef struct {
@@ -41,6 +50,7 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_SSAO_1]     = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_SSIL_0]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_SSIL_1]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
+    [R3D_TARGET_SSR]        = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true },
     [R3D_TARGET_BLOOM]      = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true  },
     [R3D_TARGET_SCENE_0]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
     [R3D_TARGET_SCENE_1]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
@@ -58,7 +68,7 @@ static void target_load(r3d_target_t target)
     glTexImage2D(GL_TEXTURE_2D, 0, config->internalFormat, w, h, 0, config->format, config->type, NULL);
     if (config->mipmaps) {
         int wLevel = 0, hLevel = 0;
-        int levels = r3d_target_get_mip_count();
+        int levels = get_mip_count(w, h);
         for (int i = 1; i < levels; ++i) {
             r3d_target_get_resolution(&wLevel, &hLevel, i);
             glTexImage2D(GL_TEXTURE_2D, i, config->internalFormat, wLevel, hLevel, 0, config->format, config->type, NULL);
@@ -73,10 +83,6 @@ static void target_load(r3d_target_t target)
 
     R3D_MOD_TARGET.targetLoaded[target] = true;
 }
-
-// ========================================
-// INTERNAL FUNCTIONS
-// ========================================
 
 /*
  * Returns the index of the FBO in the cache.
@@ -244,7 +250,7 @@ int r3d_target_get_mip_count(void)
     int w = R3D_MOD_TARGET.resW;
     int h = R3D_MOD_TARGET.resH;
 
-    return 1 + (int)floorf(log2f(w > h ? w : h));
+    return get_mip_count(w, h);
 }
 
 void r3d_target_get_resolution(int* w, int* h, int level)
@@ -351,6 +357,15 @@ void r3d_target_set_mip_level(int attachment, int level)
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment,
         GL_TEXTURE_2D, R3D_MOD_TARGET.targets[target], level
     );
+}
+
+void r3d_target_gen_mipmap(r3d_target_t target)
+{
+    GLuint id = r3d_target_get(target);
+
+    glBindTexture(GL_TEXTURE_2D, id);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLuint r3d_target_get(r3d_target_t target)

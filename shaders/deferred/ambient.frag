@@ -30,14 +30,17 @@ uniform sampler2D uTexNormal;
 uniform sampler2D uTexDepth;
 uniform sampler2D uTexSSAO;
 uniform sampler2D uTexSSIL;
+uniform sampler2D uTexSSR;
 uniform sampler2D uTexORM;
 
 uniform samplerCube uCubeIrradiance;
 uniform samplerCube uCubePrefilter;
 uniform sampler2D uTexBrdfLut;
-uniform vec4 uQuatSkybox;
+
 uniform float uAmbientEnergy;
 uniform float uReflectEnergy;
+uniform float uMipCountSSR;
+uniform vec4 uQuatSkybox;
 
 uniform vec3 uViewPosition;
 uniform mat4 uMatInvProj;
@@ -50,11 +53,13 @@ layout(location = 1) out vec4 FragSpecular;
 
 /* === Misc functions === */
 
-vec3 GetPositionFromDepth(float depth)
+vec3 GetWorldPosition(vec2 texCoord)
 {
-    vec4 ndcPos = vec4(vTexCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    float depth = texture(uTexDepth, texCoord).r;
+
+    vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     vec4 viewPos = uMatInvProj * ndcPos;
-    viewPos /= viewPos.w;
+    viewPos *= 1.0 / viewPos.w;
 
     return (uMatInvView * viewPos).xyz;
 }
@@ -66,6 +71,7 @@ void main()
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
+    vec4 ssr = textureLod(uTexSSR, vTexCoord, orm.g * uMipCountSSR);
     float ssao = texture(uTexSSAO, vTexCoord).r;
     vec4 ssil = texture(uTexSSIL, vTexCoord);
 
@@ -73,14 +79,13 @@ void main()
     float roughness = orm.g;
     float metalness = orm.b;
 
-    vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
-
-    float depth = texture(uTexDepth, vTexCoord).r;
-    vec3 position = GetPositionFromDepth(depth);
+    vec3 position = GetWorldPosition(vTexCoord);
 
     vec3 N = M_DecodeOctahedral(texture(uTexNormal, vTexCoord).rg);
     vec3 V = normalize(uViewPosition - position);
     float NdotV = max(dot(N, V), 0.0);
+
+    vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
 
     /* --- Diffuse --- */
 
@@ -98,18 +103,13 @@ void main()
     vec3 R = M_Rotate3D(reflect(-V, N), uQuatSkybox);
 
     const float MAX_REFLECTION_LOD = 7.0;
-    float mipLevel = IBL_GetSpecularMipLevel(roughness, MAX_REFLECTION_LOD + 1.0);
-    vec3 prefilteredColor = textureLod(uCubePrefilter, R, mipLevel).rgb;
-
+    vec3 radiance = textureLod(uCubePrefilter, R, roughness * MAX_REFLECTION_LOD).rgb;
     float specularOcclusion = IBL_GetSpecularOcclusion(NdotV, occlusion, roughness);
-    vec3 specularBRDF = IBL_GetMultiScatterBRDF(uTexBrdfLut, NdotV, roughness, F0, metalness);
-    vec3 specular = prefilteredColor * specularBRDF * specularOcclusion;
+    vec3 specularBRDF = IBL_GetMultiScatterBRDF(uTexBrdfLut, NdotV, roughness, F0);
 
-    // Soft falloff hack at low angles to avoid overly bright effect
-    float edgeFade = mix(1.0, pow(NdotV, 0.5), roughness);
-    specular *= edgeFade;
-
-    FragSpecular = vec4(specular * uReflectEnergy, 1.0);
+    vec3 specular = mix(radiance, ssr.rgb, ssr.a) * specularBRDF;
+    specular *= specularOcclusion * uReflectEnergy;
+    FragSpecular = vec4(specular, 1.0);
 }
 
 #else
@@ -123,9 +123,12 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexAlbedo;
 uniform sampler2D uTexSSAO;
 uniform sampler2D uTexSSIL;
+uniform sampler2D uTexSSR;
 uniform sampler2D uTexORM;
+
 uniform vec3 uAmbientColor;
 uniform float uAmbientEnergy;
+uniform float uMipCountSSR;
 
 /* === Fragments === */
 
@@ -139,6 +142,7 @@ void main()
     vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
+    vec4 ssr = textureLod(uTexSSR, vTexCoord, orm.g * uMipCountSSR);
     float ssao = texture(uTexSSAO, vTexCoord).r;
     vec4 ssil = texture(uTexSSIL, vTexCoord);
 
@@ -146,8 +150,12 @@ void main()
     ambient *= orm.r * ssao * ssil.a;
     ambient *= (1.0 - orm.b);
 
-    FragDiffuse = vec4(ambient, 1.0);
-    FragSpecular = vec4(0.0);
+    FragDiffuse = vec4(ambient * uAmbientEnergy, 1.0);
+
+    // Small tweak to get a consistent SSR
+    vec3 F0 = mix(vec3(0.04), albedo, orm.b);
+    vec3 specular = ssr.rgb * F0 * ssr.a * orm.r;
+    FragSpecular = vec4(specular, 1.0);
 }
 
 #endif

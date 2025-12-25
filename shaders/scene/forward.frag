@@ -331,8 +331,7 @@ void main()
 
     vec3 ambient = uAmbientColor;
 
-    if (uHasSkybox)
-    {
+    if (uHasSkybox) {
         vec3 kS = IBL_FresnelSchlickRoughness(cNdotV, F0, roughness);
         vec3 kD = (1.0 - kS) * (1.0 - metalness);
 
@@ -340,53 +339,27 @@ void main()
         ambient = kD * texture(uCubeIrradiance, Nr).rgb;
         ambient *= uAmbientEnergy;
     }
-    else
-    {
-        // Simplified calculation of diffuse as if NdotV is equal to 1.0 (view facing normal)
-        // NOTE: Small tweak here, we also add F0. It's not physically correct, 
-        //       but it's to at least simulate some specularity, otherwise the 
-        //       result would look poor for metals...
-        ambient = (1.0 - F0) * (1.0 - metalness) * ambient;
-        ambient += F0 * uAmbientColor * uAmbientEnergy;
+    else {
+        ambient *= (1.0 - metalness) * uAmbientEnergy;
     }
 
-    /* Compute ambient occlusion map */
-
-    ambient *= occlusion;
-
-    // Light affect should be material-specific
-    //float lightAffect = mix(1.0, ao, uValAOLightAffect);
-    //specular *= lightAffect;
-    //diffuse *= lightAffect;
+    diffuse += ambient * occlusion;
 
     /* Skybox reflection - (IBL specular) */
 
-    if (uHasSkybox)
-    {
+    if (uHasSkybox) {
         vec3 R = M_Rotate3D(reflect(-V, N), uQuatSkybox);
 
         const float MAX_REFLECTION_LOD = 7.0;
-        float mipLevel = IBL_GetSpecularMipLevel(roughness, MAX_REFLECTION_LOD + 1.0);
-        vec3 prefilteredColor = textureLod(uCubePrefilter, R, mipLevel).rgb;
-
+        vec3 radiance = textureLod(uCubePrefilter, R, roughness * MAX_REFLECTION_LOD).rgb;
         float specularOcclusion = IBL_GetSpecularOcclusion(cNdotV, occlusion, roughness);
-        vec3 specBRDF = IBL_GetMultiScatterBRDF(uTexBrdfLut, cNdotV, roughness, F0, metalness);
-        vec3 spec = prefilteredColor * specBRDF * specularOcclusion;
-
-        // Soft falloff hack at low angles to avoid overly bright effect
-        float edgeFade = mix(1.0, pow(cNdotV, 0.5), roughness);
-        spec *= edgeFade;
-
-        specular += spec * uReflectEnergy;
+        vec3 specBRDF = IBL_GetMultiScatterBRDF(uTexBrdfLut, cNdotV, roughness, F0);
+        specular += radiance * specBRDF * specularOcclusion * uReflectEnergy;
     }
 
-    /* Compute the final diffuse color, including ambient and diffuse lighting contributions */
+    /* Compute the final fragment color */
 
-    diffuse = albedo.rgb * (ambient + diffuse);
-
-    /* Compute the final fragment color by combining diffuse, specular, and emission contributions */
-
-    FragColor = vec4(diffuse + specular + emission, albedo.a);
+    FragColor = vec4(albedo.rgb * diffuse + specular + emission, albedo.a);
 
     /* Output material data */
 

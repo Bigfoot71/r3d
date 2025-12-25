@@ -33,6 +33,7 @@ typedef enum {
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
+    R3D_TARGET_SSR,             //< Half - Mip N - RGBA[16|16|16|16]
     R3D_TARGET_BLOOM,           //< Full - Mip N - RGB[16|16|16]
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB[16|16|16]
@@ -243,6 +244,12 @@ void r3d_target_bind(const r3d_target_t* targets, int count);
  * Asserts that a valid FBO is currently bound.
  */
 void r3d_target_set_mip_level(int attachment, int level);
+
+/*
+ * Generates mipmaps for the specified target.
+ * Asserts that the target has already been created.
+ */
+void r3d_target_gen_mipmap(r3d_target_t target);
 
 /*
  * Returns the texture ID corresponding to the requested target.

@@ -23,6 +23,7 @@
 #include <shaders/bilateral_blur.frag.h>
 #include <shaders/ssao.frag.h>
 #include <shaders/ssil.frag.h>
+#include <shaders/ssr.frag.h>
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
@@ -44,7 +45,6 @@
 #include <shaders/lighting.frag.h>
 #include <shaders/compose.frag.h>
 #include <shaders/bloom.frag.h>
-#include <shaders/ssr.frag.h>
 #include <shaders/fog.frag.h>
 #include <shaders/dof.frag.h>
 #include <shaders/output.frag.h>
@@ -308,6 +308,39 @@ void r3d_shader_load_prepare_ssil_blur(void)
     SET_SAMPLER_2D(prepare.ssilBlur, uTexSource, 0);
     SET_SAMPLER_2D(prepare.ssilBlur, uTexNormal, 1);
     SET_SAMPLER_2D(prepare.ssilBlur, uTexDepth, 2);
+}
+
+void r3d_shader_load_prepare_ssr(void)
+{
+    LOAD_SHADER(prepare.ssr, SCREEN_VERT, SSR_FRAG);
+
+    GET_LOCATION(prepare.ssr, uTexColor);
+    GET_LOCATION(prepare.ssr, uTexAlbedo);
+    GET_LOCATION(prepare.ssr, uTexNormal);
+    GET_LOCATION(prepare.ssr, uTexORM);
+    GET_LOCATION(prepare.ssr, uTexDepth);
+    GET_LOCATION(prepare.ssr, uMatView);
+    GET_LOCATION(prepare.ssr, uMaxRaySteps);
+    GET_LOCATION(prepare.ssr, uBinarySearchSteps);
+    GET_LOCATION(prepare.ssr, uRayMarchLength);
+    GET_LOCATION(prepare.ssr, uDepthThickness);
+    GET_LOCATION(prepare.ssr, uDepthTolerance);
+    GET_LOCATION(prepare.ssr, uEdgeFadeStart);
+    GET_LOCATION(prepare.ssr, uEdgeFadeEnd);
+    GET_LOCATION(prepare.ssr, uAmbientColor);
+    GET_LOCATION(prepare.ssr, uAmbientEnergy);
+    GET_LOCATION(prepare.ssr, uMatInvProj);
+    GET_LOCATION(prepare.ssr, uMatInvView);
+    GET_LOCATION(prepare.ssr, uMatViewProj);
+    GET_LOCATION(prepare.ssr, uViewPosition);
+
+    USE_SHADER(prepare.ssr);
+
+    SET_SAMPLER_2D(prepare.ssr, uTexColor, 0);
+    SET_SAMPLER_2D(prepare.ssr, uTexAlbedo, 1);
+    SET_SAMPLER_2D(prepare.ssr, uTexNormal, 2);
+    SET_SAMPLER_2D(prepare.ssr, uTexORM, 3);
+    SET_SAMPLER_2D(prepare.ssr, uTexDepth, 4);
 }
 
 void r3d_shader_load_prepare_bloom_down(void)
@@ -612,13 +645,15 @@ void r3d_shader_load_deferred_ambient_ibl(void)
     GET_LOCATION(deferred.ambientIbl, uTexDepth);
     GET_LOCATION(deferred.ambientIbl, uTexSSAO);
     GET_LOCATION(deferred.ambientIbl, uTexSSIL);
+    GET_LOCATION(deferred.ambientIbl, uTexSSR);
     GET_LOCATION(deferred.ambientIbl, uTexORM);
     GET_LOCATION(deferred.ambientIbl, uCubeIrradiance);
     GET_LOCATION(deferred.ambientIbl, uCubePrefilter);
     GET_LOCATION(deferred.ambientIbl, uTexBrdfLut);
-    GET_LOCATION(deferred.ambientIbl, uQuatSkybox);
     GET_LOCATION(deferred.ambientIbl, uAmbientEnergy);
     GET_LOCATION(deferred.ambientIbl, uReflectEnergy);
+    GET_LOCATION(deferred.ambientIbl, uMipCountSSR);
+    GET_LOCATION(deferred.ambientIbl, uQuatSkybox);
     GET_LOCATION(deferred.ambientIbl, uViewPosition);
     GET_LOCATION(deferred.ambientIbl, uMatInvProj);
     GET_LOCATION(deferred.ambientIbl, uMatInvView);
@@ -630,12 +665,12 @@ void r3d_shader_load_deferred_ambient_ibl(void)
     SET_SAMPLER_2D(deferred.ambientIbl, uTexDepth, 2);
     SET_SAMPLER_2D(deferred.ambientIbl, uTexSSAO, 3);
     SET_SAMPLER_2D(deferred.ambientIbl, uTexSSIL, 4);
-    SET_SAMPLER_2D(deferred.ambientIbl, uTexORM, 5);
+    SET_SAMPLER_2D(deferred.ambientIbl, uTexSSR, 5);
+    SET_SAMPLER_2D(deferred.ambientIbl, uTexORM, 6);
 
-    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, 6);
-    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, 7);
-    SET_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, 8);
-
+    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubeIrradiance, 7);
+    SET_SAMPLER_CUBE(deferred.ambientIbl, uCubePrefilter, 8);
+    SET_SAMPLER_2D(deferred.ambientIbl, uTexBrdfLut, 9);
 }
 
 void r3d_shader_load_deferred_ambient(void)
@@ -645,16 +680,19 @@ void r3d_shader_load_deferred_ambient(void)
     GET_LOCATION(deferred.ambient, uTexAlbedo);
     GET_LOCATION(deferred.ambient, uTexSSAO);
     GET_LOCATION(deferred.ambient, uTexSSIL);
+    GET_LOCATION(deferred.ambient, uTexSSR);
     GET_LOCATION(deferred.ambient, uTexORM);
     GET_LOCATION(deferred.ambient, uAmbientColor);
     GET_LOCATION(deferred.ambient, uAmbientEnergy);
+    GET_LOCATION(deferred.ambient, uMipCountSSR);
 
     USE_SHADER(deferred.ambient);
 
     SET_SAMPLER_2D(deferred.ambient, uTexAlbedo, 0);
     SET_SAMPLER_2D(deferred.ambient, uTexSSAO, 1);
     SET_SAMPLER_2D(deferred.ambient, uTexSSIL, 2);
-    SET_SAMPLER_2D(deferred.ambient, uTexORM, 3);
+    SET_SAMPLER_2D(deferred.ambient, uTexSSR, 3);
+    SET_SAMPLER_2D(deferred.ambient, uTexORM, 4);
 }
 
 void r3d_shader_load_deferred_lighting(void)
@@ -730,37 +768,6 @@ void r3d_shader_load_post_bloom(void)
 
     SET_SAMPLER_2D(post.bloom, uTexColor, 0);
     SET_SAMPLER_2D(post.bloom, uTexBloomBlur, 1);
-}
-
-void r3d_shader_load_post_ssr(void)
-{
-    LOAD_SHADER(post.ssr, SCREEN_VERT, SSR_FRAG);
-
-    GET_LOCATION(post.ssr, uTexColor);
-    GET_LOCATION(post.ssr, uTexAlbedo);
-    GET_LOCATION(post.ssr, uTexNormal);
-    GET_LOCATION(post.ssr, uTexORM);
-    GET_LOCATION(post.ssr, uTexDepth);
-    GET_LOCATION(post.ssr, uMatView);
-    GET_LOCATION(post.ssr, uMaxRaySteps);
-    GET_LOCATION(post.ssr, uBinarySearchSteps);
-    GET_LOCATION(post.ssr, uRayMarchLength);
-    GET_LOCATION(post.ssr, uDepthThickness);
-    GET_LOCATION(post.ssr, uDepthTolerance);
-    GET_LOCATION(post.ssr, uEdgeFadeStart);
-    GET_LOCATION(post.ssr, uEdgeFadeEnd);
-    GET_LOCATION(post.ssr, uMatInvProj);
-    GET_LOCATION(post.ssr, uMatInvView);
-    GET_LOCATION(post.ssr, uMatViewProj);
-    GET_LOCATION(post.ssr, uViewPosition);
-
-    USE_SHADER(post.ssr);
-
-    SET_SAMPLER_2D(post.ssr, uTexColor, 0);
-    SET_SAMPLER_2D(post.ssr, uTexAlbedo, 1);
-    SET_SAMPLER_2D(post.ssr, uTexNormal, 2);
-    SET_SAMPLER_2D(post.ssr, uTexORM, 3);
-    SET_SAMPLER_2D(post.ssr, uTexDepth, 4);
 }
 
 void r3d_shader_load_post_fog(void)
@@ -849,6 +856,7 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.ssaoBlur);
     UNLOAD_SHADER(prepare.ssil);
     UNLOAD_SHADER(prepare.ssilBlur);
+    UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);
     UNLOAD_SHADER(prepare.bloomUp);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
@@ -869,7 +877,6 @@ void r3d_shader_quit()
     UNLOAD_SHADER(deferred.compose);
 
     UNLOAD_SHADER(post.bloom);
-    UNLOAD_SHADER(post.ssr);
     UNLOAD_SHADER(post.fog);
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.output);
