@@ -81,7 +81,7 @@ int main(void)
 
             // Draw scene
             R3D_Begin(camera);
-                R3D_DrawMesh(&ground, &groundMat, MatrixTranslate(0.0f, -0.4f, 0.0f));
+                R3D_DrawMesh(&ground, &groundMat, MatrixIdentity());
                 R3D_DrawModel(&model, (Vector3){0,0,0}, 1.0f);
             R3D_End();
 
