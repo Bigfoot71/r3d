@@ -99,9 +99,6 @@ const vec2 VOGEL_DISK[8] = vec2[8](
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragColor;
-layout(location = 1) out vec4 FragAlbedo;
-layout(location = 2) out vec4 FragNormal;
-layout(location = 3) out vec4 FragORM;
 
 /* === Shadow functions === */
 
@@ -360,10 +357,4 @@ void main()
     /* Compute the final fragment color */
 
     FragColor = vec4(albedo.rgb * diffuse + specular + emission, albedo.a);
-
-    /* Output material data */
-
-    FragAlbedo = vec4(albedo.rgb, 1.0);
-    FragNormal = vec4(M_EncodeOctahedral(N), vec2(1.0));
-    FragORM = vec4(occlusion, roughness, metalness, 1.0);
 }

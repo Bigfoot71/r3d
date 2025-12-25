@@ -1404,8 +1404,7 @@ static void pass_scene_forward_send_lights(const r3d_draw_call_t* call)
 
 void pass_scene_forward(r3d_target_t sceneTarget)
 {
-    // NOTE: Material outputs are necessary for certain post-process passes such as SSR
-    R3D_TARGET_BIND(sceneTarget, R3D_TARGET_ALBEDO, R3D_TARGET_NORMAL, R3D_TARGET_ORM, R3D_TARGET_DEPTH);
+    R3D_TARGET_BIND(sceneTarget);
     R3D_SHADER_USE(scene.forward);
 
     glEnable(GL_DEPTH_TEST);
