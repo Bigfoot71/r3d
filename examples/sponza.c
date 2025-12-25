@@ -74,13 +74,18 @@ int main(void)
             R3D_ENVIRONMENT_SET(ssil.enabled, !R3D_ENVIRONMENT_GET(ssil.enabled));
         }
 
-        // Toggle fog
+        // Toggle SSR
         if (IsKeyPressed(KEY_THREE)) {
+            R3D_ENVIRONMENT_SET(ssr.enabled, !R3D_ENVIRONMENT_GET(ssr.enabled));
+        }
+
+        // Toggle fog
+        if (IsKeyPressed(KEY_FOUR)) {
             R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
         }
 
         // Toggle FXAA
-        if (IsKeyPressed(KEY_FOUR)) {
+        if (IsKeyPressed(KEY_FIVE)) {
             if (R3D_HasState(R3D_FLAG_FXAA)) R3D_ClearState(R3D_FLAG_FXAA);
             else R3D_SetState(R3D_FLAG_FXAA);
         }
