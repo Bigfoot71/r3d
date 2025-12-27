@@ -56,15 +56,13 @@ typedef enum {
 // ========================================
 
 /*
- * Internal representation of a single draw call.
- * Contains all data required to issue a draw, including geometry, material,
- * transform, and optional animation or instancing data.
+ * Draw group containing shared state for multiple draw calls.
+ * All draw calls pushed after a group inherit its transform, skeleton, and instancing data.
  */
 typedef struct {
 
-    R3D_Mesh mesh;                      //< Mesh geometry and GPU buffers
+    BoundingBox aabb;                   //< AABB of the model
     Matrix transform;                   //< World transform matrix
-    R3D_Material material;              //< Material used for rendering
     R3D_Skeleton skeleton;              //< Skeleton containing the bind pose (if any)
     const R3D_AnimationPlayer* player;  //< Animation player (may be NULL)
 
@@ -77,6 +75,26 @@ typedef struct {
         int count;                      //< Number of instances
     } instanced;
 
+} r3d_draw_group_t;
+
+/*
+ * Mapping structure linking draw groups to their associated draw calls.
+ * Stores the range of draw calls belonging to a specific group.
+ * One entry is stored per draw group.
+ */
+typedef struct {
+    int firstCall;                      //< Index of the first draw call in this group
+    int numCall;                        //< Number of draw calls in this group
+} r3d_draw_indices_t;
+
+/*
+ * Internal representation of a single draw call.
+ * Contains all data required to issue a draw, including geometry and material.
+ * Transform and animation data are stored in the parent draw group.
+ */
+typedef struct {
+    R3D_Material material;              //< Material used for rendering
+    R3D_Mesh mesh;                      //< Mesh geometry and GPU buffers
 } r3d_draw_call_t;
 
 // ========================================
@@ -116,10 +134,14 @@ typedef struct {
  * Owns the draw call storage and per-pass draw lists.
  */
 extern struct r3d_draw {
-    r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];
-    r3d_draw_call_t* drawCalls;
-    int capDrawCalls;
-    int numDrawCalls;
+    r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];  //< Lists of draw call indices organized by rendering category
+    r3d_draw_indices_t* drawIndices;            //< Array of draw call index ranges for each draw group (automatically managed)
+    r3d_draw_group_t* drawGroups;               //< Array of draw groups (shared data across draw calls)
+    r3d_draw_call_t* drawCalls;                 //< Array of draw calls
+    int* drawCallGroupIndices;                  //< Array of group indices for each draw call (automatically managed)
+    int numDrawGroups;                          //< Number of active draw groups
+    int numDrawCalls;                           //< Number of active draw calls
+    int capacity;                               //< Allocated capacity for all arrays
 } R3D_MOD_DRAW;
 
 // ========================================
@@ -144,17 +166,30 @@ void r3d_draw_quit(void);
 void r3d_draw_clear(void);
 
 /*
- * Push a new draw call to the right draw call list.
- * The draw call data is copied internally.
+ * Push a new draw group. All subsequent draw calls will belong to this group
+ * until a new group is pushed.
  */
-void r3d_draw_push(const r3d_draw_call_t* call, bool decal);
+void r3d_draw_group_push(const r3d_draw_group_t* group);
+
+/*
+ * Push a new draw call to the appropriate draw list.
+ * The draw call data is copied internally.
+ * Inherits the group previously pushed.
+ */
+void r3d_draw_call_push(const r3d_draw_call_t* call, bool decal);
+
+/*
+ * Retrieve the draw group associated with a given draw call.
+ * Returns a pointer to the parent group containing shared transform and instancing data.
+ */
+r3d_draw_group_t* r3d_draw_get_call_group(const r3d_draw_call_t* call);
 
 /*
  * Indicates if the draw call is visible within the given frustum.
  * Useful for shadow maps, but for final scene culling, use `r3d_draw_cull_list`,
  * which generates a complete list of visible draw calls. Can only be called once.
  */
-bool r3d_draw_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum);
+bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum);
 
 /*
  * Performs frustum culling on a draw list.
@@ -201,13 +236,13 @@ void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int l
 // ----------------------------------------
 
 /*
- * Check whether a draw call has valid instancing data.
+ * Check whether a draw group has valid instancing data.
  * Returns true if the draw call contains a non-null instance transform array
  * and a positive instance count.
  */
-static inline bool r3d_draw_has_instances(const r3d_draw_call_t* call)
+static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
 {
-    return call->instanced.transforms && call->instanced.count > 0;
+    return group->instanced.transforms && group->instanced.count > 0;
 }
 
 /*
