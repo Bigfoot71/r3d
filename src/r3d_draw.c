@@ -44,8 +44,8 @@
 
 static void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
 static void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
-static void raster_decal(const r3d_draw_call_t* call);
 static void raster_geometry(const r3d_draw_call_t* call);
+static void raster_decal(const r3d_draw_call_t* call);
 static void raster_forward(const r3d_draw_call_t* call);
 
 static void pass_scene_shadow(void);
@@ -580,82 +580,6 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.depthCube, uTexAlbedo);
 }
 
-void raster_decal(const r3d_draw_call_t* call)
-{
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-
-    /* --- Set additional matrix uniforms --- */
-
-    Matrix matNormal = r3d_matrix_normal(&group->transform);
-
-    R3D_SHADER_SET_MAT4(scene.decal, uMatModel, group->transform);
-    R3D_SHADER_SET_MAT4(scene.decal, uMatNormal, matNormal);
-
-    /* --- Set factor material maps --- */
-
-    R3D_SHADER_SET_FLOAT(scene.decal, uEmissionEnergy, call->material.emission.energy);
-    R3D_SHADER_SET_FLOAT(scene.decal, uNormalScale, call->material.normal.scale);
-    R3D_SHADER_SET_FLOAT(scene.decal, uOcclusion, call->material.orm.occlusion);
-    R3D_SHADER_SET_FLOAT(scene.decal, uRoughness, call->material.orm.roughness);
-    R3D_SHADER_SET_FLOAT(scene.decal, uMetalness, call->material.orm.metalness);
-
-    /* --- Set misc material values --- */
-
-    R3D_SHADER_SET_FLOAT(scene.decal, uAlphaCutoff, call->material.alphaCutoff);
-
-    /* --- Set texcoord offset/scale --- */
-
-    R3D_SHADER_SET_VEC2(scene.decal, uTexCoordOffset, call->material.uvOffset);
-    R3D_SHADER_SET_VEC2(scene.decal, uTexCoordScale, call->material.uvScale);
-
-    /* --- Set color material maps --- */
-
-    R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, call->material.emission.color);
-
-    /* --- Bind active texture maps --- */
-
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
-
-    /* --- Applying material parameters that are independent of shaders --- */
-
-    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
-
-    /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
-    // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
-
-    glDisable(GL_CULL_FACE);
-
-    /* --- Rendering the object corresponding to the draw call --- */
-
-    if (r3d_draw_has_instances(group)) {
-        R3D_SHADER_SET_INT(scene.decal, uInstancing, true);
-        r3d_primitive_draw_instanced(
-            R3D_PRIMITIVE_CUBE,
-            group->instanced.transforms,
-            group->instanced.transStride,
-            group->instanced.colors,
-            group->instanced.colStride,
-            group->instanced.count,
-            10, 14
-        );
-    }
-    else {
-        R3D_SHADER_SET_INT(scene.decal, uInstancing, false);
-        r3d_primitive_draw(R3D_PRIMITIVE_CUBE);
-    }
-
-    /* --- Unbind all bound texture maps --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexAlbedo);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexNormal);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexEmission);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexORM);
-}
-
 void raster_geometry(const r3d_draw_call_t* call)
 {
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
@@ -731,6 +655,82 @@ void raster_geometry(const r3d_draw_call_t* call)
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uTexNormal);
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uTexEmission);
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uTexORM);
+}
+
+void raster_decal(const r3d_draw_call_t* call)
+{
+    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+
+    /* --- Set additional matrix uniforms --- */
+
+    Matrix matNormal = r3d_matrix_normal(&group->transform);
+
+    R3D_SHADER_SET_MAT4(scene.decal, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4(scene.decal, uMatNormal, matNormal);
+
+    /* --- Set factor material maps --- */
+
+    R3D_SHADER_SET_FLOAT(scene.decal, uEmissionEnergy, call->material.emission.energy);
+    R3D_SHADER_SET_FLOAT(scene.decal, uNormalScale, call->material.normal.scale);
+    R3D_SHADER_SET_FLOAT(scene.decal, uOcclusion, call->material.orm.occlusion);
+    R3D_SHADER_SET_FLOAT(scene.decal, uRoughness, call->material.orm.roughness);
+    R3D_SHADER_SET_FLOAT(scene.decal, uMetalness, call->material.orm.metalness);
+
+    /* --- Set misc material values --- */
+
+    R3D_SHADER_SET_FLOAT(scene.decal, uAlphaCutoff, call->material.alphaCutoff);
+
+    /* --- Set texcoord offset/scale --- */
+
+    R3D_SHADER_SET_VEC2(scene.decal, uTexCoordOffset, call->material.uvOffset);
+    R3D_SHADER_SET_VEC2(scene.decal, uTexCoordScale, call->material.uvScale);
+
+    /* --- Set color material maps --- */
+
+    R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, call->material.emission.color);
+
+    /* --- Bind active texture maps --- */
+
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
+
+    /* --- Applying material parameters that are independent of shaders --- */
+
+    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
+
+    /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
+    // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
+
+    glDisable(GL_CULL_FACE);
+
+    /* --- Rendering the object corresponding to the draw call --- */
+
+    if (r3d_draw_has_instances(group)) {
+        R3D_SHADER_SET_INT(scene.decal, uInstancing, true);
+        r3d_primitive_draw_instanced(
+            R3D_PRIMITIVE_CUBE,
+            group->instanced.transforms,
+            group->instanced.transStride,
+            group->instanced.colors,
+            group->instanced.colStride,
+            group->instanced.count,
+            10, 14
+        );
+    }
+    else {
+        R3D_SHADER_SET_INT(scene.decal, uInstancing, false);
+        r3d_primitive_draw(R3D_PRIMITIVE_CUBE);
+    }
+
+    /* --- Unbind all bound texture maps --- */
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexAlbedo);
+    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexEmission);
+    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uTexORM);
 }
 
 void raster_forward(const r3d_draw_call_t* call)
