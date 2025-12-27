@@ -39,7 +39,7 @@ typedef struct R3D_Model {
     int materialCount;                  ///< Number of materials.
 
     BoundingBox aabb;                   ///< Axis-Aligned Bounding Box encompassing the whole model.
-    R3D_Skeleton skeleton;              ///< Skeleton hierarchy and bind pose used for skinning (NULL if non-skinned). TODO: Should be a pointer to a skeleton...
+    R3D_Skeleton skeleton;              ///< Skeleton hierarchy and bind pose used for skinning (NULL if non-skinned).
 
     R3D_AnimationPlayer* player;        ///< Animation player controlling the skeleton. If NULL the model uses its bind pose.
 

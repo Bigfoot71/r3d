@@ -9,6 +9,7 @@
 #include <r3d/r3d_animation.h>
 #include <raymath.h>
 #include <string.h>
+#include <glad.h>
 
 #include "./importer/r3d_importer.h"
 #include "./details/r3d_math.h"
@@ -23,9 +24,9 @@
 
 R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath)
 {
-    R3D_AnimationLib animLib = { 0 };
+    R3D_AnimationLib animLib = {0};
 
-    r3d_importer_t importer = { 0 };
+    r3d_importer_t importer = {0};
     if (!r3d_importer_create_from_file(&importer, filePath)) {
         return animLib;
     }
@@ -38,9 +39,9 @@ R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath)
 
 R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int size, const char* hint)
 {
-    R3D_AnimationLib animLib = { 0 };
+    R3D_AnimationLib animLib = {0};
 
-    r3d_importer_t importer = { 0 };
+    r3d_importer_t importer = {0};
     if (!r3d_importer_create_from_memory(&importer, data, size, hint)) {
         return animLib;
     }
@@ -108,14 +109,28 @@ R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton, const
     player->animLib = *animLib;
 
     player->states = RL_CALLOC(animLib->count, sizeof(R3D_AnimationState));
-    player->currentPose = RL_CALLOC(skeleton->boneCount, sizeof(Matrix));
+    player->localPose = RL_CALLOC(skeleton->boneCount, sizeof(Matrix));
+    player->globalPose = RL_CALLOC(skeleton->boneCount, sizeof(Matrix));
+
+    glGenTextures(1, &player->texGlobalPose);
+    glBindTexture(GL_TEXTURE_1D, player->texGlobalPose);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_1D, 0);
 
     return player;
 }
 
 void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player)
 {
-    RL_FREE(player->currentPose);
+    if (player->texGlobalPose > 0) {
+        glDeleteTextures(1, &player->texGlobalPose);
+    }
+
+    RL_FREE(player->localPose);
+    RL_FREE(player->globalPose);
     RL_FREE(player->states);
 }
 
@@ -142,6 +157,7 @@ void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt)
 }
 
 static void compute_pose(R3D_AnimationPlayer* player, float totalWeight);
+static void upload_pose(const R3D_AnimationPlayer* player, const Matrix* pose);
 
 void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
 {
@@ -149,18 +165,20 @@ void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
     const int animCount = player->animLib.count;
 
     R3D_AnimationState* states = player->states;
-    Matrix* pose = player->currentPose;
 
     float totalWeight = 0.0f;
     for (int iAnim = 0; iAnim < animCount; iAnim++) {
         totalWeight += states[iAnim].weight;
     }
 
-    if (totalWeight <= 0.0f) {
-        memcpy(pose, player->skeleton.bindPose, boneCount * sizeof(Matrix));
+    if (totalWeight > 0.0f) {
+        compute_pose(player, totalWeight);
+        upload_pose(player, player->globalPose);
     }
     else {
-        compute_pose(player, totalWeight);
+        //memcpy(player->localPose, player->skeleton.bindLocal, boneCount * sizeof(Matrix));
+        //memcpy(player->globalPose, player->skeleton.bindPose, boneCount * sizeof(Matrix));
+        upload_pose(player, player->skeleton.bindPose);
     }
 }
 
@@ -319,20 +337,29 @@ void compute_pose(R3D_AnimationPlayer* player, float totalWeight)
 
         if (isAnimated) {
             blended.rotation = QuaternionNormalize(blended.rotation);
-            player->currentPose[iBone] = r3d_matrix_scale_rotq_translate(blended.scale, blended.rotation, blended.translation);
+            player->localPose[iBone] = r3d_matrix_scale_rotq_translate(blended.scale, blended.rotation, blended.translation);
         }
         else {
-            player->currentPose[iBone] = player->skeleton.bindLocal[iBone];
+            player->localPose[iBone] = player->skeleton.bindLocal[iBone];
         }
 
         int parentIdx = player->skeleton.bones[iBone].parent;
         if (parentIdx >= 0) {
-            player->currentPose[iBone] = r3d_matrix_multiply(&player->currentPose[iBone], &player->currentPose[parentIdx]);
+            player->localPose[iBone] = r3d_matrix_multiply(&player->localPose[iBone], &player->localPose[parentIdx]);
         }
         else {
             Matrix invLocalBind = MatrixInvert(player->skeleton.bindLocal[iBone]);
             Matrix parentGlobalScene = r3d_matrix_multiply(&invLocalBind, &player->skeleton.bindPose[iBone]);
-            player->currentPose[iBone] = r3d_matrix_multiply(&player->currentPose[iBone], &parentGlobalScene);
+            player->localPose[iBone] = r3d_matrix_multiply(&player->localPose[iBone], &parentGlobalScene);
         }
+
+        player->globalPose[iBone] = r3d_matrix_multiply(&player->skeleton.boneOffsets[iBone], &player->localPose[iBone]);
     }
+}
+
+void upload_pose(const R3D_AnimationPlayer* player, const Matrix* pose)
+{
+    glBindTexture(GL_TEXTURE_1D, player->texGlobalPose);
+    glTexSubImage1D(GL_TEXTURE_1D, 0, 0, 4 * player->skeleton.boneCount, GL_RGBA, GL_FLOAT, pose);
+    glBindTexture(GL_TEXTURE_1D, 0);
 }

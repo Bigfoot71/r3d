@@ -11,6 +11,7 @@
 #include <assimp/mesh.h>
 #include <raylib.h>
 #include <string.h>
+#include <glad.h>
 
 #include "../details/r3d_math.h"
 
@@ -62,6 +63,21 @@ static void build_skeleton_recursive(
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
         build_skeleton_recursive(ctx, node->mChildren[i], parentIndex, globalTransform);
     }
+}
+
+// ========================================
+// BIND POSE TEXTURE UPLOAD
+// ========================================
+
+static void upload_skeleton_bind_pose(R3D_Skeleton* skeleton)
+{
+    glGenTextures(1, &skeleton->texBindPose);
+    glBindTexture(GL_TEXTURE_1D, skeleton->texBindPose);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, skeleton->bindPose);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_1D, 0);
 }
 
 // ========================================
@@ -128,6 +144,7 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
     };
 
     build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), -1, R3D_MATRIX_IDENTITY);
+    upload_skeleton_bind_pose(skeleton);
 
     TraceLog(LOG_INFO, "RENDER: Loaded skeleton with %d bones", boneCount);
 

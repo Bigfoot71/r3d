@@ -18,12 +18,10 @@
 
 #include "./modules/r3d_primitive.h"
 #include "./modules/r3d_texture.h"
-#include "./modules/r3d_storage.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_cache.h"
-#include "raylib.h"
 #include "./modules/r3d_draw.h"
 
 // ========================================
@@ -43,8 +41,6 @@
 // ========================================
 // INTERNAL FUNCTIONS
 // ========================================
-
-static void upload_bone_matrices(const r3d_draw_group_t* group, int bindingSlot);
 
 static void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
 static void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
@@ -442,25 +438,6 @@ void R3D_DrawParticleSystemEx(const R3D_ParticleSystem* system, const R3D_Mesh* 
 // INTERNAL FUNCTIONS
 // ========================================
 
-void upload_bone_matrices(const r3d_draw_group_t* group, int bindingSlot)
-{
-    const R3D_Skeleton* skeleton = NULL;
-    const Matrix* currentPose = NULL;
-
-    if (group->player != NULL) {
-        skeleton = &group->player->skeleton;
-        currentPose = group->player->currentPose;
-    }
-    else {
-        skeleton = &group->skeleton;
-        currentPose = group->skeleton.bindPose;
-    }
-
-    static Matrix bones[R3D_STORAGE_MAX_BONE_MATRICES];
-    r3d_matrix_multiply_batch(bones, skeleton->boneOffsets, currentPose, skeleton->boneCount);
-    r3d_storage_use(R3D_STORAGE_BONE_MATRICES, bindingSlot, bones, skeleton->boneCount);
-}
-
 void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 {
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
@@ -473,7 +450,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
     /* --- Send skinning related data --- */
 
     if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        upload_bone_matrices(group, R3D_SHADER_SLOT_SAMPLER_1D(scene.depth, uTexBoneMatrices));
+        R3D_SHADER_BIND_SAMPLER_1D(scene.depth, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
         R3D_SHADER_SET_INT(scene.depth, uSkinning, true);
     }
     else {
@@ -541,7 +518,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     /* --- Send skinning related data --- */
 
     if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        upload_bone_matrices(group, R3D_SHADER_SLOT_SAMPLER_1D(scene.depthCube, uTexBoneMatrices));
+        R3D_SHADER_BIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
         R3D_SHADER_SET_INT(scene.depthCube, uSkinning, true);
     }
     else {
@@ -693,7 +670,7 @@ void raster_geometry(const r3d_draw_call_t* call)
     /* --- Send skinning related data --- */
 
     if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        upload_bone_matrices(group, R3D_SHADER_SLOT_SAMPLER_1D(scene.geometry, uTexBoneMatrices));
+        R3D_SHADER_BIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
         R3D_SHADER_SET_INT(scene.geometry, uSkinning, true);
     }
     else {
@@ -770,7 +747,7 @@ void raster_forward(const r3d_draw_call_t* call)
     /* --- Send skinning related data --- */
 
     if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        upload_bone_matrices(group, R3D_SHADER_SLOT_SAMPLER_1D(scene.forward, uTexBoneMatrices));
+        R3D_SHADER_BIND_SAMPLER_1D(scene.forward, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
         R3D_SHADER_SET_INT(scene.forward, uSkinning, true);
     }
     else {

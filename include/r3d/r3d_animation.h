@@ -12,6 +12,7 @@
 #include "./r3d_platform.h"
 #include "./r3d_skeleton.h"
 #include <raylib.h>
+#include <stdint.h>
 
 /**
  * @defgroup Animation
@@ -97,12 +98,11 @@ typedef struct R3D_AnimationState {
  */
 typedef struct R3D_AnimationPlayer {
     R3D_AnimationState* states;         ///< Array of active animation states (for each animation).
-
-    // TODO: Should be const pointers but it's not safe for now...
     R3D_AnimationLib animLib;           ///< Animation library providing available animations.
     R3D_Skeleton skeleton;              ///< Target skeleton to animate.
-
-    Matrix* currentPose;                ///< Array of bone transforms representing the blended pose.
+    Matrix* localPose;                  ///< Array of bone transforms representing the blended pose.
+    Matrix* globalPose;                 ///< Array of bone transforms containing the boneOffsets*localPose.
+    uint32_t texGlobalPose;             ///< Texture ID that contains the global pose for GPU skinning. This is a 1D Texture RGBA32F 4*boneCount.
 } R3D_AnimationPlayer;
 
 // ========================================
