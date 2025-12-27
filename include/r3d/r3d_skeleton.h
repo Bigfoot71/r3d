@@ -11,6 +11,7 @@
 
 #include "./r3d_platform.h"
 #include <raylib.h>
+#include <stdint.h>
 
 /**
  * @defgroup Skeleton
@@ -46,6 +47,8 @@ typedef struct R3D_Skeleton {
     Matrix* boneOffsets;    ///< Inverse bind matrices, one per bone. Transform vertices from mesh space to bone space (used in skinning).
     Matrix* bindLocal;      ///< Bind pose transforms in local bone space (relative to parent).
     Matrix* bindPose;       ///< Bind pose transforms in model space (global). Used as the default pose when not animated.
+
+    uint32_t texBindPose;   ///< Texture ID that contains the bind pose for GPU skinning. This is a 1D Texture RGBA32F 4*boneCount.
 
 } R3D_Skeleton;
 
@@ -91,8 +94,7 @@ R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton* skeleton);
 /**
  * @brief Check if a skeleton is valid.
  * 
- * Returns true if the skeleton has bones, offsets, bind local matrices,
- * and bind pose matrices properly initialized.
+ * Returns true if atleast the texBindPose is greater than zero.
  *
  * @param skeleton Pointer to the skeleton to check.
  * @return true if valid, false otherwise.

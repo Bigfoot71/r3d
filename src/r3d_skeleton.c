@@ -9,6 +9,7 @@
 #include <r3d/r3d_skeleton.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <glad.h>
 
 #include "./importer/r3d_importer.h"
 
@@ -18,9 +19,9 @@
 
 R3D_Skeleton R3D_LoadSkeleton(const char* filePath)
 {
-    R3D_Skeleton skeleton = { 0 };
+    R3D_Skeleton skeleton = {0};
 
-    r3d_importer_t importer = { 0 };
+    r3d_importer_t importer = {0};
     if (!r3d_importer_create_from_file(&importer, filePath)) {
         return skeleton;
     }
@@ -33,9 +34,9 @@ R3D_Skeleton R3D_LoadSkeleton(const char* filePath)
 
 R3D_Skeleton R3D_LoadSkeletonFromData(const void* data, unsigned int size, const char* hint)
 {
-    R3D_Skeleton skeleton = { 0 };
+    R3D_Skeleton skeleton = {0};
 
-    r3d_importer_t importer = { 0 };
+    r3d_importer_t importer = {0};
     if (!r3d_importer_create_from_memory(&importer, data, size, hint)) {
         return skeleton;
     }
@@ -48,6 +49,10 @@ R3D_Skeleton R3D_LoadSkeletonFromData(const void* data, unsigned int size, const
 
 void R3D_UnloadSkeleton(R3D_Skeleton* skeleton)
 {
+    if (skeleton->texBindPose > 0) {
+        glDeleteTextures(1, &skeleton->texBindPose);
+    }
+
     RL_FREE(skeleton->bones);
     RL_FREE(skeleton->boneOffsets);
     RL_FREE(skeleton->bindLocal);
@@ -56,8 +61,5 @@ void R3D_UnloadSkeleton(R3D_Skeleton* skeleton)
 
 bool R3D_IsSkeletonValid(const R3D_Skeleton* skeleton)
 {
-    return (skeleton->bones != NULL) && (skeleton->boneCount > 0) &&
-           (skeleton->boneOffsets != NULL) &&
-           (skeleton->bindLocal != NULL) &&
-           (skeleton->bindPose != NULL);
+    return (skeleton->texBindPose > 0);
 }

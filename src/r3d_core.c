@@ -17,7 +17,6 @@
 
 #include "./modules/r3d_primitive.h"
 #include "./modules/r3d_texture.h"
-#include "./modules/r3d_storage.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
@@ -32,7 +31,6 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
 {
     r3d_primitive_init();
     r3d_texture_init();
-    r3d_storage_init();
     r3d_target_init(resWidth, resHeight);
     r3d_shader_init();
     r3d_light_init();
@@ -47,7 +45,6 @@ void R3D_Close(void)
 {
     r3d_primitive_quit();
     r3d_texture_quit();
-    r3d_storage_quit();
     r3d_target_quit();
     r3d_shader_quit();
     r3d_light_quit();
