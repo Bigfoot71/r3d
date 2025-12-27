@@ -14,20 +14,20 @@
 
 bool R3D_IsPointInFrustum(Vector3 position)
 {
-	return r3d_frustum_is_point_in(&R3D_CACHE_GET(viewport.frustum), &position);
+	return r3d_frustum_is_point_in(&R3D_CACHE_GET(viewState.frustum), &position);
 }
 
 bool R3D_IsSphereInFrustum(Vector3 position, float radius)
 {
-	return r3d_frustum_is_sphere_in(&R3D_CACHE_GET(viewport.frustum), &position, radius);
+	return r3d_frustum_is_sphere_in(&R3D_CACHE_GET(viewState.frustum), &position, radius);
 }
 
 bool R3D_IsAABBInFrustum(BoundingBox aabb)
 {
-	return r3d_frustum_is_aabb_in(&R3D_CACHE_GET(viewport.frustum), &aabb);
+	return r3d_frustum_is_aabb_in(&R3D_CACHE_GET(viewState.frustum), &aabb);
 }
 
 bool R3D_IsOBBInFrustum(BoundingBox aabb, Matrix transform)
 {
-	return r3d_frustum_is_obb_in(&R3D_CACHE_GET(viewport.frustum), &aabb, &transform);
+	return r3d_frustum_is_obb_in(&R3D_CACHE_GET(viewState.frustum), &aabb, &transform);
 }

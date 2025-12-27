@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings === */
@@ -21,9 +22,6 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexSource;
 uniform sampler2D uTexNormal;
 uniform sampler2D uTexDepth;
-
-uniform mat4 uMatInvProj;
-uniform mat4 uMatView;
 
 uniform vec2 uDirection;
 
@@ -113,21 +111,6 @@ const float MIN_WEIGHT = 0.3;
 
 /* === Helper Functions === */
 
-vec3 GetViewPosition(vec2 vTexCoord)
-{
-    float depth = texture(uTexDepth, vTexCoord).r;
-    vec4 ndcPos = vec4(vTexCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 viewPos = uMatInvProj * ndcPos;
-    return viewPos.xyz / viewPos.w;
-}
-
-vec3 GetViewNormal(vec2 vTexCoord)
-{
-    vec2 encoded = texture(uTexNormal, vTexCoord).rg;
-    vec3 normal = M_DecodeOctahedral(encoded);
-    return normalize(mat3(uMatView) * normal);
-}
-
 float NormalWeight(vec3 n0, vec3 n1)
 {
     float d = max(dot(n0, n1), 0.0);
@@ -155,12 +138,6 @@ float SigmaScale(float viewDepth)
     return mix(1.0, SIGMA_FAR, t);
 }
 
-bool OffScreen(vec2 texCoord)
-{
-    return any(lessThan(texCoord, vec2(0.0))) ||
-           any(greaterThan(texCoord, vec2(1.0)));
-}
-
 /* === Main Program === */
 
 void main()
@@ -170,8 +147,8 @@ void main()
 
     vec2 size = textureSize(uTexSource, 0);
 
-    vec3 centerNormal = GetViewNormal(vTexCoord);
-    vec3 centerPos = GetViewPosition(vTexCoord);
+    vec3 centerNormal = V_GetViewNormal(uTexNormal, vTexCoord);
+    vec3 centerPos = V_GetViewPosition(uTexDepth, vTexCoord);
     float centerDepth = centerPos.z;
 
 #ifdef SSIL
@@ -183,12 +160,12 @@ void main()
     {
         vec2 offset = uDirection * OFFSETS[i] / size;
         vec2 uv = vTexCoord + offset;
-        if (OffScreen(uv)) continue;
+        if (V_OffScreen(uv)) continue;
 
         vec4 sampleValue = texture(uTexSource, uv);
 
-        vec3 sampleNormal = GetViewNormal(uv);
-        vec3 samplePos = GetViewPosition(uv);
+        vec3 sampleNormal = V_GetViewNormal(uTexNormal, uv);
+        vec3 samplePos = V_GetViewPosition(uTexDepth, uv);
         float sampleDepth = samplePos.z;
 
         float wNormal = NormalWeight(centerNormal, sampleNormal);

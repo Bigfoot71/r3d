@@ -124,6 +124,11 @@ struct r3d_shader R3D_MOD_SHADER;
     );                                                                          \
 } while(0)
 
+#define SET_UNIFORM_BUFFER(shader_name, uniform, slot) do {                     \
+    GLuint idx = glGetUniformBlockIndex(R3D_MOD_SHADER.shader_name.id, #uniform);\
+    glUniformBlockBinding(R3D_MOD_SHADER.shader_name.id, idx, slot);            \
+} while(0)                                                                      \
+
 #define UNLOAD_SHADER(shader_name) do {                                         \
     if (R3D_MOD_SHADER.shader_name.id != 0) {                                   \
         glDeleteProgram(R3D_MOD_SHADER.shader_name.id);                         \
@@ -220,13 +225,12 @@ void r3d_shader_load_prepare_ssao(void)
 {
     LOAD_SHADER(prepare.ssao, SCREEN_VERT, SSAO_FRAG);
 
+    SET_UNIFORM_BUFFER(prepare.ssao, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(prepare.ssao, uTexDepth);
     GET_LOCATION(prepare.ssao, uTexNormal);
     GET_LOCATION(prepare.ssao, uTexKernel);
     GET_LOCATION(prepare.ssao, uTexNoise);
-    GET_LOCATION(prepare.ssao, uMatInvProj);
-    GET_LOCATION(prepare.ssao, uMatProj);
-    GET_LOCATION(prepare.ssao, uMatView);
     GET_LOCATION(prepare.ssao, uRadius);
     GET_LOCATION(prepare.ssao, uBias);
     GET_LOCATION(prepare.ssao, uIntensity);
@@ -244,16 +248,14 @@ void r3d_shader_load_prepare_ssao_blur(void)
 {
     const char* defines[] = {"SSAO"};
     char* fsCode = inject_defines_to_shader_code(BILATERAL_BLUR_FRAG, defines, 1);
-
     LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, fsCode);
-
     RL_FREE(fsCode);
+
+    SET_UNIFORM_BUFFER(prepare.ssaoBlur, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
     GET_LOCATION(prepare.ssaoBlur, uTexSource);
     GET_LOCATION(prepare.ssaoBlur, uTexNormal);
     GET_LOCATION(prepare.ssaoBlur, uTexDepth);
-    GET_LOCATION(prepare.ssaoBlur, uMatInvProj);
-    GET_LOCATION(prepare.ssaoBlur, uMatView);
     GET_LOCATION(prepare.ssaoBlur, uDirection);
 
     USE_SHADER(prepare.ssaoBlur);
@@ -267,6 +269,8 @@ void r3d_shader_load_prepare_ssil(void)
 {
     LOAD_SHADER(prepare.ssil, SCREEN_VERT, SSIL_FRAG);
 
+    SET_UNIFORM_BUFFER(prepare.ssil, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(prepare.ssil, uTexDepth);
     GET_LOCATION(prepare.ssil, uTexNormal);
     GET_LOCATION(prepare.ssil, uTexLight);
@@ -276,9 +280,6 @@ void r3d_shader_load_prepare_ssil(void)
     GET_LOCATION(prepare.ssil, uHitThickness);
     GET_LOCATION(prepare.ssil, uAoPower);
     GET_LOCATION(prepare.ssil, uEnergy);
-    GET_LOCATION(prepare.ssil, uMatInvProj);
-    GET_LOCATION(prepare.ssil, uMatProj);
-    GET_LOCATION(prepare.ssil, uMatView);
 
     USE_SHADER(prepare.ssil);
 
@@ -291,16 +292,14 @@ void r3d_shader_load_prepare_ssil_blur(void)
 {
     const char* defines[] = {"SSIL"};
     char* fsCode = inject_defines_to_shader_code(BILATERAL_BLUR_FRAG, defines, 1);
-
     LOAD_SHADER(prepare.ssilBlur, SCREEN_VERT, fsCode);
-
     RL_FREE(fsCode);
+
+    SET_UNIFORM_BUFFER(prepare.ssilBlur, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
     GET_LOCATION(prepare.ssilBlur, uTexSource);
     GET_LOCATION(prepare.ssilBlur, uTexNormal);
     GET_LOCATION(prepare.ssilBlur, uTexDepth);
-    GET_LOCATION(prepare.ssilBlur, uMatInvProj);
-    GET_LOCATION(prepare.ssilBlur, uMatView);
     GET_LOCATION(prepare.ssilBlur, uDirection);
 
     USE_SHADER(prepare.ssilBlur);
@@ -314,12 +313,13 @@ void r3d_shader_load_prepare_ssr(void)
 {
     LOAD_SHADER(prepare.ssr, SCREEN_VERT, SSR_FRAG);
 
+    SET_UNIFORM_BUFFER(prepare.ssr, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(prepare.ssr, uTexColor);
     GET_LOCATION(prepare.ssr, uTexAlbedo);
     GET_LOCATION(prepare.ssr, uTexNormal);
     GET_LOCATION(prepare.ssr, uTexORM);
     GET_LOCATION(prepare.ssr, uTexDepth);
-    GET_LOCATION(prepare.ssr, uMatView);
     GET_LOCATION(prepare.ssr, uMaxRaySteps);
     GET_LOCATION(prepare.ssr, uBinarySearchSteps);
     GET_LOCATION(prepare.ssr, uRayMarchLength);
@@ -329,10 +329,6 @@ void r3d_shader_load_prepare_ssr(void)
     GET_LOCATION(prepare.ssr, uEdgeFadeEnd);
     GET_LOCATION(prepare.ssr, uAmbientColor);
     GET_LOCATION(prepare.ssr, uAmbientEnergy);
-    GET_LOCATION(prepare.ssr, uMatInvProj);
-    GET_LOCATION(prepare.ssr, uMatInvView);
-    GET_LOCATION(prepare.ssr, uMatViewProj);
-    GET_LOCATION(prepare.ssr, uViewPosition);
 
     USE_SHADER(prepare.ssr);
 
@@ -415,11 +411,11 @@ void r3d_shader_load_scene_geometry(void)
 {
     LOAD_SHADER(scene.geometry, GEOMETRY_VERT, GEOMETRY_FRAG);
 
+    SET_UNIFORM_BUFFER(scene.geometry, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(scene.geometry, uTexBoneMatrices);
-    GET_LOCATION(scene.geometry, uMatInvView);
     GET_LOCATION(scene.geometry, uMatNormal);
     GET_LOCATION(scene.geometry, uMatModel);
-    GET_LOCATION(scene.geometry, uMatVP);
     GET_LOCATION(scene.geometry, uAlbedoColor);
     GET_LOCATION(scene.geometry, uEmissionEnergy);
     GET_LOCATION(scene.geometry, uEmissionColor);
@@ -451,11 +447,11 @@ void r3d_shader_load_scene_forward(void)
 {
     LOAD_SHADER(scene.forward, FORWARD_VERT, FORWARD_FRAG);
 
+    SET_UNIFORM_BUFFER(scene.forward, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(scene.forward, uTexBoneMatrices);
-    GET_LOCATION(scene.forward, uMatInvView);
     GET_LOCATION(scene.forward, uMatNormal);
     GET_LOCATION(scene.forward, uMatModel);
-    GET_LOCATION(scene.forward, uMatVP);
     GET_LOCATION(scene.forward, uAlbedoColor);
     GET_LOCATION(scene.forward, uTexCoordOffset);
     GET_LOCATION(scene.forward, uTexCoordScale);
@@ -482,7 +478,6 @@ void r3d_shader_load_scene_forward(void)
     GET_LOCATION(scene.forward, uReflectEnergy);
     GET_LOCATION(scene.forward, uAlphaCutoff);
     GET_LOCATION(scene.forward, uViewPosition);
-    GET_LOCATION(scene.forward, uFar);
 
     USE_SHADER(scene.forward);
 
@@ -536,8 +531,8 @@ void r3d_shader_load_scene_skybox(void)
 {
     LOAD_SHADER(scene.skybox, SKYBOX_VERT, SKYBOX_FRAG);
 
-    GET_LOCATION(scene.skybox, uMatProj);
-    GET_LOCATION(scene.skybox, uMatView);
+    SET_UNIFORM_BUFFER(scene.skybox, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(scene.skybox, uRotation);
     GET_LOCATION(scene.skybox, uSkyEnergy);
     GET_LOCATION(scene.skybox, uCubeSky);
@@ -599,12 +594,10 @@ void r3d_shader_load_scene_decal(void)
 {
     LOAD_SHADER(scene.decal, DECAL_VERT, DECAL_FRAG);
 
-    GET_LOCATION(scene.decal, uMatInvProj);
-    GET_LOCATION(scene.decal, uMatProj);
-    GET_LOCATION(scene.decal, uMatInvView);
+    SET_UNIFORM_BUFFER(scene.decal, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(scene.decal, uMatNormal);
     GET_LOCATION(scene.decal, uMatModel);
-    GET_LOCATION(scene.decal, uMatVP);
     GET_LOCATION(scene.decal, uAlbedoColor);
     GET_LOCATION(scene.decal, uEmissionEnergy);
     GET_LOCATION(scene.decal, uEmissionColor);
@@ -635,10 +628,10 @@ void r3d_shader_load_deferred_ambient_ibl(void)
 {
     const char* defines[] = {"IBL"};
     char* fsCode = inject_defines_to_shader_code(AMBIENT_FRAG, defines, 1);
-
     LOAD_SHADER(deferred.ambientIbl, SCREEN_VERT, fsCode);
-
     RL_FREE(fsCode);
+
+    SET_UNIFORM_BUFFER(deferred.ambientIbl, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
     GET_LOCATION(deferred.ambientIbl, uTexAlbedo);
     GET_LOCATION(deferred.ambientIbl, uTexNormal);
@@ -654,9 +647,6 @@ void r3d_shader_load_deferred_ambient_ibl(void)
     GET_LOCATION(deferred.ambientIbl, uReflectEnergy);
     GET_LOCATION(deferred.ambientIbl, uMipCountSSR);
     GET_LOCATION(deferred.ambientIbl, uQuatSkybox);
-    GET_LOCATION(deferred.ambientIbl, uViewPosition);
-    GET_LOCATION(deferred.ambientIbl, uMatInvProj);
-    GET_LOCATION(deferred.ambientIbl, uMatInvView);
 
     USE_SHADER(deferred.ambientIbl);
 
@@ -699,14 +689,13 @@ void r3d_shader_load_deferred_lighting(void)
 {
     LOAD_SHADER(deferred.lighting, SCREEN_VERT, LIGHTING_FRAG);
 
+    SET_UNIFORM_BUFFER(deferred.lighting, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(deferred.lighting, uTexAlbedo);
     GET_LOCATION(deferred.lighting, uTexNormal);
     GET_LOCATION(deferred.lighting, uTexDepth);
     GET_LOCATION(deferred.lighting, uTexSSAO);
     GET_LOCATION(deferred.lighting, uTexORM);
-    GET_LOCATION(deferred.lighting, uViewPosition);
-    GET_LOCATION(deferred.lighting, uMatInvProj);
-    GET_LOCATION(deferred.lighting, uMatInvView);
     GET_LOCATION(deferred.lighting, uSSAOLightAffect);
 
     GET_LOCATION(deferred.lighting, uLight.matVP);
@@ -774,10 +763,10 @@ void r3d_shader_load_post_fog(void)
 {
     LOAD_SHADER(post.fog, SCREEN_VERT, FOG_FRAG);
 
+    SET_UNIFORM_BUFFER(post.fog, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(post.fog, uTexColor);
     GET_LOCATION(post.fog, uTexDepth);
-    GET_LOCATION(post.fog, uNear);
-    GET_LOCATION(post.fog, uFar);
     GET_LOCATION(post.fog, uFogMode);
     GET_LOCATION(post.fog, uFogColor);
     GET_LOCATION(post.fog, uFogStart);
@@ -795,11 +784,10 @@ void r3d_shader_load_post_dof(void)
 {
     LOAD_SHADER(post.dof, SCREEN_VERT, DOF_FRAG);
 
+    SET_UNIFORM_BUFFER(post.dof, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
     GET_LOCATION(post.dof, uTexColor);
     GET_LOCATION(post.dof, uTexDepth);
-    GET_LOCATION(post.dof, uTexelSize);
-    GET_LOCATION(post.dof, uNear);
-    GET_LOCATION(post.dof, uFar);
     GET_LOCATION(post.dof, uFocusPoint);
     GET_LOCATION(post.dof, uFocusScale);
     GET_LOCATION(post.dof, uMaxBlurSize);

@@ -79,7 +79,6 @@ uniform Light uLights[LIGHT_FORWARD_COUNT];
 
 uniform float uAlphaCutoff;
 uniform vec3 uViewPosition;
-uniform float uFar;
 
 /* === Constants === */
 

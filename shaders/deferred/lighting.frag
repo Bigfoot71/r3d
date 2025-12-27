@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/light.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
@@ -55,9 +56,6 @@ uniform sampler2D uTexORM;
 
 uniform Light uLight;
 
-uniform vec3 uViewPosition;
-uniform mat4 uMatInvProj;
-uniform mat4 uMatInvView;
 uniform float uSSAOLightAffect;
 
 /* === Fragments === */
@@ -174,17 +172,6 @@ float ShadowOmni(vec3 position, float cNdotL, mat2 diskRot)
     return shadow / float(SHADOW_SAMPLES);
 }
 
-/* === Misc functions === */
-
-vec3 GetPositionFromDepth(float depth)
-{
-    vec4 ndcPos = vec4(vTexCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 viewPos = uMatInvProj * ndcPos;
-    viewPos /= viewPos.w;
-
-    return (uMatInvView * viewPos).xyz;
-}
-
 /* === Main === */
 
 void main()
@@ -200,18 +187,14 @@ void main()
 
     vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
 
-    /* Sample world depth and reconstruct world position */
+    /* Get position and normal in world space */
 
-    float depth = texture(uTexDepth, vTexCoord).r;
-    vec3 position = GetPositionFromDepth(depth);
-
-    /* Sample and decode normal in world space */
-
-    vec3 N = M_DecodeOctahedral(texture(uTexNormal, vTexCoord).rg);
+    vec3 position = V_GetWorldPosition(uTexDepth, vTexCoord);
+    vec3 N = V_GetWorldNormal(uTexNormal, vTexCoord);
 
     /* Compute view direction and the dot product of the normal and view direction */
     
-    vec3 V = normalize(uViewPosition - position);
+    vec3 V = normalize(uView.position - position);
 
     float NdotV = dot(N, V);
     float cNdotV = max(NdotV, 1e-4); // Clamped to avoid division by zero

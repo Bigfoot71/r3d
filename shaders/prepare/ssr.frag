@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
 
@@ -35,12 +36,6 @@ uniform float uEdgeFadeEnd;
 
 uniform vec3 uAmbientColor;
 uniform float uAmbientEnergy;
-
-uniform mat4 uMatView;
-uniform mat4 uMatInvProj;
-uniform mat4 uMatInvView;
-uniform mat4 uMatViewProj;
-uniform vec3 uViewPosition;
 
 /* === Output === */
 
@@ -69,31 +64,6 @@ vec4 SampleScene(vec2 texCoord)
     return vec4(light + ambient, fade);
 }
 
-vec3 GetViewPosition(vec2 texCoord, float depth)
-{
-    vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 viewPos = uMatInvProj * ndcPos;
-    return viewPos.xyz / viewPos.w;
-}
-
-vec3 GetWorldPosition(vec2 texCoord, float depth)
-{
-    vec3 viewPos = GetViewPosition(texCoord, depth);
-    return (uMatInvView * vec4(viewPos, 1.0)).xyz;
-}
-
-vec2 WorldToScreenSpace(vec3 worldPos)
-{
-    vec4 projPos = uMatViewProj * vec4(worldPos, 1.0);
-    projPos /= projPos.w;
-    return projPos.xy * 0.5 + 0.5;
-}
-
-bool OffScreen(vec2 uv)
-{
-    return any(greaterThan(uv, vec2(1.0))) || any(lessThan(uv, vec2(0.0)));
-}
-
 /* === Raymarching === */
 
 vec3 BinarySearch(vec3 startPos, vec3 endPos)
@@ -101,12 +71,10 @@ vec3 BinarySearch(vec3 startPos, vec3 endPos)
     for (int i = 0; i < uBinarySearchSteps; i++)
     {
         vec3 midPos = (startPos + endPos) * 0.5;
+        vec2 uv = V_WorldToScreen(midPos);
 
-        vec2 uv = WorldToScreenSpace(midPos);
-        float sampledDepth = texture(uTexDepth, uv).r;
-
-        vec3 sampledViewPos = GetViewPosition(uv, sampledDepth);
-        vec3 midViewPos = (uMatView * vec4(midPos, 1.0)).xyz;
+        vec3 sampledViewPos = V_GetViewPosition(uTexDepth, uv);
+        vec3 midViewPos = (uView.view * vec4(midPos, 1.0)).xyz;
 
         float depthDiff = sampledViewPos.z - midViewPos.z;
 
@@ -132,19 +100,17 @@ vec4 TraceReflectionRay(vec3 startPos, vec3 reflectionDir)
     {
         currentPos += reflectionDir * stepSize;
 
-        vec2 uv = WorldToScreenSpace(currentPos);
-        if (OffScreen(uv)) break;
+        vec2 uv = V_WorldToScreen(currentPos);
+        if (V_OffScreen(uv)) break;
 
-        float sampledDepth = texture(uTexDepth, uv).r;
-
-        vec3 sampledViewPos  = GetViewPosition(uv, sampledDepth);
-        vec3 currentViewPos = (uMatView * vec4(currentPos, 1.0)).xyz;
+        vec3 sampledViewPos = V_GetViewPosition(uTexDepth, uv);
+        vec3 currentViewPos = (uView.view * vec4(currentPos, 1.0)).xyz;
 
         float depthDiff = sampledViewPos.z - currentViewPos.z;
 
         if (depthDiff > -uDepthTolerance && depthDiff < uDepthThickness) {
             currentPos = BinarySearch(startPos, currentPos);
-            uv = WorldToScreenSpace(currentPos);
+            uv = V_WorldToScreen(currentPos);
             return SampleScene(uv);
         }
 
@@ -163,11 +129,10 @@ void main()
     float depth = texture(uTexDepth, vTexCoord).r;
     if (depth > 1.0 - 1e-5) return;
 
-    vec2 encodedNormal = texture(uTexNormal, vTexCoord).rg;
-    vec3 worldNormal = M_DecodeOctahedral(encodedNormal);
-    vec3 worldPos = GetWorldPosition(vTexCoord, depth);
+    vec3 worldNormal = V_GetWorldNormal(uTexNormal, vTexCoord);
+    vec3 worldPos = V_GetWorldPosition(depth, vTexCoord);
 
-    vec3 viewDir = normalize(worldPos - uViewPosition);
+    vec3 viewDir = normalize(worldPos - uView.position);
     vec3 reflectionDir = reflect(viewDir, worldNormal);
     if (dot(reflectionDir, worldNormal) < 0.0) return;
 

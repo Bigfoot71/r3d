@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Attributes === */
@@ -18,8 +19,6 @@ layout (location = 0) in vec3 aPosition;
 
 /* === Uniforms === */
 
-uniform mat4 uMatProj;
-uniform mat4 uMatView;
 uniform vec4 uRotation;
 
 /* === Varyings === */
@@ -32,6 +31,6 @@ void main()
 {
     vPosition = M_Rotate3D(aPosition, uRotation);
 
-    mat4 rotView = mat4(mat3(uMatView));
-    gl_Position = (uMatProj * rotView * vec4(aPosition, 1.0)).xyww;
+    mat4 rotView = mat4(mat3(uView.view));
+    gl_Position = (uView.proj * rotView * vec4(aPosition, 1.0)).xyww;
 }

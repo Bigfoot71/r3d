@@ -9,6 +9,10 @@
 
 #version 330 core
 
+/* === Includes === */
+
+#include "../include/blocks/view.glsl"
+
 /* === Varyings === */
 
 in mat4 vFinalMatModel;
@@ -24,11 +28,7 @@ uniform sampler2D uTexEmission;
 uniform sampler2D uTexORM;
 uniform sampler2D uTexDepth;
 
-uniform mat4 uMatInvView;
 uniform mat4 uMatNormal; // Unused - placeholder for future implementation
-uniform mat4 uMatVP;
-uniform mat4 uMatInvProj;
-uniform mat4 uMatProj;
 
 uniform float uAlphaCutoff;
 uniform float uNormalScale; // Unused - placeholder for future implementation
@@ -46,15 +46,6 @@ layout(location = 1) out vec4 FragEmission;
 layout(location = 2) out vec2 FragNormal; // Unused - normal output placeholder
 layout(location = 3) out vec3 FragORM;
 
-/* === Helper Functions === */
-
-vec3 DepthToViewPosition(vec2 texCoord, float depth)
-{
-    vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 viewPos = uMatInvProj * ndcPos;
-    return viewPos.xyz / viewPos.w;
-}
-
 /* === Main function === */
 
 void main()
@@ -63,14 +54,11 @@ void main()
     vec2 screenPos = vClipPos.xy / vClipPos.w;
     vec2 fragTexCoord = screenPos * 0.5 + 0.5;
 
-    // Retrieve the depth from the depth texture
-    float textureDepth = texture(uTexDepth, fragTexCoord).r;
-
     // Reconstruct position in view space
-    vec3 positionViewSpace = DepthToViewPosition(fragTexCoord, textureDepth);
+    vec3 positionViewSpace = V_GetViewPosition(uTexDepth, fragTexCoord);
 
     // Convert from world space to decal projector's model space
-    vec4 positionModelSpace = inverse(vFinalMatModel) * uMatInvView * vec4(positionViewSpace, 1.0);
+    vec4 positionModelSpace = inverse(vFinalMatModel) * uView.invView * vec4(positionViewSpace, 1.0);
 
     // Discard fragments that are outside the bounds of the decal projector
     if (abs(positionModelSpace.x) > 0.5 || 

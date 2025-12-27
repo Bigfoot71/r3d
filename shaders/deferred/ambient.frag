@@ -8,16 +8,14 @@
 
 #version 330 core
 
-/* === Common Includes === */
-
-#include "../include/pbr.glsl"
-
 #ifdef IBL
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 #include "../include/ibl.glsl"
+#include "../include/pbr.glsl"
 
 /* === Varyings === */
 
@@ -42,27 +40,10 @@ uniform float uReflectEnergy;
 uniform float uMipCountSSR;
 uniform vec4 uQuatSkybox;
 
-uniform vec3 uViewPosition;
-uniform mat4 uMatInvProj;
-uniform mat4 uMatInvView;
-
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragDiffuse;
 layout(location = 1) out vec4 FragSpecular;
-
-/* === Misc functions === */
-
-vec3 GetWorldPosition(vec2 texCoord)
-{
-    float depth = texture(uTexDepth, texCoord).r;
-
-    vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 viewPos = uMatInvProj * ndcPos;
-    viewPos *= 1.0 / viewPos.w;
-
-    return (uMatInvView * viewPos).xyz;
-}
 
 /* === Main === */
 
@@ -79,10 +60,9 @@ void main()
     float roughness = orm.g;
     float metalness = orm.b;
 
-    vec3 position = GetWorldPosition(vTexCoord);
-
-    vec3 N = M_DecodeOctahedral(texture(uTexNormal, vTexCoord).rg);
-    vec3 V = normalize(uViewPosition - position);
+    vec3 position = V_GetWorldPosition(uTexDepth, vTexCoord);
+    vec3 N = V_GetWorldNormal(uTexNormal, vTexCoord);
+    vec3 V = normalize(uView.position - position);
     float NdotV = max(dot(N, V), 0.0);
 
     vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);

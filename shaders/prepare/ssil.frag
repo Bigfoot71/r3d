@@ -16,6 +16,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings == */
@@ -35,10 +36,6 @@ uniform float uHitThickness;
 
 uniform float uEnergy;
 uniform float uAoPower;
-
-uniform mat4 uMatInvProj;
-uniform mat4 uMatProj;
-uniform mat4 uMatView;
 
 /* === Fragments === */
 
@@ -65,21 +62,6 @@ uint UpdateSectors(float minHorizon, float maxHorizon, uint outBitfield)
     return outBitfield | currentBitfield;
 }
 
-vec3 GetViewPosition(vec2 texCoord)
-{
-    float depth = texture(uTexDepth, texCoord).r;
-    vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
-    vec4 viewPos = uMatInvProj * ndcPos;
-    return viewPos.xyz / viewPos.w;
-}
-
-vec3 GetViewNormal(vec2 texCoord)
-{
-    vec2 encoded = texture(uTexNormal, texCoord).rg;
-    vec3 normal = M_DecodeOctahedral(encoded);
-    return normalize(mat3(uMatView) * normal);
-}
-
 /* === Program === */
 
 void main()
@@ -90,15 +72,12 @@ void main()
     float visibility = 0.0;
     vec3 lighting = vec3(0.0);
 
-    vec2 size = vec2(textureSize(uTexLight, 0));
-    vec2 aspect = size.yx / size.x;
-
-    vec3 position = GetViewPosition(vTexCoord);
-    vec3 normal = GetViewNormal(vTexCoord);
+    vec3 position = V_GetViewPosition(uTexDepth, vTexCoord);
+    vec3 normal = V_GetViewNormal(uTexNormal, vTexCoord);
     vec3 camera = normalize(-position);
 
     float sliceRotation = M_TAU / (uSliceCount - 1.0);
-    float sampleScale = (-uSampleRadius * uMatProj[0][0]) / position.z;  // World-space to screen-space conversion
+    float sampleScale = (-uSampleRadius * uView.proj[0][0]) / position.z;  // World-space to screen-space conversion
     float sampleOffset = 0.01;
     float jitter = M_HashIGN(gl_FragCoord.xy) - 0.5;
 
@@ -125,10 +104,10 @@ void main()
         for (float currentSample = 0.0; currentSample < uSampleCount + 0.5; currentSample += 1.0)
         {
             float sampleStep = (currentSample + jitter) / uSampleCount + sampleOffset;
-            vec2 sampleUV = vTexCoord - sampleStep * sampleScale * omega * aspect;
+            vec2 sampleUV = vTexCoord - sampleStep * sampleScale * omega * uView.aspect;
 
-            vec3 samplePosition = GetViewPosition(sampleUV);
-            vec3 sampleNormal = GetViewNormal(sampleUV);
+            vec3 samplePosition = V_GetViewPosition(uTexDepth, sampleUV);
+            vec3 sampleNormal = V_GetViewNormal(uTexNormal, sampleUV);
             vec3 sampleLight = texture(uTexLight, sampleUV).rgb;
 
             vec3 sampleDistance = samplePosition - position;

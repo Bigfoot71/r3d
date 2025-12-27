@@ -17,6 +17,10 @@
 
 #version 330 core
 
+/* === Includes === */
+
+#include "../include/blocks/view.glsl"
+
 /* === Varyings === */
 
 noperspective in vec2 vTexCoord;
@@ -25,10 +29,6 @@ noperspective in vec2 vTexCoord;
 
 uniform sampler2D uTexColor;
 uniform sampler2D uTexDepth;
-
-uniform vec2 uTexelSize;
-uniform float uNear;
-uniform float uFar;
 
 uniform float uFocusPoint;
 uniform float uFocusScale;
@@ -45,11 +45,6 @@ const float RAD_SCALE = 0.5;            //< Smaller = nicer blur, larger = faste
 
 /* === Helpers === */
 
-float LinearizeDepth(float depth)
-{
-    return (2.0 * uNear * uFar) / (uFar + uNear - (2.0 * depth - 1.0) * (uFar - uNear));;
-}
-
 float GetBlurSize(float depth)
 {
     float coc = clamp((1.0 / uFocusPoint - 1.0 / depth) * uFocusScale, -1.0, 1.0);
@@ -60,10 +55,11 @@ float GetBlurSize(float depth)
 
 void main()
 {
+    vec2 texelSize = 1.0 / vec2(textureSize(uTexColor, 0));
     vec3 color = texture(uTexColor, vTexCoord).rgb;
 
     // Center depth and CoC
-    float centerDepth = LinearizeDepth(texture(uTexDepth, vTexCoord).r);
+    float centerDepth = V_GetLinearDepth(uTexDepth, vTexCoord);
     float centerSize  = GetBlurSize(centerDepth);
 
     //scatter as gather
@@ -72,10 +68,10 @@ void main()
     float radius = RAD_SCALE;
     for (float ang = 0.0; radius < uMaxBlurSize; ang += GOLDEN_ANGLE)
     {
-        vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * uTexelSize * radius;
+        vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 
         vec3 sampleColor = texture(uTexColor, tc).rgb;
-        float sampleDepth = LinearizeDepth(texture(uTexDepth, tc).r);
+        float sampleDepth = V_GetLinearDepth(uTexDepth, tc);
         float sampleSize  = GetBlurSize(sampleDepth);
 
         if (sampleDepth > centerDepth) {

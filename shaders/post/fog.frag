@@ -8,6 +8,10 @@
 
 #version 330 core
 
+/* === Includes === */
+
+#include "../include/blocks/view.glsl"
+
 /* === Definitions === */
 
 #define FOG_DISABLED 0
@@ -24,9 +28,6 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uTexColor;
 uniform sampler2D uTexDepth;
 
-uniform float uNear;
-uniform float uFar;
-
 uniform lowp int uFogMode;
 uniform vec3 uFogColor;
 uniform float uFogStart;
@@ -39,11 +40,6 @@ uniform float uSkyAffect;
 out vec4 FragColor;
 
 // === Helper functions === //
-
-float LinearizeDepth(float depth, float near, float far)
-{
-    return (2.0 * near * far) / (far + near - (2.0 * depth - 1.0) * (far - near));;
-}
 
 float FogFactorLinear(float dist, float start, float end)
 {
@@ -74,18 +70,12 @@ float FogFactor(float dist, int mode, float density, float start, float end)
 
 void main()
 {
-    // Sampling scene color texture
-    vec3 result = texture(uTexColor, vTexCoord).rgb;
+    float depth = V_GetLinearDepth(uTexDepth, vTexCoord);
+    vec3 color = texture(uTexColor, vTexCoord).rgb;
 
-    // Depth retrieval and distance calculation
-    float depth = texture(uTexDepth, vTexCoord).r;
-    depth = LinearizeDepth(depth, uNear, uFar);
-
-    // Applying the fog factor to the resulting color
     float fogFactor = FogFactor(depth, uFogMode, uFogDensity, uFogStart, uFogEnd);
-    fogFactor *= uSkyAffect * step(depth, uFar);
-    result = mix(result, uFogColor, fogFactor);
+    fogFactor *= uSkyAffect * step(depth, uView.far);
+    color = mix(color, uFogColor, fogFactor);
 
-    // Final color output
-    FragColor = vec4(result, 1.0);
+    FragColor = vec4(color, 1.0);
 }

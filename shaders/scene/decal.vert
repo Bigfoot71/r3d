@@ -9,6 +9,10 @@
 
 #version 330 core
 
+/* === Includes === */
+
+#include "../include/blocks/view.glsl"
+
 /* === Attributes === */
 
 layout(location = 0) in vec3 aPosition;
@@ -24,7 +28,6 @@ layout(location = 14) in vec4 iColor;
 
 uniform mat4 uMatNormal; // Unused - placeholder for future implementation
 uniform mat4 uMatModel;
-uniform mat4 uMatVP;
 
 uniform vec4 uAlbedoColor;
 uniform float uEmissionEnergy;
@@ -57,6 +60,6 @@ void main()
     vEmission = uEmissionColor * uEmissionEnergy;
 
     vec3 position = vec3(matModel * vec4(aPosition, 1.0));
-    gl_Position = uMatVP * vec4(position, 1.0);
+    gl_Position = uView.viewProj * vec4(position, 1.0);
     vClipPos  = gl_Position;
 }

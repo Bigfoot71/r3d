@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/billboard.glsl"
 #include "../include/light.glsl"
 
@@ -31,10 +32,8 @@ layout(location = 14) in vec4 iColor;
 uniform sampler1D uTexBoneMatrices;
 
 uniform mat4 uMatLightVP[LIGHT_FORWARD_COUNT];
-uniform mat4 uMatInvView;       ///< Only for billboard modes
 uniform mat4 uMatNormal;
 uniform mat4 uMatModel;
-uniform mat4 uMatVP;
 
 uniform vec4 uAlbedoColor;
 uniform vec2 uTexCoordOffset;
@@ -97,10 +96,10 @@ void main()
     case BILLBOARD_NONE:
         break;
     case BILLBOARD_FRONT:
-        BillboardFront(matModel, matNormal, uMatInvView);
+        BillboardFront(matModel, matNormal, uView.invView);
         break;
     case BILLBOARD_Y_AXIS:
-        BillboardYAxis(matModel, matNormal, uMatInvView);
+        BillboardYAxis(matModel, matNormal, uView.invView);
         break;
     }
 
@@ -117,5 +116,5 @@ void main()
         vPosLightSpace[i] = uMatLightVP[i] * vec4(vPosition, 1.0);
     }
 
-    gl_Position = uMatVP * vec4(vPosition, 1.0);
+    gl_Position = uView.viewProj * vec4(vPosition, 1.0);
 }
