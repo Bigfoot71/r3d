@@ -144,6 +144,7 @@ extern struct r3d_draw {
     bool* visibleGroups;                        //< Array of bool for each group (indicating if they are visible)
     r3d_draw_call_t* calls;                     //< Array of draw calls
     int* groupIndices;                          //< Array of group indices for each draw call (automatically managed)
+    float* cacheDists;                          //< Array of distances between draw calls and the camera for sorting
     int numGroups;                              //< Number of active draw groups
     int numCalls;                               //< Number of active draw calls
     int capacity;                               //< Allocated capacity for all arrays

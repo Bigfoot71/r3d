@@ -71,6 +71,7 @@ static bool growth_arrays(void)
 
     GROW_AND_ASSIGN(calls);
     GROW_AND_ASSIGN(groups);
+    GROW_AND_ASSIGN(cacheDists);
     GROW_AND_ASSIGN(callIndices);
     GROW_AND_ASSIGN(groupIndices);
     GROW_AND_ASSIGN(visibleGroups);
@@ -95,23 +96,21 @@ static Vector3 G_sortViewPosition = {0};
 static float calculate_max_distance_to_camera(const r3d_draw_call_t* call)
 {
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-
-    Vector3 corners[8] = {
-        {call->mesh.aabb.min.x, call->mesh.aabb.min.y, call->mesh.aabb.min.z},
-        {call->mesh.aabb.max.x, call->mesh.aabb.min.y, call->mesh.aabb.min.z},
-        {call->mesh.aabb.min.x, call->mesh.aabb.max.y, call->mesh.aabb.min.z},
-        {call->mesh.aabb.max.x, call->mesh.aabb.max.y, call->mesh.aabb.min.z},
-        {call->mesh.aabb.min.x, call->mesh.aabb.min.y, call->mesh.aabb.max.z},
-        {call->mesh.aabb.max.x, call->mesh.aabb.min.y, call->mesh.aabb.max.z},
-        {call->mesh.aabb.min.x, call->mesh.aabb.max.y, call->mesh.aabb.max.z},
-        {call->mesh.aabb.max.x, call->mesh.aabb.max.y, call->mesh.aabb.max.z}
-    };
+    const Vector3* min = &call->mesh.aabb.min;
+    const Vector3* max = &call->mesh.aabb.max;
 
     float maxDistSq = 0.0f;
+
     for (int i = 0; i < 8; ++i) {
-        Vector3 corner = Vector3Transform(corners[i], group->transform);
+        Vector3 corner = {
+            (i & 1) ? max->x : min->x,
+            (i & 2) ? max->y : min->y,
+            (i & 4) ? max->z : min->z
+        };
+
+        corner = Vector3Transform(corner, group->transform);
         float distSq = Vector3DistanceSqr(G_sortViewPosition, corner);
-        if (distSq > maxDistSq) maxDistSq = distSq;
+        maxDistSq = (distSq > maxDistSq) ? distSq : maxDistSq;
     }
 
     return maxDistSq;
@@ -133,22 +132,22 @@ static float calculate_center_distance_to_camera(const r3d_draw_call_t* call)
 
 static int compare_back_to_front(const void* a, const void* b)
 {
-    const r3d_draw_call_t* drawCallA = &R3D_MOD_DRAW.calls[*(int*)(a)];
-    const r3d_draw_call_t* drawCallB = &R3D_MOD_DRAW.calls[*(int*)(b)];
-
-    float distA = calculate_max_distance_to_camera(drawCallA);
-    float distB = calculate_max_distance_to_camera(drawCallB);
+    int indexA = *(int*)a;
+    int indexB = *(int*)b;
+    
+    float distA = R3D_MOD_DRAW.cacheDists[indexA];
+    float distB = R3D_MOD_DRAW.cacheDists[indexB];
 
     return (distA < distB) - (distA > distB);
 }
 
 static int compare_front_to_back(const void* a, const void* b)
 {
-    const r3d_draw_call_t* drawCallA = &R3D_MOD_DRAW.calls[*(int*)(a)];
-    const r3d_draw_call_t* drawCallB = &R3D_MOD_DRAW.calls[*(int*)(b)];
-
-    float distA = calculate_center_distance_to_camera(drawCallA);
-    float distB = calculate_center_distance_to_camera(drawCallB);
+    int indexA = *(int*)a;
+    int indexB = *(int*)b;
+    
+    float distA = R3D_MOD_DRAW.cacheDists[indexA];
+    float distB = R3D_MOD_DRAW.cacheDists[indexB];
 
     return (distA > distB) - (distA < distB);
 }
@@ -202,6 +201,7 @@ bool r3d_draw_init(void)
     ALLOC_AND_ASSIGN(callIndices, "Draw call indices array allocation failed");
     ALLOC_AND_ASSIGN(groupIndices, "Draw group indices array allocation failed");
     ALLOC_AND_ASSIGN(visibleGroups, "Visible group array allocation failed");
+    ALLOC_AND_ASSIGN(cacheDists, "Distance cache array allocation failed");
 
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         ALLOC_AND_ASSIGN(list[i].calls, "Draw call array %i allocation failed", i);
@@ -226,6 +226,7 @@ void r3d_draw_quit(void)
     RL_FREE(R3D_MOD_DRAW.visibleGroups);
     RL_FREE(R3D_MOD_DRAW.groupIndices);
     RL_FREE(R3D_MOD_DRAW.callIndices);
+    RL_FREE(R3D_MOD_DRAW.cacheDists);
     RL_FREE(R3D_MOD_DRAW.groups);
     RL_FREE(R3D_MOD_DRAW.calls);
 }
@@ -348,6 +349,23 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
 {
     G_sortViewPosition = viewPosition;
 
+    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+
+    if (mode == R3D_DRAW_SORT_BACK_TO_FRONT) {
+        for (int i = 0; i < drawList->numCalls; i++) {
+            int callIndex = drawList->calls[i];
+            const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
+            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_max_distance_to_camera(call);
+        }
+    }
+    else {
+        for (int i = 0; i < drawList->numCalls; i++) {
+            int callIndex = drawList->calls[i];
+            const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
+            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_center_distance_to_camera(call);
+        }
+    }
+
     int (*compare_func)(const void *a, const void *b) = NULL;
 
     switch (mode) {
@@ -363,9 +381,9 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     }
 
     qsort(
-        R3D_MOD_DRAW.list[list].calls,
-        R3D_MOD_DRAW.list[list].numCalls,
-        sizeof(*R3D_MOD_DRAW.list[list].calls),
+        drawList->calls,
+        drawList->numCalls,
+        sizeof(*drawList->calls),
         compare_func
     );
 }
