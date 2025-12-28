@@ -65,6 +65,7 @@
             .reflect = 1.0f,                            \
         },                                              \
         .ssao = {                                       \
+            .sampleCount = 32,                          \
             .intensity = 1.0f,                          \
             .power = 1.0f,                              \
             .radius = 0.5f,                             \
@@ -205,6 +206,7 @@ typedef struct R3D_EnvAmbient {
  * Darkens areas where surfaces are close together, such as corners and crevices.
  */
 typedef struct R3D_EnvSSAO {
+    int sampleCount;        ///< Number of samples to compute SSAO (default: 32)
     float intensity;        ///< Base occlusion strength multiplier (default: 1.0)
     float power;            ///< Exponential falloff for sharper darkening (default: 1.0)
     float radius;           ///< Sampling radius in world space (default: 0.5)
