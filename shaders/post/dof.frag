@@ -20,6 +20,7 @@
 /* === Includes === */
 
 #include "../include/blocks/view.glsl"
+#include "../include/math.glsl"
 
 /* === Varyings === */
 
@@ -40,7 +41,6 @@ uniform int uDebugMode;         //< 0 off, 1 green/black/blue
 
 out vec4 FragColor;
 
-const float GOLDEN_ANGLE = 2.39996323;
 const float RAD_SCALE = 0.5;            //< Smaller = nicer blur, larger = faster
 
 /* === Helpers === */
@@ -66,7 +66,7 @@ void main()
     float tot = 1.0;
 
     float radius = RAD_SCALE;
-    for (float ang = 0.0; radius < uMaxBlurSize; ang += GOLDEN_ANGLE)
+    for (float ang = 0.0; radius < uMaxBlurSize; ang += M_GOLDEN_ANGLE)
     {
         vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 

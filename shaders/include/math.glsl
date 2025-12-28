@@ -8,10 +8,11 @@
 
 /* === Constants === */
 
-#define M_PI        3.1415926535897931
-#define M_HPI       1.5707963267948966
-#define M_TAU       6.2831853071795862
-#define M_INV_PI    0.3183098861837907
+#define M_PI            3.1415926535897931
+#define M_HPI           1.5707963267948966
+#define M_TAU           6.2831853071795862
+#define M_INV_PI        0.3183098861837907
+#define M_GOLDEN_ANGLE  2.3999632297286535
 
 /* === Functions === */
 
