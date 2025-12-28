@@ -6,8 +6,10 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-// Adapted from the method proposed by Morgan McGuire et al. in "Scalable Ambient Occlusion"
-// SEE: https://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf
+// Adapted from the methods proposed by Morgan McGuire et al. in "Alchemy AO" and "Scalable Ambient Obscurance"
+
+// SEE AlchemyAO: https://casual-effects.com/research/McGuire2011AlchemyAO/VV11AlchemyAO.pdf
+// SEE SAO:       https://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf
 
 #version 330 core
 
