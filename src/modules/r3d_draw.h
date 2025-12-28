@@ -29,13 +29,13 @@
 #define R3D_DRAW_FOR_EACH(call, ...)                                            \
     for (int _lists[] = {__VA_ARGS__}, _list_idx = 0, _i = 0, _keep = 1;        \
          _list_idx < (int)(sizeof(_lists)/sizeof(_lists[0]));                   \
-         (_i >= R3D_MOD_DRAW.list[_lists[_list_idx]].numDrawCalls ?             \
+         (_i >= R3D_MOD_DRAW.list[_lists[_list_idx]].numCalls ?             \
           (_list_idx++, _i = 0) : 0))                                           \
         for (; _list_idx < (int)(sizeof(_lists)/sizeof(_lists[0])) &&           \
-               _i < R3D_MOD_DRAW.list[_lists[_list_idx]].numDrawCalls;          \
+               _i < R3D_MOD_DRAW.list[_lists[_list_idx]].numCalls;          \
              _i++, _keep = 1)                                                   \
             for (const r3d_draw_call_t* call =                                  \
-                 &R3D_MOD_DRAW.drawCalls[R3D_MOD_DRAW.list[_lists[_list_idx]].drawCalls[_i]]; \
+                 &R3D_MOD_DRAW.calls[R3D_MOD_DRAW.list[_lists[_list_idx]].calls[_i]]; \
                  _keep; _keep = 0)
 
 // ========================================
@@ -125,8 +125,8 @@ typedef enum {
  * A draw list stores indices into the global draw call array.
  */
 typedef struct {
-    int* drawCalls;     //< Indices of draw calls
-    int numDrawCalls;   //< Number of active entries
+    int* calls;     //< Indices of draw calls
+    int numCalls;   //< Number of active entries
 } r3d_draw_list_t;
 
 /*
@@ -135,12 +135,12 @@ typedef struct {
  */
 extern struct r3d_draw {
     r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];  //< Lists of draw call indices organized by rendering category
-    r3d_draw_indices_t* drawIndices;            //< Array of draw call index ranges for each draw group (automatically managed)
-    r3d_draw_group_t* drawGroups;               //< Array of draw groups (shared data across draw calls)
-    r3d_draw_call_t* drawCalls;                 //< Array of draw calls
-    int* drawCallGroupIndices;                  //< Array of group indices for each draw call (automatically managed)
-    int numDrawGroups;                          //< Number of active draw groups
-    int numDrawCalls;                           //< Number of active draw calls
+    r3d_draw_indices_t* callIndices;            //< Array of draw call index ranges for each draw group (automatically managed)
+    r3d_draw_group_t* groups;                   //< Array of draw groups (shared data across draw calls)
+    r3d_draw_call_t* calls;                     //< Array of draw calls
+    int* groupIndices;                          //< Array of group indices for each draw call (automatically managed)
+    int numGroups;                              //< Number of active draw groups
+    int numCalls;                               //< Number of active draw calls
     int capacity;                               //< Allocated capacity for all arrays
 } R3D_MOD_DRAW;
 
@@ -252,8 +252,8 @@ static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
 static inline bool r3d_draw_has_deferred(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numDrawCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numDrawCalls > 0;
+        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numCalls > 0;
 }
 
 /*
@@ -263,8 +263,8 @@ static inline bool r3d_draw_has_deferred(void)
 static inline bool r3d_draw_has_prepass(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numDrawCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numDrawCalls > 0;
+        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numCalls > 0;
 }
 
 /*
@@ -274,8 +274,8 @@ static inline bool r3d_draw_has_prepass(void)
 static inline bool r3d_draw_has_forward(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numDrawCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numDrawCalls > 0;
+        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numCalls > 0;
 }
 
 /*
@@ -285,8 +285,8 @@ static inline bool r3d_draw_has_forward(void)
 static inline bool r3d_draw_has_decal(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numDrawCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numDrawCalls > 0;
+        R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numCalls > 0 ||
+        R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numCalls > 0;
 }
 
 #endif // R3D_MODULE_DRAW_H
