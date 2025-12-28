@@ -26,17 +26,12 @@ noperspective in vec2 vTexCoord;
 
 uniform sampler2D uTexDepth;
 uniform sampler2D uTexNormal;
-uniform sampler2D uTexNoise;
 
 uniform int uSampleCount;
 uniform float uRadius;
 uniform float uBias;
 uniform float uIntensity;
 uniform float uPower;
-
-/* === Constants === */
-
-const int NOISE_TEXTURE_SIZE = 4;
 
 /* === Fragments === */
 
@@ -61,9 +56,7 @@ void main()
     vec3 normal = V_GetViewNormal(uTexNormal, vTexCoord);
 
     float ssRadius = (-uRadius * uView.proj[0][0]) / position.z;
-
-    vec3 rnd = texture(uTexNoise, gl_FragCoord.xy / float(NOISE_TEXTURE_SIZE)).xyz;
-    float spin = M_TAU * rnd.x;
+    float spin = M_TAU * M_HashIGN(gl_FragCoord.xy);
 
     float occlusion = 0.0;
     float valid = 0.0;

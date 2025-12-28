@@ -12,8 +12,6 @@
 #include <string.h>
 #include <glad.h>
 
-#include "../details/r3d_half.h"
-
 // ========================================
 // TEXTURE DATA INCLUDES
 // ========================================
@@ -58,7 +56,6 @@ static void load_white(void);
 static void load_black(void);
 static void load_blank(void);
 static void load_normal(void);
-static void load_ssao_noise(void);
 static void load_ibl_brdf_lut(void);
 
 static const texture_loader_func LOADERS[] = {
@@ -66,7 +63,6 @@ static const texture_loader_func LOADERS[] = {
     [R3D_TEXTURE_BLACK] = load_black,
     [R3D_TEXTURE_BLANK] = load_blank,
     [R3D_TEXTURE_NORMAL] = load_normal,
-    [R3D_TEXTURE_SSAO_NOISE] = load_ssao_noise,
     [R3D_TEXTURE_IBL_BRDF_LUT] = load_ibl_brdf_lut
 };
 
@@ -95,17 +91,6 @@ void load_normal(void) {
     const uint8_t px[4] = {127, 127, 255, 0};
     glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_NORMAL]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, px);
-    tex_params(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_EDGE);
-}
-
-void load_ssao_noise(void) {
-    r3d_half_t noise[32];
-    for (int i = 0; i < 16; i++) {
-        noise[i * 2 + 0] = r3d_cvt_fh(randf() * 2.0f - 1.0f);
-        noise[i * 2 + 1] = r3d_cvt_fh(randf() * 2.0f - 1.0f);
-    }
-    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_SSAO_NOISE]);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 4, 4, 0, GL_RG, GL_HALF_FLOAT, noise);
     tex_params(GL_TEXTURE_2D, GL_NEAREST, GL_CLAMP_TO_EDGE);
 }
 

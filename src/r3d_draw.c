@@ -940,13 +940,11 @@ r3d_target_t pass_prepare_ssao(void)
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uTexNoise, r3d_texture_get(R3D_TEXTURE_SSAO_NOISE));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexDepth);
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexNormal);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uTexNoise);
 
     /* --- Blur SSAO --- */
 

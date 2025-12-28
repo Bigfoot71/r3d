@@ -229,7 +229,6 @@ void r3d_shader_load_prepare_ssao(void)
 
     GET_LOCATION(prepare.ssao, uTexDepth);
     GET_LOCATION(prepare.ssao, uTexNormal);
-    GET_LOCATION(prepare.ssao, uTexNoise);
     GET_LOCATION(prepare.ssao, uSampleCount);
     GET_LOCATION(prepare.ssao, uRadius);
     GET_LOCATION(prepare.ssao, uBias);
@@ -240,7 +239,6 @@ void r3d_shader_load_prepare_ssao(void)
 
     SET_SAMPLER_2D(prepare.ssao, uTexDepth, 0);
     SET_SAMPLER_2D(prepare.ssao, uTexNormal, 1);
-    SET_SAMPLER_2D(prepare.ssao, uTexNoise, 2);
 }
 
 void r3d_shader_load_prepare_ssao_blur(void)
