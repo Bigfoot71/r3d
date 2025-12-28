@@ -21,22 +21,26 @@
 // ========================================
 
 /*
- * Iterate over multiple draw lists in the order specified by the variadic arguments.
- * Provides a pointer to each r3d_draw_call_t in sequence.
+ * Iterate over multiple draw lists in the order specified by the variadic arguments,
+ * yielding a pointer to each r3d_draw_call_t.
+ *
+ * The optional 'cond' expression filters calls before culling (use `true` if unused).
+ * The optional 'frustum' pointer enables frustum culling; pass NULL to disable it.
  *
  * Intended for internal rendering passes only.
  */
-#define R3D_DRAW_FOR_EACH(call, ...)                                            \
+#define R3D_DRAW_FOR_EACH(call, cond, frustum, ...)                             \
     for (int _lists[] = {__VA_ARGS__}, _list_idx = 0, _i = 0, _keep = 1;        \
          _list_idx < (int)(sizeof(_lists)/sizeof(_lists[0]));                   \
-         (_i >= R3D_MOD_DRAW.list[_lists[_list_idx]].numCalls ?             \
+         (_i >= R3D_MOD_DRAW.list[_lists[_list_idx]].numCalls ?                 \
           (_list_idx++, _i = 0) : 0))                                           \
         for (; _list_idx < (int)(sizeof(_lists)/sizeof(_lists[0])) &&           \
-               _i < R3D_MOD_DRAW.list[_lists[_list_idx]].numCalls;          \
+               _i < R3D_MOD_DRAW.list[_lists[_list_idx]].numCalls;              \
              _i++, _keep = 1)                                                   \
             for (const r3d_draw_call_t* call =                                  \
                  &R3D_MOD_DRAW.calls[R3D_MOD_DRAW.list[_lists[_list_idx]].calls[_i]]; \
-                 _keep; _keep = 0)
+                 _keep && (cond) && (!frustum || r3d_draw_call_is_visible(call, frustum)); \
+                 _keep = 0)
 
 // ========================================
 // DRAW OP ENUMS
@@ -137,6 +141,7 @@ extern struct r3d_draw {
     r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];  //< Lists of draw call indices organized by rendering category
     r3d_draw_indices_t* callIndices;            //< Array of draw call index ranges for each draw group (automatically managed)
     r3d_draw_group_t* groups;                   //< Array of draw groups (shared data across draw calls)
+    bool* visibleGroups;                        //< Array of bool for each group (indicating if they are visible)
     r3d_draw_call_t* calls;                     //< Array of draw calls
     int* groupIndices;                          //< Array of group indices for each draw call (automatically managed)
     int numGroups;                              //< Number of active draw groups
@@ -185,18 +190,17 @@ void r3d_draw_call_push(const r3d_draw_call_t* call, bool decal);
 r3d_draw_group_t* r3d_draw_get_call_group(const r3d_draw_call_t* call);
 
 /*
- * Indicates if the draw call is visible within the given frustum.
- * Useful for shadow maps, but for final scene culling, use `r3d_draw_cull_list`,
- * which generates a complete list of visible draw calls. Can only be called once.
+ * Builds the list of groups that are visible inside the given frustum.
+ * Must be called before issuing visibility tests with the same frustum.
  */
-bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum);
+void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum);
 
 /*
- * Performs frustum culling on a draw list.
- * Invisible draw calls are removed, leaving only those visible within the frustum.
- * Should be called once per list/frame for final scene rendering.
+ * Returns true if the draw call is visible within the given frustum.
+ * Uses both per-call culling and the results produced by `r3d_draw_compute_visible_groups()`
+ * Make sure to compute visible groups with the same frustum before calling this function.
  */
-void r3d_draw_cull_list(r3d_draw_list_enum_t list, const r3d_frustum_t* frustum);
+bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum);
 
 /*
  * Sort a draw list according to the given mode and camera position.

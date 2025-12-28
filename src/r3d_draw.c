@@ -14,6 +14,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#include "./details/r3d_frustum.h"
 #include "./details/r3d_math.h"
 
 #include "./modules/r3d_primitive.h"
@@ -111,12 +112,10 @@ void R3D_End(void)
 
     pass_scene_shadow();
 
-    /* --- Cull and sort all draw calls before rendering --- */
+    /* --- Cull groups and sort all draw calls before rendering --- */
 
     if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-            r3d_draw_cull_list(i, &R3D_CACHE_GET(viewState.frustum));
-        }
+        r3d_draw_compute_visible_groups(&R3D_CACHE_GET(viewState.frustum));
     }
 
     if (R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_OPAQUE_SORTING)) {
@@ -835,11 +834,17 @@ void pass_scene_shadow(void)
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + iFace, light->shadowMap.tex, 0);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
-                R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-                    if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED && r3d_draw_call_is_visible(call, &light->frustum[iFace])) {
-                        raster_depth_cube(call, true, &light->matVP[iFace]);
-                    }
+                const r3d_frustum_t* frustum = NULL;
+                if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+                    frustum = &light->frustum[iFace];
+                    r3d_draw_compute_visible_groups(frustum);
                 }
+
+                #define COND (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
+                R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
+                    raster_depth_cube(call, true, &light->matVP[iFace]);
+                }
+                #undef COND
             }
 
             // The bone matrices texture may have been bind during drawcalls, so UNBIND!
@@ -849,11 +854,17 @@ void pass_scene_shadow(void)
             glClear(GL_DEPTH_BUFFER_BIT);
             R3D_SHADER_USE(scene.depth);
 
-            R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-                if (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED && r3d_draw_call_is_visible(call, &light->frustum[0])) {
-                    raster_depth(call, true, &light->matVP[0]);
-                }
+            const r3d_frustum_t* frustum = NULL;
+            if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+                frustum = &light->frustum[0];
+                r3d_draw_compute_visible_groups(frustum);
             }
+
+            #define COND (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
+            R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
+                raster_depth(call, true, &light->matVP[0]);
+            }
+            #undef COND
 
             // The bone matrices texture may have been bind during drawcalls, so UNBIND!
             R3D_SHADER_UNBIND_SAMPLER_1D(scene.depth, uTexBoneMatrices);
@@ -871,7 +882,12 @@ void pass_scene_geometry(void)
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED) {
+    const r3d_frustum_t* frustum = NULL;
+    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+        frustum = &R3D_CACHE_GET(viewState.frustum);
+    }
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED) {
         raster_geometry(call);
     }
 
@@ -891,7 +907,12 @@ void pass_scene_decals(void)
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_DECAL_INST, R3D_DRAW_DECAL) {
+    const r3d_frustum_t* frustum = NULL;
+    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+        frustum = &R3D_CACHE_GET(viewState.frustum);
+    }
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DECAL_INST, R3D_DRAW_DECAL) {
         raster_decal(call);
     }
 
@@ -1259,7 +1280,12 @@ void pass_scene_prepass(void)
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
+    const r3d_frustum_t* frustum = NULL;
+    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+        frustum = &R3D_CACHE_GET(viewState.frustum);
+    }
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
         raster_depth(call, false, &R3D_CACHE_GET(viewState.viewProj));
     }
 
@@ -1362,7 +1388,12 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     R3D_SHADER_SET_VEC3(scene.forward, uViewPosition, R3D_CACHE_GET(viewState.viewPosition));
 
-    R3D_DRAW_FOR_EACH(call, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS, R3D_DRAW_FORWARD_INST, R3D_DRAW_FORWARD) {
+    const r3d_frustum_t* frustum = NULL;
+    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+        frustum = &R3D_CACHE_GET(viewState.frustum);
+    }
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS, R3D_DRAW_FORWARD_INST, R3D_DRAW_FORWARD) {
         pass_scene_forward_send_lights(call);
         raster_forward(call);
     }

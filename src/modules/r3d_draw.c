@@ -16,9 +16,8 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#include "../details/r3d_frustum.h"
 #include "../details/r3d_math.h"
-
-// TODO: Optimize cull with draw group pre-culling
 
 // ========================================
 // MODULE STATE
@@ -62,29 +61,25 @@ static inline r3d_draw_group_t* get_last_group(void)
 
 static bool growth_arrays(void)
 {
+    #define GROW_AND_ASSIGN(field) do { \
+        void* _p = RL_REALLOC(R3D_MOD_DRAW.field, newCapacity * sizeof(*R3D_MOD_DRAW.field)); \
+        if (_p == NULL) return false; \
+        R3D_MOD_DRAW.field = _p; \
+    } while (0)
+
     int newCapacity = 2 * R3D_MOD_DRAW.capacity;
 
-    void* newDrawCalls = RL_REALLOC(R3D_MOD_DRAW.calls, newCapacity * sizeof(*R3D_MOD_DRAW.calls));
-    if (newDrawCalls == NULL) return false;
-    R3D_MOD_DRAW.calls = newDrawCalls;
+    GROW_AND_ASSIGN(calls);
+    GROW_AND_ASSIGN(groups);
+    GROW_AND_ASSIGN(callIndices);
+    GROW_AND_ASSIGN(groupIndices);
+    GROW_AND_ASSIGN(visibleGroups);
 
-    void* newDrawGroups = RL_REALLOC(R3D_MOD_DRAW.groups, newCapacity * sizeof(*R3D_MOD_DRAW.groups));
-    if (newDrawGroups == NULL) return false;
-    R3D_MOD_DRAW.groups = newDrawGroups;
-
-    void* newDrawIndices = RL_REALLOC(R3D_MOD_DRAW.callIndices, newCapacity * sizeof(*R3D_MOD_DRAW.callIndices));
-    if (newDrawIndices == NULL) return false;
-    R3D_MOD_DRAW.callIndices = newDrawIndices;
-
-    void* newDrawCallGroupIndices = RL_REALLOC(R3D_MOD_DRAW.groupIndices, newCapacity * sizeof(*R3D_MOD_DRAW.groupIndices));
-    if (newDrawCallGroupIndices == NULL) return false;
-    R3D_MOD_DRAW.groupIndices = newDrawCallGroupIndices;
-
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-        void* newDrawList = RL_REALLOC(R3D_MOD_DRAW.list[i].calls, newCapacity * sizeof(*R3D_MOD_DRAW.list[i].calls));
-        if (newDrawList == NULL) return false;
-        R3D_MOD_DRAW.list[i].calls = newDrawList;
+    for (int i = 0; i < R3D_DRAW_LIST_COUNT; ++i) {
+        GROW_AND_ASSIGN(list[i].calls);
     }
+
+    #undef GROW_AND_ASSIGN
 
     R3D_MOD_DRAW.capacity = newCapacity;
 
@@ -162,7 +157,12 @@ static int compare_front_to_back(const void* a, const void* b)
 // INTERNAL DRAW FUNCTIONS
 // ========================================
 
-GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
+static inline const BoundingBox* get_group_aabb(const r3d_draw_group_t* group)
+{
+    return r3d_draw_has_instances(group) ? &group->instanced.allAabb : &group->aabb;
+}
+
+static GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
 {
     switch (primitive) {
     case R3D_PRIMITIVE_POINTS:          return GL_POINTS;
@@ -184,46 +184,38 @@ GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
 
 bool r3d_draw_init(void)
 {
-    memset(&R3D_MOD_DRAW, 0, sizeof(R3D_MOD_DRAW));
-
     const int DRAW_RESERVE_COUNT = 1024;
 
-    R3D_MOD_DRAW.calls = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.calls));
-    if (R3D_MOD_DRAW.calls == NULL) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw call array allocation failed");
-        return false;
+    #define ALLOC_AND_ASSIGN(field, logfmt, ...)  do { \
+        void* _p = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.field)); \
+        if (_p == NULL) { \
+            TraceLog(LOG_FATAL, "R3D: Failed to init draw module; " logfmt, ##__VA_ARGS__); \
+            goto fail; \
+        } \
+        R3D_MOD_DRAW.field = _p; \
+    } while (0)
+
+    memset(&R3D_MOD_DRAW, 0, sizeof(R3D_MOD_DRAW));
+
+    ALLOC_AND_ASSIGN(calls, "Draw call array allocation failed");
+    ALLOC_AND_ASSIGN(groups, "Draw group array allocation failed");
+    ALLOC_AND_ASSIGN(callIndices, "Draw call indices array allocation failed");
+    ALLOC_AND_ASSIGN(groupIndices, "Draw group indices array allocation failed");
+    ALLOC_AND_ASSIGN(visibleGroups, "Visible group array allocation failed");
+
+    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
+        ALLOC_AND_ASSIGN(list[i].calls, "Draw call array %i allocation failed", i);
     }
 
-    R3D_MOD_DRAW.groups = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.groups));
-    if (R3D_MOD_DRAW.groups == NULL) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw group array allocation failed");
-        return false;
-    }
-
-    R3D_MOD_DRAW.callIndices = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.callIndices));
-    if (R3D_MOD_DRAW.callIndices == NULL) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw call indices array allocation failed");
-        return false;
-    }
-
-    R3D_MOD_DRAW.groupIndices = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.groupIndices));
-    if (R3D_MOD_DRAW.groupIndices == NULL) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw group indices array allocation failed");
-        return false;
-    }
+    #undef ALLOC_AND_ASSIGN
 
     R3D_MOD_DRAW.capacity = DRAW_RESERVE_COUNT;
 
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-        R3D_MOD_DRAW.list[i].calls = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.list[i].calls));
-        if (R3D_MOD_DRAW.list[i].calls == NULL) {
-            TraceLog(LOG_FATAL, "R3D: Failed to init draw module; Draw call array %i allocation failed", i);
-            for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_DRAW.list[j].calls);
-            return false;
-        }
-    }
-
     return true;
+
+fail:
+    r3d_draw_quit();
+    return false;
 }
 
 void r3d_draw_quit(void)
@@ -231,6 +223,7 @@ void r3d_draw_quit(void)
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         RL_FREE(R3D_MOD_DRAW.list[i].calls);
     }
+    RL_FREE(R3D_MOD_DRAW.visibleGroups);
     RL_FREE(R3D_MOD_DRAW.groupIndices);
     RL_FREE(R3D_MOD_DRAW.callIndices);
     RL_FREE(R3D_MOD_DRAW.groups);
@@ -306,13 +299,40 @@ r3d_draw_group_t* r3d_draw_get_call_group(const r3d_draw_call_t* call)
     return group;
 }
 
+void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
+{
+    for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++)
+    {
+        const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[i];
+        const BoundingBox* aabb = get_group_aabb(group);
+
+        if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
+            R3D_MOD_DRAW.visibleGroups[i] = true;
+        }
+        else if (r3d_matrix_is_identity(&group->transform)) {
+            R3D_MOD_DRAW.visibleGroups[i] = r3d_frustum_is_aabb_in(frustum, aabb);
+        }
+        else {
+            R3D_MOD_DRAW.visibleGroups[i] = r3d_frustum_is_obb_in(frustum, aabb, &group->transform);
+        }
+    }
+}
+
 bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
 {
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    int callIndex = get_draw_call_index(call);
+    int groupIndex = R3D_MOD_DRAW.groupIndices[callIndex];
+    if (!R3D_MOD_DRAW.visibleGroups[groupIndex]) return false;
 
-    const BoundingBox* aabb = r3d_draw_has_instances(group)
-        ? &group->instanced.allAabb : &call->mesh.aabb;
+    // If the number of calls to this group is 1, then the object has already been tested
+    if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) {
+        return true;
+    }
 
+    const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
+    const BoundingBox* aabb = get_group_aabb(group);
+
+    // If the AABB is 'zero', the object is considered visible
     if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
         return true;
     }
@@ -322,17 +342,6 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
     }
 
     return r3d_frustum_is_obb_in(frustum, aabb, &group->transform);
-}
-
-void r3d_draw_cull_list(r3d_draw_list_enum_t list, const r3d_frustum_t* frustum)
-{
-    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
-
-    for (int i = drawList->numCalls - 1; i >= 0; i--) {
-        if (!r3d_draw_call_is_visible(&R3D_MOD_DRAW.calls[drawList->calls[i]], frustum)) {
-            drawList->calls[i] = drawList->calls[--drawList->numCalls];
-        }
-    }
 }
 
 void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode)
