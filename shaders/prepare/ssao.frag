@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-// Adapted from the methods proposed by Morgan McGuire et al. in "Alchemy AO" and "Scalable Ambient Obscurance"
+// Adapted from the methods proposed by Morgan McGuire et al. in "AlchemyAO" and "Scalable Ambient Obscurance"
 
 // SEE AlchemyAO: https://casual-effects.com/research/McGuire2011AlchemyAO/VV11AlchemyAO.pdf
 // SEE SAO:       https://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf
@@ -33,18 +33,23 @@ uniform float uBias;
 uniform float uIntensity;
 uniform float uPower;
 
+/* === Constants === */
+
+const float TURNS = 3.0;
+
 /* === Fragments === */
 
 out float FragOcclusion;
 
 /* === Helper functions === */
 
-vec2 TapLocation(int i, float spinAngle, out float ssRadius)
+vec2 TapLocation(int i, float spinAngle, out float rNorm)
 {
     float alpha = (float(i) + 0.5) / float(uSampleCount);
-    float angle = alpha * (M_TAU * 3.0) + spinAngle;        //< 3 spiral turns
+    float angle = alpha * (M_TAU * TURNS) + spinAngle;
 
-    ssRadius = alpha;
+    rNorm = alpha;
+
     return vec2(cos(angle), sin(angle));
 }
 
@@ -55,31 +60,47 @@ void main()
     vec3 position = V_GetViewPosition(uTexDepth, vTexCoord);
     vec3 normal = V_GetViewNormal(uTexNormal, vTexCoord);
 
-    float ssRadius = (-uRadius * uView.proj[0][0]) / position.z;
+    // Compute the radius in screen space
+    float projScale = uView.proj[0][0];
+    float ssRadius = (uRadius * projScale) / abs(position.z) * 0.5;
+
+    // Clamping the screen space radius could avoid big cache misses
+    // and possible artifacts when very close to an object. To test
+    //ssRadius = min(ssRadius, 0.1); // 10% of the screen
+
+    // For the spin, the AlchemyAO method did this: float((3*px.x^px.y+px.x*px.y)*10)
+    // But I found that using a simple IGN produce a really more stable result
     float spin = M_TAU * M_HashIGN(gl_FragCoord.xy);
+    float radiusSq = uRadius * uRadius;
 
-    float occlusion = 0.0;
-    float valid = 0.0;
-
+    float aoSum = 0.0;
     for (int i = 0; i < uSampleCount; ++i)
     {
         float rNorm;
         vec2 dir = TapLocation(i, spin, rNorm);
         vec2 offset = vTexCoord + dir * ssRadius * rNorm;
 
+        // The "SAO" paper recommends using mipmaps of the linearized depth here, but hey
         vec3 samplePos = V_GetViewPosition(uTexDepth, offset);
         vec3 v = samplePos - position;
-        float dist2 = dot(v, v);
 
-        float NdotV = dot(v, normal) - uBias;
-        float rWS2 = uRadius * uRadius;
+        float vv = dot(v, v);
+        float vn = dot(v, normal);
+        if (vv > radiusSq) continue; // Reject samples beyond the world space radius
 
-        occlusion += pow(max(rWS2 - dist2, 0.0) / rWS2, 3.0) * max(NdotV / (0.01 + dist2), 0.0);
-        valid += 1.0;
+        // AlchemyAO formula
+        float ao = max(vn + position.z * uBias, 0.0) / (vv + 0.01);
+
+        // Apply a falloff after the calculation to limit terms that blow up
+        // This isn't stated explicitly in the paper, but it seems essential
+        // So we use a sigmoid to gently cap values before normalization
+        aoSum += ao / (1.0 + ao);
     }
 
-    occlusion = 1.0 - occlusion / float(uSampleCount);
-    occlusion = clamp(pow(occlusion, uPower), 0.0, 1.0);
+    // Ignore the paper's factor of 2, it comes from
+    // hemispherical integration but just over darkens in practice...
+    float A = (uIntensity / float(uSampleCount)) * aoSum;
 
-    FragOcclusion = mix(1.0, occlusion, uIntensity);
+    // Conversion to accessibility factor then apply contrast
+    FragOcclusion = pow(max(1.0 - A, 0.0), uPower);
 }
