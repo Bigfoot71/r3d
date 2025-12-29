@@ -80,6 +80,7 @@
             .hitThickness = 0.5f,                       \
             .aoPower = 1.0f,                            \
             .energy = 1.0f,                             \
+            .convergence = 0.5f,                        \
             .enabled = false,                           \
         },                                              \
         .bloom = {                                      \
@@ -227,6 +228,14 @@ typedef struct R3D_EnvSSIL {
     float hitThickness;     ///< Thickness threshold for occluders (default: 0.5)
     float aoPower;          ///< Exponential falloff for visibility factor (too high = more noise) (default: 1.0)
     float energy;           ///< Multiplier for indirect light intensity (default: 1.0)
+    float convergence;      /**< Temporal convergence factor (0 disables it, default 0.5).
+                              *  Smooths sudden light flashes by blending with previous frames.
+                              *  Higher values produce smoother results but may cause ghosting.
+                              *  Tip: The faster the screen changes, the higher the convergence can be acceptable.
+                              *  Requires an additional history buffer (so require more memory). 
+                              *  If multiple SSIL passes are done in the same frame, the history may be inconsistent, 
+                              *  in that case, enable SSIL/convergence for only one pass per frame.
+                              */
     bool enabled;           ///< Enable/disable SSIL effect (default: false)
 } R3D_EnvSSIL;
 
