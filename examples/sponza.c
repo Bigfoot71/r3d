@@ -14,10 +14,8 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
     // Post-processing setup
-    R3D_ENVIRONMENT_SET(ssao.enabled, true);
-    R3D_ENVIRONMENT_SET(ssao.radius, 2.0f);
-    R3D_ENVIRONMENT_SET(ssao.power, 1.5f);
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
+    R3D_ENVIRONMENT_SET(ssao.enabled, true);
 
     // Background and ambient
     R3D_ENVIRONMENT_SET(background.color, SKYBLUE);

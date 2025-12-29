@@ -1,10 +1,15 @@
-/* ssao.frag -- Fragment shader for calculating ambient occlusion in screen space
+/* ssao.frag -- Scalable Ambient Occlusion fragment shader
  *
  * Copyright (c) 2025 Le Juez Victor
  *
  * This software is provided 'as-is', without any express or implied warranty.
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
+
+// Adapted from the methods proposed by Morgan McGuire et al. in "AlchemyAO" and "Scalable Ambient Obscurance"
+
+// SEE AlchemyAO: https://casual-effects.com/research/McGuire2011AlchemyAO/VV11AlchemyAO.pdf
+// SEE SAO:       https://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf
 
 #version 330 core
 
@@ -21,9 +26,8 @@ noperspective in vec2 vTexCoord;
 
 uniform sampler2D uTexDepth;
 uniform sampler2D uTexNormal;
-uniform sampler1D uTexKernel;
-uniform sampler2D uTexNoise;
 
+uniform int uSampleCount;
 uniform float uRadius;
 uniform float uBias;
 uniform float uIntensity;
@@ -31,8 +35,7 @@ uniform float uPower;
 
 /* === Constants === */
 
-const int NOISE_TEXTURE_SIZE = 4;
-const int KERNEL_SIZE = 32;
+const float TURNS = 3.0;
 
 /* === Fragments === */
 
@@ -40,10 +43,14 @@ out float FragOcclusion;
 
 /* === Helper functions === */
 
-vec3 SampleKernel(int index, int kernelSize)
+vec2 TapLocation(int i, float spinAngle, out float rNorm)
 {
-    float texCoord = (float(index) + 0.5) / float(kernelSize);
-    return texture(uTexKernel, texCoord).rgb;
+    float alpha = (float(i) + 0.5) / float(uSampleCount);
+    float angle = alpha * (M_TAU * TURNS) + spinAngle;
+
+    rNorm = alpha;
+
+    return vec2(cos(angle), sin(angle));
 }
 
 /* === Main program === */
@@ -53,31 +60,47 @@ void main()
     vec3 position = V_GetViewPosition(uTexDepth, vTexCoord);
     vec3 normal = V_GetViewNormal(uTexNormal, vTexCoord);
 
-    vec2 noiseCoord = gl_FragCoord.xy / float(NOISE_TEXTURE_SIZE);
-    vec3 randomVec = normalize(texture(uTexNoise, noiseCoord).xyz * 2.0 - 1.0);
+    // Compute the radius in screen space
+    float projScale = uView.proj[0][0];
+    float ssRadius = (uRadius * projScale) / abs(position.z) * 0.5;
 
-    vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
-    vec3 bitangent = cross(normal, tangent);
-    mat3 TBN = mat3(tangent, bitangent, normal);
+    // Clamping the screen space radius could avoid big cache misses
+    // and possible artifacts when very close to an object. To test
+    //ssRadius = min(ssRadius, 0.1); // 10% of the screen
 
-    float occlusion = 0.0;
-    float valid = 0.0;
+    // For the spin, the AlchemyAO method did this: float((3*px.x^px.y+px.x*px.y)*10)
+    // But I found that using a simple IGN produce a really more stable result
+    float spin = M_TAU * M_HashIGN(gl_FragCoord.xy);
+    float radiusSq = uRadius * uRadius;
 
-    for (int i = 0; i < KERNEL_SIZE; i++)
+    float aoSum = 0.0;
+    for (int i = 0; i < uSampleCount; ++i)
     {
-        vec3 offset = SampleKernel(i, KERNEL_SIZE);
-        vec3 testPos  = position + (TBN * offset) * uRadius;
+        float rNorm;
+        vec2 dir = TapLocation(i, spin, rNorm);
+        vec2 offset = vTexCoord + dir * ssRadius * rNorm;
 
-        vec2 sampleUV = V_ViewToScreen(testPos);
-        if (V_OffScreen(sampleUV)) continue;
+        // The "SAO" paper recommends using mipmaps of the linearized depth here, but hey
+        vec3 samplePos = V_GetViewPosition(uTexDepth, offset);
+        vec3 v = samplePos - position;
 
-        vec3 samplePos = V_GetViewPosition(uTexDepth, sampleUV);
-        float rangeCheck = 1.0 - smoothstep(0.0, uRadius, abs(position.z - samplePos.z));
+        float vv = dot(v, v);
+        float vn = dot(v, normal);
+        if (vv > radiusSq) continue; // Reject samples beyond the world space radius
 
-        occlusion += (samplePos.z >= testPos.z + uBias) ? rangeCheck : 0.0;
-        valid += 1.0;
+        // AlchemyAO formula
+        float ao = max(vn + position.z * uBias, 0.0) / (vv + 0.01);
+
+        // Apply a falloff after the calculation to limit terms that blow up
+        // This isn't stated explicitly in the paper, but it seems essential
+        // So we use a sigmoid to gently cap values before normalization
+        aoSum += ao / (1.0 + ao);
     }
 
-    occlusion = 1.0 - (occlusion / max(valid, 1.0));
-    FragOcclusion = pow(occlusion, uPower) * uIntensity;
+    // Ignore the paper's factor of 2, it comes from
+    // hemispherical integration but just over darkens in practice...
+    float A = (uIntensity / float(uSampleCount)) * aoSum;
+
+    // Conversion to accessibility factor then apply contrast
+    FragOcclusion = pow(max(1.0 - A, 0.0), uPower);
 }

@@ -185,8 +185,7 @@ typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexDepth;
     r3d_shader_uniform_sampler2D_t uTexNormal;
-    r3d_shader_uniform_sampler1D_t uTexKernel;
-    r3d_shader_uniform_sampler2D_t uTexNoise;
+    r3d_shader_uniform_int_t uSampleCount;
     r3d_shader_uniform_float_t uRadius;
     r3d_shader_uniform_float_t uBias;
     r3d_shader_uniform_float_t uIntensity;
