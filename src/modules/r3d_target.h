@@ -33,6 +33,8 @@ typedef enum {
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
+    R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA[16|16|16|16]
+    R3D_TARGET_SSIL_3,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSR,             //< Half - Mip N - RGBA[16|16|16|16]
     R3D_TARGET_BLOOM,           //< Full - Mip N - RGB[16|16|16]
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
@@ -96,15 +98,6 @@ typedef enum {
 #define R3D_TARGET_BIND_AND_SWAP_SSAO(target) do {                      \
     R3D_TARGET_BIND(target);                                            \
     target = r3d_target_swap_ssao(target);                              \
-} while(0)
-
-/*
- * Binds the target, then swaps to the alternate SSIL target.
- * Modifies the target parameter to point to the other buffer.
- */
-#define R3D_TARGET_BIND_AND_SWAP_SSIL(target) do {                      \
-    R3D_TARGET_BIND(target);                                            \
-    target = r3d_target_swap_ssil(target);                              \
 } while(0)
 
 /*
@@ -215,11 +208,6 @@ r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao);
 /*
  * Returns target '1' if target '0' is provided, otherwise returns target '0'.
  */
-r3d_target_t r3d_target_swap_ssil(r3d_target_t ssil);
-
-/*
- * Returns target '1' if target '0' is provided, otherwise returns target '0'.
- */
 r3d_target_t r3d_target_swap_scene(r3d_target_t scene);
 
 /*
@@ -253,11 +241,16 @@ void r3d_target_gen_mipmap(r3d_target_t target);
 
 /*
  * Returns the texture ID corresponding to the requested target.
- * Returns 0 if the target enum is invalid.
- * Asserts that the requested target has been created.
+ * Asserts that the requested target has been created and if the target enum is valid.
  * If not created yet, it means we never bound this target, so it would be empty.
  */
 GLuint r3d_target_get(r3d_target_t target);
+
+/*
+ * Returns the texture ID corresponding to the requested target.
+ * Or returns 0 if the target has not been created or if the enum is invalid.
+ */
+GLuint r3d_target_get_or_null(r3d_target_t target);
 
 /*
  * Blits mip 0 of the specified target to the screen or RenderTexture2D

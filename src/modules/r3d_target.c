@@ -49,6 +49,8 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_SSAO_1]     = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_SSIL_0]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_SSIL_1]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
+    [R3D_TARGET_SSIL_2]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
+    [R3D_TARGET_SSIL_3]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
     [R3D_TARGET_SSR]        = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true },
     [R3D_TARGET_BLOOM]      = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true  },
     [R3D_TARGET_SCENE_0]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
@@ -284,14 +286,6 @@ r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao)
     return R3D_TARGET_SSAO_0;
 }
 
-r3d_target_t r3d_target_swap_ssil(r3d_target_t ssil)
-{
-    if (ssil == R3D_TARGET_SSIL_0) {
-        return R3D_TARGET_SSIL_1;
-    }
-    return R3D_TARGET_SSIL_0;
-}
-
 r3d_target_t r3d_target_swap_scene(r3d_target_t scene)
 {
     if (scene == R3D_TARGET_SCENE_0) {
@@ -370,11 +364,15 @@ void r3d_target_gen_mipmap(r3d_target_t target)
 
 GLuint r3d_target_get(r3d_target_t target)
 {
-    if (target <= R3D_TARGET_INVALID || target >= R3D_TARGET_COUNT) {
-        return 0;
-    }
-
+    assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
     assert(R3D_MOD_TARGET.targetLoaded[target]);
+    return R3D_MOD_TARGET.targets[target];
+}
+
+GLuint r3d_target_get_or_null(r3d_target_t target)
+{
+    if (target <= R3D_TARGET_INVALID || target >= R3D_TARGET_COUNT) return 0;
+    if (!R3D_MOD_TARGET.targetLoaded[target]) return 0;
     return R3D_MOD_TARGET.targets[target];
 }
 
