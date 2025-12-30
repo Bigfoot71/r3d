@@ -985,40 +985,49 @@ r3d_target_t pass_prepare_ssil(void)
     static r3d_target_t SSIL_WORK0 = R3D_TARGET_SSIL_1;
     static r3d_target_t SSIL_WORK1 = R3D_TARGET_SSIL_2;
 
+    /* --- Check if we need history --- */
+
+    bool needConvergence = (R3D_CACHE_GET(environment.ssil.convergence) >= 0.1f);
+    bool needBounce = (R3D_CACHE_GET(environment.ssil.bounce) >= 0.01f);
+    bool needHistory = (needConvergence || needBounce);
+
+    if (needHistory && r3d_target_get_or_null(SSIL_HISTORY) == 0) {
+        R3D_TARGET_CLEAR(SSIL_HISTORY);
+    }
+
     /* --- Calculate SSIL --- */
 
     R3D_TARGET_BIND(SSIL_WORK0);
 
     R3D_SHADER_USE(prepare.ssil);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexLight, r3d_target_get(R3D_TARGET_DIFFUSE));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexPrevSSIL, R3D_TEXTURE_SELECT(r3d_target_get_or_null(SSIL_HISTORY), BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleCount, (float)R3D_CACHE_GET(environment.ssil.sampleCount));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleRadius, R3D_CACHE_GET(environment.ssil.sampleRadius));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSliceCount, (float)R3D_CACHE_GET(environment.ssil.sliceCount));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uHitThickness, R3D_CACHE_GET(environment.ssil.hitThickness));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uAoPower, R3D_CACHE_GET(environment.ssil.aoPower));
+    R3D_SHADER_SET_FLOAT(prepare.ssil, uBounce, R3D_CACHE_GET(environment.ssil.bounce));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uEnergy, R3D_CACHE_GET(environment.ssil.energy));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexDepth);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexNormal);
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexLight);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexPrevSSIL);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexNormal);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexDepth);
 
     /* --- Apply convergence if needed --- */
 
     r3d_target_t source = SSIL_WORK0;
     r3d_target_t target = SSIL_WORK1;
 
-    if (R3D_CACHE_GET(environment.ssil.convergence))
+    if (needConvergence)
     {
-        if (r3d_target_get_or_null(SSIL_HISTORY) == 0) {
-            R3D_TARGET_CLEAR(SSIL_HISTORY);
-        }
-
         R3D_TARGET_BIND(SSIL_WORK1);
         R3D_SHADER_USE(prepare.ssilConvergence);
 
@@ -1038,6 +1047,11 @@ r3d_target_t pass_prepare_ssil(void)
         r3d_target_t tmp = SSIL_HISTORY;
         SSIL_HISTORY = SSIL_WORK1;
         SSIL_WORK1 = tmp;
+    }
+    else if (needBounce) {
+        r3d_target_t tmp = SSIL_HISTORY;
+        SSIL_HISTORY = SSIL_WORK0;
+        SSIL_WORK0 = tmp;
     }
 
     /* --- Blur SSIL (Dual Filtering) --- */

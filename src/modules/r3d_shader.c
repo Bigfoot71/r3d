@@ -286,21 +286,24 @@ void r3d_shader_load_prepare_ssil(void)
 
     SET_UNIFORM_BUFFER(prepare.ssil, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
-    GET_LOCATION(prepare.ssil, uTexDepth);
-    GET_LOCATION(prepare.ssil, uTexNormal);
     GET_LOCATION(prepare.ssil, uTexLight);
+    GET_LOCATION(prepare.ssil, uTexPrevSSIL);
+    GET_LOCATION(prepare.ssil, uTexNormal);
+    GET_LOCATION(prepare.ssil, uTexDepth);
     GET_LOCATION(prepare.ssil, uSampleCount);
     GET_LOCATION(prepare.ssil, uSampleRadius);
     GET_LOCATION(prepare.ssil, uSliceCount);
     GET_LOCATION(prepare.ssil, uHitThickness);
     GET_LOCATION(prepare.ssil, uAoPower);
+    GET_LOCATION(prepare.ssil, uBounce);
     GET_LOCATION(prepare.ssil, uEnergy);
 
     USE_SHADER(prepare.ssil);
 
-    SET_SAMPLER_2D(prepare.ssil, uTexDepth, 0);
-    SET_SAMPLER_2D(prepare.ssil, uTexNormal, 1);
-    SET_SAMPLER_2D(prepare.ssil, uTexLight, 2);
+    SET_SAMPLER_2D(prepare.ssil, uTexLight, 0);
+    SET_SAMPLER_2D(prepare.ssil, uTexPrevSSIL, 1);
+    SET_SAMPLER_2D(prepare.ssil, uTexNormal, 2);
+    SET_SAMPLER_2D(prepare.ssil, uTexDepth, 3);
 }
 
 void r3d_shader_load_prepare_ssil_convergence(void)

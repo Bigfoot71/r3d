@@ -214,14 +214,16 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexDepth;
-    r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_sampler2D_t uTexLight;
+    r3d_shader_uniform_sampler2D_t uTexPrevSSIL;
+    r3d_shader_uniform_sampler2D_t uTexNormal;
+    r3d_shader_uniform_sampler2D_t uTexDepth;
     r3d_shader_uniform_float_t uSampleCount;
     r3d_shader_uniform_float_t uSampleRadius;
     r3d_shader_uniform_float_t uSliceCount;
     r3d_shader_uniform_float_t uHitThickness;
     r3d_shader_uniform_float_t uAoPower;
+    r3d_shader_uniform_float_t uBounce;
     r3d_shader_uniform_float_t uEnergy;
 } r3d_shader_prepare_ssil_t;
 

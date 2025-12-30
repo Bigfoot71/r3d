@@ -81,6 +81,7 @@
             .aoPower = 1.0f,                            \
             .energy = 1.0f,                             \
             .convergence = 0.5f,                        \
+            .bounce = 0.5f,                             \
             .enabled = false,                           \
         },                                              \
         .bloom = {                                      \
@@ -228,6 +229,10 @@ typedef struct R3D_EnvSSIL {
     float hitThickness;     ///< Thickness threshold for occluders (default: 0.5)
     float aoPower;          ///< Exponential falloff for visibility factor (too high = more noise) (default: 1.0)
     float energy;           ///< Multiplier for indirect light intensity (default: 1.0)
+    float bounce;           /**< Bounce feeback factor. (default: 0.5)
+                              *  Simulates light bounces by re-injecting the SSIL from the previous frame into the current direct light.
+                              *  Be careful not to make the factor too high in order to avoid a feedback loop.
+                              */
     float convergence;      /**< Temporal convergence factor (0 disables it, default 0.5).
                               *  Smooths sudden light flashes by blending with previous frames.
                               *  Higher values produce smoother results but may cause ghosting.

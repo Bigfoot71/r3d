@@ -25,15 +25,17 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexDepth;
-uniform sampler2D uTexNormal;
 uniform sampler2D uTexLight;
+uniform sampler2D uTexPrevSSIL;
+uniform sampler2D uTexNormal;
+uniform sampler2D uTexDepth;
 
 uniform float uSampleCount;
 uniform float uSampleRadius;
 uniform float uSliceCount;
 uniform float uHitThickness;
 
+uniform float uBounce;
 uniform float uEnergy;
 uniform float uAoPower;
 
@@ -60,6 +62,13 @@ uint UpdateSectors(float minHorizon, float maxHorizon, uint outBitfield)
     uint angleBit = horizonAngle > 0u ? uint(0xFFFFFFFFu >> (SECTOR_COUNT - horizonAngle)) : 0u;
     uint currentBitfield = angleBit << startBit;
     return outBitfield | currentBitfield;
+}
+
+vec3 SampleLight(vec2 texCoord)
+{
+    vec3 indirect = textureLod(uTexLight, texCoord, 0.0).rgb;
+    vec3 direct = texture(uTexPrevSSIL, texCoord).rgb;
+    return direct + uBounce * indirect;
 }
 
 /* === Program === */
@@ -108,7 +117,7 @@ void main()
 
             vec3 samplePosition = V_GetViewPosition(uTexDepth, sampleUV);
             vec3 sampleNormal = V_GetViewNormal(uTexNormal, sampleUV);
-            vec3 sampleLight = texture(uTexLight, sampleUV).rgb;
+            vec3 sampleLight = SampleLight(sampleUV);
 
             vec3 sampleDistance = samplePosition - position;
             float sampleLength = length(sampleDistance);
