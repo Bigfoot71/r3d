@@ -35,9 +35,10 @@ uniform float uSampleRadius;
 uniform float uSliceCount;
 uniform float uHitThickness;
 
+uniform float uConvergence;
+uniform float uAoPower;
 uniform float uBounce;
 uniform float uEnergy;
-uniform float uAoPower;
 
 /* === Fragments === */
 
@@ -149,8 +150,10 @@ void main()
         visibility += 1.0 - float(BitCount(occlusion)) / float(SECTOR_COUNT);
     }
 
+    vec4 history = texture(uTexPrevSSIL, vTexCoord);
     visibility /= uSliceCount;
     lighting /= uSliceCount;
 
     FragColor = vec4(lighting * uEnergy, pow(visibility, uAoPower));
+    FragColor = mix(FragColor, history, uConvergence);
 }

@@ -25,7 +25,6 @@
 #include <shaders/blur_up.frag.h>
 #include <shaders/ssao.frag.h>
 #include <shaders/ssil.frag.h>
-#include <shaders/ssil_convergence.frag.h>
 #include <shaders/ssr.frag.h>
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
@@ -294,6 +293,7 @@ void r3d_shader_load_prepare_ssil(void)
     GET_LOCATION(prepare.ssil, uSampleRadius);
     GET_LOCATION(prepare.ssil, uSliceCount);
     GET_LOCATION(prepare.ssil, uHitThickness);
+    GET_LOCATION(prepare.ssil, uConvergence);
     GET_LOCATION(prepare.ssil, uAoPower);
     GET_LOCATION(prepare.ssil, uBounce);
     GET_LOCATION(prepare.ssil, uEnergy);
@@ -304,20 +304,6 @@ void r3d_shader_load_prepare_ssil(void)
     SET_SAMPLER_2D(prepare.ssil, uTexPrevSSIL, 1);
     SET_SAMPLER_2D(prepare.ssil, uTexNormal, 2);
     SET_SAMPLER_2D(prepare.ssil, uTexDepth, 3);
-}
-
-void r3d_shader_load_prepare_ssil_convergence(void)
-{
-    LOAD_SHADER(prepare.ssilConvergence, SCREEN_VERT, SSIL_CONVERGENCE_FRAG);
-
-    GET_LOCATION(prepare.ssilConvergence, uTexCurrent);
-    GET_LOCATION(prepare.ssilConvergence, uTexHistory);
-    GET_LOCATION(prepare.ssilConvergence, uConvergence);
-
-    USE_SHADER(prepare.ssilConvergence);
-
-    SET_SAMPLER_2D(prepare.ssilConvergence, uTexCurrent, 0);
-    SET_SAMPLER_2D(prepare.ssilConvergence, uTexHistory, 1);
 }
 
 void r3d_shader_load_prepare_ssr(void)
@@ -856,7 +842,6 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.ssao);
     UNLOAD_SHADER(prepare.ssaoBlur);
     UNLOAD_SHADER(prepare.ssil);
-    UNLOAD_SHADER(prepare.ssilConvergence);
     UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);
     UNLOAD_SHADER(prepare.bloomUp);

@@ -222,17 +222,11 @@ typedef struct {
     r3d_shader_uniform_float_t uSampleRadius;
     r3d_shader_uniform_float_t uSliceCount;
     r3d_shader_uniform_float_t uHitThickness;
+    r3d_shader_uniform_float_t uConvergence;
     r3d_shader_uniform_float_t uAoPower;
     r3d_shader_uniform_float_t uBounce;
     r3d_shader_uniform_float_t uEnergy;
 } r3d_shader_prepare_ssil_t;
-
-typedef struct {
-    unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexCurrent;
-    r3d_shader_uniform_sampler2D_t uTexHistory;
-    r3d_shader_uniform_float_t uConvergence;
-} r3d_shader_prepare_ssil_convergence_t;
 
 typedef struct {
     unsigned int id;
@@ -566,7 +560,6 @@ extern struct r3d_shader {
         r3d_shader_prepare_ssao_t ssao;
         r3d_shader_prepare_ssao_blur_t ssaoBlur;
         r3d_shader_prepare_ssil_t ssil;
-        r3d_shader_prepare_ssil_convergence_t ssilConvergence;
         r3d_shader_prepare_ssr_t ssr;
         r3d_shader_prepare_bloom_down_t bloomDown;
         r3d_shader_prepare_bloom_up_t bloomUp;
@@ -616,7 +609,6 @@ void r3d_shader_load_prepare_blur_up(void);
 void r3d_shader_load_prepare_ssao(void);
 void r3d_shader_load_prepare_ssao_blur(void);
 void r3d_shader_load_prepare_ssil(void);
-void r3d_shader_load_prepare_ssil_convergence(void);
 void r3d_shader_load_prepare_ssr(void);
 void r3d_shader_load_prepare_bloom_down(void);
 void r3d_shader_load_prepare_bloom_up(void);
@@ -649,7 +641,6 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func ssao;
         r3d_shader_loader_func ssaoBlur;
         r3d_shader_loader_func ssil;
-        r3d_shader_loader_func ssilConvergence;
         r3d_shader_loader_func ssr;
         r3d_shader_loader_func bloomDown;
         r3d_shader_loader_func bloomUp;
@@ -694,7 +685,6 @@ static const struct r3d_shader_loader {
         .ssao = r3d_shader_load_prepare_ssao,
         .ssaoBlur = r3d_shader_load_prepare_ssao_blur,
         .ssil = r3d_shader_load_prepare_ssil,
-        .ssilConvergence = r3d_shader_load_prepare_ssil_convergence,
         .ssr = r3d_shader_load_prepare_ssr,
         .bloomDown = r3d_shader_load_prepare_bloom_down,
         .bloomUp = r3d_shader_load_prepare_bloom_up,

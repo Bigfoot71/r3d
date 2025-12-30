@@ -1010,6 +1010,7 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleRadius, R3D_CACHE_GET(environment.ssil.sampleRadius));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSliceCount, (float)R3D_CACHE_GET(environment.ssil.sliceCount));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uHitThickness, R3D_CACHE_GET(environment.ssil.hitThickness));
+    R3D_SHADER_SET_FLOAT(prepare.ssil, uConvergence, R3D_CACHE_GET(environment.ssil.convergence));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uAoPower, R3D_CACHE_GET(environment.ssil.aoPower));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uBounce, R3D_CACHE_GET(environment.ssil.bounce));
     R3D_SHADER_SET_FLOAT(prepare.ssil, uEnergy, R3D_CACHE_GET(environment.ssil.energy));
@@ -1021,34 +1022,12 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexNormal);
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexDepth);
 
-    /* --- Apply convergence if needed --- */
+    /* --- Swap history --- */
 
     r3d_target_t source = SSIL_WORK0;
     r3d_target_t target = SSIL_WORK1;
 
-    if (needConvergence)
-    {
-        R3D_TARGET_BIND(SSIL_WORK1);
-        R3D_SHADER_USE(prepare.ssilConvergence);
-
-        R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilConvergence, uTexCurrent, r3d_target_get(SSIL_WORK0));
-        R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilConvergence, uTexHistory, r3d_target_get(SSIL_HISTORY));
-
-        R3D_SHADER_SET_FLOAT(prepare.ssilConvergence, uConvergence, R3D_CACHE_GET(environment.ssil.convergence));
-
-        R3D_PRIMITIVE_DRAW_SCREEN();
-
-        R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilConvergence, uTexCurrent);
-        R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilConvergence, uTexHistory);
-
-        source = SSIL_WORK1;
-        target = SSIL_WORK0;
-
-        r3d_target_t tmp = SSIL_HISTORY;
-        SSIL_HISTORY = SSIL_WORK1;
-        SSIL_WORK1 = tmp;
-    }
-    else if (needBounce) {
+    if (needHistory) {
         r3d_target_t tmp = SSIL_HISTORY;
         SSIL_HISTORY = SSIL_WORK0;
         SSIL_WORK0 = tmp;
