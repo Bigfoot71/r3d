@@ -183,6 +183,18 @@ typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_sampler2D_t uTexSource;
+    r3d_shader_uniform_int_t uMipSource;
+} r3d_shader_prepare_blur_down_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler2D_t uTexSource;
+    r3d_shader_uniform_int_t uMipSource;
+} r3d_shader_prepare_blur_up_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_sampler2D_t uTexDepth;
     r3d_shader_uniform_sampler2D_t uTexNormal;
     r3d_shader_uniform_int_t uSampleCount;
@@ -212,14 +224,6 @@ typedef struct {
     r3d_shader_uniform_float_t uAoPower;
     r3d_shader_uniform_float_t uEnergy;
 } r3d_shader_prepare_ssil_t;
-
-typedef struct {
-    unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexSource;
-    r3d_shader_uniform_sampler2D_t uTexNormal;
-    r3d_shader_uniform_sampler2D_t uTexDepth;
-    r3d_shader_uniform_vec2_t uDirection;
-} r3d_shader_prepare_ssil_blur_t;
 
 typedef struct {
     unsigned int id;
@@ -555,10 +559,11 @@ extern struct r3d_shader {
 
     // Prepare shaders
     struct {
+        r3d_shader_prepare_blur_down_t blurDown;
+        r3d_shader_prepare_blur_up_t blurUp;
         r3d_shader_prepare_ssao_t ssao;
         r3d_shader_prepare_ssao_blur_t ssaoBlur;
         r3d_shader_prepare_ssil_t ssil;
-        r3d_shader_prepare_ssil_blur_t ssilBlur;
         r3d_shader_prepare_ssil_convergence_t ssilConvergence;
         r3d_shader_prepare_ssr_t ssr;
         r3d_shader_prepare_bloom_down_t bloomDown;
@@ -604,10 +609,11 @@ extern struct r3d_shader {
 
 typedef void (*r3d_shader_loader_func)(void);
 
+void r3d_shader_load_prepare_blur_down(void);
+void r3d_shader_load_prepare_blur_up(void);
 void r3d_shader_load_prepare_ssao(void);
 void r3d_shader_load_prepare_ssao_blur(void);
 void r3d_shader_load_prepare_ssil(void);
-void r3d_shader_load_prepare_ssil_blur(void);
 void r3d_shader_load_prepare_ssil_convergence(void);
 void r3d_shader_load_prepare_ssr(void);
 void r3d_shader_load_prepare_bloom_down(void);
@@ -636,10 +642,11 @@ static const struct r3d_shader_loader {
 
     // Prepare shaders
     struct {
+        r3d_shader_loader_func blurDown;
+        r3d_shader_loader_func blurUp;
         r3d_shader_loader_func ssao;
         r3d_shader_loader_func ssaoBlur;
         r3d_shader_loader_func ssil;
-        r3d_shader_loader_func ssilBlur;
         r3d_shader_loader_func ssilConvergence;
         r3d_shader_loader_func ssr;
         r3d_shader_loader_func bloomDown;
@@ -680,10 +687,11 @@ static const struct r3d_shader_loader {
 } R3D_MOD_SHADER_LOADER = {
 
     .prepare = {
+        .blurDown = r3d_shader_load_prepare_blur_down,
+        .blurUp = r3d_shader_load_prepare_blur_up,
         .ssao = r3d_shader_load_prepare_ssao,
         .ssaoBlur = r3d_shader_load_prepare_ssao_blur,
         .ssil = r3d_shader_load_prepare_ssil,
-        .ssilBlur = r3d_shader_load_prepare_ssil_blur,
         .ssilConvergence = r3d_shader_load_prepare_ssil_convergence,
         .ssr = r3d_shader_load_prepare_ssr,
         .bloomDown = r3d_shader_load_prepare_bloom_down,

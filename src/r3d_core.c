@@ -69,7 +69,7 @@ void R3D_ClearState(R3D_Flags flags)
 
 void R3D_GetResolution(int* width, int* height)
 {
-    r3d_target_get_resolution(width, height, 0);
+    r3d_target_get_resolution(width, height, R3D_TARGET_SCENE_0, 0);
 }
 
 void R3D_UpdateResolution(int width, int height)

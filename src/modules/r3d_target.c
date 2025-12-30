@@ -40,41 +40,33 @@ typedef struct {
 } target_config_t;
 
 static const target_config_t TARGET_CONFIG[] = {
-    [R3D_TARGET_ALBEDO]     = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_NORMAL]     = { GL_RG16F,             GL_RG,              GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_ORM]        = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_DIFFUSE]    = { GL_RGBA16F,           GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_SPECULAR]   = { GL_RGBA16F,           GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_SSAO_0]     = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,               GL_LINEAR,  false },
-    [R3D_TARGET_SSAO_1]     = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,               GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_0]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_1]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_2]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_3]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,               GL_LINEAR,  false },
-    [R3D_TARGET_SSR]        = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true },
-    [R3D_TARGET_BLOOM]      = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  true  },
-    [R3D_TARGET_SCENE_0]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_SCENE_1]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,              GL_NEAREST, false },
-    [R3D_TARGET_DEPTH]      = { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,   1.0f, GL_NEAREST,              GL_NEAREST, false },
+    [R3D_TARGET_ALBEDO]     = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_NORMAL]     = { GL_RG16F,             GL_RG,              GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_ORM]        = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_DIFFUSE]    = { GL_RGBA16F,           GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_SPECULAR]   = { GL_RGBA16F,           GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_SSAO_0]     = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,                GL_LINEAR,  false },
+    [R3D_TARGET_SSAO_1]     = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,                GL_LINEAR,  false },
+    [R3D_TARGET_SSIL_0]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR,  true  },
+    [R3D_TARGET_SSIL_1]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR,  true  },
+    [R3D_TARGET_SSIL_2]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR,  true  },
+    [R3D_TARGET_SSR]        = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
+    [R3D_TARGET_BLOOM]      = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
+    [R3D_TARGET_SCENE_0]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_SCENE_1]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_DEPTH]      = { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,   1.0f, GL_NEAREST,               GL_NEAREST, false },
 };
 
 static void target_load(r3d_target_t target)
 {
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TARGET.targets[target]);
     const target_config_t* config = &TARGET_CONFIG[target];
-    GLuint* id = &R3D_MOD_TARGET.targets[target];
+    int mipCount = r3d_target_get_mip_count(target);
 
-    int w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
-    int h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
-
-    glBindTexture(GL_TEXTURE_2D, *id);
-    glTexImage2D(GL_TEXTURE_2D, 0, config->internalFormat, w, h, 0, config->format, config->type, NULL);
-    if (config->mipmaps) {
+    for (int i = 0; i < mipCount; ++i) {
         int wLevel = 0, hLevel = 0;
-        int levels = get_mip_count(w, h);
-        for (int i = 1; i < levels; ++i) {
-            r3d_target_get_resolution(&wLevel, &hLevel, i);
-            glTexImage2D(GL_TEXTURE_2D, i, config->internalFormat, wLevel, hLevel, 0, config->format, config->type, NULL);
-        }
+        r3d_target_get_resolution(&wLevel, &hLevel, target, i);
+        glTexImage2D(GL_TEXTURE_2D, i, config->internalFormat, wLevel, hLevel, 0, config->format, config->type, NULL);
     }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, config->minFilter);
@@ -247,18 +239,22 @@ float r3d_target_get_render_aspect(void)
     return aspect;
 }
 
-int r3d_target_get_mip_count(void)
+int r3d_target_get_mip_count(r3d_target_t target)
 {
-    int w = R3D_MOD_TARGET.resW;
-    int h = R3D_MOD_TARGET.resH;
+    const target_config_t* config = &TARGET_CONFIG[target];
+    if (!config->mipmaps) return 1;
 
-    return get_mip_count(w, h);
+    int w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
+    int h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
+    return 1 + (int)floorf(log2f(w > h ? w : h));
 }
 
-void r3d_target_get_resolution(int* w, int* h, int level)
+void r3d_target_get_resolution(int* w, int* h, r3d_target_t target, int level)
 {
-    if (w) *w = R3D_MOD_TARGET.resW;
-    if (h) *h = R3D_MOD_TARGET.resH;
+    const target_config_t* config = &TARGET_CONFIG[target];
+
+    if (w) *w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
+    if (h) *h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
 
     if (level > 0) {
         if (w) *w = *w >> level, *w = *w > 1 ? *w : 1;
@@ -266,10 +262,12 @@ void r3d_target_get_resolution(int* w, int* h, int level)
     }
 }
 
-void r3d_target_get_texel_size(float* w, float* h, int level)
+void r3d_target_get_texel_size(float* w, float* h, r3d_target_t target, int level)
 {
-    if (w) *w = R3D_MOD_TARGET.txlW;
-    if (h) *h = R3D_MOD_TARGET.txlH;
+    const target_config_t* config = &TARGET_CONFIG[target];
+
+    if (w) *w = R3D_MOD_TARGET.txlW / config->resolutionFactor;
+    if (h) *h = R3D_MOD_TARGET.txlH / config->resolutionFactor;
 
     if (level > 0) {
         float scale = (float)(1 << level);

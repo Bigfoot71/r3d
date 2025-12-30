@@ -984,7 +984,6 @@ r3d_target_t pass_prepare_ssil(void)
     static r3d_target_t SSIL_HISTORY = R3D_TARGET_SSIL_0;
     static r3d_target_t SSIL_WORK0 = R3D_TARGET_SSIL_1;
     static r3d_target_t SSIL_WORK1 = R3D_TARGET_SSIL_2;
-    static r3d_target_t SSIL_WORK2 = R3D_TARGET_SSIL_3;
 
     /* --- Calculate SSIL --- */
 
@@ -1011,7 +1010,8 @@ r3d_target_t pass_prepare_ssil(void)
 
     /* --- Apply convergence if needed --- */
 
-    r3d_target_t srcBlur = SSIL_WORK0;
+    r3d_target_t source = SSIL_WORK0;
+    r3d_target_t target = SSIL_WORK1;
 
     if (R3D_CACHE_GET(environment.ssil.convergence))
     {
@@ -1019,7 +1019,7 @@ r3d_target_t pass_prepare_ssil(void)
             R3D_TARGET_CLEAR(SSIL_HISTORY);
         }
 
-        R3D_TARGET_BIND(SSIL_WORK2);
+        R3D_TARGET_BIND(SSIL_WORK1);
         R3D_SHADER_USE(prepare.ssilConvergence);
 
         R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilConvergence, uTexCurrent, r3d_target_get(SSIL_WORK0));
@@ -1032,37 +1032,57 @@ r3d_target_t pass_prepare_ssil(void)
         R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilConvergence, uTexCurrent);
         R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilConvergence, uTexHistory);
 
-        srcBlur = SSIL_WORK2;
+        source = SSIL_WORK1;
+        target = SSIL_WORK0;
 
         r3d_target_t tmp = SSIL_HISTORY;
-        SSIL_HISTORY = SSIL_WORK2;
-        SSIL_WORK2 = tmp;
+        SSIL_HISTORY = SSIL_WORK1;
+        SSIL_WORK1 = tmp;
     }
 
-    /* --- Blur SSIL --- */
+    /* --- Blur SSIL (Dual Filtering) --- */
 
-    R3D_SHADER_USE(prepare.ssilBlur);
+    int mipCount = r3d_target_get_mip_count(target);
+    int mipMax = (3 > mipCount) ? mipCount : 3;
+    int dstW, dstH;
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilBlur, uTexNormal, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilBlur, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_TARGET_BIND(target);
 
-    // Horizontal pass
-    R3D_TARGET_BIND(SSIL_WORK1);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilBlur, uTexSource, r3d_target_get(srcBlur));
-    R3D_SHADER_SET_VEC2(prepare.ssilBlur, uDirection, (Vector2) {1.0f, 0.0f});
-    R3D_PRIMITIVE_DRAW_SCREEN();
+    R3D_SHADER_USE(prepare.blurDown);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uTexSource, r3d_target_get(source));
 
-    // Vertical pass
-    R3D_TARGET_BIND(SSIL_WORK0);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssilBlur, uTexSource, r3d_target_get(SSIL_WORK1));
-    R3D_SHADER_SET_VEC2(prepare.ssilBlur, uDirection, (Vector2) {0.0f, 1.0f});
-    R3D_PRIMITIVE_DRAW_SCREEN();
+    for (int dstLevel = 1; dstLevel < mipMax; dstLevel++)
+    {
+        r3d_target_get_resolution(&dstW, &dstH, target, dstLevel);
+        r3d_target_set_mip_level(0, dstLevel);
+        glViewport(0, 0, dstW, dstH);
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilBlur, uTexSource);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilBlur, uTexNormal);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssilBlur, uTexDepth);
+        R3D_SHADER_SET_INT(prepare.blurDown, uMipSource, dstLevel - 1);
+        R3D_PRIMITIVE_DRAW_SCREEN();
 
-    return SSIL_WORK0;
+        if (dstLevel == 1) {
+            R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uTexSource, r3d_target_get(target));
+        }
+    }
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurDown, uTexSource);
+
+    R3D_SHADER_USE(prepare.blurUp);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurUp, uTexSource, r3d_target_get(target));
+
+    for (int dstLevel = mipMax - 2; dstLevel >= 0; dstLevel--)
+    {
+        r3d_target_get_resolution(&dstW, &dstH, target, dstLevel);
+        r3d_target_set_mip_level(0, dstLevel);
+        glViewport(0, 0, dstW, dstH);
+
+        R3D_SHADER_SET_INT(prepare.blurUp, uMipSource, dstLevel + 1);
+        R3D_PRIMITIVE_DRAW_SCREEN();
+    }
+
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurUp, uTexSource);
+
+    return target;
 }
 
 r3d_target_t pass_prepare_ssr(void)
@@ -1136,7 +1156,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
         R3D_SHADER_SET_VEC4(deferred.ambientIbl, uQuatSkybox, R3D_CACHE_GET(environment.background.rotation));
         R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uAmbientEnergy, R3D_CACHE_GET(environment.ambient.energy));
         R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uReflectEnergy, R3D_CACHE_GET(environment.ambient.reflect));
-        R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uMipCountSSR, (float)(r3d_target_get_mip_count() - 1));
+        R3D_SHADER_SET_FLOAT(deferred.ambientIbl, uMipCountSSR, (float)r3d_target_get_mip_count(R3D_TARGET_SSR));
 
         R3D_PRIMITIVE_DRAW_SCREEN();
 
@@ -1167,7 +1187,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
 
         R3D_SHADER_SET_COL3(deferred.ambient, uAmbientColor, R3D_CACHE_GET(environment.ambient.color));
         R3D_SHADER_SET_FLOAT(deferred.ambient, uAmbientEnergy, R3D_CACHE_GET(environment.ambient.energy));
-        R3D_SHADER_SET_FLOAT(deferred.ambient, uMipCountSSR, (float)(r3d_target_get_mip_count() - 1));
+        R3D_SHADER_SET_FLOAT(deferred.ambient, uMipCountSSR, (float)r3d_target_get_mip_count(R3D_TARGET_SSR));
 
         R3D_PRIMITIVE_DRAW_SCREEN();
 
@@ -1540,8 +1560,8 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 {
     r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
     GLuint sceneSourceID = r3d_target_get(sceneSource);
-    int mipCount = r3d_target_get_mip_count();
 
+    int mipCount = r3d_target_get_mip_count(R3D_TARGET_BLOOM);
     float txSrcW = 0, txSrcH = 0;
     int srcW = 0, srcH = 0;
     int dstW = 0, dstH = 0;
@@ -1572,8 +1592,8 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE(prepare.bloomDown);
 
-    r3d_target_get_texel_size(&txSrcW, &txSrcH, 0);
-    r3d_target_get_resolution(&srcW, &srcH, 0);
+    r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, 0);
+    r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_BLOOM, 0);
     r3d_target_set_mip_level(0, 0);
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, sceneSourceID);
@@ -1592,9 +1612,9 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = 1; dstLevel < maxLevel; dstLevel++)
     {
-        r3d_target_get_texel_size(&txSrcW, &txSrcH, dstLevel - 1);
-        r3d_target_get_resolution(&srcW, &srcH, dstLevel - 1);
-        r3d_target_get_resolution(&dstW, &dstH, dstLevel);
+        r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, dstLevel - 1);
+        r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_BLOOM, dstLevel - 1);
+        r3d_target_get_resolution(&dstW, &dstH, R3D_TARGET_BLOOM, dstLevel);
 
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);
@@ -1619,9 +1639,9 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = maxLevel - 2; dstLevel >= 0; dstLevel--)
     {
-        r3d_target_get_texel_size(&txSrcW, &txSrcH, dstLevel + 1);
-        r3d_target_get_resolution(&srcW, &srcH, dstLevel + 1);
-        r3d_target_get_resolution(&dstW, &dstH, dstLevel);
+        r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, dstLevel + 1);
+        r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_BLOOM, dstLevel + 1);
+        r3d_target_get_resolution(&dstW, &dstH, R3D_TARGET_BLOOM, dstLevel);
 
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);

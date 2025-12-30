@@ -34,7 +34,6 @@ typedef enum {
     R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSIL_3,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSR,             //< Half - Mip N - RGBA[16|16|16|16]
     R3D_TARGET_BLOOM,           //< Full - Mip N - RGB[16|16|16]
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
@@ -188,17 +187,17 @@ float r3d_target_get_render_aspect(void);
  * Returns the total number of mip levels of the internal buffers
  * based on their full resolution.
  */
-int r3d_target_get_mip_count(void);
+int r3d_target_get_mip_count(r3d_target_t target);
 
 /*
  * Returns the internal resolution for the specified mip level.
  */
-void r3d_target_get_resolution(int* w, int* h, int level);
+void r3d_target_get_resolution(int* w, int* h, r3d_target_t target, int level);
 
 /*
  * Returns the texel size for the specified mip level.
  */
-void r3d_target_get_texel_size(float* w, float* h, int level);
+void r3d_target_get_texel_size(float* w, float* h, r3d_target_t target, int level);
 
 /*
  * Returns target '1' if target '0' is provided, otherwise returns target '0'.

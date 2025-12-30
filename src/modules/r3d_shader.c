@@ -21,6 +21,8 @@
 #include <shaders/screen.vert.h>
 #include <shaders/cubemap.vert.h>
 #include <shaders/bilateral_blur.frag.h>
+#include <shaders/blur_down.frag.h>
+#include <shaders/blur_up.frag.h>
 #include <shaders/ssao.frag.h>
 #include <shaders/ssil.frag.h>
 #include <shaders/ssil_convergence.frag.h>
@@ -222,6 +224,24 @@ GLuint load_shader(const char* vsCode, const char* fsCode)
 // SHADER LOADING FUNCTIONS
 // ========================================
 
+void r3d_shader_load_prepare_blur_down(void)
+{
+    LOAD_SHADER(prepare.blurDown, SCREEN_VERT, BLUR_DOWN_FRAG);
+    GET_LOCATION(prepare.blurDown, uTexSource);
+    GET_LOCATION(prepare.blurDown, uMipSource);
+    USE_SHADER(prepare.blurDown);
+    SET_SAMPLER_2D(prepare.blurDown, uTexSource, 0);
+}
+
+void r3d_shader_load_prepare_blur_up(void)
+{
+    LOAD_SHADER(prepare.blurUp, SCREEN_VERT, BLUR_UP_FRAG);
+    GET_LOCATION(prepare.blurUp, uTexSource);
+    GET_LOCATION(prepare.blurUp, uMipSource);
+    USE_SHADER(prepare.blurUp);
+    SET_SAMPLER_2D(prepare.blurUp, uTexSource, 0);
+}
+
 void r3d_shader_load_prepare_ssao(void)
 {
     LOAD_SHADER(prepare.ssao, SCREEN_VERT, SSAO_FRAG);
@@ -244,10 +264,7 @@ void r3d_shader_load_prepare_ssao(void)
 
 void r3d_shader_load_prepare_ssao_blur(void)
 {
-    const char* defines[] = {"SSAO"};
-    char* fsCode = inject_defines_to_shader_code(BILATERAL_BLUR_FRAG, defines, 1);
-    LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, fsCode);
-    RL_FREE(fsCode);
+    LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, BILATERAL_BLUR_FRAG);
 
     SET_UNIFORM_BUFFER(prepare.ssaoBlur, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
@@ -284,27 +301,6 @@ void r3d_shader_load_prepare_ssil(void)
     SET_SAMPLER_2D(prepare.ssil, uTexDepth, 0);
     SET_SAMPLER_2D(prepare.ssil, uTexNormal, 1);
     SET_SAMPLER_2D(prepare.ssil, uTexLight, 2);
-}
-
-void r3d_shader_load_prepare_ssil_blur(void)
-{
-    const char* defines[] = {"SSIL"};
-    char* fsCode = inject_defines_to_shader_code(BILATERAL_BLUR_FRAG, defines, 1);
-    LOAD_SHADER(prepare.ssilBlur, SCREEN_VERT, fsCode);
-    RL_FREE(fsCode);
-
-    SET_UNIFORM_BUFFER(prepare.ssilBlur, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
-
-    GET_LOCATION(prepare.ssilBlur, uTexSource);
-    GET_LOCATION(prepare.ssilBlur, uTexNormal);
-    GET_LOCATION(prepare.ssilBlur, uTexDepth);
-    GET_LOCATION(prepare.ssilBlur, uDirection);
-
-    USE_SHADER(prepare.ssilBlur);
-
-    SET_SAMPLER_2D(prepare.ssilBlur, uTexSource, 0);
-    SET_SAMPLER_2D(prepare.ssilBlur, uTexNormal, 1);
-    SET_SAMPLER_2D(prepare.ssilBlur, uTexDepth, 2);
 }
 
 void r3d_shader_load_prepare_ssil_convergence(void)
@@ -852,10 +848,12 @@ bool r3d_shader_init()
 
 void r3d_shader_quit()
 {
+    UNLOAD_SHADER(prepare.blurDown);
+    UNLOAD_SHADER(prepare.blurUp);
     UNLOAD_SHADER(prepare.ssao);
     UNLOAD_SHADER(prepare.ssaoBlur);
     UNLOAD_SHADER(prepare.ssil);
-    UNLOAD_SHADER(prepare.ssilBlur);
+    UNLOAD_SHADER(prepare.ssilConvergence);
     UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);
     UNLOAD_SHADER(prepare.bloomUp);

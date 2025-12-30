@@ -33,8 +33,6 @@ out vec4 FragColor;
 
 // NOTE: Generated using https://lisyarus.github.io/blog/posts/blur-coefficients-generator.html
 
-#if defined(SSAO)
-
 // Parameters:
 //  - Correction: Yes
 //  - Radius: 3.0
@@ -66,49 +64,6 @@ const float NORMAL_POWER = 6.0;         // Controls normal similarity falloff (h
 const float DEPTH_SENSITIVITY = 3.0;    // Controls depth discontinuity tolerance (higher = more permissive blur across depths)
 const float MIN_WEIGHT = 0.0;           // Minimum weight threshold to prevent complete isolation of pixels (ensures some blur even at sharp edges)
 
-#elif defined(SSIL)
-
-// Parameters:
-//  - Correction: No
-//  - Radius: 5.0
-//  - Sigma: 4.5
-
-const int SAMPLE_COUNT = 11;
-
-const float OFFSETS[11] = float[11](
-    -5,
-    -4,
-    -3,
-    -2,
-    -1,
-    0,
-    1,
-    2,
-    3,
-    4,
-    5
-);
-
-const float WEIGHTS[11] = float[11](
-    0.03976498055891493,
-    0.06201839806156053,
-    0.08762883376041485,
-    0.11217090845611094,
-    0.13008288506268811,
-    0.13666798820062134,
-    0.13008288506268811,
-    0.11217090845611094,
-    0.08762883376041485,
-    0.06201839806156053,
-    0.03976498055891493
-);
-
-const float NORMAL_POWER = 2.0;
-const float DEPTH_SENSITIVITY = 4.0;
-const float MIN_WEIGHT = 0.3;
-
-#endif
-
 /* === Helper Functions === */
 
 float NormalWeight(vec3 n0, vec3 n1)
@@ -123,21 +78,6 @@ float DepthWeight(float d0, float d1)
     return exp(-diff * DEPTH_SENSITIVITY);
 }
 
-float SigmaScale(float viewDepth)
-{
-    float dist = abs(viewDepth);
-
-    // Transition distance (in meters)
-    const float D0 = 5.0;
-    const float D1 = 20.0;
-
-    // Maximum intensity of the far blur
-    const float SIGMA_FAR = 2.5;
-
-    float t = clamp((dist - D0) / (D1 - D0), 0.0, 1.0);
-    return mix(1.0, SIGMA_FAR, t);
-}
-
 /* === Main Program === */
 
 void main()
@@ -150,11 +90,6 @@ void main()
     vec3 centerNormal = V_GetViewNormal(uTexNormal, vTexCoord);
     vec3 centerPos = V_GetViewPosition(uTexDepth, vTexCoord);
     float centerDepth = centerPos.z;
-
-#ifdef SSIL
-    float sigmaScale = SigmaScale(centerDepth);
-    float maxOffset = abs(OFFSETS[SAMPLE_COUNT - 1]);
-#endif
 
     for (int i = 0; i < SAMPLE_COUNT; ++i)
     {
@@ -171,15 +106,9 @@ void main()
         float wNormal = NormalWeight(centerNormal, sampleNormal);
         float wDepth = DepthWeight(centerDepth, sampleDepth);
 
-    #ifdef SSIL
-        float tapDist = abs(OFFSETS[i]) / maxOffset;
-        float spatialScale = mix(1.0, sigmaScale, tapDist);
-        float w = WEIGHTS[i] * spatialScale * wNormal * wDepth;
-    #else
         float w = WEIGHTS[i] * wNormal * wDepth;
-    #endif
-
         w = max(w, MIN_WEIGHT * WEIGHTS[i]);
+
         result += sampleValue * w;
         totalWeight += w;
     }
