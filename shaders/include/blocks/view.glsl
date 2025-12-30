@@ -24,17 +24,34 @@ layout(std140) uniform ViewBlock {
     View uView;
 };
 
-vec3 V_GetViewPosition(float depth, vec2 texCoord)
+vec2 GetNDC(vec2 texCoord)
 {
-    vec4 ndcPos = vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    return vec2(texCoord * 2.0 - 1.0);
+}
+
+vec4 GetNDC(vec2 texCoord, float depth)
+{
+    return vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+}
+
+vec4 GetNDC(sampler2D texDepth, vec2 texCoord)
+{
+    float depth = texture(texDepth, texCoord).r;
+    return GetNDC(texCoord, depth);
+}
+
+vec3 V_GetViewPosition(vec2 texCoord, float depth)
+{
+    vec4 ndcPos = GetNDC(texCoord, depth);
     vec4 viewPos = uView.invProj * ndcPos;
     return viewPos.xyz / viewPos.w;
 }
 
 vec3 V_GetViewPosition(sampler2D texDepth, vec2 texCoord)
 {
-    float depth = texture(texDepth, texCoord).r;
-    return V_GetViewPosition(depth, texCoord);
+    vec4 ndcPos = GetNDC(texDepth, texCoord);
+    vec4 viewPos = uView.invProj * ndcPos;
+    return viewPos.xyz / viewPos.w;
 }
 
 vec3 V_GetWorldPosition(vec3 viewPosition)
@@ -42,16 +59,16 @@ vec3 V_GetWorldPosition(vec3 viewPosition)
     return (uView.invView * vec4(viewPosition, 1.0)).xyz;
 }
 
-vec3 V_GetWorldPosition(float depth, vec2 texCoord)
+vec3 V_GetWorldPosition(vec2 texCoord, float depth)
 {
-    vec3 viewPosition = V_GetViewPosition(depth, texCoord);
+    vec3 viewPosition = V_GetViewPosition(texCoord, depth);
     return V_GetWorldPosition(viewPosition);
 }
 
 vec3 V_GetWorldPosition(sampler2D texDepth, vec2 texCoord)
 {
     float depth = texture(texDepth, texCoord).r;
-    return V_GetWorldPosition(depth, texCoord);
+    return V_GetWorldPosition(texCoord, depth);
 }
 
 vec3 V_GetViewNormal(vec3 worldNormal)

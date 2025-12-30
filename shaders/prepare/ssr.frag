@@ -130,7 +130,7 @@ void main()
     if (depth > 1.0 - 1e-5) return;
 
     vec3 worldNormal = V_GetWorldNormal(uTexNormal, vTexCoord);
-    vec3 worldPos = V_GetWorldPosition(depth, vTexCoord);
+    vec3 worldPos = V_GetWorldPosition(vTexCoord, depth);
 
     vec3 viewDir = normalize(worldPos - uView.position);
     vec3 reflectionDir = reflect(viewDir, worldNormal);
