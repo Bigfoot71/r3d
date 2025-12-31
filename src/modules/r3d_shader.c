@@ -20,7 +20,7 @@
 #include <shaders/color.frag.h>
 #include <shaders/screen.vert.h>
 #include <shaders/cubemap.vert.h>
-#include <shaders/bilateral_blur.frag.h>
+#include <shaders/atrous_wavelet.frag.h>
 #include <shaders/blur_down.frag.h>
 #include <shaders/blur_up.frag.h>
 #include <shaders/ssao.frag.h>
@@ -223,6 +223,24 @@ GLuint load_shader(const char* vsCode, const char* fsCode)
 // SHADER LOADING FUNCTIONS
 // ========================================
 
+void r3d_shader_load_prepare_atrous_wavelet(void)
+{
+    LOAD_SHADER(prepare.atrousWavelet, SCREEN_VERT, ATROUS_WAVELET_FRAG);
+
+    SET_UNIFORM_BUFFER(prepare.atrousWavelet, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
+
+    GET_LOCATION(prepare.atrousWavelet, uTexSource);
+    GET_LOCATION(prepare.atrousWavelet, uTexNormal);
+    GET_LOCATION(prepare.atrousWavelet, uTexDepth);
+    GET_LOCATION(prepare.atrousWavelet, uStepSize);
+
+    USE_SHADER(prepare.atrousWavelet);
+
+    SET_SAMPLER_2D(prepare.atrousWavelet, uTexSource, 0);
+    SET_SAMPLER_2D(prepare.atrousWavelet, uTexNormal, 1);
+    SET_SAMPLER_2D(prepare.atrousWavelet, uTexDepth, 2);
+}
+
 void r3d_shader_load_prepare_blur_down(void)
 {
     LOAD_SHADER(prepare.blurDown, SCREEN_VERT, BLUR_DOWN_FRAG);
@@ -259,24 +277,6 @@ void r3d_shader_load_prepare_ssao(void)
 
     SET_SAMPLER_2D(prepare.ssao, uTexDepth, 0);
     SET_SAMPLER_2D(prepare.ssao, uTexNormal, 1);
-}
-
-void r3d_shader_load_prepare_ssao_blur(void)
-{
-    LOAD_SHADER(prepare.ssaoBlur, SCREEN_VERT, BILATERAL_BLUR_FRAG);
-
-    SET_UNIFORM_BUFFER(prepare.ssaoBlur, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
-
-    GET_LOCATION(prepare.ssaoBlur, uTexSource);
-    GET_LOCATION(prepare.ssaoBlur, uTexNormal);
-    GET_LOCATION(prepare.ssaoBlur, uTexDepth);
-    GET_LOCATION(prepare.ssaoBlur, uDirection);
-
-    USE_SHADER(prepare.ssaoBlur);
-
-    SET_SAMPLER_2D(prepare.ssaoBlur, uTexSource, 0);
-    SET_SAMPLER_2D(prepare.ssaoBlur, uTexNormal, 1);
-    SET_SAMPLER_2D(prepare.ssaoBlur, uTexDepth, 2);
 }
 
 void r3d_shader_load_prepare_ssil(void)
@@ -837,10 +837,10 @@ bool r3d_shader_init()
 
 void r3d_shader_quit()
 {
+    UNLOAD_SHADER(prepare.atrousWavelet);
     UNLOAD_SHADER(prepare.blurDown);
     UNLOAD_SHADER(prepare.blurUp);
     UNLOAD_SHADER(prepare.ssao);
-    UNLOAD_SHADER(prepare.ssaoBlur);
     UNLOAD_SHADER(prepare.ssil);
     UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);

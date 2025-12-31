@@ -222,7 +222,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/generic/color.frag"
     "${R3D_ROOT_PATH}/shaders/generic/screen.vert"
     "${R3D_ROOT_PATH}/shaders/generic/cubemap.vert"
-    "${R3D_ROOT_PATH}/shaders/prepare/bilateral_blur.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/atrous_wavelet.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao.frag"
