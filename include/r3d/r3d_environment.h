@@ -76,7 +76,7 @@
         .ssil = {                                       \
             .sampleCount = 4,                           \
             .sliceCount = 4,                            \
-            .sampleRadius = 5.0f,                       \
+            .sampleRadius = 2.0f,                       \
             .hitThickness = 0.5f,                       \
             .aoPower = 1.0f,                            \
             .energy = 1.0f,                             \
