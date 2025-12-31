@@ -977,8 +977,7 @@ r3d_target_t pass_prepare_ssil(void)
     //         via static variables will need to be revisited and stored per viewport.
 
     static r3d_target_t SSIL_HISTORY = R3D_TARGET_SSIL_0;
-    static r3d_target_t SSIL_WORK0 = R3D_TARGET_SSIL_1;
-    static r3d_target_t SSIL_WORK1 = R3D_TARGET_SSIL_2;
+    static r3d_target_t SSIL_CURRENT = R3D_TARGET_SSIL_1;
 
     /* --- Check if we need history --- */
 
@@ -992,8 +991,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     /* --- Calculate SSIL --- */
 
-    R3D_TARGET_BIND(SSIL_WORK0);
-
+    R3D_TARGET_BIND(SSIL_CURRENT);
     R3D_SHADER_USE(prepare.ssil);
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uTexLight, r3d_target_get(R3D_TARGET_DIFFUSE));
@@ -1017,60 +1015,58 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexNormal);
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uTexDepth);
 
-    /* --- Swap history --- */
+    /* --- Blur SSIL (Dual Filtering) --- */
 
-    r3d_target_t source = SSIL_WORK0;
-    r3d_target_t target = SSIL_WORK1;
+    r3d_target_t SSIL_MIP = R3D_TARGET_SSIL_MIP;
+
+    int mipCount = r3d_target_get_mip_count(SSIL_MIP);
+    int mipMax = (3 > mipCount) ? mipCount : 3;
+
+    R3D_TARGET_BIND(SSIL_MIP);
+
+    // Downsample
+    R3D_SHADER_USE(prepare.blurDown);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uTexSource, r3d_target_get(SSIL_CURRENT));
+    for (int mipLevel = 1; mipLevel < mipMax; mipLevel++)
+    {
+        int dstW, dstH;
+        r3d_target_get_resolution(&dstW, &dstH, SSIL_MIP, mipLevel);
+        r3d_target_set_mip_level(0, mipLevel);
+        glViewport(0, 0, dstW, dstH);
+
+        R3D_SHADER_SET_INT(prepare.blurDown, uMipSource, mipLevel - 1);
+        R3D_PRIMITIVE_DRAW_SCREEN();
+
+        if (mipLevel == 1) {
+            R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uTexSource, r3d_target_get(SSIL_MIP));
+        }
+    }
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurDown, uTexSource);
+
+    // Upsample
+    R3D_SHADER_USE(prepare.blurUp);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurUp, uTexSource, r3d_target_get(SSIL_MIP));
+    for (int mipLevel = mipMax - 2; mipLevel >= 0; mipLevel--)
+    {
+        int dstW, dstH;
+        r3d_target_get_resolution(&dstW, &dstH, SSIL_MIP, mipLevel);
+        r3d_target_set_mip_level(0, mipLevel);
+        glViewport(0, 0, dstW, dstH);
+
+        R3D_SHADER_SET_INT(prepare.blurUp, uMipSource, mipLevel + 1);
+        R3D_PRIMITIVE_DRAW_SCREEN();
+    }
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurUp, uTexSource);
+
+    /* --- Swap history --- */
 
     if (needHistory) {
         r3d_target_t tmp = SSIL_HISTORY;
-        SSIL_HISTORY = SSIL_WORK0;
-        SSIL_WORK0 = tmp;
+        SSIL_HISTORY = SSIL_CURRENT;
+        SSIL_CURRENT = tmp;
     }
 
-    /* --- Blur SSIL (Dual Filtering) --- */
-
-    int mipCount = r3d_target_get_mip_count(target);
-    int mipMax = (3 > mipCount) ? mipCount : 3;
-    int dstW, dstH;
-
-    R3D_TARGET_BIND(target);
-
-    R3D_SHADER_USE(prepare.blurDown);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uTexSource, r3d_target_get(source));
-
-    for (int dstLevel = 1; dstLevel < mipMax; dstLevel++)
-    {
-        r3d_target_get_resolution(&dstW, &dstH, target, dstLevel);
-        r3d_target_set_mip_level(0, dstLevel);
-        glViewport(0, 0, dstW, dstH);
-
-        R3D_SHADER_SET_INT(prepare.blurDown, uMipSource, dstLevel - 1);
-        R3D_PRIMITIVE_DRAW_SCREEN();
-
-        if (dstLevel == 1) {
-            R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uTexSource, r3d_target_get(target));
-        }
-    }
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurDown, uTexSource);
-
-    R3D_SHADER_USE(prepare.blurUp);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurUp, uTexSource, r3d_target_get(target));
-
-    for (int dstLevel = mipMax - 2; dstLevel >= 0; dstLevel--)
-    {
-        r3d_target_get_resolution(&dstW, &dstH, target, dstLevel);
-        r3d_target_set_mip_level(0, dstLevel);
-        glViewport(0, 0, dstW, dstH);
-
-        R3D_SHADER_SET_INT(prepare.blurUp, uMipSource, dstLevel + 1);
-        R3D_PRIMITIVE_DRAW_SCREEN();
-    }
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurUp, uTexSource);
-
-    return target;
+    return R3D_TARGET_SSIL_MIP;
 }
 
 r3d_target_t pass_prepare_ssr(void)
