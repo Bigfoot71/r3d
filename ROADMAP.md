@@ -2,6 +2,10 @@
 
 ## **v0.7**
 
+* [ ] **Add support for sRGB textures**
+  Provide a parameter (enabled by default) for loading textures,
+  albedo being the most important, in sRGB.
+
 * [ ] Adding the `R3D_InstanceBuffer` type to manage instances.
   See: https://github.com/Bigfoot71/r3d/discussions/121
 
