@@ -51,6 +51,7 @@ static void raster_forward(const r3d_draw_call_t* call);
 
 static void pass_scene_shadow(void);
 static void pass_scene_geometry(void);
+static void pass_scene_prepass(void);
 static void pass_scene_decals(void);
 
 static r3d_target_t pass_prepare_ssao(void);
@@ -61,7 +62,6 @@ static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSour
 static void pass_deferred_lights(r3d_target_t ssaoSource);
 static void pass_deferred_compose(r3d_target_t sceneTarget);
 
-static void pass_scene_prepass(void);
 static void pass_scene_forward(r3d_target_t sceneTarget);
 static void pass_scene_background(r3d_target_t sceneTarget);
 
@@ -135,10 +135,15 @@ void R3D_End(void)
 
     r3d_target_t sceneTarget = R3D_TARGET_SCENE_0;
 
-    if (r3d_draw_has_deferred()) {
+    if (r3d_draw_has_deferred() || r3d_draw_has_prepass()) {
         R3D_TARGET_CLEAR(R3D_TARGET_ALL_DEFERRED);
 
         pass_scene_geometry();
+
+        if (r3d_draw_has_prepass()) {
+            pass_scene_prepass();
+        }
+
         if (r3d_draw_has_decal()) {
             pass_scene_decals();
         }
@@ -174,7 +179,6 @@ void R3D_End(void)
     pass_scene_background(sceneTarget);
 
     if (r3d_draw_has_forward() || r3d_draw_has_prepass()) {
-        if (r3d_draw_has_prepass()) pass_scene_prepass();
         pass_scene_forward(sceneTarget);
     }
 
@@ -895,6 +899,43 @@ void pass_scene_geometry(void)
     R3D_SHADER_UNBIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices);
 }
 
+void pass_scene_prepass(void)
+{
+    /* --- First render only depth --- */
+
+    R3D_TARGET_BIND(R3D_TARGET_DEPTH);
+    R3D_SHADER_USE(scene.depth);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+    glDepthMask(GL_TRUE);
+
+    const r3d_frustum_t* frustum = NULL;
+    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
+        frustum = &R3D_CACHE_GET(viewState.frustum);
+    }
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
+        raster_depth(call, false, &R3D_CACHE_GET(viewState.viewProj));
+    }
+
+    /* --- Render opaque only with GL_EQUAL --- */
+
+    // NOTE: The transparent part will be rendered in forward
+    R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
+    R3D_SHADER_USE(scene.geometry);
+
+    glDepthFunc(GL_EQUAL);
+    glDepthMask(GL_FALSE);
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
+        raster_geometry(call);
+    }
+
+    // NOTE: The storage texture of the matrices may have been bind during drawcalls
+    R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uTexBoneMatrices);
+}
+
 void pass_scene_decals(void)
 {
     R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
@@ -1307,28 +1348,6 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
 
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexDiffuse);
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uTexSpecular);
-}
-
-void pass_scene_prepass(void)
-{
-    R3D_TARGET_BIND(R3D_TARGET_DEPTH);
-    R3D_SHADER_USE(scene.depth);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_TRUE);
-
-    const r3d_frustum_t* frustum = NULL;
-    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        frustum = &R3D_CACHE_GET(viewState.frustum);
-    }
-
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-        raster_depth(call, false, &R3D_CACHE_GET(viewState.viewProj));
-    }
-
-    // NOTE: The storage texture of the matrices may have been bind during drawcalls
-    R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uTexBoneMatrices);
 }
 
 static void pass_scene_forward_send_lights(const r3d_draw_call_t* call)
