@@ -67,8 +67,8 @@ uint UpdateSectors(float minHorizon, float maxHorizon, uint outBitfield)
 
 vec3 SampleLight(vec2 texCoord)
 {
-    vec3 indirect = textureLod(uTexLight, texCoord, 0.0).rgb;
-    vec3 direct = texture(uTexPrevSSIL, texCoord).rgb;
+    vec3 indirect = texture(uTexPrevSSIL, texCoord).rgb;
+    vec3 direct = texture(uTexLight, texCoord).rgb;
     return direct + uBounce * indirect;
 }
 
@@ -155,5 +155,5 @@ void main()
     lighting /= uSliceCount;
 
     FragColor = vec4(lighting * uEnergy, pow(visibility, uAoPower));
-    FragColor = mix(FragColor, history, uConvergence);
+    FragColor.rgb = mix(FragColor.rgb, history.rgb, uConvergence);
 }
