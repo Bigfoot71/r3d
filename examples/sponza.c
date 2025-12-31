@@ -20,7 +20,6 @@ int main(void)
     // Background and ambient
     R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
     R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
-    R3D_ENVIRONMENT_SET(ssao.power, 2.5);
 
     // Load Sponza model
     R3D_Model sponza = R3D_LoadModel(RESOURCES_PATH "sponza.glb");
