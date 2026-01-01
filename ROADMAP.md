@@ -2,7 +2,7 @@
 
 ## **v0.7**
 
-* [ ] **Add support for sRGB textures**
+* [x] **Add support for sRGB textures**
   Provide a parameter (enabled by default) for loading textures,
   albedo being the most important, in sRGB.
 
