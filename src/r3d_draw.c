@@ -15,6 +15,7 @@
 #include <glad.h>
 
 #include "./details/r3d_frustum.h"
+#include "./details/r3d_macros.h"
 #include "./details/r3d_math.h"
 
 #include "./modules/r3d_primitive.h"
@@ -1061,7 +1062,7 @@ r3d_target_t pass_prepare_ssil(void)
     r3d_target_t SSIL_MIP = R3D_TARGET_SSIL_MIP;
 
     int mipCount = r3d_target_get_mip_count(SSIL_MIP);
-    int mipMax = (3 > mipCount) ? mipCount : 3;
+    int mipMax = MIN(3, mipCount);
 
     R3D_TARGET_BIND(SSIL_MIP);
 
