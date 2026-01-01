@@ -87,7 +87,7 @@ int r3d_importer_get_bone_index(const r3d_importer_t* importer, const char* name
  * This will spawn worker threads to load images in parallel, then
  * progressively upload them to GPU as they become ready
  */
-r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, TextureFilter filter);
+r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter);
 
 /**
  * Destroy the texture cache and free all unused resources

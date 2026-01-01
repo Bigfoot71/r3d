@@ -307,24 +307,6 @@ static Texture2D load_texture(const Image* image, TextureWrap wrap,
 }
 
 // ========================================
-// ASSIMP HELPER FUNCTIONS
-// ========================================
-
-static TextureWrap get_wrap_mode(enum aiTextureMapMode wrap)
-{
-    switch (wrap) {
-    case aiTextureMapMode_Wrap:
-        return TEXTURE_WRAP_REPEAT;
-    case aiTextureMapMode_Mirror:
-        return TEXTURE_WRAP_MIRROR_REPEAT;
-    case aiTextureMapMode_Clamp:
-    case aiTextureMapMode_Decal:
-    default:
-        return TEXTURE_WRAP_CLAMP;
-    }
-}
-
-// ========================================
 // IMAGE LOADING FUNCTIONS
 // ========================================
 
@@ -501,6 +483,29 @@ static bool load_image_for_map(
 }
 
 // ========================================
+// HELPER FUNCTIONS
+// ========================================
+
+static bool is_srgb(r3d_importer_texture_map_t map, R3D_ColorSpace space)
+{
+    return (space == R3D_COLORSPACE_SRGB && (map == R3D_MAP_ALBEDO || map == R3D_MAP_EMISSION));
+}
+
+static TextureWrap get_wrap_mode(enum aiTextureMapMode wrap)
+{
+    switch (wrap) {
+    case aiTextureMapMode_Wrap:
+        return TEXTURE_WRAP_REPEAT;
+    case aiTextureMapMode_Mirror:
+        return TEXTURE_WRAP_MIRROR_REPEAT;
+    case aiTextureMapMode_Clamp:
+    case aiTextureMapMode_Decal:
+    default:
+        return TEXTURE_WRAP_CLAMP;
+    }
+}
+
+// ========================================
 // WORKER THREAD
 // ========================================
 
@@ -535,7 +540,7 @@ static int worker_thread(void* arg)
 // PUBLIC FUNCTIONS
 // ========================================
 
-r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, TextureFilter filter)
+r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
         TraceLog(LOG_ERROR, "R3D: Invalid importer for texture loading");
@@ -593,7 +598,10 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
             // Upload texture to GPU
             if (img->image.data) {
                 Texture2D* texture = &cache->materials[materialIdx].textures[mapIdx];
-                *texture = load_texture(&img->image, get_wrap_mode(img->wrap[0]), filter, mapIdx == R3D_MAP_ALBEDO);
+                *texture = load_texture(
+                    &img->image, get_wrap_mode(img->wrap[0]),
+                    filter, is_srgb(mapIdx, colorSpace)
+                );
 
                 // Free image data
                 if (img->owned) {

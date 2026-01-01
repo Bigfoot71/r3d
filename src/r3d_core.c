@@ -87,6 +87,11 @@ void R3D_SetTextureFilter(TextureFilter filter)
     R3D_CACHE_SET(textureFilter, filter);
 }
 
+void R3D_SetTextureColorSpace(R3D_ColorSpace space)
+{
+    R3D_CACHE_SET(textureColorSpace, space);
+}
+
 R3D_Layer R3D_GetActiveLayers(void)
 {
     return R3D_CACHE_GET(layers);
