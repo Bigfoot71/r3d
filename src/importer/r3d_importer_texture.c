@@ -28,6 +28,8 @@
 #include <tinycthread.h>
 #include <stdatomic.h>
 #include <stdlib.h>
+#include <rlgl.h>
+#include <glad.h>
 
 #include "../details/r3d_image.h"
 
@@ -118,25 +120,213 @@ static bool ring_pop(loader_context_t* ctx, int* jobIndex)
 }
 
 // ========================================
-// TEXTURE WRAP CONVERSION
+// TEXTURE LOADING FUNCTIONS
 // ========================================
 
-static int get_wrap_mode(enum aiTextureMapMode wrap)
+static bool has_gl_ext(const char* name)
 {
-    switch (wrap) {
-    case aiTextureMapMode_Wrap:
-        return TEXTURE_WRAP_REPEAT;
-    case aiTextureMapMode_Mirror:
-        return TEXTURE_WRAP_MIRROR_REPEAT;
-    case aiTextureMapMode_Clamp:
-    case aiTextureMapMode_Decal:
-    default:
-        return TEXTURE_WRAP_CLAMP;
+    GLint n = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &n);
+
+    for (GLint i = 0; i < n; i++) {
+        const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
+        if (strcmp(ext, name) == 0) return true;
+    }
+
+    return false;
+}
+
+static bool has_gl_anisotropy(float* max)
+{
+    static bool hasAniso = false;
+    static float maxAniso = 1.0f;
+
+    if (!hasAniso) {
+        hasAniso = has_gl_ext("GL_EXT_texture_filter_anisotropic");
+        if (hasAniso) {
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &maxAniso);
+            glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fminf(8.0f, maxAniso));
+        }
+    }
+
+    if (max) *max = maxAniso;
+
+    return hasAniso;
+}
+
+void get_gl_texture_format(int format, bool srgb, GLenum* glInternalFormat, GLenum* glFormat, GLenum* glType)
+{
+    // TODO: Add checks for support of compressed formats (consider WebGL 2 for later)
+
+    *glInternalFormat = 0;
+    *glFormat = 0;
+    *glType = 0;
+
+    switch (format) {
+    case RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE: *glInternalFormat = GL_R8; *glFormat = GL_RED; *glType = GL_UNSIGNED_BYTE; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA: *glInternalFormat = GL_RG8; *glFormat = GL_RG; *glType = GL_UNSIGNED_BYTE; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R5G6B5: *glInternalFormat = GL_RGB565; *glFormat = GL_RGB; *glType = GL_UNSIGNED_SHORT_5_6_5; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8: *glInternalFormat = GL_RGB8; *glFormat = GL_RGB; *glType = GL_UNSIGNED_BYTE; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R5G5B5A1: *glInternalFormat = GL_RGB5_A1; *glFormat = GL_RGBA; *glType = GL_UNSIGNED_SHORT_5_5_5_1; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R4G4B4A4: *glInternalFormat = GL_RGBA4; *glFormat = GL_RGBA; *glType = GL_UNSIGNED_SHORT_4_4_4_4; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R8G8B8A8: *glInternalFormat = GL_RGBA8; *glFormat = GL_RGBA; *glType = GL_UNSIGNED_BYTE; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R32: *glInternalFormat = GL_R32F; *glFormat = GL_RED; *glType = GL_FLOAT; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R32G32B32: *glInternalFormat = GL_RGB32F; *glFormat = GL_RGB; *glType = GL_FLOAT; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R32G32B32A32: *glInternalFormat = GL_RGBA32F; *glFormat = GL_RGBA; *glType = GL_FLOAT; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R16: *glInternalFormat = GL_R16F; *glFormat = GL_RED; *glType = GL_HALF_FLOAT; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16: *glInternalFormat = GL_RGB16F; *glFormat = GL_RGB; *glType = GL_HALF_FLOAT; break;
+    case RL_PIXELFORMAT_UNCOMPRESSED_R16G16B16A16: *glInternalFormat = GL_RGBA16F; *glFormat = GL_RGBA; *glType = GL_HALF_FLOAT; break;
+    case RL_PIXELFORMAT_COMPRESSED_DXT1_RGB: *glInternalFormat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT; break;
+    case RL_PIXELFORMAT_COMPRESSED_DXT1_RGBA: *glInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
+    case RL_PIXELFORMAT_COMPRESSED_DXT3_RGBA: *glInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
+    case RL_PIXELFORMAT_COMPRESSED_DXT5_RGBA: *glInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
+    default: TRACELOG(RL_LOG_WARNING, "R3D: Current format not supported (%i)", format); break;
+    }
+
+    if (srgb) {
+        switch (*glInternalFormat) {
+        case GL_RGBA8: *glInternalFormat = GL_SRGB8_ALPHA8; break;
+        case GL_RGB8: *glInternalFormat = GL_SRGB8; break;
+        // NOT SUPPORTED FOR NOW
+        case GL_COMPRESSED_RGBA_BPTC_UNORM: *glInternalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM; break;
+        case GL_COMPRESSED_RGBA_ASTC_4x4_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_5x4_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_5x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_6x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_6x6_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_8x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_8x6_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_8x8_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x6_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x8_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x10_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_12x10_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_12x12_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR; break;
+        case GL_COMPRESSED_RGB8_ETC2: *glInternalFormat = GL_COMPRESSED_SRGB8_ETC2; break;
+        case GL_COMPRESSED_RGBA8_ETC2_EAC: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC; break;
+        case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2: *glInternalFormat = GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2; break;
+        }
     }
 }
 
+static void upload_mipmap(const uint8_t *data, int width, int height, int level, 
+                          int format, bool srgb)
+{
+    GLenum glInternalFormat, glFormat, glType;
+    get_gl_texture_format(format, srgb, &glInternalFormat, &glFormat, &glType);
+    
+    if (glInternalFormat == 0) return;
+    
+    if (format < RL_PIXELFORMAT_COMPRESSED_DXT1_RGB) {
+        glTexImage2D(GL_TEXTURE_2D, level, glInternalFormat, width, height, 
+                     0, glFormat, glType, data);
+    } else {
+        int size = GetPixelDataSize(width, height, format);
+        glCompressedTexImage2D(GL_TEXTURE_2D, level, glInternalFormat, 
+                              width, height, 0, size, data);
+    }
+}
+
+static void set_texture_swizzle(int format)
+{
+    static const GLint grayscale[] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+    static const GLint gray_alpha[] = {GL_RED, GL_RED, GL_RED, GL_GREEN};
+    
+    const GLint *mask = NULL;
+    if (format == RL_PIXELFORMAT_UNCOMPRESSED_GRAYSCALE) mask = grayscale;
+    else if (format == RL_PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA) mask = gray_alpha;
+    
+    if (mask) {
+        glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, mask);
+    }
+}
+
+static void set_texture_wrap(TextureWrap wrap)
+{
+    static const GLenum wrap_modes[] = {
+        [TEXTURE_WRAP_REPEAT] = GL_REPEAT,
+        [TEXTURE_WRAP_CLAMP] = GL_CLAMP_TO_EDGE,
+        [TEXTURE_WRAP_MIRROR_REPEAT] = GL_MIRRORED_REPEAT,
+        [TEXTURE_WRAP_MIRROR_CLAMP] = GL_MIRROR_CLAMP_TO_EDGE
+    };
+    
+    if (wrap < sizeof(wrap_modes) / sizeof(wrap_modes[0]) && wrap_modes[wrap]) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrap_modes[wrap]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrap_modes[wrap]);
+    }
+}
+
+static void set_texture_filter(TextureFilter filter)
+{
+    typedef struct {
+        GLenum mag, min;
+        float aniso;
+    } FilterMode;
+    
+    static const FilterMode modes[] = {
+        [TEXTURE_FILTER_POINT] = {GL_NEAREST, GL_NEAREST, 0},
+        [TEXTURE_FILTER_BILINEAR] = {GL_LINEAR, GL_LINEAR, 0},
+        [TEXTURE_FILTER_TRILINEAR] = {GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, 0},
+        [TEXTURE_FILTER_ANISOTROPIC_4X] = {GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, 4.0f},
+        [TEXTURE_FILTER_ANISOTROPIC_8X] = {GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, 8.0f},
+        [TEXTURE_FILTER_ANISOTROPIC_16X] = {GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, 16.0f}
+    };
+    
+    if (filter < sizeof(modes) / sizeof(modes[0]) && modes[filter].mag) {
+        const FilterMode *m = &modes[filter];
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m->mag);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m->min);
+        if (m->aniso > 0) {
+            float maxAniso = 1.0f;
+            if (has_gl_anisotropy(&maxAniso)) {
+                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fminf(m->aniso, maxAniso));
+            }
+        }
+    }
+}
+
+static Texture2D load_texture(const Image* image, TextureWrap wrap, 
+                               TextureFilter filter, bool srgb)
+{
+    GLuint id = 0;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    const uint8_t *dataPtr = image->data;
+    int mipW = image->width, mipH = image->height;
+
+    for (int i = 0; i < image->mipmaps; i++) {
+        upload_mipmap(dataPtr, mipW, mipH, i, image->format, srgb);
+        if (i == 0) set_texture_swizzle(image->format);
+
+        int mipSize = GetPixelDataSize(mipW, mipH, image->format);
+        if (dataPtr) dataPtr += mipSize;
+
+        mipW = (mipW > 1) ? mipW / 2 : 1;
+        mipH = (mipH > 1) ? mipH / 2 : 1;
+    }
+
+    if (image->mipmaps == 1 && filter >= TEXTURE_FILTER_TRILINEAR) {
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+
+    set_texture_wrap(wrap);
+    set_texture_filter(filter);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return (Texture2D) {
+        .id = id,
+        .width = image->width,
+        .height = image->height,
+        .mipmaps = image->mipmaps,
+        .format = image->format
+    };
+}
+
 // ========================================
-// IMAGE LOADING HELPERS
+// IMAGE LOADING FUNCTIONS
 // ========================================
 
 static bool load_image_base(
@@ -312,6 +502,29 @@ static bool load_image_for_map(
 }
 
 // ========================================
+// HELPER FUNCTIONS
+// ========================================
+
+static bool is_srgb(r3d_importer_texture_map_t map, R3D_ColorSpace space)
+{
+    return (space == R3D_COLORSPACE_SRGB && (map == R3D_MAP_ALBEDO || map == R3D_MAP_EMISSION));
+}
+
+static TextureWrap get_wrap_mode(enum aiTextureMapMode wrap)
+{
+    switch (wrap) {
+    case aiTextureMapMode_Wrap:
+        return TEXTURE_WRAP_REPEAT;
+    case aiTextureMapMode_Mirror:
+        return TEXTURE_WRAP_MIRROR_REPEAT;
+    case aiTextureMapMode_Clamp:
+    case aiTextureMapMode_Decal:
+    default:
+        return TEXTURE_WRAP_CLAMP;
+    }
+}
+
+// ========================================
 // WORKER THREAD
 // ========================================
 
@@ -346,7 +559,7 @@ static int worker_thread(void* arg)
 // PUBLIC FUNCTIONS
 // ========================================
 
-r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, TextureFilter filter)
+r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
         TraceLog(LOG_ERROR, "R3D: Invalid importer for texture loading");
@@ -391,8 +604,6 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
 
     // Progressive upload loop on main thread
     int uploadedCount = 0;
-    bool generateMipmaps = (filter >= TEXTURE_FILTER_TRILINEAR);
-
     while (uploadedCount < ctx.totalJobs) {
         int jobIndex;
 
@@ -406,15 +617,10 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
             // Upload texture to GPU
             if (img->image.data) {
                 Texture2D* texture = &cache->materials[materialIdx].textures[mapIdx];
-                *texture = LoadTextureFromImage(img->image);
-
-                if (texture->id != 0) {
-                    if (generateMipmaps) {
-                        GenTextureMipmaps(texture);
-                    }
-                    SetTextureWrap(*texture, get_wrap_mode(img->wrap[0]));
-                    SetTextureFilter(*texture, filter);
-                }
+                *texture = load_texture(
+                    &img->image, get_wrap_mode(img->wrap[0]),
+                    filter, is_srgb(mapIdx, colorSpace)
+                );
 
                 // Free image data
                 if (img->owned) {

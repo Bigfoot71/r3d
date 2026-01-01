@@ -22,6 +22,7 @@ int main(void)
     R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
     // Load Sponza model
+    R3D_SetTextureFilter(TEXTURE_FILTER_ANISOTROPIC_8X);
     R3D_Model sponza = R3D_LoadModel(RESOURCES_PATH "sponza.glb");
 
     // Load skybox (disabled by default)

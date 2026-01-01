@@ -53,6 +53,7 @@ bool r3d_cache_init(R3D_Flags flags)
 
     R3D_MOD_CACHE.environment = R3D_ENVIRONMENT_BASE;
 
+    R3D_MOD_CACHE.textureColorSpace = R3D_COLORSPACE_SRGB;
     R3D_MOD_CACHE.textureFilter = TEXTURE_FILTER_TRILINEAR;
     R3D_MOD_CACHE.layers = R3D_LAYER_ALL;
     R3D_MOD_CACHE.state = flags;

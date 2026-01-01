@@ -73,6 +73,17 @@ typedef uint32_t R3D_Layer;
 
 #define R3D_LAYER_ALL   0xFFFFFFFF
 
+/**
+ * @brief Specifies the color space of a texture.
+ *
+ * This enum defines how a texture's colors are interpreted during rendering.
+ * It is used with color textures such as albedo and emission.
+ */
+typedef enum {
+    R3D_COLORSPACE_LINEAR,  ///< Linear color space, no gamma correction applied.
+    R3D_COLORSPACE_SRGB     ///< sRGB color space, gamma correction applied on load.
+} R3D_ColorSpace;
+
 // ========================================
 // PUBLIC API
 // ========================================
@@ -168,6 +179,19 @@ R3DAPI void R3D_UpdateResolution(int width, int height);
  * @param filter The texture filtering mode to be applied by default.
  */
 R3DAPI void R3D_SetTextureFilter(TextureFilter filter);
+
+/**
+ * @brief Sets the color space for color textures such as albedo and emission.
+ *
+ * This function specifies whether textures representing visible colors
+ * should be interpreted as linear or sRGB. The chosen color space
+ * is applied automatically when loading the texture.
+ *
+ * The default texture color space is `R3D_COLORSPACE_SRGB`.
+ *
+ * @param space The color space to use (linear or sRGB).
+ */
+R3DAPI void R3D_SetTextureColorSpace(R3D_ColorSpace space);
 
 /**
  * @brief Get the currently active global rendering layers.
