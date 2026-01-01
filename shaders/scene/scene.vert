@@ -1,4 +1,4 @@
-/* geometry.vert -- Vertex shader used for rendering in G-buffers
+/* scene.vert -- Common vertex shader for all scene render paths.
  *
  * Copyright (c) 2025 Le Juez Victor
  *
