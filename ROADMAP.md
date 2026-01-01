@@ -9,7 +9,7 @@
 * [ ] Adding the `R3D_InstanceBuffer` type to manage instances.
   See: https://github.com/Bigfoot71/r3d/discussions/121
 
-* [ ] **Merge Scene Vertex Shaders**
+* [x] **Merge Scene Vertex Shaders**
   Merge all vertex shaders used by the `scene` module into a single unified vertex shader.
 
 * [ ] **Skybox Revision and Reflection Probes**
