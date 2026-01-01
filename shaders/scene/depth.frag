@@ -10,8 +10,8 @@
 
 /* === Varyings === */
 
-in vec2 vTexCoord;
-in float vAlpha;
+smooth in vec2 vTexCoord;
+smooth in vec4 vColor;
 
 /* === Uniforms === */
 
@@ -24,6 +24,6 @@ void main()
 {
     // NOTE: The depth is automatically written
 
-    float alpha = vAlpha * texture(uTexAlbedo, vTexCoord).a;
+    float alpha = vColor.a * texture(uTexAlbedo, vTexCoord).a;
     if (alpha < uAlphaCutoff) discard;
 }

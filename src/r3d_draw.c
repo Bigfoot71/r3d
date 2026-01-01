@@ -476,7 +476,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
     /* --- Set transparency material data --- */
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_FLOAT(scene.depth, uAlpha, ((float)call->material.albedo.color.a / 255));
+    R3D_SHADER_SET_COL4(scene.depth, uAlbedoColor, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
         R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, shadow ? 0.1f : 0.99f);
@@ -544,7 +544,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     /* --- Set transparency material data --- */
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_FLOAT(scene.depthCube, uAlpha, ((float)call->material.albedo.color.a / 255));
+    R3D_SHADER_SET_COL4(scene.depthCube, uAlbedoColor, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
         R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, shadow ? 0.1f : 0.99f);

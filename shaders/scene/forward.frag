@@ -41,10 +41,11 @@ struct Light
 
 /* === Varyings === */
 
-in vec3 vPosition;
-in vec2 vTexCoord;
-in vec4 vColor;
-in mat3 vTBN;
+smooth in vec3 vPosition;
+smooth in vec2 vTexCoord;
+flat   in vec3 vEmission;
+smooth in vec4 vColor;
+smooth in mat3 vTBN;
 
 in vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
 
@@ -208,7 +209,7 @@ void main()
     /* Sample material maps */
 
     vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
-    vec3 emission = uEmissionEnergy * (uEmissionColor * texture(uTexEmission, vTexCoord).rgb);
+    vec3 emission = vEmission * texture(uTexEmission, vTexCoord).rgb;
     vec3 orm = texture(uTexORM, vTexCoord).rgb;
 
     float occlusion = uOcclusion * orm.x;

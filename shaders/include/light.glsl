@@ -11,7 +11,8 @@
 
 /* === Defines === */
 
-#define LIGHT_FORWARD_COUNT 8
+// Should be defined in client side
+//#define LIGHT_FORWARD_COUNT 8
 
 #define LIGHT_DIR   0
 #define LIGHT_SPOT  1

@@ -14,10 +14,10 @@
 
 /* === Varyings === */
 
-flat in vec3 vEmission;
-in vec2 vTexCoord;
-in vec4 vColor;
-in mat3 vTBN;
+smooth in vec2 vTexCoord;
+flat   in vec3 vEmission;
+smooth in vec4 vColor;
+smooth in mat3 vTBN;
 
 /* === Uniforms === */
 

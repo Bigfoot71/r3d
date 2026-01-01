@@ -1,4 +1,4 @@
-/* forward.vert -- Vertex shader used for forward shading
+/* geometry.vert -- Vertex shader used for rendering in G-buffers
  *
  * Copyright (c) 2025 Le Juez Victor
  *
@@ -12,7 +12,6 @@
 
 #include "../include/blocks/view.glsl"
 #include "../include/billboard.glsl"
-#include "../include/light.glsl"
 
 /* === Attributes === */
 
@@ -31,26 +30,45 @@ layout(location = 14) in vec4 iColor;
 
 uniform sampler1D uTexBoneMatrices;
 
-uniform mat4 uMatLightVP[LIGHT_FORWARD_COUNT];
-uniform mat4 uMatNormal;
 uniform mat4 uMatModel;
+uniform mat4 uMatNormal;
 
 uniform vec4 uAlbedoColor;
+uniform vec3 uEmissionColor;
+uniform float uEmissionEnergy;
+
 uniform vec2 uTexCoordOffset;
 uniform vec2 uTexCoordScale;
-
 uniform bool uInstancing;
+
 uniform bool uSkinning;
 uniform int uBillboard;
 
+#if defined(FORWARD)
+uniform mat4 uMatLightVP[LIGHT_FORWARD_COUNT];
+#endif // FORWARD
+
+#if defined(DEPTH) || defined(DEPTH_CUBE)
+uniform mat4 uMatInvView;   // inv view only for billboard modes
+uniform mat4 uMatVP;
+#endif // DEPTH || DEPTH_CUBE
+
 /* === Varyings === */
 
-out vec3 vPosition;
-out vec2 vTexCoord;
-out vec4 vColor;
-out mat3 vTBN;
+smooth out vec3 vPosition;
+smooth out vec2 vTexCoord;
+flat   out vec3 vEmission;
+smooth out vec4 vColor;
+smooth out mat3 vTBN;
 
-out vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
+#if defined(FORWARD)
+smooth out vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
+#endif // FORWARD
+
+#if defined(DECAL)
+smooth out mat4 vFinalMatModel;
+smooth out vec4 vClipPos;
+#endif // DECAL
 
 /* === Helper Functions === */
 
@@ -92,16 +110,21 @@ void main()
         matNormal = mat3(transpose(inverse(iMatModel))) * matNormal;
     }
 
-    switch(uBillboard) {
-    case BILLBOARD_NONE:
-        break;
-    case BILLBOARD_FRONT:
-        BillboardFront(matModel, matNormal, uView.invView);
-        break;
-    case BILLBOARD_Y_AXIS:
-        BillboardYAxis(matModel, matNormal, uView.invView);
-        break;
+#if defined(DEPTH) || defined(DEPTH_CUBE)
+    if (uBillboard == BILLBOARD_FRONT) {
+        BillboardFront(matModel, matNormal, uMatInvView);
     }
+    else if (uBillboard == BILLBOARD_Y_AXIS) {
+        BillboardYAxis(matModel, matNormal, uMatInvView);
+    }
+#else
+    if (uBillboard == BILLBOARD_FRONT) {
+        BillboardFront(matModel, matNormal, uView.invView);
+    }
+    else if (uBillboard == BILLBOARD_Y_AXIS) {
+        BillboardYAxis(matModel, matNormal, uView.invView);
+    }
+#endif
 
     vec3 T = normalize(matNormal * aTangent.xyz);
     vec3 N = normalize(matNormal * aNormal);
@@ -109,12 +132,24 @@ void main()
 
     vPosition = vec3(matModel * vec4(aPosition, 1.0));
     vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
+    vEmission = uEmissionColor * uEmissionEnergy;
     vColor = aColor * iColor * uAlbedoColor;
     vTBN = mat3(T, B, N);
 
+#if defined(FORWARD)
     for (int i = 0; i < LIGHT_FORWARD_COUNT; i++) {
         vPosLightSpace[i] = uMatLightVP[i] * vec4(vPosition, 1.0);
     }
+#endif // FORWARD
 
+#if defined(DEPTH) || defined(DEPTH_CUBE)
+    gl_Position = uMatVP * vec4(vPosition, 1.0);
+#else
     gl_Position = uView.viewProj * vec4(vPosition, 1.0);
+#endif
+
+#if defined(DECAL)
+    vFinalMatModel = matModel;
+    vClipPos  = gl_Position;
+#endif // DECAL
 }

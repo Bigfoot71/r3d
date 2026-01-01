@@ -15,10 +15,10 @@
 
 /* === Varyings === */
 
-in mat4 vFinalMatModel;
-flat in vec3 vEmission;
-in vec4 vColor;
-in vec4 vClipPos;
+smooth in mat4 vFinalMatModel;
+flat   in vec3 vEmission;
+smooth in vec4 vColor;
+smooth in vec4 vClipPos;
 
 /* === Uniforms === */
 

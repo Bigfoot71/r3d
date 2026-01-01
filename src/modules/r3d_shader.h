@@ -13,6 +13,13 @@
 #include <glad.h>
 
 // ========================================
+// MODULE CONSTANTS
+// ========================================
+
+#define R3D_SHADER_FORWARD_NUM_LIGHTS   8
+#define R3D_SHADER_UBO_VIEW_SLOT        0
+
+// ========================================
 // SHADER MANAGEMENT MACROS
 // ========================================
 
@@ -153,13 +160,6 @@
 #define R3D_SHADER_SET_MAT4_V(shader_name, uniform, array, count) do {                              \
     glUniformMatrix4fv(R3D_MOD_SHADER.shader_name.uniform.loc, (count), GL_TRUE, (float*)(array));  \
 } while(0)
-
-// ========================================
-// MODULE CONSTANTS
-// ========================================
-
-#define R3D_SHADER_FORWARD_NUM_LIGHTS   8
-#define R3D_SHADER_UBO_VIEW_SLOT        0
 
 // ========================================
 // UNIFORMS TYPES
@@ -314,9 +314,9 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_float_t uAlpha;
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
@@ -330,9 +330,9 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
-    r3d_shader_uniform_float_t uAlpha;
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;

@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <rlgl.h>
 
+#include "../details/r3d_macros.h"
+
 // ========================================
 // SHADER CODE INCLUDES
 // ========================================
@@ -31,18 +33,14 @@
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap_irradiance.frag.h>
 #include <shaders/cubemap_prefilter.frag.h>
-#include <shaders/geometry.vert.h>
+#include <shaders/scene.vert.h>
 #include <shaders/geometry.frag.h>
-#include <shaders/forward.vert.h>
 #include <shaders/forward.frag.h>
+#include <shaders/depth.frag.h>
+#include <shaders/depth_cube.frag.h>
+#include <shaders/decal.frag.h>
 #include <shaders/skybox.vert.h>
 #include <shaders/skybox.frag.h>
-#include <shaders/depth.vert.h>
-#include <shaders/depth.frag.h>
-#include <shaders/depth_cube.vert.h>
-#include <shaders/depth_cube.frag.h>
-#include <shaders/decal.vert.h>
-#include <shaders/decal.frag.h>
 #include <shaders/ambient.frag.h>
 #include <shaders/lighting.frag.h>
 #include <shaders/compose.frag.h>
@@ -406,7 +404,10 @@ void r3d_shader_load_prepare_cubemap_prefilter(void)
 
 void r3d_shader_load_scene_geometry(void)
 {
-    LOAD_SHADER(scene.geometry, GEOMETRY_VERT, GEOMETRY_FRAG);
+    const char* defines[] = {"GEOMETRY"};
+    char* vsCode = inject_defines_to_shader_code(SCENE_VERT, defines, ARRAY_SIZE(defines));
+    LOAD_SHADER(scene.geometry, vsCode, GEOMETRY_FRAG);
+    RL_FREE(vsCode);
 
     SET_UNIFORM_BUFFER(scene.geometry, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
@@ -442,7 +443,10 @@ void r3d_shader_load_scene_geometry(void)
 
 void r3d_shader_load_scene_forward(void)
 {
-    LOAD_SHADER(scene.forward, FORWARD_VERT, FORWARD_FRAG);
+    const char* defines[] = {"FORWARD", TextFormat("LIGHT_FORWARD_COUNT %i", R3D_SHADER_FORWARD_NUM_LIGHTS)};
+    char* vsCode = inject_defines_to_shader_code(SCENE_VERT, defines, ARRAY_SIZE(defines));
+    LOAD_SHADER(scene.forward, vsCode, FORWARD_FRAG);
+    RL_FREE(vsCode);
 
     SET_UNIFORM_BUFFER(scene.forward, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
@@ -541,15 +545,18 @@ void r3d_shader_load_scene_skybox(void)
 
 void r3d_shader_load_scene_depth(void)
 {
-    LOAD_SHADER(scene.depth, DEPTH_VERT, DEPTH_FRAG);
+    const char* defines[] = {"DEPTH"};
+    char* vsCode = inject_defines_to_shader_code(SCENE_VERT, defines, ARRAY_SIZE(defines));
+    LOAD_SHADER(scene.depth, vsCode, DEPTH_FRAG);
+    RL_FREE(vsCode);
 
     GET_LOCATION(scene.depth, uTexBoneMatrices);
     GET_LOCATION(scene.depth, uMatInvView);
     GET_LOCATION(scene.depth, uMatModel);
     GET_LOCATION(scene.depth, uMatVP);
+    GET_LOCATION(scene.depth, uAlbedoColor);
     GET_LOCATION(scene.depth, uTexCoordOffset);
     GET_LOCATION(scene.depth, uTexCoordScale);
-    GET_LOCATION(scene.depth, uAlpha);
     GET_LOCATION(scene.depth, uInstancing);
     GET_LOCATION(scene.depth, uSkinning);
     GET_LOCATION(scene.depth, uBillboard);
@@ -564,15 +571,18 @@ void r3d_shader_load_scene_depth(void)
 
 void r3d_shader_load_scene_depth_cube(void)
 {
-    LOAD_SHADER(scene.depthCube, DEPTH_CUBE_VERT, DEPTH_CUBE_FRAG);
+    const char* defines[] = {"DEPTH_CUBE"};
+    char* vsCode = inject_defines_to_shader_code(SCENE_VERT, defines, ARRAY_SIZE(defines));
+    LOAD_SHADER(scene.depthCube, vsCode, DEPTH_CUBE_FRAG);
+    RL_FREE(vsCode);
 
     GET_LOCATION(scene.depthCube, uTexBoneMatrices);
     GET_LOCATION(scene.depthCube, uMatInvView);
     GET_LOCATION(scene.depthCube, uMatModel);
     GET_LOCATION(scene.depthCube, uMatVP);
+    GET_LOCATION(scene.depthCube, uAlbedoColor);
     GET_LOCATION(scene.depthCube, uTexCoordOffset);
     GET_LOCATION(scene.depthCube, uTexCoordScale);
-    GET_LOCATION(scene.depthCube, uAlpha);
     GET_LOCATION(scene.depthCube, uInstancing);
     GET_LOCATION(scene.depthCube, uSkinning);
     GET_LOCATION(scene.depthCube, uBillboard);
@@ -589,7 +599,10 @@ void r3d_shader_load_scene_depth_cube(void)
 
 void r3d_shader_load_scene_decal(void)
 {
-    LOAD_SHADER(scene.decal, DECAL_VERT, DECAL_FRAG);
+    const char* defines[] = {"DECAL"};
+    char* vsCode = inject_defines_to_shader_code(SCENE_VERT, defines, ARRAY_SIZE(defines));
+    LOAD_SHADER(scene.decal, vsCode, DECAL_FRAG);
+    RL_FREE(vsCode);
 
     SET_UNIFORM_BUFFER(scene.decal, ViewBlock, R3D_SHADER_UBO_VIEW_SLOT);
 
@@ -624,7 +637,7 @@ void r3d_shader_load_scene_decal(void)
 void r3d_shader_load_deferred_ambient_ibl(void)
 {
     const char* defines[] = {"IBL"};
-    char* fsCode = inject_defines_to_shader_code(AMBIENT_FRAG, defines, 1);
+    char* fsCode = inject_defines_to_shader_code(AMBIENT_FRAG, defines, ARRAY_SIZE(defines));
     LOAD_SHADER(deferred.ambientIbl, SCREEN_VERT, fsCode);
     RL_FREE(fsCode);
 
