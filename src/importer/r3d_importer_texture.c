@@ -187,6 +187,25 @@ void get_gl_texture_format(int format, bool srgb, GLenum* glInternalFormat, GLen
         switch (*glInternalFormat) {
         case GL_RGBA8: *glInternalFormat = GL_SRGB8_ALPHA8; break;
         case GL_RGB8: *glInternalFormat = GL_SRGB8; break;
+        // NOT SUPPORTED FOR NOW
+        case GL_COMPRESSED_RGBA_BPTC_UNORM: *glInternalFormat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM; break;
+        case GL_COMPRESSED_RGBA_ASTC_4x4_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_5x4_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_5x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_6x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_6x6_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_8x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_8x6_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_8x8_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x5_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x6_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x8_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_10x10_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_12x10_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR; break;
+        case GL_COMPRESSED_RGBA_ASTC_12x12_KHR: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR; break;
+        case GL_COMPRESSED_RGB8_ETC2: *glInternalFormat = GL_COMPRESSED_SRGB8_ETC2; break;
+        case GL_COMPRESSED_RGBA8_ETC2_EAC: *glInternalFormat = GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC; break;
+        case GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2: *glInternalFormat = GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2; break;
         }
     }
 }
