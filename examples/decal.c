@@ -8,7 +8,7 @@
 #define MAXDECALS 256
 
 static bool RayCubeIntersection(Ray ray, Vector3 cubePos, Vector3 cubeSize, Vector3* intersectionPoint, Vector3* normal);
-static void DrawTransformedCube(Matrix t, Color c);
+static Matrix MatrixTransform(Vector3 position, Quaternion rotation, Vector3 scale);
 
 int main(void)
 {
@@ -60,7 +60,7 @@ int main(void)
     // Decal state
     Vector3 decalScale = {3.0f, 3.0f, 3.0f};
     Matrix targetDecalTransform = MatrixIdentity();
-    Matrix decalTransforms[MAXDECALS];
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(MAXDECALS, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE);
     int decalCount = 0;
     int decalIndex = 0;
     Vector3 targetPosition = {0};
@@ -80,23 +80,20 @@ int main(void)
             targetPosition = hitPoint;
         }
 
-        // Compute decal transform
-        Matrix translation = MatrixTranslate(targetPosition.x, targetPosition.y, targetPosition.z);
-        Matrix scaling = MatrixScale(decalScale.x, decalScale.y, decalScale.z);
-        Matrix rotation = MatrixIdentity();
-
-        if (hitNormal.x == -1.0f) rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 90.0f * DEG2RAD });
-        else if (hitNormal.x == 1.0f) rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, -90.0f * DEG2RAD });
-        else if (hitNormal.y == -1.0f) rotation = MatrixRotateY(180.0f * DEG2RAD);
-        else if (hitNormal.y == 1.0f) rotation = MatrixRotateZ(180.0f * DEG2RAD);
-        else if (hitNormal.z == -1.0f) rotation = MatrixRotateX(90.0f * DEG2RAD);
-        else if (hitNormal.z == 1.0f) rotation = MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 0 });
-
-        targetDecalTransform = MatrixMultiply(MatrixMultiply(scaling, rotation), translation);
+        // Compute decal rotation
+        Quaternion decalRotation = QuaternionIdentity();
+        if (hitNormal.x == -1.0f) decalRotation = QuaternionFromMatrix(MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 90.0f * DEG2RAD }));
+        else if (hitNormal.x == 1.0f) decalRotation = QuaternionFromMatrix(MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, -90.0f * DEG2RAD }));
+        else if (hitNormal.y == -1.0f) decalRotation = QuaternionFromMatrix(MatrixRotateY(180.0f * DEG2RAD));
+        else if (hitNormal.y == 1.0f) decalRotation = QuaternionFromMatrix(MatrixRotateZ(180.0f * DEG2RAD));
+        else if (hitNormal.z == -1.0f) decalRotation = QuaternionFromMatrix(MatrixRotateX(90.0f * DEG2RAD));
+        else if (hitNormal.z == 1.0f) decalRotation = QuaternionFromMatrix(MatrixRotateXYZ((Vector3) { -90.0f * DEG2RAD, 180.0f * DEG2RAD, 0 }));
 
         // Apply decal on mouse click
         if (IsMouseButtonPressed(0)) {
-            decalTransforms[decalIndex] = targetDecalTransform;
+            R3D_UploadInstances(instances, R3D_INSTANCE_POSITION, decalIndex, 1, &targetPosition);
+            R3D_UploadInstances(instances, R3D_INSTANCE_ROTATION, decalIndex, 1, &decalRotation);
+            R3D_UploadInstances(instances, R3D_INSTANCE_SCALE, decalIndex, 1, &decalScale);
             decalIndex = (decalIndex + 1) % MAXDECALS;
             if (decalCount < MAXDECALS) decalCount++;
         }
@@ -112,15 +109,15 @@ int main(void)
             }
 
             if (decalCount > 0) {
-                R3D_DrawDecalInstanced(&decal, decalTransforms, decalCount);
+                R3D_DrawDecalInstanced(&decal, &instances, decalCount);
             }
 
-            R3D_DrawDecal(&decal, targetDecalTransform);
+            R3D_DrawDecal(&decal, MatrixTransform(targetPosition, decalRotation, decalScale));
 
         R3D_End();
 
         BeginMode3D(camera);
-        DrawTransformedCube(targetDecalTransform, WHITE);
+        DrawCubeWires(targetPosition, decalScale.x, decalScale.y, decalScale.z, WHITE);
         EndMode3D();
 
         DrawText("LEFT CLICK TO APPLY DECAL", 10, 10, 20, LIME);
@@ -190,28 +187,22 @@ bool RayCubeIntersection(Ray ray, Vector3 cubePosition, Vector3 cubeSize, Vector
     return true;
 }
 
-void DrawTransformedCube(Matrix transform, Color color)
+static Matrix MatrixTransform(Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    static Vector3 vertices[8] = {
-        { -0.5f, -0.5f, -0.5f },
-        {  0.5f, -0.5f, -0.5f },
-        {  0.5f,  0.5f, -0.5f },
-        { -0.5f,  0.5f, -0.5f },
-        { -0.5f, -0.5f,  0.5f },
-        {  0.5f, -0.5f,  0.5f },
-        {  0.5f,  0.5f,  0.5f },
-        { -0.5f,  0.5f,  0.5f },
+    float xx = rotation.x * rotation.x;
+    float yy = rotation.y * rotation.y;
+    float zz = rotation.z * rotation.z;
+    float xy = rotation.x * rotation.y;
+    float xz = rotation.x * rotation.z;
+    float yz = rotation.y * rotation.z;
+    float wx = rotation.w * rotation.x;
+    float wy = rotation.w * rotation.y;
+    float wz = rotation.w * rotation.z;
+
+    return (Matrix) {
+        scale.x * (1.0 - 2.0 * (yy + zz)), scale.y * 2.0 * (xy - wz),         scale.z * 2.0 * (xz + wy),         position.x,
+        scale.x * 2.0 * (xy + wz),         scale.y * (1.0 - 2.0 * (xx + zz)), scale.z * 2.0 * (yz - wx),         position.y,
+        scale.x * 2.0 * (xz - wy),         scale.y * 2.0 * (yz + wx),         scale.z * (1.0 - 2.0 * (xx + yy)), position.z,
+        0.0,                               0.0,                               0.0,                               1.0
     };
-
-    Vector3 transformedVertices[8];
-
-    for (int i = 0; i < 8; i++) {
-        transformedVertices[i] = Vector3Transform(vertices[i], transform);
-    }
-
-    for (int i = 0; i < 4; i++) {
-        DrawLine3D(transformedVertices[i], transformedVertices[(i + 1) % 4], color);           // Bottom
-        DrawLine3D(transformedVertices[i + 4], transformedVertices[(i + 1) % 4 + 4], color);   // Top
-        DrawLine3D(transformedVertices[i], transformedVertices[i + 4], color);                 // Sides
-    }
 }

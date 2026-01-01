@@ -10,6 +10,7 @@
 #define R3D_MODULE_DRAW_H
 
 #include <r3d/r3d_animation.h>
+#include <r3d/r3d_instance.h>
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_skeleton.h>
 #include <r3d/r3d_mesh.h>
@@ -71,11 +72,8 @@ typedef struct {
     const R3D_AnimationPlayer* player;  //< Animation player (may be NULL)
 
     struct {
-        const Matrix* transforms;       //< Per-instance model matrices
-        const Color* colors;            //< Optional per-instance colors
+        R3D_InstanceBuffer buffer;      //< Instance buffer to use
         BoundingBox allAabb;            //< World-space AABB covering all instances
-        int transStride;                //< Byte stride between instance transforms (0 = sizeof(Matrix))
-        int colStride;                  //< Byte stride between instance colors (0 = sizeof(Color))
         int count;                      //< Number of instances
     } instanced;
 
@@ -234,7 +232,7 @@ void r3d_draw(const r3d_draw_call_t* call);
  * Issue an instanced draw call.
  * Instance data is uploaded and bound internally.
  */
-void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int locInstanceColor);
+void r3d_draw_instanced(const r3d_draw_call_t* call);
 
 // ----------------------------------------
 // INLINE QUERIES
@@ -247,7 +245,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int l
  */
 static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
 {
-    return group->instanced.transforms && group->instanced.count > 0;
+    return (group->instanced.buffer.capacity > 0) && (group->instanced.count > 0);
 }
 
 /*
@@ -257,8 +255,8 @@ static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
 static inline bool r3d_draw_has_deferred(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numCalls > 0;
+        (R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numCalls > 0);
 }
 
 /*
@@ -268,8 +266,8 @@ static inline bool r3d_draw_has_deferred(void)
 static inline bool r3d_draw_has_prepass(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numCalls > 0;
+        (R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numCalls > 0);
 }
 
 /*
@@ -279,8 +277,8 @@ static inline bool r3d_draw_has_prepass(void)
 static inline bool r3d_draw_has_forward(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numCalls > 0;
+        (R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numCalls > 0);
 }
 
 /*
@@ -290,8 +288,8 @@ static inline bool r3d_draw_has_forward(void)
 static inline bool r3d_draw_has_decal(void)
 {
     return
-        R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numCalls > 0 ||
-        R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numCalls > 0;
+        (R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numCalls > 0);
 }
 
 #endif // R3D_MODULE_DRAW_H

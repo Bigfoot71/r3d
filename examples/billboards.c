@@ -1,3 +1,5 @@
+#include "r3d/r3d_instance.h"
+#include "raylib.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -32,18 +34,20 @@ int main(void)
     matBillboard.albedo.texture = LoadTexture(RESOURCES_PATH "tree.png");
 
     // Create transforms for instanced billboards
-    Matrix transformsBillboards[64];
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(64, R3D_INSTANCE_POSITION | R3D_INSTANCE_SCALE);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Vector3* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE);
     for (int i = 0; i < 64; i++)
     {
         float scaleFactor = GetRandomValue(25, 50) / 10.0f;
-        Matrix scale = MatrixScale(scaleFactor, scaleFactor, 1.0f);
-        Matrix translate = MatrixTranslate(
+        scales[i] = (Vector3) {scaleFactor, scaleFactor, 1.0f};
+        positions[i] = (Vector3) {
             (float)GetRandomValue(-100, 100),
             scaleFactor * 0.5f,
             (float)GetRandomValue(-100, 100)
-        );
-        transformsBillboards[i] = MatrixMultiply(scale, translate);
+        };
     }
+    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION | R3D_INSTANCE_SCALE);
 
     // Setup directional light with shadows
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
@@ -74,7 +78,7 @@ int main(void)
 
             R3D_Begin(camera);
                 R3D_DrawMesh(&meshGround, &matGround, MatrixIdentity());
-                R3D_DrawMeshInstanced(&meshBillboard, &matBillboard, transformsBillboards, 64);
+                R3D_DrawMeshInstanced(&meshBillboard, &matBillboard, &instances, 64);
             R3D_End();
 
         EndDrawing();

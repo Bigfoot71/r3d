@@ -1,3 +1,4 @@
+#include "r3d/r3d_instance.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -20,30 +21,35 @@ int main(void)
     R3D_Material material = R3D_GetDefaultMaterial();
 
     // Generate random transforms and colors for instances
-    Matrix transforms[INSTANCE_COUNT];
-    Color colors[INSTANCE_COUNT];
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE | R3D_INSTANCE_COLOR);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Quaternion* rotations = R3D_MapInstances(instances, R3D_INSTANCE_ROTATION);
+    Vector3* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE);
+    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR);
 
     for (int i = 0; i < INSTANCE_COUNT; i++)
     {
-        Matrix translate = MatrixTranslate(
+        positions[i] = (Vector3) {
             (float)GetRandomValue(-50000, 50000) / 1000,
             (float)GetRandomValue(-50000, 50000) / 1000,
             (float)GetRandomValue(-50000, 50000) / 1000
-        );
-        Matrix rotate = MatrixRotateXYZ((Vector3){
+        };
+        rotations[i] = QuaternionFromEuler(
             (float)GetRandomValue(-314000, 314000) / 100000,
             (float)GetRandomValue(-314000, 314000) / 100000,
             (float)GetRandomValue(-314000, 314000) / 100000
-        });
-        Matrix scale = MatrixScale(
+        );
+        scales[i] = (Vector3) {
             (float)GetRandomValue(100, 2000) / 1000,
             (float)GetRandomValue(100, 2000) / 1000,
             (float)GetRandomValue(100, 2000) / 1000
+        };
+        colors[i] = ColorFromHSV(
+            (float)GetRandomValue(0, 360000) / 1000, 1.0f, 1.0f
         );
-
-        transforms[i] = MatrixMultiply(MatrixMultiply(scale, rotate), translate);
-        colors[i] = ColorFromHSV((float)GetRandomValue(0, 360000) / 1000, 1.0f, 1.0f);
     }
+
+    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE | R3D_INSTANCE_COLOR);
 
     // Setup directional light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
@@ -70,7 +76,7 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMeshInstancedEx(&mesh, &material, transforms, colors, INSTANCE_COUNT);
+                R3D_DrawMeshInstanced(&mesh, &material, &instances, INSTANCE_COUNT);
             R3D_End();
 
             DrawFPS(10, 10);

@@ -9,6 +9,7 @@
 #ifndef R3D_MODULE_PRIMTIVE_H
 #define R3D_MODULE_PRIMTIVE_H
 
+#include <r3d/r3d_instance.h>
 #include <raylib.h>
 #include <stddef.h>
 
@@ -64,8 +65,6 @@ void r3d_primitive_draw(r3d_primitive_t primitive);
  * Bind, draws the primitive, and unbind the VAO of the primitive.
  * Handles the binding of the instance buffer, just like `r3d_draw_instanced()`
  */
-void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transforms, size_t transStride, 
-                                  const void* colors, size_t colStride, size_t instanceCount,
-                                  int locInstanceModel, int locInstanceColor);
+void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const R3D_InstanceBuffer* instances, int count);
 
 #endif // R3D_MODULE_PRIMTIVE_H

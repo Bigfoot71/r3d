@@ -1,3 +1,4 @@
+#include "r3d/r3d_instance.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 #include <stdlib.h>
@@ -34,19 +35,21 @@ int main(void)
     R3D_Material matDefault = R3D_GetDefaultMaterial();
 
     // Generate instance matrices and colors
-    Matrix instances[INSTANCE_COUNT];
-    Color instanceColors[INSTANCE_COUNT];
     float spacing = 0.5f;
     float offsetX = (X_INSTANCES * spacing) / 2.0f;
     float offsetZ = (Y_INSTANCES * spacing) / 2.0f;
     int idx = 0;
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION | R3D_INSTANCE_COLOR);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR);
     for (int x = 0; x < X_INSTANCES; x++) {
         for (int y = 0; y < Y_INSTANCES; y++) {
-            instances[idx] = MatrixTranslate(x * spacing - offsetX, 0, y * spacing - offsetZ);
-            instanceColors[idx] = (Color){rand()%256, rand()%256, rand()%256, 255};
+            positions[idx] = (Vector3) {x * spacing - offsetX, 0, y * spacing - offsetZ};
+            colors[idx] = (Color){rand()%256, rand()%256, rand()%256, 255};
             idx++;
         }
     }
+    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION | R3D_INSTANCE_COLOR);
 
     // Setup camera
     Camera3D camDefault = {
@@ -89,7 +92,7 @@ int main(void)
 
             // Render scene
             R3D_Begin(camDefault);
-                R3D_DrawMeshInstancedEx(&meshSphere, &matDefault, instances, instanceColors, INSTANCE_COUNT);
+                R3D_DrawMeshInstanced(&meshSphere, &matDefault, &instances, INSTANCE_COUNT);
             R3D_End();
 
             // Display DoF values
@@ -112,8 +115,10 @@ int main(void)
     }
 
     // Cleanup
+    R3D_UnloadInstanceBuffer(instances);
     R3D_UnloadMesh(&meshSphere);
     R3D_Close();
+
     CloseWindow();
 
     return 0;

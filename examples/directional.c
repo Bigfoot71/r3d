@@ -1,3 +1,4 @@
+#include "r3d/r3d_instance.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 #include <stdlib.h>
@@ -18,14 +19,14 @@ int main(void)
 
     // Create transforms for instanced spheres
     int count = 100;
-    Matrix* transforms = RL_MALLOC(count * count * sizeof(Matrix));
-    if (!transforms) exit(-1);
-
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(count, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
     for (int x = -50; x < 50; x++) {
         for (int z = -50; z < 50; z++) {
-            transforms[(z+50)*count + (x+50)] = MatrixTranslate((float)x*2, 0, (float)z*2);
+            positions[(z+50)*count + (x+50)] = (Vector3) {(float)x*2, 0, (float)z*2};
         }
     }
+    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION);
 
     // Setup environment
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
@@ -60,7 +61,7 @@ int main(void)
 
             R3D_Begin(camera);
                 R3D_DrawMesh(&plane, &material, MatrixTranslate(0, -0.5f, 0));
-                R3D_DrawMeshInstanced(&sphere, &material, transforms, count*count);
+                R3D_DrawMeshInstanced(&sphere, &material, &instances, count);
             R3D_End();
 
             DrawFPS(10, 10);
@@ -69,10 +70,10 @@ int main(void)
     }
 
     // Cleanup
-    RL_FREE(transforms);
-    R3D_UnloadMesh(&plane);
-    R3D_UnloadMesh(&sphere);
+    R3D_UnloadInstanceBuffer(instances);
     R3D_UnloadMaterial(&material);
+    R3D_UnloadMesh(&sphere);
+    R3D_UnloadMesh(&plane);
     R3D_Close();
 
     CloseWindow();

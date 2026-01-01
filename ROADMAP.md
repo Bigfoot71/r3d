@@ -6,7 +6,7 @@
   Provide a parameter (enabled by default) for loading textures,
   albedo being the most important, in sRGB.
 
-* [ ] Adding the `R3D_InstanceBuffer` type to manage instances.
+* [x] **Adding the `R3D_InstanceBuffer` type to manage instances.**
   See: https://github.com/Bigfoot71/r3d/discussions/121
 
 * [x] **Merge Scene Vertex Shaders**
