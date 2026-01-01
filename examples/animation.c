@@ -1,3 +1,4 @@
+#include "r3d/r3d_lighting.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -18,11 +19,11 @@ int main(void)
     R3D_ENVIRONMENT_SET(ssao.enabled, true);
     R3D_ENVIRONMENT_SET(bloom.intensity, 0.03f);
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_ADDITIVE);
-    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_AGX);
 
     // Set background and ambient colors
-    R3D_ENVIRONMENT_SET(background.color, BLACK);
-    R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
+    R3D_ENVIRONMENT_SET(background.color, (Color){12, 10, 15, 255});
+    R3D_ENVIRONMENT_SET(ambient.color, (Color){12, 10, 15, 255});
 
     // Create ground plane
     R3D_Mesh plane = R3D_GenMeshPlane(32, 32, 1, 1);
@@ -61,11 +62,13 @@ int main(void)
     lights[0] = R3D_CreateLight(R3D_LIGHT_OMNI);
     R3D_SetLightPosition(lights[0], (Vector3){-10.0f, 25.0f, 0.0f});
     R3D_EnableShadow(lights[0], 4096);
+    R3D_SetLightEnergy(lights[0], 1.25f);
     R3D_SetLightActive(lights[0], true);
 
     lights[1] = R3D_CreateLight(R3D_LIGHT_OMNI);
     R3D_SetLightPosition(lights[1], (Vector3){10.0f, 25.0f, 0.0f});
     R3D_EnableShadow(lights[1], 4096);
+    R3D_SetLightEnergy(lights[1], 1.25f);
     R3D_SetLightActive(lights[1], true);
 
     // Setup camera

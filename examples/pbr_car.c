@@ -1,3 +1,4 @@
+#include "r3d/r3d_environment.h"
 #include "r3d/r3d_lighting.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
@@ -26,7 +27,7 @@ int main(void)
     R3D_ENVIRONMENT_SET(ssao.radius, 2.0f);
     R3D_ENVIRONMENT_SET(bloom.intensity, 0.1f);
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
-    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
 
     // Load model
     R3D_Model model = R3D_LoadModel(RESOURCES_PATH "pbr/car.glb");
@@ -48,6 +49,7 @@ int main(void)
     R3D_SetShadowDepthBias(light, 0.003f);
     R3D_EnableShadow(light, 4096);
     R3D_SetLightActive(light, true);
+    R3D_SetLightEnergy(light, 2.0f);
     R3D_SetLightRange(light, 10);
 
     // Setup camera

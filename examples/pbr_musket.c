@@ -1,3 +1,4 @@
+#include "r3d/r3d_environment.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -15,12 +16,11 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), R3D_FLAG_FXAA);
 
     // Tonemapping
-    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
     R3D_ENVIRONMENT_SET(tonemap.exposure, 0.75f);
-    R3D_ENVIRONMENT_SET(tonemap.white, 1.25f);
 
     // Set texture filter for mipmaps
-    R3D_SetTextureFilter(TEXTURE_FILTER_TRILINEAR);
+    R3D_SetTextureFilter(TEXTURE_FILTER_ANISOTROPIC_4X);
 
     // Load model
     R3D_Model model = R3D_LoadModel(RESOURCES_PATH "pbr/musket.glb");

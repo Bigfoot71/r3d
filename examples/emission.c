@@ -18,10 +18,7 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
     // Configure post-processing (Tonemap + Bloom)
-    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_ACES);
-    R3D_ENVIRONMENT_SET(tonemap.exposure, 0.5f);
-    R3D_ENVIRONMENT_SET(tonemap.white, 4.0f);
-
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_AGX);
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_ADDITIVE);
     R3D_ENVIRONMENT_SET(bloom.softThreshold, 0.2f);
     R3D_ENVIRONMENT_SET(bloom.threshold, 0.6f);
