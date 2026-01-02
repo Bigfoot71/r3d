@@ -474,8 +474,6 @@ void r3d_draw(const r3d_draw_call_t* call)
     else {
         glDrawElements(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL);
     }
-
-    glBindVertexArray(0);
 }
 
 void r3d_draw_instanced(const r3d_draw_call_t* call)
@@ -529,6 +527,4 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     else {
         glDrawElementsInstanced(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL, group->instanced.count);
     }
-
-    glBindVertexArray(0);
 }
