@@ -1,6 +1,5 @@
 #include <r3d/r3d.h>
 #include <raymath.h>
-#include <stdlib.h>
 
 #define GRID_SIZE 100
 #define LIGHT_GRID 10
@@ -23,14 +22,14 @@ int main(void)
     R3D_Material material = R3D_GetDefaultMaterial();
 
     // Allocate transforms for all spheres
-    Matrix* transforms = (Matrix*)RL_MALLOC(GRID_SIZE * GRID_SIZE * sizeof(Matrix));
-    if (!transforms) exit(-1);
-
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(GRID_SIZE * GRID_SIZE, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
     for (int x = -50; x < 50; x++) {
         for (int z = -50; z < 50; z++) {
-            transforms[(z+50)*GRID_SIZE + (x+50)] = MatrixTranslate((float)x, 0, (float)z);
+            positions[(z+50)*GRID_SIZE + (x+50)] = (Vector3) {x, 0, z};
         }
     }
+    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION);
 
     // Create lights
     R3D_Light lights[LIGHT_GRID * LIGHT_GRID];
@@ -64,7 +63,7 @@ int main(void)
         // Draw scene
         R3D_Begin(camera);
             R3D_DrawMesh(&plane, &material, MatrixTranslate(0, -0.5f, 0));
-            R3D_DrawMeshInstanced(&sphere, &material, transforms, GRID_SIZE*GRID_SIZE);
+            R3D_DrawMeshInstanced(&sphere, &material, &instances, GRID_SIZE*GRID_SIZE);
         R3D_End();
 
         // Optionally show lights shapes
@@ -82,9 +81,9 @@ int main(void)
     }
 
     // Cleanup
-    RL_FREE(transforms);
-    R3D_UnloadMesh(&plane);
+    R3D_UnloadInstanceBuffer(instances);
     R3D_UnloadMesh(&sphere);
+    R3D_UnloadMesh(&plane);
     R3D_Close();
 
     CloseWindow();

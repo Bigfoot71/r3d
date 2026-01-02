@@ -1,4 +1,3 @@
-#include "r3d/r3d_lighting.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -44,12 +43,14 @@ int main(void)
     R3D_Model dancer = R3D_LoadModel(RESOURCES_PATH "dancer.glb");
 
     // Create instance matrices
-    Matrix dancerInstances[4];
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(4, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
     for (int z = 0; z < 2; z++) {
         for (int x = 0; x < 2; x++) {
-            dancerInstances[z*2 + x] = MatrixTranslate((float)x - 0.5f, 0, (float)z - 0.5f);
+            positions[z*2 + x] = (Vector3) {(float)x - 0.5f, 0, (float)z - 0.5f};
         }
     }
+    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION);
 
     // Load animations
     R3D_AnimationLib dancerAnims = R3D_LoadAnimationLib(RESOURCES_PATH "dancer.glb");
@@ -100,7 +101,7 @@ int main(void)
             R3D_Begin(camera);
                 R3D_DrawMesh(&plane, &planeMat, MatrixIdentity());
                 R3D_DrawModel(&dancer, (Vector3){0, 0, 1.5f}, 1.0f);
-                R3D_DrawModelInstanced(&dancer, dancerInstances, 4);
+                R3D_DrawModelInstanced(&dancer, &instances, 4);
             R3D_End();
 
             DrawText("Model made by zhuoyi0904", 10, GetScreenHeight() - 26, 16, LIME);

@@ -32,20 +32,45 @@ static struct {
 
 static void setup_vertex_attribs(void)
 {
+    // position (vec3)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
-    
+
+    // texcoord (vec2)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
-    
+
+    // normal (vec3)
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
-    
+
+    // color (vec4)
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
-    
+
+    // tangent (vec4)
     glEnableVertexAttribArray(4);
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
+
+    // boneIds (ivec4) / weights (vec4) - (disabled)
+    glVertexAttrib4iv(5, (int[4]){0, 0, 0, 0});
+    glVertexAttrib4f(6, 0.0f, 0.0f, 0.0f, 0.0f);
+
+    // instance position (vec3) (disabled)
+    glVertexAttribDivisor(10, 1);
+    glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
+
+    // instance rotation (vec4) (disabled)
+    glVertexAttribDivisor(11, 1);
+    glVertexAttrib4f(11, 0.0f, 0.0f, 0.0f, 1.0f);
+
+    // instance scale (vec3) (disabled)
+    glVertexAttribDivisor(12, 1);
+    glVertexAttrib3f(12, 1.0f, 1.0f, 1.0f);
+
+    // instance color (vec4) (disabled)
+    glVertexAttribDivisor(13, 1);
+    glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 static void load_mesh(primitive_buffer_t* buf, const R3D_Vertex* verts, int vertCount, const GLubyte* indices, int idxCount)
@@ -180,72 +205,54 @@ void r3d_primitive_draw(r3d_primitive_t primitive)
     }
 }
 
-void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const void* transforms, size_t transStride, 
-                                   const void* colors, size_t colStride, size_t instanceCount,
-                                   int locInstanceModel, int locInstanceColor)
+void r3d_primitive_draw_instanced(r3d_primitive_t primitive, const R3D_InstanceBuffer* instances, int count)
 {
-    // NOTE: All this mess here will be reviewed with the instance buffers
-
     primitive_buffer_t* buf = &R3D_MOD_PRIMITIVE.buffers[primitive];
 
     // NOTE: The loader leaves the vao bound
     if (buf->vao == 0) LOADERS[primitive](buf);
     else glBindVertexArray(buf->vao);
 
-    unsigned int vboTransforms = 0;
-    unsigned int vboColors = 0;
-
-    // Enable the attribute for the transformation matrix (decomposed into 4 vec4 vectors)
-    if (locInstanceModel >= 0 && transforms) {
-        size_t stride = (transStride == 0) ? sizeof(Matrix) : transStride;
-
-        // Create and bind VBO for transforms
-        glGenBuffers(1, &vboTransforms);
-        glBindBuffer(GL_ARRAY_BUFFER, vboTransforms);
-        glBufferData(GL_ARRAY_BUFFER, instanceCount * stride, transforms, GL_DYNAMIC_DRAW);
-
-        for (int i = 0; i < 4; i++) {
-            glEnableVertexAttribArray(locInstanceModel + i);
-            glVertexAttribPointer(locInstanceModel + i, 4, GL_FLOAT, GL_FALSE, (int)stride, (void*)(i * sizeof(Vector4)));
-            glVertexAttribDivisor(locInstanceModel + i, 1);
-        }
-    }
-
-    // Handle per-instance colors if available
-    if (locInstanceColor >= 0 && colors) {
-        size_t stride = (colStride == 0) ? sizeof(Color) : colStride;
-
-        // Create and bind VBO for colors
-        glGenBuffers(1, &vboColors);
-        glBindBuffer(GL_ARRAY_BUFFER, vboColors);
-        glBufferData(GL_ARRAY_BUFFER, instanceCount * stride, colors, GL_DYNAMIC_DRAW);
-
-        glEnableVertexAttribArray(locInstanceColor);
-        glVertexAttribPointer(locInstanceColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, (int)stride, (void*)0);
-        glVertexAttribDivisor(locInstanceColor, 1);
-    }
-
-    // Draw the geometry (instanced)
-    if (buf->indexCount > 0) {
-        glDrawElementsInstanced(GL_TRIANGLES, buf->indexCount, GL_UNSIGNED_BYTE, 0, (int)instanceCount);
+    if (instances->flags & R3D_INSTANCE_POSITION) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[0]);
+        glEnableVertexAttribArray(10);
+        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
     }
     else {
-        glDrawArraysInstanced(GL_TRIANGLES, 0, 3, (int)instanceCount);
+        glDisableVertexAttribArray(10);
     }
 
-    // Clean up instanced data
-    if (vboTransforms > 0) {
-        for (int i = 0; i < 4; i++) {
-            glDisableVertexAttribArray(locInstanceModel + i);
-            glVertexAttribDivisor(locInstanceModel + i, 0);
-        }
-        glDeleteBuffers(1, &vboTransforms);
+    if (instances->flags & R3D_INSTANCE_ROTATION) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[1]);
+        glEnableVertexAttribArray(11);
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), 0);
     }
-    if (vboColors > 0) {
-        glDisableVertexAttribArray(locInstanceColor);
-        glVertexAttribDivisor(locInstanceColor, 0);
-        glDeleteBuffers(1, &vboColors);
+    else {
+        glDisableVertexAttribArray(11);
     }
 
-    glBindVertexArray(0);
+    if (instances->flags & R3D_INSTANCE_SCALE) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[2]);
+        glEnableVertexAttribArray(12);
+        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+    }
+    else {
+        glDisableVertexAttribArray(12);
+    }
+
+    if (instances->flags & R3D_INSTANCE_COLOR) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[3]);
+        glEnableVertexAttribArray(13);
+        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), 0);
+    }
+    else {
+        glDisableVertexAttribArray(13);
+    }
+
+    if (buf->indexCount > 0) {
+        glDrawElementsInstanced(GL_TRIANGLES, buf->indexCount, GL_UNSIGNED_BYTE, 0, count);
+    }
+    else {
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 3, count);
+    }
 }

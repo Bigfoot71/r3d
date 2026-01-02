@@ -467,79 +467,64 @@ void r3d_draw(const r3d_draw_call_t* call)
     GLenum primitive = get_opengl_primitive(call->mesh.primitiveType);
 
     glBindVertexArray(call->mesh.vao);
-    if (call->mesh.ebo == 0) glDrawArrays(primitive, 0, call->mesh.vertexCount);
-    else glDrawElements(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL);
-    glBindVertexArray(0);
+
+    if (call->mesh.ebo == 0) {
+        glDrawArrays(primitive, 0, call->mesh.vertexCount);
+    }
+    else {
+        glDrawElements(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL);
+    }
 }
 
-void r3d_draw_instanced(const r3d_draw_call_t* call, int locInstanceModel, int locInstanceColor)
+void r3d_draw_instanced(const r3d_draw_call_t* call)
 {
-    // NOTE: All this mess here will be reviewed with the instance buffers
+    GLenum primitive = get_opengl_primitive(call->mesh.primitiveType);
 
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const R3D_InstanceBuffer* instances = &group->instanced.buffer;
 
     glBindVertexArray(call->mesh.vao);
 
-    unsigned int vboTransforms = 0;
-    unsigned int vboColors = 0;
-
-    // Enable the attribute for the transformation matrix (decomposed into 4 vec4 vectors)
-    if (locInstanceModel >= 0 && group->instanced.transforms) {
-        size_t stride = (group->instanced.transStride == 0) ? sizeof(Matrix) : group->instanced.transStride;
-
-        // Create and bind VBO for transforms
-        glGenBuffers(1, &vboTransforms);
-        glBindBuffer(GL_ARRAY_BUFFER, vboTransforms);
-        glBufferData(GL_ARRAY_BUFFER, group->instanced.count * stride, group->instanced.transforms, GL_DYNAMIC_DRAW);
-
-        for (int i = 0; i < 4; i++) {
-            glEnableVertexAttribArray(locInstanceModel + i);
-            glVertexAttribPointer(locInstanceModel + i, 4, GL_FLOAT, GL_FALSE, (int)stride, (void*)(i * sizeof(Vector4)));
-            glVertexAttribDivisor(locInstanceModel + i, 1);
-        }
-    }
-
-    // Handle per-instance colors if available
-    if (locInstanceColor >= 0 && group->instanced.colors) {
-        size_t stride = (group->instanced.colStride == 0) ? sizeof(Color) : group->instanced.colStride;
-
-        // Create and bind VBO for colors
-        glGenBuffers(1, &vboColors);
-        glBindBuffer(GL_ARRAY_BUFFER, vboColors);
-        glBufferData(GL_ARRAY_BUFFER, group->instanced.count * stride, group->instanced.colors, GL_DYNAMIC_DRAW);
-
-        glEnableVertexAttribArray(locInstanceColor);
-        glVertexAttribPointer(locInstanceColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, (int)stride, (void*)0);
-        glVertexAttribDivisor(locInstanceColor, 1);
-    }
-
-    // Draw the geometry
-    if (call->mesh.ebo == 0) {
-        glDrawArraysInstanced(
-            get_opengl_primitive(call->mesh.primitiveType),
-            0, call->mesh.vertexCount, (int)group->instanced.count
-        );
+    if (instances->flags & R3D_INSTANCE_POSITION) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[0]);
+        glEnableVertexAttribArray(10);
+        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
     }
     else {
-        glDrawElementsInstanced(
-            get_opengl_primitive(call->mesh.primitiveType),
-            call->mesh.indexCount, GL_UNSIGNED_INT, NULL, (int)group->instanced.count
-        );
+        glDisableVertexAttribArray(10);
     }
 
-    // Clean up instanced data
-    if (vboTransforms > 0) {
-        for (int i = 0; i < 4; i++) {
-            glDisableVertexAttribArray(locInstanceModel + i);
-            glVertexAttribDivisor(locInstanceModel + i, 0);
-        }
-        glDeleteBuffers(1, &vboTransforms);
+    if (instances->flags & R3D_INSTANCE_ROTATION) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[1]);
+        glEnableVertexAttribArray(11);
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), 0);
     }
-    if (vboColors > 0) {
-        glDisableVertexAttribArray(locInstanceColor);
-        glVertexAttribDivisor(locInstanceColor, 0);
-        glDeleteBuffers(1, &vboColors);
+    else {
+        glDisableVertexAttribArray(11);
     }
 
-    glBindVertexArray(0);
+    if (instances->flags & R3D_INSTANCE_SCALE) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[2]);
+        glEnableVertexAttribArray(12);
+        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+    }
+    else {
+        glDisableVertexAttribArray(12);
+    }
+
+    if (instances->flags & R3D_INSTANCE_COLOR) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[3]);
+        glEnableVertexAttribArray(13);
+        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), 0);
+    }
+    else {
+        glDisableVertexAttribArray(13);
+    }
+
+    if (call->mesh.ebo == 0) {
+        glDrawArraysInstanced(primitive, 0, call->mesh.vertexCount, group->instanced.count);
+    }
+    else {
+        glDrawElementsInstanced(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL, group->instanced.count);
+    }
 }

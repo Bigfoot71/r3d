@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <rlgl.h>
 
-#include "../details/r3d_macros.h"
+#include "../details/r3d_helper.h"
 
 // ========================================
 // SHADER CODE INCLUDES

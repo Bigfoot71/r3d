@@ -15,7 +15,7 @@
 #include <glad.h>
 
 #include "./details/r3d_frustum.h"
-#include "./details/r3d_macros.h"
+#include "./details/r3d_helper.h"
 #include "./details/r3d_math.h"
 
 #include "./modules/r3d_primitive.h"
@@ -230,39 +230,23 @@ void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix tra
     r3d_draw_call_push(&drawCall, false);
 }
 
-void R3D_DrawMeshInstanced(const R3D_Mesh* mesh, const R3D_Material* material, const Matrix* instanceTransforms, int instanceCount)
+void R3D_DrawMeshInstanced(const R3D_Mesh* mesh, const R3D_Material* material, const R3D_InstanceBuffer* instances, int count)
 {
-    R3D_DrawMeshInstancedPro(mesh, material, NULL, MatrixIdentity(), instanceTransforms, 0, NULL, 0, instanceCount);
+    R3D_DrawMeshInstancedEx(mesh, material, (BoundingBox) {0}, MatrixIdentity(), instances, count);
 }
 
-void R3D_DrawMeshInstancedEx(const R3D_Mesh* mesh, const R3D_Material* material, const Matrix* instanceTransforms, const Color* instanceColors, int instanceCount)
-{
-    R3D_DrawMeshInstancedPro(mesh, material, NULL, MatrixIdentity(), instanceTransforms, 0, instanceColors, 0, instanceCount);
-}
-
-void R3D_DrawMeshInstancedPro(const R3D_Mesh* mesh, const R3D_Material* material,
-                              const BoundingBox* globalAabb, Matrix globalTransform,
-                              const Matrix* instanceTransforms, int transformsStride,
-                              const Color* instanceColors, int colorsStride,
-                              int instanceCount)
+void R3D_DrawMeshInstancedEx(const R3D_Mesh* mesh, const R3D_Material* material, BoundingBox globalAabb, Matrix globalTransform, const R3D_InstanceBuffer* instances, int count)
 {
     if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
-        return;
-    }
-
-    if (instanceCount == 0 || instanceTransforms == NULL) {
         return;
     }
 
     r3d_draw_group_t drawGroup = {0};
 
     drawGroup.transform = globalTransform;
-    drawGroup.instanced.allAabb = globalAabb ? *globalAabb : (BoundingBox) {0};
-    drawGroup.instanced.transforms = instanceTransforms;
-    drawGroup.instanced.transStride = transformsStride;
-    drawGroup.instanced.colStride = colorsStride;
-    drawGroup.instanced.colors = instanceColors;
-    drawGroup.instanced.count = instanceCount;
+    drawGroup.instanced.buffer = *instances;
+    drawGroup.instanced.allAabb = globalAabb;
+    drawGroup.instanced.count = CLAMP(count, 0, instances->capacity);
 
     r3d_draw_group_push(&drawGroup);
 
@@ -325,26 +309,13 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
     }
 }
 
-void R3D_DrawModelInstanced(const R3D_Model* model, const Matrix* instanceTransforms, int instanceCount)
+void R3D_DrawModelInstanced(const R3D_Model* model, const R3D_InstanceBuffer* instances, int count)
 {
-    R3D_DrawModelInstancedPro(model, NULL, MatrixIdentity(), instanceTransforms, 0, NULL, 0, instanceCount);
+    R3D_DrawModelInstancedEx(model, (BoundingBox) {0}, R3D_MATRIX_IDENTITY, instances, count);
 }
 
-void R3D_DrawModelInstancedEx(const R3D_Model* model, const Matrix* instanceTransforms, const Color* instanceColors, int instanceCount)
+void R3D_DrawModelInstancedEx(const R3D_Model* model, BoundingBox globalAabb, Matrix globalTransform, const R3D_InstanceBuffer* instances, int count)
 {
-    R3D_DrawModelInstancedPro(model, NULL, MatrixIdentity(), instanceTransforms, 0, instanceColors, 0, instanceCount);
-}
-
-void R3D_DrawModelInstancedPro(const R3D_Model* model,
-                               const BoundingBox* globalAabb, Matrix globalTransform,
-                               const Matrix* instanceTransforms, int transformsStride,
-                               const Color* instanceColors, int colorsStride,
-                               int instanceCount)
-{
-    if (model == NULL || instanceCount == 0 || instanceTransforms == NULL || model->meshCount == 0) {
-        return;
-    }
-
     r3d_draw_group_t drawGroup = {0};
 
     drawGroup.aabb = model->aabb;
@@ -352,12 +323,10 @@ void R3D_DrawModelInstancedPro(const R3D_Model* model,
     drawGroup.skeleton = model->skeleton;
     drawGroup.player = model->player;
 
-    drawGroup.instanced.allAabb = globalAabb ? *globalAabb : (BoundingBox) {0};
-    drawGroup.instanced.transforms = instanceTransforms;
-    drawGroup.instanced.transStride = transformsStride;
-    drawGroup.instanced.colStride = colorsStride;
-    drawGroup.instanced.colors = instanceColors;
-    drawGroup.instanced.count = instanceCount;
+    drawGroup.transform = globalTransform;
+    drawGroup.instanced.buffer = *instances;
+    drawGroup.instanced.allAabb = globalAabb;
+    drawGroup.instanced.count = CLAMP(count, 0, instances->capacity);
 
     r3d_draw_group_push(&drawGroup);
 
@@ -394,18 +363,15 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
     r3d_draw_call_push(&drawCall, true);
 }
 
-void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransforms, int instanceCount)
+void R3D_DrawDecalInstanced(const R3D_Decal* decal, const R3D_InstanceBuffer* instances, int count)
 {
     r3d_draw_group_t drawGroup = {0};
 
     drawGroup.transform = R3D_MATRIX_IDENTITY;
     // TODO: Move aabb evaluation to potential Pro version of this function
-    drawGroup.instanced.allAabb = (BoundingBox) {0};
-    drawGroup.instanced.transforms = instanceTransforms;
-    drawGroup.instanced.transStride = 0;
-    drawGroup.instanced.colStride = 0;
-    drawGroup.instanced.colors = NULL;
-    drawGroup.instanced.count = instanceCount;
+    drawGroup.instanced.buffer = *instances;
+    drawGroup.instanced.allAabb = (BoundingBox){0};
+    drawGroup.instanced.count = CLAMP(count, 0, instances->capacity);
 
     r3d_draw_group_push(&drawGroup);
 
@@ -417,25 +383,6 @@ void R3D_DrawDecalInstanced(const R3D_Decal* decal, const Matrix* instanceTransf
     drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
 
     r3d_draw_call_push(&drawCall, true);
-}
-
-void R3D_DrawParticleSystem(const R3D_ParticleSystem* system, const R3D_Mesh* mesh, const R3D_Material* material)
-{
-    R3D_DrawParticleSystemEx(system, mesh, material, MatrixIdentity());
-}
-
-void R3D_DrawParticleSystemEx(const R3D_ParticleSystem* system, const R3D_Mesh* mesh, const R3D_Material* material, Matrix transform)
-{
-    if (system == NULL || mesh == NULL) {
-        return;
-    }
-
-    R3D_DrawMeshInstancedPro(
-        mesh, material, &system->aabb, transform,
-        &system->particles->transform, sizeof(R3D_Particle),
-        &system->particles->color, sizeof(R3D_Particle),
-        system->count
-    );
 }
 
 // ========================================
@@ -498,7 +445,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 
     if (r3d_draw_has_instances(group)) {
         R3D_SHADER_SET_INT(scene.depth, uInstancing, true);
-        r3d_draw_instanced(call, 10, -1);
+        r3d_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.depth, uInstancing, false);
@@ -566,7 +513,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
 
     if (r3d_draw_has_instances(group)) {
         R3D_SHADER_SET_INT(scene.depthCube, uInstancing, true);
-        r3d_draw_instanced(call, 10, -1);
+        r3d_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.depthCube, uInstancing, false);
@@ -646,7 +593,7 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     if (r3d_draw_has_instances(group)) {
         R3D_SHADER_SET_INT(scene.geometry, uInstancing, true);
-        r3d_draw_instanced(call, 10, 14);
+        r3d_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.geometry, uInstancing, false);
@@ -716,12 +663,8 @@ void raster_decal(const r3d_draw_call_t* call)
         R3D_SHADER_SET_INT(scene.decal, uInstancing, true);
         r3d_primitive_draw_instanced(
             R3D_PRIMITIVE_CUBE,
-            group->instanced.transforms,
-            group->instanced.transStride,
-            group->instanced.colors,
-            group->instanced.colStride,
-            group->instanced.count,
-            10, 14
+            &group->instanced.buffer,
+            group->instanced.count
         );
     }
     else {
@@ -800,7 +743,7 @@ void raster_forward(const r3d_draw_call_t* call)
 
     if (r3d_draw_has_instances(group)) {
         R3D_SHADER_SET_INT(scene.forward, uInstancing, true);
-        r3d_draw_instanced(call, 10, 14);
+        r3d_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT(scene.forward, uInstancing, false);

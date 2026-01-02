@@ -8,10 +8,16 @@
 
 #version 330 core
 
+/* === Constants === */
+
+#define BILLBOARD_NONE   0
+#define BILLBOARD_FRONT  1
+#define BILLBOARD_Y_AXIS 2
+
 /* === Includes === */
 
 #include "../include/blocks/view.glsl"
-#include "../include/billboard.glsl"
+#include "../include/math.glsl"
 
 /* === Attributes === */
 
@@ -23,8 +29,10 @@ layout(location = 4) in vec4 aTangent;
 layout(location = 5) in ivec4 aBoneIDs;
 layout(location = 6) in vec4 aWeights;
 
-layout(location = 10) in mat4 iMatModel;
-layout(location = 14) in vec4 iColor;
+layout(location = 10) in vec3 iPosition;
+layout(location = 11) in vec4 iRotation;
+layout(location = 12) in vec3 iScale;
+layout(location = 13) in vec4 iColor;
 
 /* === Uniforms === */
 
@@ -66,7 +74,7 @@ smooth out vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
 #endif // FORWARD
 
 #if defined(DECAL)
-smooth out mat4 vFinalMatModel;
+smooth out mat4 vMatDecal;
 smooth out vec4 vClipPos;
 #endif // DECAL
 
@@ -92,45 +100,117 @@ mat4 SkinMatrix(ivec4 boneIDs, vec4 weights)
            weights.w * BoneMatrix(boneIDs.w);
 }
 
+#if defined(DECAL)
+mat4 MatrixTransform(vec3 translation, vec4 quat, vec3 scale)
+{
+    float xx = quat.x * quat.x;
+    float yy = quat.y * quat.y;
+    float zz = quat.z * quat.z;
+    float xy = quat.x * quat.y;
+    float xz = quat.x * quat.z;
+    float yz = quat.y * quat.z;
+    float wx = quat.w * quat.x;
+    float wy = quat.w * quat.y;
+    float wz = quat.w * quat.z;
+
+    return mat4(
+        scale.x * (1.0 - 2.0 * (yy + zz)), scale.x * 2.0 * (xy + wz),         scale.x * 2.0 * (xz - wy),         0.0,
+        scale.y * 2.0 * (xy - wz),         scale.y * (1.0 - 2.0 * (xx + zz)), scale.y * 2.0 * (yz + wx),         0.0,
+        scale.z * 2.0 * (xz + wy),         scale.z * 2.0 * (yz - wx),         scale.z * (1.0 - 2.0 * (xx + yy)), 0.0,
+        translation.x,                     translation.y,                     translation.z,                     1.0
+    );
+}
+#endif
+
+void BillboardFront(inout vec3 position, inout vec3 normal, inout vec3 tangent, vec3 center, mat4 invView)
+{
+    vec3 right = invView[0].xyz;
+    vec3 up = invView[1].xyz;
+    vec3 forward = invView[2].xyz;
+
+    vec3 localPos = position - center;
+    vec3 localNormal = normal;
+    vec3 localTangent = tangent;
+    
+    position = center + localPos.x*right + localPos.y*up + localPos.z*forward;
+    normal = localNormal.x*right + localNormal.y*up + localNormal.z*forward;
+    tangent = localTangent.x*right + localTangent.y*up + localTangent.z*forward;
+}
+
+void BillboardYAxis(inout vec3 position, inout vec3 normal, inout vec3 tangent, vec3 center, mat4 invView)
+{
+    vec3 cameraPos = vec3(invView[3]);
+    vec3 upVector = vec3(0, 1, 0);
+
+    vec3 look = normalize(cameraPos - center);
+    vec3 right = normalize(cross(upVector, look));
+    vec3 front = normalize(cross(right, upVector));
+
+    vec3 localPos = position - center;
+    vec3 localNormal = normal;
+    vec3 localTangent = tangent;
+
+    position = center + localPos.x*right + localPos.y*upVector + localPos.z*front;
+    normal = localNormal.x*right + localNormal.y*upVector + localNormal.z*front;
+    tangent = localTangent.x*right + localTangent.y*upVector + localTangent.z*front;
+}
+
 /* === Main program === */
 
 void main()
 {
-    mat4 matModel = uMatModel;
-    mat3 matNormal = mat3(uMatNormal);
+#if defined(DECAL)
+    mat4 finalMatModel = uMatModel;
+#endif // DECAL
+
+    vec3 billboardCenter = vec3(uMatModel[3]);
+    vec3 finalPosition = vec3(uMatModel * vec4(aPosition, 1.0));
+    vec3 finalNormal = mat3(uMatNormal) * aNormal;
+    vec3 finalTangent = mat3(uMatNormal) * aTangent.xyz;
 
     if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
-        matModel = matModel * sMatModel;
-        matNormal = matNormal * mat3(transpose(inverse(sMatModel)));
+        mat3 sMatNormal = mat3(transpose(inverse(sMatModel)));
+        finalPosition = vec3(sMatModel * vec4(finalPosition, 1.0));
+        finalNormal = sMatNormal * finalNormal;
+        finalTangent = sMatNormal * finalTangent;
     }
 
     if (uInstancing) {
-        matModel = transpose(iMatModel) * matModel;
-        matNormal = mat3(transpose(inverse(iMatModel))) * matNormal;
+        billboardCenter += iPosition;
+        finalPosition = finalPosition * iScale;
+        finalPosition = M_Rotate3D(finalPosition, iRotation);
+        finalPosition = finalPosition + iPosition;
+        finalNormal = M_Rotate3D(finalNormal, iRotation);
+        finalTangent = M_Rotate3D(finalTangent, iRotation);
+
+    #if defined(DECAL)
+        mat4 iMatModel = MatrixTransform(iPosition, iRotation, iScale);
+        finalMatModel = iMatModel * finalMatModel;
+    #endif // DECAL
     }
 
 #if defined(DEPTH) || defined(DEPTH_CUBE)
     if (uBillboard == BILLBOARD_FRONT) {
-        BillboardFront(matModel, matNormal, uMatInvView);
+        BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
     }
     else if (uBillboard == BILLBOARD_Y_AXIS) {
-        BillboardYAxis(matModel, matNormal, uMatInvView);
+        BillboardYAxis(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
     }
 #else
     if (uBillboard == BILLBOARD_FRONT) {
-        BillboardFront(matModel, matNormal, uView.invView);
+        BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uView.invView);
     }
     else if (uBillboard == BILLBOARD_Y_AXIS) {
-        BillboardYAxis(matModel, matNormal, uView.invView);
+        BillboardYAxis(finalPosition, finalNormal, finalTangent, billboardCenter, uView.invView);
     }
 #endif
 
-    vec3 T = normalize(matNormal * aTangent.xyz);
-    vec3 N = normalize(matNormal * aNormal);
+    vec3 T = normalize(finalTangent);
+    vec3 N = normalize(finalNormal);
     vec3 B = normalize(cross(N, T) * aTangent.w);
 
-    vPosition = vec3(matModel * vec4(aPosition, 1.0));
+    vPosition = finalPosition;
     vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
     vEmission = uEmissionColor * uEmissionEnergy;
     vColor = aColor * iColor * uAlbedoColor;
@@ -149,7 +229,7 @@ void main()
 #endif
 
 #if defined(DECAL)
-    vFinalMatModel = matModel;
-    vClipPos  = gl_Position;
+    vMatDecal = inverse(finalMatModel) * uView.invView;
+    vClipPos = gl_Position;
 #endif // DECAL
 }

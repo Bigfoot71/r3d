@@ -15,7 +15,7 @@
 
 /* === Varyings === */
 
-smooth in mat4 vFinalMatModel;
+smooth in mat4 vMatDecal;
 flat   in vec3 vEmission;
 smooth in vec4 vColor;
 smooth in vec4 vClipPos;
@@ -58,7 +58,7 @@ void main()
     vec3 positionViewSpace = V_GetViewPosition(uTexDepth, fragTexCoord);
 
     // Convert from world space to decal projector's model space
-    vec4 positionModelSpace = inverse(vFinalMatModel) * uView.invView * vec4(positionViewSpace, 1.0);
+    vec4 positionModelSpace = vMatDecal * vec4(positionViewSpace, 1.0);
 
     // Discard fragments that are outside the bounds of the decal projector
     if (abs(positionModelSpace.x) > 0.5 || 

@@ -72,14 +72,21 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     glEnableVertexAttribArray(6);
     glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
 
-    // Default matrix instance (mat4)
-    glVertexAttrib4f(10, 1.0f, 0.0f, 0.0f, 0.0f);
-    glVertexAttrib4f(11, 0.0f, 1.0f, 0.0f, 0.0f);
-    glVertexAttrib4f(12, 0.0f, 0.0f, 1.0f, 0.0f);
-    glVertexAttrib4f(13, 0.0f, 0.0f, 0.0f, 1.0f);
+    // instance position (vec3) (disabled)
+    glVertexAttribDivisor(10, 1);
+    glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
 
-    // Default color instance (vec4)
-    glVertexAttrib4f(14, 1.0f, 1.0f, 1.0f, 1.0f);
+    // instance rotation (vec4) (disabled)
+    glVertexAttribDivisor(11, 1);
+    glVertexAttrib4f(11, 0.0f, 0.0f, 0.0f, 1.0f);
+
+    // instance scale (vec3) (disabled)
+    glVertexAttribDivisor(12, 1);
+    glVertexAttrib3f(12, 1.0f, 1.0f, 1.0f);
+
+    // instance color (vec4) (disabled)
+    glVertexAttribDivisor(13, 1);
+    glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
 
     // EBO if indices present
     if (data->indexCount > 0 && data->indices) {

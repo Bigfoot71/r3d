@@ -1,5 +1,3 @@
-#include "r3d/r3d_environment.h"
-#include "r3d/r3d_lighting.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
