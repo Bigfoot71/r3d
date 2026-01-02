@@ -168,8 +168,7 @@ void main()
     vec3 finalNormal = mat3(uMatNormal) * aNormal;
     vec3 finalTangent = mat3(uMatNormal) * aTangent.xyz;
 
-    if (uSkinning)
-    {
+    if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
         mat3 sMatNormal = mat3(transpose(inverse(sMatModel)));
         finalPosition = vec3(sMatModel * vec4(finalPosition, 1.0));
@@ -177,8 +176,7 @@ void main()
         finalTangent = sMatNormal * finalTangent;
     }
 
-    if (uInstancing)
-    {
+    if (uInstancing) {
         billboardCenter += iPosition;
         finalPosition = finalPosition * iScale;
         finalPosition = M_Rotate3D(finalPosition, iRotation);
