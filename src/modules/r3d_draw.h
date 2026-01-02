@@ -44,8 +44,18 @@
                  _keep = 0)
 
 // ========================================
-// DRAW OP ENUMS
+// DRAW CALL ENUMS
 // ========================================
+
+/*
+ * Visibility state for a group or cluster.
+ * Used by culling passes to indicate whether drawing is required.
+ */
+typedef enum {
+    R3D_DRAW_VISBILITY_UNKNOWN = -1,    //< Visibility has not been evaluated yet
+    R3D_DRAW_VISBILITY_FALSE = 0,       //< Determined to be not visible (culled)
+    R3D_DRAW_VISBILITY_TRUE = 1,        //< Determined to be visible
+} r3d_draw_visibility_enum_t;
 
 /*
  * Sorting modes applied to draw lists.
@@ -57,8 +67,37 @@ typedef enum {
 } r3d_draw_sort_enum_t;
 
 // ========================================
-// DRAW CALL STRUCTURE
+// DRAW CALL STRUCTS
 // ========================================
+
+/*
+ * Cluster that may contain multiple draw groups.
+ * Stores bounds and the evaluated visibility state.
+ */
+typedef struct {
+    BoundingBox aabb;
+    r3d_draw_visibility_enum_t visible;
+} r3d_draw_cluster_t;
+
+/*
+ * Visibility metadata for a draw group.
+ * Holds its cluster index (if assigned) and its own visibility state.
+ * Note: a group is effectively visible only when its cluster is visible.
+ */
+typedef struct {
+    int clusterIndex;
+    r3d_draw_visibility_enum_t visible;
+} r3d_draw_group_visibility_t;
+
+/*
+ * Mapping structure linking draw groups to their associated draw calls.
+ * Stores the range of draw calls belonging to a specific group.
+ * One entry is stored per draw group.
+ */
+typedef struct {
+    int firstCall;                      //< Index of the first draw call in this group
+    int numCall;                        //< Number of draw calls in this group
+} r3d_draw_indices_t;
 
 /*
  * Draw group containing shared state for multiple draw calls.
@@ -71,16 +110,6 @@ typedef struct {
     R3D_InstanceBuffer instances;       //< Instance buffer to use
     int instanceCount;                  //< Number of instances
 } r3d_draw_group_t;
-
-/*
- * Mapping structure linking draw groups to their associated draw calls.
- * Stores the range of draw calls belonging to a specific group.
- * One entry is stored per draw group.
- */
-typedef struct {
-    int firstCall;                      //< Index of the first draw call in this group
-    int numCall;                        //< Number of draw calls in this group
-} r3d_draw_indices_t;
 
 /*
  * Internal representation of a single draw call.
@@ -129,16 +158,24 @@ typedef struct {
  * Owns the draw call storage and per-pass draw lists.
  */
 extern struct r3d_draw {
-    r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];  //< Lists of draw call indices organized by rendering category
-    r3d_draw_indices_t* callIndices;            //< Array of draw call index ranges for each draw group (automatically managed)
-    r3d_draw_group_t* groups;                   //< Array of draw groups (shared data across draw calls)
-    bool* visibleGroups;                        //< Array of bool for each group (indicating if they are visible)
-    r3d_draw_call_t* calls;                     //< Array of draw calls
-    int* groupIndices;                          //< Array of group indices for each draw call (automatically managed)
-    float* cacheDists;                          //< Array of distances between draw calls and the camera for sorting
-    int numGroups;                              //< Number of active draw groups
-    int numCalls;                               //< Number of active draw calls
-    int capacity;                               //< Allocated capacity for all arrays
+
+    r3d_draw_cluster_t* clusters;                   //< Array of draw clusters
+    int activeCluster;                              //< Index of the active cluster for new draw groups (-1 if no active clusters)
+
+    r3d_draw_group_visibility_t* groupVisibility;   //< Array containing visibility info for each draw group (generated during group culling)
+    r3d_draw_indices_t* callIndices;                //< Array of draw call index ranges for each draw group (automatically managed)
+    r3d_draw_group_t* groups;                       //< Array of draw groups (shared data across draw calls)
+
+    r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];      //< Lists of draw call indices organized by rendering category
+    r3d_draw_call_t* calls;                         //< Array of draw calls
+    int* groupIndices;                              //< Array of group indices for each draw call (automatically managed)
+    float* cacheDists;                              //< Array of distances between draw calls and the camera for sorting
+
+    int numClusters;                                //< Number of active draw clusters
+    int numGroups;                                  //< Number of active draw groups
+    int numCalls;                                   //< Number of active draw calls
+    int capacity;                                   //< Allocated capacity for all arrays (in number of elements)
+
 } R3D_MOD_DRAW;
 
 // ========================================
@@ -161,6 +198,19 @@ void r3d_draw_quit(void);
  * Clear all draw lists and reset the draw call buffer for the next frame.
  */
 void r3d_draw_clear(void);
+
+/*
+ * Begins a new draw cluster with the given bounds.
+ * All subsequent draw-group pushes will belong to this cluster.
+ * Returns false if a cluster is already active or allocation fails.
+ */
+bool r3d_draw_cluster_begin(BoundingBox aabb);
+
+/*
+ * Ends the currently active draw cluster.
+ * Returns false if no cluster is currently active.
+ */
+bool r3d_draw_cluster_end(void);
 
 /*
  * Push a new draw group. All subsequent draw calls will belong to this group

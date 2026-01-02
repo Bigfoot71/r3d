@@ -33,9 +33,8 @@ typedef uint32_t R3D_Flags;
 #define R3D_FLAG_FXAA                   (1 << 0)    ///< Enables Fast Approximate Anti-Aliasing (FXAA)
 #define R3D_FLAG_BLIT_LINEAR            (1 << 1)    ///< Uses linear filtering when blitting the final image
 #define R3D_FLAG_ASPECT_KEEP            (1 << 2)    ///< Maintains the aspect ratio of the internal resolution when blitting the final image
-#define R3D_FLAG_NO_FRUSTUM_CULLING     (1 << 3)    ///< Disables internal frustum culling. Manual culling is allowed, but may break shadow visibility if objects casting shadows are skipped.
-#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 4)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments. Be careful, in 'force forward' mode this flag will also sort opaque objects in 'near-to-far' but in the same sorting pass.
-#define R3D_FLAG_OPAQUE_SORTING         (1 << 5)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting. Please note, in 'force forward' mode this flag has no effect, see transparent sorting.
+#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 3)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
+#define R3D_FLAG_OPAQUE_SORTING         (1 << 4)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
 
 /**
  * @brief Bitfield type used to specify rendering layers for 3D objects.

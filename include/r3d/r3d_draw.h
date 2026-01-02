@@ -58,6 +58,9 @@ R3DAPI void R3D_BeginEx(RenderTexture target, Camera3D camera);
  */
 R3DAPI void R3D_End(void);
 
+R3DAPI void R3D_BeginCluster(BoundingBox aabb);
+R3DAPI void R3D_EndCluster(void);
+
 /**
  * @brief Queues a mesh draw command.
  *

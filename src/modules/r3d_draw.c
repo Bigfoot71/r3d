@@ -69,22 +69,41 @@ static bool growth_arrays(void)
 
     int newCapacity = 2 * R3D_MOD_DRAW.capacity;
 
-    GROW_AND_ASSIGN(calls);
-    GROW_AND_ASSIGN(groups);
-    GROW_AND_ASSIGN(cacheDists);
+    GROW_AND_ASSIGN(clusters);
+    GROW_AND_ASSIGN(groupVisibility);
     GROW_AND_ASSIGN(callIndices);
-    GROW_AND_ASSIGN(groupIndices);
-    GROW_AND_ASSIGN(visibleGroups);
+    GROW_AND_ASSIGN(groups);
 
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; ++i) {
         GROW_AND_ASSIGN(list[i].calls);
     }
+
+    GROW_AND_ASSIGN(calls);
+    GROW_AND_ASSIGN(groupIndices);
+    GROW_AND_ASSIGN(cacheDists);
 
     #undef GROW_AND_ASSIGN
 
     R3D_MOD_DRAW.capacity = newCapacity;
 
     return true;
+}
+
+// ========================================
+// INTERNAL CULLING FUNCTIONS
+// ========================================
+
+static bool frustum_test(const r3d_frustum_t* frustum, const BoundingBox* aabb, const Matrix* transform)
+{
+    if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
+        return true;
+    }
+
+    if (!transform || r3d_matrix_is_identity(transform)) {
+        return r3d_frustum_is_aabb_in(frustum, aabb);
+    }
+
+    return r3d_frustum_is_obb_in(frustum, aabb, transform);
 }
 
 // ========================================
@@ -191,20 +210,23 @@ bool r3d_draw_init(void)
 
     memset(&R3D_MOD_DRAW, 0, sizeof(R3D_MOD_DRAW));
 
-    ALLOC_AND_ASSIGN(calls, "Draw call array allocation failed");
-    ALLOC_AND_ASSIGN(groups, "Draw group array allocation failed");
+    ALLOC_AND_ASSIGN(clusters, "Draw cluster array allocation failed");
+    ALLOC_AND_ASSIGN(groupVisibility, "Group visibility array allocation failed");
     ALLOC_AND_ASSIGN(callIndices, "Draw call indices array allocation failed");
-    ALLOC_AND_ASSIGN(groupIndices, "Draw group indices array allocation failed");
-    ALLOC_AND_ASSIGN(visibleGroups, "Visible group array allocation failed");
-    ALLOC_AND_ASSIGN(cacheDists, "Distance cache array allocation failed");
+    ALLOC_AND_ASSIGN(groups, "Draw group array allocation failed");
 
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         ALLOC_AND_ASSIGN(list[i].calls, "Draw call array %i allocation failed", i);
     }
 
+    ALLOC_AND_ASSIGN(calls, "Draw call array allocation failed");
+    ALLOC_AND_ASSIGN(groupIndices, "Draw group indices array allocation failed");
+    ALLOC_AND_ASSIGN(cacheDists, "Distance cache array allocation failed");
+
     #undef ALLOC_AND_ASSIGN
 
     R3D_MOD_DRAW.capacity = DRAW_RESERVE_COUNT;
+    R3D_MOD_DRAW.activeCluster = -1;
 
     return true;
 
@@ -218,7 +240,7 @@ void r3d_draw_quit(void)
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         RL_FREE(R3D_MOD_DRAW.list[i].calls);
     }
-    RL_FREE(R3D_MOD_DRAW.visibleGroups);
+    RL_FREE(R3D_MOD_DRAW.groupVisibility);
     RL_FREE(R3D_MOD_DRAW.groupIndices);
     RL_FREE(R3D_MOD_DRAW.callIndices);
     RL_FREE(R3D_MOD_DRAW.cacheDists);
@@ -231,8 +253,42 @@ void r3d_draw_clear(void)
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         R3D_MOD_DRAW.list[i].numCalls = 0;
     }
+    R3D_MOD_DRAW.numClusters = 0;
     R3D_MOD_DRAW.numGroups = 0;
     R3D_MOD_DRAW.numCalls = 0;
+}
+
+bool r3d_draw_cluster_begin(BoundingBox aabb)
+{
+    if (R3D_MOD_DRAW.activeCluster >= 0) {
+        return false;
+    }
+
+    if (R3D_MOD_DRAW.numClusters >= R3D_MOD_DRAW.capacity) {
+        if (!growth_arrays()) {
+            TraceLog(LOG_FATAL, "R3D: Bad alloc on draw cluster begin");
+            return false;
+        }
+    }
+
+    R3D_MOD_DRAW.activeCluster = R3D_MOD_DRAW.numClusters++;
+
+    r3d_draw_cluster_t* cluster = &R3D_MOD_DRAW.clusters[R3D_MOD_DRAW.activeCluster];
+    cluster->visible = R3D_DRAW_VISBILITY_UNKNOWN;
+    cluster->aabb = aabb;
+
+    return true;
+}
+
+bool r3d_draw_cluster_end(void)
+{
+    if (R3D_MOD_DRAW.activeCluster < 0) {
+        return false;
+    }
+
+    R3D_MOD_DRAW.activeCluster = -1;
+
+    return true;
 }
 
 void r3d_draw_group_push(const r3d_draw_group_t* group)
@@ -245,6 +301,12 @@ void r3d_draw_group_push(const r3d_draw_group_t* group)
     }
 
     int groupIndex = R3D_MOD_DRAW.numGroups++;
+
+    R3D_MOD_DRAW.groupVisibility[groupIndex] = (r3d_draw_group_visibility_t) {
+        .clusterIndex = R3D_MOD_DRAW.activeCluster,
+        .visible = R3D_DRAW_VISBILITY_UNKNOWN
+    };
+
     R3D_MOD_DRAW.callIndices[groupIndex] = (r3d_draw_indices_t) {0};
     R3D_MOD_DRAW.groups[groupIndex] = *group;
 }
@@ -299,45 +361,53 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
 {
     for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++)
     {
+        r3d_draw_group_visibility_t* visibility = &R3D_MOD_DRAW.groupVisibility[i];
         const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[i];
         const BoundingBox* aabb = &group->aabb;
 
-        if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
-            R3D_MOD_DRAW.visibleGroups[i] = true;
-        }
-        else if (r3d_matrix_is_identity(&group->transform)) {
-            R3D_MOD_DRAW.visibleGroups[i] = r3d_frustum_is_aabb_in(frustum, aabb);
+        if (visibility->clusterIndex >= 0) {
+            r3d_draw_cluster_t* cluster = &R3D_MOD_DRAW.clusters[visibility->clusterIndex];
+
+            if (cluster->visible == R3D_DRAW_VISBILITY_UNKNOWN) {
+                cluster->visible = frustum_test(frustum, &cluster->aabb, NULL);
+            }
+
+            if (cluster->visible == R3D_DRAW_VISBILITY_TRUE) {
+                // If the group represents multiple instances or a skinned model, rely only on the cluster visibility
+                // TODO: It would be better to find an improved method for skinned models
+                visibility->visible =
+                    r3d_draw_has_instances(group) || (group->texPose > 0) ||
+                    frustum_test(frustum, &group->aabb, &group->transform);
+            }
+            else {
+                visibility->visible = R3D_DRAW_VISBILITY_FALSE;
+            }
         }
         else {
-            R3D_MOD_DRAW.visibleGroups[i] = r3d_frustum_is_obb_in(frustum, aabb, &group->transform);
+            // If the group represents multiple instances or a skinned model, consider to be always visible
+            // TODO: It would be better to find an improved method for skinned models
+            visibility->visible =
+                r3d_draw_has_instances(group) || (group->texPose > 0) ||
+                frustum_test(frustum, &group->aabb, &group->transform);
         }
     }
 }
 
 bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
 {
+    // If the parent group is not visible, discard this call immediately
+    // Then, if the call count for the group is one, it means it has already been tested
+    // Finally, if the group represents instances or a skinned model, rely only on the group's visibility
+
     int callIndex = get_draw_call_index(call);
     int groupIndex = R3D_MOD_DRAW.groupIndices[callIndex];
-    if (!R3D_MOD_DRAW.visibleGroups[groupIndex]) return false;
-
-    // If the number of calls to this group is 1, then the object has already been tested
-    if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) {
-        return true;
-    }
-
     const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
-    const BoundingBox* aabb = &group->aabb;
 
-    // If the AABB is 'zero', the object is considered visible
-    if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
-        return true;
-    }
+    if (!R3D_MOD_DRAW.groupVisibility[groupIndex].visible) return false;
+    if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) return true;
+    if (r3d_draw_has_instances(group) || group->texPose > 0) return true;
 
-    if (r3d_matrix_is_identity(&group->transform)) {
-        return r3d_frustum_is_aabb_in(frustum, aabb);
-    }
-
-    return r3d_frustum_is_obb_in(frustum, aabb, &group->transform);
+    return frustum_test(frustum, &call->mesh.aabb, &group->transform);
 }
 
 void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode)

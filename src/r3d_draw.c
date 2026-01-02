@@ -115,9 +115,7 @@ void R3D_End(void)
 
     /* --- Cull groups and sort all draw calls before rendering --- */
 
-    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        r3d_draw_compute_visible_groups(&R3D_CACHE_GET(viewState.frustum));
-    }
+    r3d_draw_compute_visible_groups(&R3D_CACHE_GET(viewState.frustum));
 
     if (R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_OPAQUE_SORTING)) {
         r3d_draw_sort_list(R3D_DRAW_DEFERRED, R3D_CACHE_GET(viewState.viewPosition), R3D_DRAW_SORT_FRONT_TO_BACK);
@@ -210,6 +208,20 @@ void R3D_End(void)
     /* --- Reset states changed by R3D --- */
 
     reset_raylib_state();
+}
+
+void R3D_BeginCluster(BoundingBox aabb)
+{
+    if (!r3d_draw_cluster_begin(aabb)) {
+        TraceLog(LOG_WARNING, "R3D: Failed to begin cluster");
+    }
+}
+
+void R3D_EndCluster(void)
+{
+    if (!r3d_draw_cluster_end()) {
+        TraceLog(LOG_WARNING, "R3D: Failed to end cluster");
+    }
 }
 
 void R3D_DrawMesh(R3D_Mesh mesh, R3D_Material material, Vector3 position, float scale)
@@ -850,11 +862,8 @@ void pass_scene_shadow(void)
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + iFace, light->shadowMap.tex, 0);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
-                const r3d_frustum_t* frustum = NULL;
-                if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-                    frustum = &light->frustum[iFace];
-                    r3d_draw_compute_visible_groups(frustum);
-                }
+                const r3d_frustum_t* frustum = &light->frustum[iFace];
+                r3d_draw_compute_visible_groups(frustum);
 
                 #define COND (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
                 R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
@@ -870,11 +879,8 @@ void pass_scene_shadow(void)
             glClear(GL_DEPTH_BUFFER_BIT);
             R3D_SHADER_USE(scene.depth);
 
-            const r3d_frustum_t* frustum = NULL;
-            if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-                frustum = &light->frustum[0];
-                r3d_draw_compute_visible_groups(frustum);
-            }
+            const r3d_frustum_t* frustum = &light->frustum[0];
+            r3d_draw_compute_visible_groups(frustum);
 
             #define COND (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
             R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
@@ -898,11 +904,7 @@ void pass_scene_geometry(void)
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
-    const r3d_frustum_t* frustum = NULL;
-    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        frustum = &R3D_CACHE_GET(viewState.frustum);
-    }
-
+    const r3d_frustum_t* frustum = &R3D_CACHE_GET(viewState.frustum);
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED) {
         raster_geometry(call);
     }
@@ -922,11 +924,7 @@ void pass_scene_prepass(void)
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
 
-    const r3d_frustum_t* frustum = NULL;
-    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        frustum = &R3D_CACHE_GET(viewState.frustum);
-    }
-
+    const r3d_frustum_t* frustum = &R3D_CACHE_GET(viewState.frustum);
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
         raster_depth(call, false, &R3D_CACHE_GET(viewState.viewProj));
     }
@@ -960,11 +958,7 @@ void pass_scene_decals(void)
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexDepth, r3d_target_get(R3D_TARGET_DEPTH));
 
-    const r3d_frustum_t* frustum = NULL;
-    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        frustum = &R3D_CACHE_GET(viewState.frustum);
-    }
-
+    const r3d_frustum_t* frustum = &R3D_CACHE_GET(viewState.frustum);
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DECAL_INST, R3D_DRAW_DECAL) {
         raster_decal(call);
     }
@@ -1457,11 +1451,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     R3D_SHADER_SET_VEC3(scene.forward, uViewPosition, R3D_CACHE_GET(viewState.viewPosition));
 
-    const r3d_frustum_t* frustum = NULL;
-    if (!R3D_CACHE_FLAGS_HAS(state, R3D_FLAG_NO_FRUSTUM_CULLING)) {
-        frustum = &R3D_CACHE_GET(viewState.frustum);
-    }
-
+    const r3d_frustum_t* frustum = &R3D_CACHE_GET(viewState.frustum);
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS, R3D_DRAW_FORWARD_INST, R3D_DRAW_FORWARD) {
         pass_scene_forward_send_lights(call);
         raster_forward(call);
