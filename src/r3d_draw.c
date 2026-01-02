@@ -1578,7 +1578,6 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     int mipCount = r3d_target_get_mip_count(R3D_TARGET_BLOOM);
     float txSrcW = 0, txSrcH = 0;
-    int srcW = 0, srcH = 0;
     int dstW = 0, dstH = 0;
 
     R3D_TARGET_BIND(R3D_TARGET_BLOOM);
@@ -1603,12 +1602,11 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     if (maxLevel > mipCount) maxLevel = mipCount;
     else if (maxLevel < 1) maxLevel = 1;
 
-    /* --- Bloom: Karis average before downsampling --- */
+    /* --- Karis average for the first downsampling to half res --- */
 
     R3D_SHADER_USE(prepare.bloomDown);
 
     r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, 0);
-    r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_BLOOM, 0);
     r3d_target_set_mip_level(0, 0);
 
     R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, sceneSourceID);
@@ -1619,7 +1617,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
-    /* --- Bloom: Downsampling --- */
+    /* --- Bloom Downsampling --- */
 
     // It's okay to sample the target here
     // Given that we'll be sampling a different level from where we're writing
@@ -1627,10 +1625,10 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     for (int dstLevel = 1; dstLevel < maxLevel; dstLevel++)
     {
-        r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, dstLevel - 1);
-        r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_BLOOM, dstLevel - 1);
-        r3d_target_get_resolution(&dstW, &dstH, R3D_TARGET_BLOOM, dstLevel);
+        int srcLevel = dstLevel - 1;
 
+        r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, srcLevel);
+        r3d_target_get_resolution(&dstW, &dstH, R3D_TARGET_BLOOM, dstLevel);
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);
 
@@ -1642,7 +1640,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomDown, uTexture);
 
-    /* --- Bloom: Upsampling --- */
+    /* --- Bloom Upsampling --- */
 
     R3D_SHADER_USE(prepare.bloomUp);
 
@@ -1655,9 +1653,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     for (int dstLevel = maxLevel - 2; dstLevel >= 0; dstLevel--)
     {
         r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, dstLevel + 1);
-        r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_BLOOM, dstLevel + 1);
         r3d_target_get_resolution(&dstW, &dstH, R3D_TARGET_BLOOM, dstLevel);
-
         r3d_target_set_mip_level(0, dstLevel);
         glViewport(0, 0, dstW, dstH);
 
