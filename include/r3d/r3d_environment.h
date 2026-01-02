@@ -69,7 +69,7 @@
             .intensity = 1.0f,                          \
             .power = 1.5f,                              \
             .radius = 0.5f,                             \
-            .bias = 0.005f,                             \
+            .bias = 0.025f,                             \
             .lightAffect = 0.0f,                        \
             .enabled = false,                           \
         },                                              \
