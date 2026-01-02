@@ -67,8 +67,7 @@ typedef enum {
 typedef struct {
     BoundingBox aabb;                   //< AABB of the model
     Matrix transform;                   //< World transform matrix
-    R3D_Skeleton skeleton;              //< Skeleton containing the bind pose (if any)
-    R3D_AnimationPlayer player;         //< Animation player (may be NULL)
+    uint32_t texPose;                   //< Texture that contains the bone matrices (can be 0 for non-skinned)
     R3D_InstanceBuffer instances;       //< Instance buffer to use
     int instanceCount;                  //< Number of instances
 } r3d_draw_group_t;

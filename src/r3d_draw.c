@@ -287,7 +287,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.skeleton = model.skeleton;
+    drawGroup.texPose = model.skeleton.texBindPose;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -319,7 +319,7 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.skeleton = model.skeleton;
+    drawGroup.texPose = model.skeleton.texBindPose;
 
     drawGroup.transform = transform;
     drawGroup.instances = instances;
@@ -362,8 +362,8 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.skeleton = model.skeleton;
-    drawGroup.player = player;
+    drawGroup.texPose = (player.texGlobalPose > 0)
+        ? player.texGlobalPose : model.skeleton.texBindPose;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -395,8 +395,8 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.skeleton = model.skeleton;
-    drawGroup.player = player;
+    drawGroup.texPose = (player.texGlobalPose > 0)
+        ? player.texGlobalPose : model.skeleton.texBindPose;
 
     drawGroup.transform = transform;
     drawGroup.instances = instances;
@@ -472,9 +472,8 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 
     /* --- Send skinning related data --- */
 
-    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
-        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
-        R3D_SHADER_BIND_SAMPLER_1D(scene.depth, uTexBoneMatrices, texPose);
+    if (group->texPose > 0) {
+        R3D_SHADER_BIND_SAMPLER_1D(scene.depth, uTexBoneMatrices, group->texPose);
         R3D_SHADER_SET_INT(scene.depth, uSkinning, true);
     }
     else {
@@ -541,9 +540,8 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
 
     /* --- Send skinning related data --- */
 
-    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
-        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
-        R3D_SHADER_BIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices, texPose);
+    if (group->texPose > 0) {
+        R3D_SHADER_BIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices, group->texPose);
         R3D_SHADER_SET_INT(scene.depthCube, uSkinning, true);
     }
     else {
@@ -618,9 +616,8 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     /* --- Send skinning related data --- */
 
-    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
-        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
-        R3D_SHADER_BIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices, texPose);
+    if (group->texPose > 0) {
+        R3D_SHADER_BIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices, group->texPose);
         R3D_SHADER_SET_INT(scene.geometry, uSkinning, true);
     }
     else {
@@ -764,9 +761,8 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Send skinning related data --- */
 
-    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
-        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
-        R3D_SHADER_BIND_SAMPLER_1D(scene.forward, uTexBoneMatrices, texPose);
+    if (group->texPose > 0) {
+        R3D_SHADER_BIND_SAMPLER_1D(scene.forward, uTexBoneMatrices, group->texPose);
         R3D_SHADER_SET_INT(scene.forward, uSkinning, true);
     }
     else {
