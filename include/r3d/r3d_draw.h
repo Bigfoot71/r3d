@@ -59,6 +59,24 @@ R3DAPI void R3D_BeginEx(RenderTexture target, Camera3D camera);
 R3DAPI void R3D_End(void);
 
 /**
+ * @brief Begins a clustered draw pass.
+ *
+ * All draw calls submitted in this pass are first tested against the
+ * cluster AABB. If the cluster fails the scene/shadow frustum test,
+ * none of the contained objects are tested or drawn.
+ *
+ * @param aabb Bounding box used as the cluster-level frustum test.
+ */
+R3DAPI void R3D_BeginCluster(BoundingBox aabb);
+
+/**
+ * @brief Ends the current clustered draw pass.
+ *
+ * Stops submitting draw calls to the active cluster.
+ */
+R3DAPI void R3D_EndCluster(void);
+
+/**
  * @brief Queues a mesh draw command.
  *
  * Draws the mesh at the given position and uniform scale.

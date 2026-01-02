@@ -12,7 +12,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D with FXAA and no frustum culling
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), R3D_FLAG_FXAA | R3D_FLAG_NO_FRUSTUM_CULLING);
+    R3D_Init(GetScreenWidth(), GetScreenHeight(), R3D_FLAG_FXAA);
 
     // Enable post-processing effects
     R3D_ENVIRONMENT_SET(ssao.enabled, true);
