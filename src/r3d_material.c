@@ -11,12 +11,7 @@
 #include <glad.h>
 
 #include "./modules/r3d_texture.h"
-
-// ========================================
-// INTERNAL STATE
-// ========================================
-
-static R3D_Material G_DefaultMaterial = R3D_MATERIAL_BASE;
+#include "./modules/r3d_cache.h"
 
 // ========================================
 // PUBLIC API
@@ -24,12 +19,12 @@ static R3D_Material G_DefaultMaterial = R3D_MATERIAL_BASE;
 
 R3D_Material R3D_GetDefaultMaterial(void)
 {
-    return G_DefaultMaterial;
+    return R3D_CACHE_GET(material);
 }
 
 void R3D_SetDefaultMaterial(R3D_Material material)
 {
-    G_DefaultMaterial = material;
+    R3D_CACHE_SET(material, material);
 }
 
 void R3D_UnloadMaterial(R3D_Material material)
