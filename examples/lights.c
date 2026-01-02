@@ -1,7 +1,5 @@
-#include "r3d/r3d_instance.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
-#include <stdlib.h>
 
 #define GRID_SIZE 100
 #define LIGHT_GRID 10

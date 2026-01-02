@@ -1,7 +1,9 @@
-#include "r3d/r3d_instance.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
-#include <stdlib.h>
+
+#define X_INSTANCES 50
+#define Y_INSTANCES 50
+#define INSTANCE_COUNT (X_INSTANCES * Y_INSTANCES)
 
 int main(void)
 {
@@ -18,12 +20,16 @@ int main(void)
     R3D_Material material = R3D_GetDefaultMaterial();
 
     // Create transforms for instanced spheres
-    int count = 100;
-    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(count, R3D_INSTANCE_POSITION);
+    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION);
     Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
-    for (int x = -50; x < 50; x++) {
-        for (int z = -50; z < 50; z++) {
-            positions[(z+50)*count + (x+50)] = (Vector3) {(float)x*2, 0, (float)z*2};
+    float spacing = 1.5f;
+    float offsetX = (X_INSTANCES * spacing) / 2.0f;
+    float offsetZ = (Y_INSTANCES * spacing) / 2.0f;
+    int idx = 0;
+    for (int x = 0; x < X_INSTANCES; x++) {
+        for (int y = 0; y < Y_INSTANCES; y++) {
+            positions[idx] = (Vector3) {x * spacing - offsetX, 0, y * spacing - offsetZ};
+            idx++;
         }
     }
     R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION);
@@ -61,7 +67,7 @@ int main(void)
 
             R3D_Begin(camera);
                 R3D_DrawMesh(&plane, &material, MatrixTranslate(0, -0.5f, 0));
-                R3D_DrawMeshInstanced(&sphere, &material, &instances, count);
+                R3D_DrawMeshInstanced(&sphere, &material, &instances, INSTANCE_COUNT);
             R3D_End();
 
             DrawFPS(10, 10);
