@@ -115,59 +115,70 @@ typedef enum R3D_CullMode {
 // STRUCTS TYPES
 // ========================================
 
+/**
+ * @brief Albedo (base color) map.
+ *
+ * Provides the base color texture and a color multiplier.
+ */
 typedef struct R3D_MapAlbedo {
-    Texture2D texture;      ///< Albedo (base color) texture. (default: WHITE)
-    Color color;            ///< Albedo color multiplier. (defulat: WHITE)
+    Texture2D texture;  ///< Base color texture (default: WHITE)
+    Color color;        ///< Color multiplier (default: WHITE)
 } R3D_MapAlbedo;
 
+/**
+ * @brief Emission map.
+ *
+ * Provides emission texture, color, and energy multiplier.
+ */
 typedef struct R3D_MapEmission {
-    Texture2D texture;      ///< Emission texture. (default: WHITE)
-    Color color;            ///< Emission color. (default: WHITE)
-    float energy;           ///< Emission energy multiplier. (default: 0.0f)
+    Texture2D texture;  ///< Emission texture (default: WHITE)
+    Color color;        ///< Emission color (default: WHITE)
+    float energy;       ///< Emission strength (default: 0.0f)
 } R3D_MapEmission;
 
+/**
+ * @brief Normal map.
+ *
+ * Provides normal map texture and scale factor.
+ */
 typedef struct R3D_MapNormal {
-    Texture2D texture;      ///< Normal map texture. (default: Front Facing)
-    float scale;            ///< Normal scale. (default: 1.0f)
+    Texture2D texture;  ///< Normal map texture (default: Front Facing)
+    float scale;        ///< Normal scale (default: 1.0f)
 } R3D_MapNormal;
 
+/**
+ * @brief Combined Occlusion-Roughness-Metalness (ORM) map.
+ *
+ * Provides texture and individual multipliers for occlusion, roughness, and metalness.
+ */
 typedef struct R3D_MapORM {
-    Texture2D texture;      ///< Combined Occlusion-Roughness-Metalness texture. (default: WHITE)
-    float occlusion;        ///< Occlusion multiplier. (default: 1.0f)
-    float roughness;        ///< Roughness multiplier. (default: 1.0f)
-    float metalness;        ///< Metalness multiplier. (default: 0.0f)
+    Texture2D texture;  ///< ORM texture (default: WHITE)
+    float occlusion;    ///< Occlusion multiplier (default: 1.0f)
+    float roughness;    ///< Roughness multiplier (default: 1.0f)
+    float metalness;    ///< Metalness multiplier (default: 0.0f)
 } R3D_MapORM;
 
 /**
- * @brief Represents a material with textures, parameters, and rendering modes.
+ * @brief Material definition.
  *
- * Combines multiple texture maps and settings used during shading.
+ * Combines multiple texture maps and rendering parameters for shading.
  */
 typedef struct R3D_Material {
 
-    R3D_MapAlbedo albedo;
-    R3D_MapEmission emission;
-    R3D_MapNormal normal;
-    R3D_MapORM orm;
+    R3D_MapAlbedo albedo;       ///< Albedo map
+    R3D_MapEmission emission;   ///< Emission map
+    R3D_MapNormal normal;       ///< Normal map
+    R3D_MapORM orm;             ///< Occlusion-Roughness-Metalness map
 
-    R3D_TransparencyMode transparencyMode;  ///< Transparency mode applied to the object. (default: DISABLED)
-    R3D_BillboardMode billboardMode;        ///< Billboard mode applied to the object. (default: DISABLED)
-    R3D_BlendMode blendMode;                ///< Blend mode used for rendering. (default: MIX)
-    R3D_CullMode cullMode;                  ///< Face culling mode used for rendering. (default: BACK)
+    R3D_TransparencyMode transparencyMode;  ///< Transparency mode (default: DISABLED)
+    R3D_BillboardMode billboardMode;        ///< Billboard mode (default: DISABLED)
+    R3D_BlendMode blendMode;                ///< Blend mode (default: MIX)
+    R3D_CullMode cullMode;                  ///< Face culling mode (default: BACK)
 
-    Vector2 uvOffset;                       /**< UV offset applied to the texture coordinates.
-                                             *  For models, this can be set manually.
-                                             *  For sprites, this value is overridden automatically.
-                                             *  (default: {0.0f, 0.0f})
-                                             */
+    Vector2 uvOffset;    ///< UV offset (default: {0.0f, 0.0f})
+    Vector2 uvScale;     ///< UV scale (default: {1.0f, 1.0f})
 
-    Vector2 uvScale;                        /**< UV scale factor applied to the texture coordinates.
-                                             *  For models, this can be set manually.
-                                             *  For sprites, this value is overridden automatically.
-                                             *  (default: {1.0f, 1.0f})
-                                             */
-
-    float alphaCutoff;          ///< Alpha threshold below which fragments are discarded during opaque rendering. (default: 0.01f)
+    float alphaCutoff;   ///< Alpha cutoff threshold (default: 0.01f)
 
 } R3D_Material;
 
