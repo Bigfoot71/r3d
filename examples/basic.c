@@ -41,17 +41,18 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMesh(&plane, &material, MatrixTranslate(0, -0.5f, 0));
-                R3D_DrawMesh(&sphere, &material, MatrixIdentity());
+                R3D_DrawMesh(plane, material, (Vector3) {0, -0.5f, 0}, 1.0f);
+                R3D_DrawMesh(sphere, material, Vector3Zero(), 1.0f);
             R3D_End();
 
         EndDrawing();
     }
 
     // Cleanup
-    R3D_UnloadMesh(&plane);
-    R3D_UnloadMesh(&sphere);
+    R3D_UnloadMesh(sphere);
+    R3D_UnloadMesh(plane);
     R3D_Close();
+
     CloseWindow();
 
     return 0;

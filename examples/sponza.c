@@ -1,4 +1,5 @@
 #include <r3d/r3d.h>
+#include <raymath.h>
 
 #ifndef RESOURCES_PATH
 #	define RESOURCES_PATH "./"
@@ -104,7 +105,7 @@ int main(void)
 
             // Draw Sponza model
             R3D_Begin(camera);
-                R3D_DrawModel(&sponza, (Vector3){0,0,0}, 1.0f);
+                R3D_DrawModel(sponza, Vector3Zero(), 1.0f);
             R3D_End();
 
             // Draw lights
@@ -132,7 +133,7 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadModel(&sponza, true);
+    R3D_UnloadModel(sponza, true);
     R3D_UnloadSkybox(skybox);
     R3D_Close();
 

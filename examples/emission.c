@@ -76,8 +76,8 @@ int main(void)
 
             // Render scene
             R3D_Begin(camera);
-                R3D_DrawMesh(&plane, &material, MatrixIdentity());
-                R3D_DrawModelEx(&model, (Vector3){0}, (Vector3){0, 1, 0}, rotModel, (Vector3){1, 1, 1});
+                R3D_DrawMesh(plane, material, Vector3Zero(), 1.0f);
+                R3D_DrawModelEx(model, Vector3Zero(), QuaternionFromEuler(0.0f, rotModel, .0f), Vector3One());
             R3D_End();
 
             // UI
@@ -88,8 +88,8 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadModel(&model, true);
-    R3D_UnloadMesh(&plane);
+    R3D_UnloadModel(model, true);
+    R3D_UnloadMesh(plane);
     R3D_Close();
 
     CloseWindow();

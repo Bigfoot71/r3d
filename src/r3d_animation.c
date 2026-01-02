@@ -52,13 +52,12 @@ R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int s
     return animLib;
 }
 
-void R3D_UnloadAnimationLib(R3D_AnimationLib* animLib)
+void R3D_UnloadAnimationLib(R3D_AnimationLib animLib)
 {
-    if (!animLib || !animLib->animations)
-        return;
+    if (!animLib.animations) return;
 
-    for (int i = 0; i < animLib->count; ++i) {
-        R3D_Animation* anim = &animLib->animations[i];
+    for (int i = 0; i < animLib.count; ++i) {
+        R3D_Animation* anim = &animLib.animations[i];
 
         for (int j = 0; j < anim->channelCount; ++j) {
             R3D_AnimationChannel* channel = &anim->channels[j];
@@ -76,45 +75,45 @@ void R3D_UnloadAnimationLib(R3D_AnimationLib* animLib)
         RL_FREE(anim->channels);
     }
 
-    RL_FREE(animLib->animations);
+    RL_FREE(animLib.animations);
 }
 
-int R3D_GetAnimationIndex(const R3D_AnimationLib* animLib, const char* name)
+int R3D_GetAnimationIndex(R3D_AnimationLib animLib, const char* name)
 {
-    for (int i = 0; i < animLib->count; i++) {
-        if (strcmp(animLib->animations[i].name, name) == 0) {
+    for (int i = 0; i < animLib.count; i++) {
+        if (strcmp(animLib.animations[i].name, name) == 0) {
             return i;
         }
     }
     return -1;
 }
 
-R3D_Animation* R3D_GetAnimation(const R3D_AnimationLib* animLib, const char* name)
+R3D_Animation* R3D_GetAnimation(R3D_AnimationLib animLib, const char* name)
 {
     int index = R3D_GetAnimationIndex(animLib, name);
     if (index < 0) return NULL;
 
-    return &animLib->animations[index];
+    return &animLib.animations[index];
 }
 
 // ----------------------------------------
 // ANIMATION: Animation Player Functions
 // ----------------------------------------
 
-R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton, const R3D_AnimationLib* animLib)
+R3D_AnimationPlayer R3D_LoadAnimationPlayer(R3D_Skeleton skeleton, R3D_AnimationLib animLib)
 {
-    R3D_AnimationPlayer* player = RL_MALLOC(sizeof(R3D_AnimationPlayer));
+    R3D_AnimationPlayer player = {0};
 
-    player->skeleton = *skeleton;
-    player->animLib = *animLib;
+    player.skeleton = skeleton;
+    player.animLib = animLib;
 
-    player->states = RL_CALLOC(animLib->count, sizeof(R3D_AnimationState));
-    player->localPose = RL_CALLOC(skeleton->boneCount, sizeof(Matrix));
-    player->globalPose = RL_CALLOC(skeleton->boneCount, sizeof(Matrix));
+    player.states = RL_CALLOC(animLib.count, sizeof(R3D_AnimationState));
+    player.localPose = RL_CALLOC(skeleton.boneCount, sizeof(Matrix));
+    player.globalPose = RL_CALLOC(skeleton.boneCount, sizeof(Matrix));
 
-    glGenTextures(1, &player->texGlobalPose);
-    glBindTexture(GL_TEXTURE_1D, player->texGlobalPose);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, NULL);
+    glGenTextures(1, &player.texGlobalPose);
+    glBindTexture(GL_TEXTURE_1D, player.texGlobalPose);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA32F, 4 * skeleton.boneCount, 0, GL_RGBA, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -123,15 +122,20 @@ R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton, const
     return player;
 }
 
-void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player)
+void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer player)
 {
-    if (player->texGlobalPose > 0) {
-        glDeleteTextures(1, &player->texGlobalPose);
+    if (player.texGlobalPose > 0) {
+        glDeleteTextures(1, &player.texGlobalPose);
     }
 
-    RL_FREE(player->localPose);
-    RL_FREE(player->globalPose);
-    RL_FREE(player->states);
+    RL_FREE(player.localPose);
+    RL_FREE(player.globalPose);
+    RL_FREE(player.states);
+}
+
+bool R3D_IsAnimationPlayerValid(R3D_AnimationPlayer player)
+{
+    return (player.texGlobalPose > 0);
 }
 
 void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt)

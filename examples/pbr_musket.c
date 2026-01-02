@@ -1,4 +1,3 @@
-#include "r3d/r3d_environment.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -65,7 +64,7 @@ int main(void)
             R3D_Begin(camera);
                 Matrix scale = MatrixScale(modelScale, modelScale, modelScale);
                 Matrix transform = MatrixMultiply(modelMatrix, scale);
-                R3D_DrawModelPro(&model, transform);
+                R3D_DrawModelPro(model, transform);
             R3D_End();
 
             DrawText("Model made by TommyLingL", 10, GetScreenHeight()-26, 16, LIME);
@@ -74,7 +73,7 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadModel(&model, true);
+    R3D_UnloadModel(model, true);
     R3D_UnloadSkybox(skybox);
     R3D_Close();
 

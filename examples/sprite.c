@@ -71,17 +71,17 @@ int main(void)
 
             // Draw scene
             R3D_Begin(camera);
-                R3D_DrawMesh(&meshGround, &matGround, MatrixTranslate(0, -0.5f, 0));
-                R3D_DrawMesh(&meshSprite, &matSprite, MatrixTranslate(birdPos.x, birdPos.y, 0));
+                R3D_DrawMesh(meshGround, matGround, (Vector3) {0, -0.5f, 0}, 1.0f);
+                R3D_DrawMesh(meshSprite, matSprite, (Vector3) {birdPos.x, birdPos.y, 0}, 1.0f);
             R3D_End();
 
         EndDrawing();
     }
 
     // Cleanup
-    R3D_UnloadMaterial(&matSprite);
-    R3D_UnloadMesh(&meshSprite);
-    R3D_UnloadMesh(&meshGround);
+    R3D_UnloadMaterial(matSprite);
+    R3D_UnloadMesh(meshSprite);
+    R3D_UnloadMesh(meshGround);
     R3D_Close();
 
     CloseWindow();

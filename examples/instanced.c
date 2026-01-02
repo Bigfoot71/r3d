@@ -75,7 +75,7 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMeshInstanced(&mesh, &material, &instances, INSTANCE_COUNT);
+                R3D_DrawMeshInstanced(mesh, material, instances, INSTANCE_COUNT);
             R3D_End();
 
             DrawFPS(10, 10);
@@ -83,8 +83,8 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadMesh(&mesh);
-    R3D_UnloadMaterial(&material);
+    R3D_UnloadMaterial(material);
+    R3D_UnloadMesh(mesh);
     R3D_Close();
 
     CloseWindow();

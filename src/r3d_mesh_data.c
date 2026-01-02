@@ -12,8 +12,6 @@
 #include <string.h>
 #include <float.h>
 
-#include "./details/r3d_math.h"
-
 // ========================================
 // PUBLIC API
 // ========================================
@@ -50,15 +48,15 @@ R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount)
     return meshData;
 }
 
-void R3D_UnloadMeshData(R3D_MeshData* meshData)
+void R3D_UnloadMeshData(R3D_MeshData meshData)
 {
-    RL_FREE(meshData->vertices);
-    RL_FREE(meshData->indices);
+    RL_FREE(meshData.vertices);
+    RL_FREE(meshData.indices);
 }
 
-bool R3D_IsMeshDataValid(const R3D_MeshData* meshData)
+bool R3D_IsMeshDataValid(R3D_MeshData meshData)
 {
-    return (meshData->vertices != NULL) && (meshData->vertexCount > 0);
+    return (meshData.vertices != NULL) && (meshData.vertexCount > 0);
 }
 
 R3D_MeshData R3D_GenMeshDataQuad(float width, float length, int resX, int resZ, Vector3 frontDir)
@@ -1670,40 +1668,40 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
     return meshData;
 }
 
-R3D_MeshData R3D_DuplicateMeshData(const R3D_MeshData* meshData)
+R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData)
 {
     R3D_MeshData duplicate = {0};
 
-    if (meshData == NULL || meshData->vertices == NULL) {
+    if (meshData.vertices == NULL) {
         TraceLog(LOG_ERROR, "R3D: Cannot duplicate null mesh data");
         return duplicate;
     }
 
-    duplicate = R3D_CreateMeshData(meshData->vertexCount, meshData->indexCount);
+    duplicate = R3D_CreateMeshData(meshData.vertexCount, meshData.indexCount);
     if (duplicate.vertices == NULL) {
         return duplicate;
     }
 
-    memcpy(duplicate.vertices, meshData->vertices, meshData->vertexCount * sizeof(*meshData->vertices));
+    memcpy(duplicate.vertices, meshData.vertices, meshData.vertexCount * sizeof(*meshData.vertices));
 
-    if (meshData->indexCount > 0 && meshData->indices != NULL && duplicate.indices != NULL) {
-        memcpy(duplicate.indices, meshData->indices, meshData->indexCount * sizeof(*meshData->indices));
+    if (meshData.indexCount > 0 && meshData.indices != NULL && duplicate.indices != NULL) {
+        memcpy(duplicate.indices, meshData.indices, meshData.indexCount * sizeof(*meshData.indices));
     }
 
     return duplicate;
 }
 
-R3D_MeshData R3D_MergeMeshData(const R3D_MeshData* a, const R3D_MeshData* b)
+R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b)
 {
     R3D_MeshData merged = {0};
 
-    if (a == NULL || b == NULL || a->vertices == NULL || b->vertices == NULL) {
+    if (a.vertices == NULL || b.vertices == NULL) {
         TraceLog(LOG_ERROR, "R3D: Cannot merge null mesh data");
         return merged;
     }
 
-    int totalVertices = a->vertexCount + b->vertexCount;
-    int totalIndices = a->indexCount + b->indexCount;
+    int totalVertices = a.vertexCount + b.vertexCount;
+    int totalIndices = a.indexCount + b.indexCount;
 
     merged = R3D_CreateMeshData(totalVertices, totalIndices);
 
@@ -1711,16 +1709,16 @@ R3D_MeshData R3D_MergeMeshData(const R3D_MeshData* a, const R3D_MeshData* b)
         return merged;
     }
 
-    memcpy(merged.vertices, a->vertices, a->vertexCount * sizeof(*merged.vertices));
-    memcpy(merged.vertices + a->vertexCount, b->vertices, b->vertexCount * sizeof(*merged.vertices));
+    memcpy(merged.vertices, a.vertices, a.vertexCount * sizeof(*merged.vertices));
+    memcpy(merged.vertices + a.vertexCount, b.vertices, b.vertexCount * sizeof(*merged.vertices));
 
-    if (a->indexCount > 0 && a->indices != NULL) {
-        memcpy(merged.indices, a->indices, a->indexCount * sizeof(*merged.indices));
+    if (a.indexCount > 0 && a.indices != NULL) {
+        memcpy(merged.indices, a.indices, a.indexCount * sizeof(*merged.indices));
     }
 
-    if (b->indexCount > 0 && b->indices != NULL) {
-        for (int i = 0; i < b->indexCount; i++) {
-            merged.indices[a->indexCount + i] = b->indices[i] + a->vertexCount;
+    if (b.indexCount > 0 && b.indices != NULL) {
+        for (int i = 0; i < b.indexCount; i++) {
+            merged.indices[a.indexCount + i] = b.indices[i] + a.vertexCount;
         }
     }
 
@@ -1991,19 +1989,19 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData)
     RL_FREE(bitangents);
 }
 
-BoundingBox R3D_CalculateMeshDataBoundingBox(const R3D_MeshData* meshData)
+BoundingBox R3D_CalculateMeshDataBoundingBox(R3D_MeshData meshData)
 {
     BoundingBox bounds = {0};
 
-    if (meshData == NULL || meshData->vertices == NULL || meshData->vertexCount == 0) {
+    if (meshData.vertices == NULL || meshData.vertexCount == 0) {
         return bounds;
     }
 
-    bounds.min = meshData->vertices[0].position;
-    bounds.max = meshData->vertices[0].position;
+    bounds.min = meshData.vertices[0].position;
+    bounds.max = meshData.vertices[0].position;
 
-    for (int i = 1; i < meshData->vertexCount; i++) {
-        Vector3 pos = meshData->vertices[i].position;
+    for (int i = 1; i < meshData.vertexCount; i++) {
+        Vector3 pos = meshData.vertices[i].position;
         bounds.min = Vector3Min(bounds.min, pos);
         bounds.max = Vector3Max(bounds.max, pos);
     }

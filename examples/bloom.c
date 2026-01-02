@@ -76,7 +76,7 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMesh(&cube, &material, MatrixIdentity());
+                R3D_DrawMesh(cube, material, Vector3Zero(), 1.0f);
             R3D_End();
 
             // Draw bloom info
@@ -88,7 +88,7 @@ int main(void)
         EndDrawing();
     }
 
-    R3D_UnloadMesh(&cube);
+    R3D_UnloadMesh(cube);
     R3D_Close();
 
     CloseWindow();

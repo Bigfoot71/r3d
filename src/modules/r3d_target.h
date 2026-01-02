@@ -168,9 +168,9 @@ void r3d_target_resize(int resW, int resH);
 /*
  * Defines the target where the blit is performed.
  * Also uses the associated data to determine the aspect ratio.
- * If NULL, the destination will be the default framebuffer (0).
+ * If ID is zero, the destination will be the default framebuffer (0).
  */
-void r3d_target_set_blit_screen(const RenderTexture* screen);
+void r3d_target_set_blit_screen(RenderTexture screen);
 
 /*
  * Defines the blit configuration for the assigned screen.

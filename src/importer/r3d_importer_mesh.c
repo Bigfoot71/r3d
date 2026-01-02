@@ -13,7 +13,6 @@
 #include <raylib.h>
 
 #include <assimp/mesh.h>
-#include <string.h>
 #include <float.h>
 
 #include "../details/r3d_math.h"
@@ -275,13 +274,13 @@ static bool load_mesh_internal(
 
     // Process bone data
     if (!process_bones(aiMesh, &data, vertexCount)) {
-        R3D_UnloadMeshData(&data);
+        R3D_UnloadMeshData(data);
         return false;
     }
 
     // Upload the mesh
-    *outMesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    *outMesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return true;
 }
@@ -345,7 +344,7 @@ bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model)
     // Load all meshes recursively
     if (!load_recursive(importer, model, r3d_importer_get_root(importer), &R3D_MATRIX_IDENTITY)) {
         for (int i = 0; i < model->meshCount; i++) {
-            R3D_UnloadMesh(&model->meshes[i]);
+            R3D_UnloadMesh(model->meshes[i]);
         }
         RL_FREE(model->meshMaterials);
         RL_FREE(model->meshes);

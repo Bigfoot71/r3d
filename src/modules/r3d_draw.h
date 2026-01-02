@@ -65,18 +65,12 @@ typedef enum {
  * All draw calls pushed after a group inherit its transform, skeleton, and instancing data.
  */
 typedef struct {
-
     BoundingBox aabb;                   //< AABB of the model
     Matrix transform;                   //< World transform matrix
     R3D_Skeleton skeleton;              //< Skeleton containing the bind pose (if any)
-    const R3D_AnimationPlayer* player;  //< Animation player (may be NULL)
-
-    struct {
-        R3D_InstanceBuffer buffer;      //< Instance buffer to use
-        BoundingBox allAabb;            //< World-space AABB covering all instances
-        int count;                      //< Number of instances
-    } instanced;
-
+    R3D_AnimationPlayer player;         //< Animation player (may be NULL)
+    R3D_InstanceBuffer instances;       //< Instance buffer to use
+    int instanceCount;                  //< Number of instances
 } r3d_draw_group_t;
 
 /*
@@ -245,7 +239,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call);
  */
 static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
 {
-    return (group->instanced.buffer.capacity > 0) && (group->instanced.count > 0);
+    return (group->instances.capacity > 0) && (group->instanceCount > 0);
 }
 
 /*

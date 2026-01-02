@@ -81,10 +81,10 @@ static void reset_raylib_state(void);
 
 void R3D_Begin(Camera3D camera)
 {
-    R3D_BeginEx(camera, NULL);
+    R3D_BeginEx((RenderTexture) {0}, camera);
 }
 
-void R3D_BeginEx(Camera3D camera, const RenderTexture* target)
+void R3D_BeginEx(RenderTexture target, Camera3D camera)
 {
     rlDrawRenderBatchActive();
 
@@ -212,9 +212,21 @@ void R3D_End(void)
     reset_raylib_state();
 }
 
-void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix transform)
+void R3D_DrawMesh(R3D_Mesh mesh, R3D_Material material, Vector3 position, float scale)
 {
-    if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
+    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    R3D_DrawMeshPro(mesh, material, transform);
+}
+
+void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quaternion rotation, Vector3 scale)
+{
+    Matrix tranform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    R3D_DrawMeshPro(mesh, material, tranform);
+}
+
+void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
+{
+    if (!R3D_CACHE_FLAGS_HAS(layers, mesh.layerMask)) {
         return;
     }
 
@@ -224,77 +236,64 @@ void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix tra
     r3d_draw_group_push(&drawGroup);
 
     r3d_draw_call_t drawCall = {0};
-    drawCall.material = material ? *material : R3D_GetDefaultMaterial();
-    drawCall.mesh = *mesh;
+    drawCall.material = material;
+    drawCall.mesh = mesh;
 
     r3d_draw_call_push(&drawCall, false);
 }
 
-void R3D_DrawMeshInstanced(const R3D_Mesh* mesh, const R3D_Material* material, const R3D_InstanceBuffer* instances, int count)
+void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count)
 {
-    R3D_DrawMeshInstancedEx(mesh, material, (BoundingBox) {0}, MatrixIdentity(), instances, count);
+    R3D_DrawMeshInstancedEx(mesh, material, instances, count, R3D_MATRIX_IDENTITY);
 }
 
-void R3D_DrawMeshInstancedEx(const R3D_Mesh* mesh, const R3D_Material* material, BoundingBox globalAabb, Matrix globalTransform, const R3D_InstanceBuffer* instances, int count)
+void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
-    if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
+    if (!R3D_CACHE_FLAGS_HAS(layers, mesh.layerMask)) {
         return;
     }
 
     r3d_draw_group_t drawGroup = {0};
 
-    drawGroup.transform = globalTransform;
-    drawGroup.instanced.buffer = *instances;
-    drawGroup.instanced.allAabb = globalAabb;
-    drawGroup.instanced.count = CLAMP(count, 0, instances->capacity);
+    drawGroup.transform = transform;
+    drawGroup.instances = instances;
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
     r3d_draw_group_push(&drawGroup);
 
     r3d_draw_call_t drawCall = {0};
 
-    drawCall.material = material ? *material : R3D_GetDefaultMaterial();
-    drawCall.mesh = *mesh;
+    drawCall.material = material;
+    drawCall.mesh = mesh;
 
     r3d_draw_call_push(&drawCall, false);
 }
 
-void R3D_DrawModel(const R3D_Model* model, Vector3 position, float scale)
+void R3D_DrawModel(R3D_Model model, Vector3 position, float scale)
 {
-    Vector3 vScale = {scale, scale, scale};
-    Vector3 rotationAxis = {0.0f, 1.0f, 0.0f};
-    R3D_DrawModelEx(model, position, rotationAxis, 0.0f, vScale);
+    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    R3D_DrawModelPro(model, transform);
 }
 
-void R3D_DrawModelEx(const R3D_Model* model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale)
+void R3D_DrawModelEx(R3D_Model model, Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    Matrix matTransform = r3d_matrix_scale_rotaxis_translate(
-        scale,
-        (Vector4) {
-            rotationAxis.x,
-            rotationAxis.y,
-            rotationAxis.z,
-            rotationAngle
-        },
-        position
-    );
-
-    R3D_DrawModelPro(model, matTransform);
+    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    R3D_DrawModelPro(model, transform);
 }
 
-void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
+void R3D_DrawModelPro(R3D_Model model, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
 
-    drawGroup.aabb = model->aabb;
+    drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.skeleton = model->skeleton;
-    drawGroup.player = model->player;
+    drawGroup.skeleton = model.skeleton;
 
     r3d_draw_group_push(&drawGroup);
 
-    for (int i = 0; i < model->meshCount; i++)
+    for (int i = 0; i < model.meshCount; i++)
     {
-        const R3D_Mesh* mesh = &model->meshes[i];
+        const R3D_Mesh* mesh = &model.meshes[i];
 
         if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
             return;
@@ -302,37 +301,35 @@ void R3D_DrawModelPro(const R3D_Model* model, Matrix transform)
 
         r3d_draw_call_t drawCall = {0};
 
-        drawCall.material = model->materials[model->meshMaterials[i]];
+        drawCall.material = model.materials[model.meshMaterials[i]];
         drawCall.mesh = *mesh;
 
         r3d_draw_call_push(&drawCall, false);
     }
 }
 
-void R3D_DrawModelInstanced(const R3D_Model* model, const R3D_InstanceBuffer* instances, int count)
+void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int count)
 {
-    R3D_DrawModelInstancedEx(model, (BoundingBox) {0}, R3D_MATRIX_IDENTITY, instances, count);
+    R3D_DrawModelInstancedEx(model, instances, count, R3D_MATRIX_IDENTITY);
 }
 
-void R3D_DrawModelInstancedEx(const R3D_Model* model, BoundingBox globalAabb, Matrix globalTransform, const R3D_InstanceBuffer* instances, int count)
+void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
 
-    drawGroup.aabb = model->aabb;
-    drawGroup.transform = globalTransform;
-    drawGroup.skeleton = model->skeleton;
-    drawGroup.player = model->player;
+    drawGroup.aabb = model.aabb;
+    drawGroup.transform = transform;
+    drawGroup.skeleton = model.skeleton;
 
-    drawGroup.transform = globalTransform;
-    drawGroup.instanced.buffer = *instances;
-    drawGroup.instanced.allAabb = globalAabb;
-    drawGroup.instanced.count = CLAMP(count, 0, instances->capacity);
+    drawGroup.transform = transform;
+    drawGroup.instances = instances;
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
     r3d_draw_group_push(&drawGroup);
 
-    for (int i = 0; i < model->meshCount; i++)
+    for (int i = 0; i < model.meshCount; i++)
     {
-        const R3D_Mesh* mesh = &model->meshes[i];
+        const R3D_Mesh* mesh = &model.meshes[i];
 
         if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
             return;
@@ -340,14 +337,91 @@ void R3D_DrawModelInstancedEx(const R3D_Model* model, BoundingBox globalAabb, Ma
 
         r3d_draw_call_t drawCall = {0};
 
-        drawCall.material = model->materials[model->meshMaterials[i]];
+        drawCall.material = model.materials[model.meshMaterials[i]];
         drawCall.mesh = *mesh;
 
         r3d_draw_call_push(&drawCall, false);
     }
 }
 
-void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
+void R3D_DrawAnimatedModel(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, float scale)
+{
+    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    R3D_DrawAnimatedModelPro(model, player, transform);
+}
+
+void R3D_DrawAnimatedModelEx(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, Quaternion rotation, Vector3 scale)
+{
+    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    R3D_DrawAnimatedModelPro(model, player, transform);
+}
+
+void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matrix transform)
+{
+    r3d_draw_group_t drawGroup = {0};
+
+    drawGroup.aabb = model.aabb;
+    drawGroup.transform = transform;
+    drawGroup.skeleton = model.skeleton;
+    drawGroup.player = player;
+
+    r3d_draw_group_push(&drawGroup);
+
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        const R3D_Mesh* mesh = &model.meshes[i];
+
+        if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
+            return;
+        }
+
+        r3d_draw_call_t drawCall = {0};
+
+        drawCall.material = model.materials[model.meshMaterials[i]];
+        drawCall.mesh = *mesh;
+
+        r3d_draw_call_push(&drawCall, false);
+    }
+}
+
+void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count)
+{
+    R3D_DrawAnimatedModelInstancedEx(model, player, instances, count, R3D_MATRIX_IDENTITY);
+}
+
+void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform)
+{
+    r3d_draw_group_t drawGroup = {0};
+
+    drawGroup.aabb = model.aabb;
+    drawGroup.transform = transform;
+    drawGroup.skeleton = model.skeleton;
+    drawGroup.player = player;
+
+    drawGroup.transform = transform;
+    drawGroup.instances = instances;
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
+
+    r3d_draw_group_push(&drawGroup);
+
+    for (int i = 0; i < model.meshCount; i++)
+    {
+        const R3D_Mesh* mesh = &model.meshes[i];
+
+        if (!R3D_CACHE_FLAGS_HAS(layers, mesh->layerMask)) {
+            return;
+        }
+
+        r3d_draw_call_t drawCall = {0};
+
+        drawCall.material = model.materials[model.meshMaterials[i]];
+        drawCall.mesh = *mesh;
+
+        r3d_draw_call_push(&drawCall, false);
+    }
+}
+
+void R3D_DrawDecal(R3D_Decal decal, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
     drawGroup.transform = transform;
@@ -355,7 +429,7 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
     r3d_draw_group_push(&drawGroup);
 
     r3d_draw_call_t drawCall = {0};
-    drawCall.material = decal->material;
+    drawCall.material = decal.material;
     drawCall.mesh.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
     drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
     drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
@@ -363,21 +437,19 @@ void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform)
     r3d_draw_call_push(&drawCall, true);
 }
 
-void R3D_DrawDecalInstanced(const R3D_Decal* decal, const R3D_InstanceBuffer* instances, int count)
+void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count)
 {
     r3d_draw_group_t drawGroup = {0};
 
     drawGroup.transform = R3D_MATRIX_IDENTITY;
-    // TODO: Move aabb evaluation to potential Pro version of this function
-    drawGroup.instanced.buffer = *instances;
-    drawGroup.instanced.allAabb = (BoundingBox){0};
-    drawGroup.instanced.count = CLAMP(count, 0, instances->capacity);
+    drawGroup.instances = instances;
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
     r3d_draw_group_push(&drawGroup);
 
     r3d_draw_call_t drawCall = {0};
 
-    drawCall.material = decal->material;
+    drawCall.material = decal.material;
     drawCall.mesh.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
     drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
     drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
@@ -400,8 +472,9 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
 
     /* --- Send skinning related data --- */
 
-    if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.depth, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
+    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
+        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
+        R3D_SHADER_BIND_SAMPLER_1D(scene.depth, uTexBoneMatrices, texPose);
         R3D_SHADER_SET_INT(scene.depth, uSkinning, true);
     }
     else {
@@ -468,8 +541,9 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
 
     /* --- Send skinning related data --- */
 
-    if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
+    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
+        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
+        R3D_SHADER_BIND_SAMPLER_1D(scene.depthCube, uTexBoneMatrices, texPose);
         R3D_SHADER_SET_INT(scene.depthCube, uSkinning, true);
     }
     else {
@@ -544,8 +618,9 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     /* --- Send skinning related data --- */
 
-    if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
+    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
+        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
+        R3D_SHADER_BIND_SAMPLER_1D(scene.geometry, uTexBoneMatrices, texPose);
         R3D_SHADER_SET_INT(scene.geometry, uSkinning, true);
     }
     else {
@@ -583,7 +658,7 @@ void raster_geometry(const r3d_draw_call_t* call)
     R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
     R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -646,7 +721,7 @@ void raster_decal(const r3d_draw_call_t* call)
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -661,11 +736,7 @@ void raster_decal(const r3d_draw_call_t* call)
 
     if (r3d_draw_has_instances(group)) {
         R3D_SHADER_SET_INT(scene.decal, uInstancing, true);
-        r3d_primitive_draw_instanced(
-            R3D_PRIMITIVE_CUBE,
-            &group->instanced.buffer,
-            group->instanced.count
-        );
+        r3d_primitive_draw_instanced(R3D_PRIMITIVE_CUBE, &group->instances, group->instanceCount);
     }
     else {
         R3D_SHADER_SET_INT(scene.decal, uInstancing, false);
@@ -693,8 +764,9 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Send skinning related data --- */
 
-    if (group->player != NULL || R3D_IsSkeletonValid(&group->skeleton)) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.forward, uTexBoneMatrices, group->player ? group->player->texGlobalPose : group->skeleton.texBindPose);
+    if (group->player.texGlobalPose > 0 || group->skeleton.texBindPose > 0) {
+        GLuint texPose = (group->player.texGlobalPose > 0) ? group->player.texGlobalPose : group->skeleton.texBindPose;
+        R3D_SHADER_BIND_SAMPLER_1D(scene.forward, uTexBoneMatrices, texPose);
         R3D_SHADER_SET_INT(scene.forward, uSkinning, true);
     }
     else {
@@ -732,7 +804,7 @@ void raster_forward(const r3d_draw_call_t* call)
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 

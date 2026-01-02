@@ -13,45 +13,26 @@
 #include "./modules/r3d_texture.h"
 
 // ========================================
+// INTERNAL STATE
+// ========================================
+
+static R3D_Material G_DefaultMaterial = R3D_MATERIAL_BASE;
+
+// ========================================
 // PUBLIC API
 // ========================================
 
 R3D_Material R3D_GetDefaultMaterial(void)
 {
-    R3D_Material material = { 0 };
-
-    // Albedo map
-    material.albedo.texture = R3D_GetWhiteTexture();
-    material.albedo.color = WHITE;
-
-    // Emission map
-    material.emission.texture = R3D_GetWhiteTexture();
-    material.emission.color = WHITE;
-    material.emission.energy = 0.0f;
-
-    // Normal map
-    material.normal.texture = R3D_GetNormalTexture();
-    material.normal.scale = 1.0f;
-
-    // ORM map
-    material.orm.texture = R3D_GetWhiteTexture();
-    material.orm.occlusion = 1.0f;
-    material.orm.roughness = 1.0f;
-    material.orm.metalness = 0.0f;
-
-    // Misc
-    material.transparencyMode = R3D_TRANSPARENCY_DISABLED;
-    material.billboardMode = R3D_BILLBOARD_DISABLED;
-    material.blendMode = R3D_BLEND_MIX;
-    material.cullMode = R3D_CULL_BACK;
-    material.uvOffset = (Vector2) {0.0f, 0.0f};
-    material.uvScale = (Vector2) {1.0f, 1.0f};
-    material.alphaCutoff = 0.01f;
-
-    return material;
+    return G_DefaultMaterial;
 }
 
-void R3D_UnloadMaterial(const R3D_Material* material)
+void R3D_SetDefaultMaterial(R3D_Material material)
+{
+    G_DefaultMaterial = material;
+}
+
+void R3D_UnloadMaterial(R3D_Material material)
 {
 #define UNLOAD_TEXTURE_IF_VALID(id) \
     do { \
@@ -60,10 +41,10 @@ void R3D_UnloadMaterial(const R3D_Material* material)
         } \
     } while (0)
 
-    UNLOAD_TEXTURE_IF_VALID(material->albedo.texture.id);
-    UNLOAD_TEXTURE_IF_VALID(material->emission.texture.id);
-    UNLOAD_TEXTURE_IF_VALID(material->normal.texture.id);
-    UNLOAD_TEXTURE_IF_VALID(material->orm.texture.id);
+    UNLOAD_TEXTURE_IF_VALID(material.albedo.texture.id);
+    UNLOAD_TEXTURE_IF_VALID(material.emission.texture.id);
+    UNLOAD_TEXTURE_IF_VALID(material.normal.texture.id);
+    UNLOAD_TEXTURE_IF_VALID(material.orm.texture.id);
 
 #undef UNLOAD_TEXTURE_IF_VALID
 }

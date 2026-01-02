@@ -12,6 +12,7 @@
 #include <raylib.h>
 #include <uthash.h>
 
+#include <r3d/r3d_animation.h>
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_skeleton.h>
 #include <r3d/r3d_model.h>

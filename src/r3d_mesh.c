@@ -16,11 +16,11 @@
 // PUBLIC API
 // ========================================
 
-R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const BoundingBox* aabb, R3D_MeshUsage usage)
+R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingBox* aabb, R3D_MeshUsage usage)
 {
     R3D_Mesh mesh = { 0 };
 
-    if (data == NULL || data->vertexCount <= 0 || !data->vertices) {
+    if (data.vertexCount <= 0 || !data.vertices) {
         TraceLog(LOG_WARNING, "R3D: Invalid mesh data passed to R3D_UpdateMesh");
         return mesh;
     }
@@ -42,7 +42,7 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     // Creation of the VBO
     glGenBuffers(1, &mesh.vbo);
     glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, data->vertexCount * sizeof(R3D_Vertex), data->vertices, glUsage);
+    glBufferData(GL_ARRAY_BUFFER, data.vertexCount * sizeof(R3D_Vertex), data.vertices, glUsage);
 
     // position (vec3)
     glEnableVertexAttribArray(0);
@@ -89,10 +89,10 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
 
     // EBO if indices present
-    if (data->indexCount > 0 && data->indices) {
+    if (data.indexCount > 0 && data.indices) {
         glGenBuffers(1, &mesh.ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data->indexCount * sizeof(uint32_t), data->indices, glUsage);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indexCount * sizeof(uint32_t), data.indices, glUsage);
     }
 
     // Cleaning
@@ -101,8 +101,8 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // Fill mesh infos
-    mesh.vertexCount = mesh.allocVertexCount = data->vertexCount;
-    mesh.indexCount = mesh.allocIndexCount = data->indexCount;
+    mesh.vertexCount = mesh.allocVertexCount = data.vertexCount;
+    mesh.indexCount = mesh.allocIndexCount = data.indexCount;
     mesh.shadowCastMode = R3D_SHADOW_CAST_ON_AUTO;
     mesh.layerMask = R3D_LAYER_01;
     mesh.primitiveType = type;
@@ -115,16 +115,16 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const Bo
     return mesh;
 }
 
-void R3D_UnloadMesh(R3D_Mesh* mesh)
+void R3D_UnloadMesh(R3D_Mesh mesh)
 {
-    if (mesh->vao != 0) glDeleteVertexArrays(1, &mesh->vao);
-    if (mesh->vbo != 0) glDeleteBuffers(1, &mesh->vbo);
-    if (mesh->ebo != 0) glDeleteBuffers(1, &mesh->ebo);
+    if (mesh.vao != 0) glDeleteVertexArrays(1, &mesh.vao);
+    if (mesh.vbo != 0) glDeleteBuffers(1, &mesh.vbo);
+    if (mesh.ebo != 0) glDeleteBuffers(1, &mesh.ebo);
 }
 
-bool R3D_IsMeshValid(const R3D_Mesh* mesh)
+bool R3D_IsMeshValid(R3D_Mesh mesh)
 {
-    return (mesh->vao != 0) && (mesh->vbo != 0);
+    return (mesh.vao != 0) && (mesh.vbo != 0);
 }
 
 R3D_Mesh R3D_GenMeshQuad(float width, float length, int resX, int resZ, Vector3 frontDir)
@@ -132,10 +132,10 @@ R3D_Mesh R3D_GenMeshQuad(float width, float length, int resX, int resZ, Vector3 
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataQuad(width, length, resX, resZ, frontDir);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, NULL, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, NULL, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -145,15 +145,15 @@ R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataPlane(width, length, resX, resZ);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-width * 0.5f, 0.0f, -length * 0.5f},
         { width * 0.5f, 0.0f,  length * 0.5f}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -163,15 +163,15 @@ R3D_Mesh R3D_GenMeshPoly(int sides, float radius)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataPoly(sides, radius);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius, 0.0f, -radius},
         { radius, 0.0f,  radius}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -181,15 +181,15 @@ R3D_Mesh R3D_GenMeshCube(float width, float height, float length)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataCube(width, height, length);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-width * 0.5f, -height * 0.5f, -length * 0.5f},
         { width * 0.5f,  height * 0.5f,  length * 0.5f}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -199,15 +199,15 @@ R3D_Mesh R3D_GenMeshSphere(float radius, int rings, int slices)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataSphere(radius, rings, slices);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius, -radius, -radius},
         { radius,  radius,  radius}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -217,15 +217,15 @@ R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataHemiSphere(radius, rings, slices);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius,   0.0f, -radius},
         { radius, radius,  radius}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -235,15 +235,15 @@ R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataCylinder(radius, height, slices);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius,   0.0f, -radius},
         { radius, height,  radius}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -253,15 +253,15 @@ R3D_Mesh R3D_GenMeshCone(float radius, float height, int slices)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataCone(radius, height, slices);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius,   0.0f, -radius},
         { radius, height,  radius}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -271,15 +271,15 @@ R3D_Mesh R3D_GenMeshTorus(float radius, float size, int radSeg, int sides)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataTorus(radius, size, radSeg, sides);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius - size, -size, -radius - size},
         { radius + size,  size,  radius + size}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -289,15 +289,15 @@ R3D_Mesh R3D_GenMeshKnot(float radius, float size, int radSeg, int sides)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataKnot(radius, size, radSeg, sides);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-radius - size, -size, -radius - size},
         { radius + size,  size,  radius + size}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -307,15 +307,15 @@ R3D_Mesh R3D_GenMeshHeightmap(Image heightmap, Vector3 size)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataHeightmap(heightmap, size);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {-size.x * 0.5f,   0.0f, -size.z * 0.5f},
         { size.x * 0.5f, size.y,  size.z * 0.5f}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
@@ -325,27 +325,27 @@ R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
     R3D_Mesh mesh = { 0 };
 
     R3D_MeshData data = R3D_GenMeshDataCubicmap(cubicmap, cubeSize);
-    if (!R3D_IsMeshDataValid(&data)) return mesh;
+    if (!R3D_IsMeshDataValid(data)) return mesh;
 
     BoundingBox aabb = {
         {0.0f, 0.0f, 0.0f},
         {cubicmap.width * cubeSize.x, cubeSize.y, cubicmap.height * cubeSize.z}
     };
 
-    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, &data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(&data);
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
 
     return mesh;
 }
 
-bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb)
+bool R3D_UpdateMesh(R3D_Mesh* mesh, R3D_MeshData data, const BoundingBox* aabb)
 {
     if (!mesh || mesh->vao == 0 || mesh->vbo == 0) {
         TraceLog(LOG_WARNING, "R3D: Cannot update mesh; Invalid mesh instance");
         return false;
     }
 
-    if (!data || data->vertexCount <= 0 || !data->vertices) {
+    if (data.vertexCount <= 0 || !data.vertices) {
         TraceLog(LOG_WARNING, "R3D: Invalid mesh data given to R3D_UpdateMesh");
         return false;
     }
@@ -363,23 +363,23 @@ bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox*
     glBindVertexArray(mesh->vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
 
-    if (mesh->allocVertexCount < data->vertexCount) {
-        glBufferData(GL_ARRAY_BUFFER, mesh->vertexCount * sizeof(R3D_Vertex), data->vertices, glUsage);
-        mesh->allocVertexCount = data->vertexCount;
+    if (mesh->allocVertexCount < data.vertexCount) {
+        glBufferData(GL_ARRAY_BUFFER, mesh->vertexCount * sizeof(R3D_Vertex), data.vertices, glUsage);
+        mesh->allocVertexCount = data.vertexCount;
     }
     else {
-        glBufferSubData(GL_ARRAY_BUFFER, 0, mesh->vertexCount * sizeof(R3D_Vertex), data->vertices);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, mesh->vertexCount * sizeof(R3D_Vertex), data.vertices);
     }
 
-    if (data->indexCount > 0) {
-        if (mesh->allocIndexCount < data->indexCount) {
+    if (data.indexCount > 0) {
+        if (mesh->allocIndexCount < data.indexCount) {
             if (mesh->ebo == 0) glGenBuffers(1, &mesh->ebo);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indexCount * sizeof(uint32_t), data->indices, glUsage);
-            mesh->allocIndexCount = data->indexCount;
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indexCount * sizeof(uint32_t), data.indices, glUsage);
+            mesh->allocIndexCount = data.indexCount;
         }
         else {
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, mesh->indexCount * sizeof(uint32_t), data->indices);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, mesh->indexCount * sizeof(uint32_t), data.indices);
         }
     }
 
@@ -387,8 +387,8 @@ bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox*
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    mesh->vertexCount = data->vertexCount;
-    mesh->indexCount = data->indexCount;
+    mesh->vertexCount = data.vertexCount;
+    mesh->indexCount = data.indexCount;
 
     return true;
 }

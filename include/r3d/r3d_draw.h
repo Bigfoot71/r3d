@@ -9,6 +9,7 @@
 #ifndef R3D_DRAW_H
 #define R3D_DRAW_H
 
+#include "./r3d_animation.h"
 #include "./r3d_instance.h"
 #include "./r3d_platform.h"
 #include "./r3d_model.h"
@@ -29,164 +30,160 @@ extern "C" {
 #endif
 
 /**
- * @brief Begins a rendering session for a 3D camera.
- * 
- * This function starts a rendering session, preparing the engine to handle subsequent 
- * draw calls using the provided camera settings. Rendering output will be directed 
- * to the default screen framebuffer.
- * 
- * @param camera The camera to use for rendering the scene.
+ * @brief Begins a rendering session using the given camera.
+ *
+ * Rendering output is directed to the default framebuffer.
+ *
+ * @param camera Camera used to render the scene.
  */
 R3DAPI void R3D_Begin(Camera3D camera);
 
 /**
- * @brief Begins a rendering session for a 3D camera with an optional custom render target.
- * 
- * This function starts a rendering session, preparing the engine to handle subsequent 
- * draw calls using the provided camera settings. If a render target is provided, rendering 
- * output will be directed to it. If the target is `NULL`, rendering will be performed 
- * directly to the screen framebuffer (same behavior as R3D_Begin).
- * 
- * @param camera The camera to use for rendering the scene.
- * @param target Optional pointer to a RenderTexture to render into. Can be NULL to render 
- *               directly to the screen.
+ * @brief Begins a rendering session with a custom render target.
+ *
+ * If the render target is invalid (ID = 0), rendering goes to the screen.
+ *
+ * @param target Render texture to render into.
+ * @param camera Camera used to render the scene.
  */
-R3DAPI void R3D_BeginEx(Camera3D camera, const RenderTexture* target);
+R3DAPI void R3D_BeginEx(RenderTexture target, Camera3D camera);
 
 /**
  * @brief Ends the current rendering session.
- * 
- * This function signals the end of a rendering session, at which point the engine 
- * will process all necessary render passes and output the final result to the main 
- * or custom framebuffer.
+ *
+ * This function is the one that actually performs the full
+ * rendering of the described scene. It carries out culling,
+ * sorting, shadow rendering, scene rendering, and screen /
+ * post-processing effects.
  */
 R3DAPI void R3D_End(void);
 
 /**
- * @brief Draws a mesh with a specified material and transformation.
- * 
- * This function renders a mesh with the provided material and transformation matrix.
- * 
- * @param mesh A pointer to the mesh to render. Cannot be NULL.
- * @param material A pointer to the material to apply to the mesh. Can be NULL, default material will be used.
- * @param transform The transformation matrix to apply to the mesh.
+ * @brief Queues a mesh draw command.
+ *
+ * Draws the mesh at the given position and uniform scale.
+ * The command is executed during R3D_End().
  */
-R3DAPI void R3D_DrawMesh(const R3D_Mesh* mesh, const R3D_Material* material, Matrix transform);
+R3DAPI void R3D_DrawMesh(R3D_Mesh mesh, R3D_Material material, Vector3 position, float scale);
 
 /**
- * @brief Draws a mesh with instancing support.
- * 
- * This function renders a mesh multiple times for each instance.
- * 
- * @param mesh A pointer to the mesh to render. Cannot be NULL.
- * @param material A pointer to the material to apply to the mesh. Can be NULL, default material will be used.
- * @param instances A pointer tot the instance buffer to use. Cannot be NULL.
- * @param count The number of instances to render. Clamped between 1 and instance buffer capacity.
+ * @brief Queues a mesh draw command with rotation and non-uniform scale.
+ *
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawMeshInstanced(const R3D_Mesh* mesh, const R3D_Material* material, const R3D_InstanceBuffer* instances, int count);
+R3DAPI void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quaternion rotation, Vector3 scale);
 
 /**
- * @brief Draws a mesh with instancing support.
+ * @brief Queues a mesh draw command using a full transform matrix.
  *
- * This function renders a mesh multiple times for each instance.
- * Allows to provide a bounding box and global transformation of all instances.
- *
- * @param mesh A pointer to the mesh to render. Cannot be NULL.
- * @param material A pointer to the material to apply to the mesh. Can be NULL, default material will be used.
- * @param globalAaabb Bounding box for frustum culling. Ignored if zeroed.
- * @param globalTransform Global transformation matrix for all instances.
- * @param instances A pointer tot the instance buffer to use. Cannot be NULL.
- * @param count The number of instances to render. Clamped between 1 and instance buffer capacity.
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawMeshInstancedEx(const R3D_Mesh* mesh, const R3D_Material* material,
-                                    BoundingBox globalAabb, Matrix globalTransform,
-                                    const R3D_InstanceBuffer* instances, int count);
+R3DAPI void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform);
 
 /**
- * @brief Draws a model at a specified position and scale.
+ * @brief Queues an instanced mesh draw command.
  *
- * This function renders a model at the given position with the specified scale factor.
- *
- * @param model A pointer to the model to render.
- * @param position The position to place the model at.
- * @param scale The scale factor to apply to the model.
+ * Draws multiple instances using the provided instance buffer.
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawModel(const R3D_Model* model, Vector3 position, float scale);
+R3DAPI void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count);
 
 /**
- * @brief Draws a model with advanced transformation options.
+ * @brief Queues an instanced mesh draw command with an additional transform.
  *
- * This function renders a model with a specified position, rotation axis, rotation 
- * angle, and scale. It provides more control over how the model is transformed before 
- * rendering.
- *
- * @param model A pointer to the model to render.
- * @param position The position to place the model at.
- * @param rotationAxis The axis of rotation for the model.
- * @param rotationAngle The angle to rotate the model.
- * @param scale The scale factor to apply to the model.
+ * The transform is applied to all instances. Executed during R3D_End().
  */
-R3DAPI void R3D_DrawModelEx(const R3D_Model* model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale);
+R3DAPI void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform);
 
 /**
- * @brief Draws a model using a transformation matrix.
+ * @brief Queues a model draw command.
  *
- * This function renders a model using a custom transformation matrix, allowing full control 
- * over the model's position, rotation, scale, and skew. It is intended for advanced rendering 
- * scenarios where a single matrix defines the complete transformation.
- *
- * @param model A pointer to the model to render.
- * @param transform A transformation matrix that defines how to position, rotate, and scale the model.
+ * Draws the model at the given position and uniform scale.
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawModelPro(const R3D_Model* model, Matrix transform);
+R3DAPI void R3D_DrawModel(R3D_Model model, Vector3 position, float scale);
 
 /**
- * @brief Draws a model with instancing support.
+ * @brief Queues a model draw command with rotation and non-uniform scale.
  *
- * This function renders a model multiple times for each instance.
- * 
- * @param model A pointer to the model to render. Cannot be NULL.
- * @param instances A pointer tot the instance buffer to use. Cannot be NULL.
- * @param count The number of instances to render. Clamped between 1 and instance buffer capacity.
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawModelInstanced(const R3D_Model* model, const R3D_InstanceBuffer* instances, int count);
+R3DAPI void R3D_DrawModelEx(R3D_Model model, Vector3 position, Quaternion rotation, Vector3 scale);
 
 /**
- * @brief Draws a model with instancing support.
+ * @brief Queues a model draw command using a full transform matrix.
  *
- * This function renders a model multiple times for each instance.
- * Allows to provide a bounding box and global transformation of all instances.
- *
- * @param model A pointer to the model to render. Cannot be NULL.
- * @param globalAaabb Bounding box for frustum culling. Ignored if zeroed.
- * @param globalTransform Global transformation matrix for all instances.
- * @param instances A pointer tot the instance buffer to use. Cannot be NULL.
- * @param count The number of instances to render. Clamped between 1 and instance buffer capacity.
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawModelInstancedEx(const R3D_Model* model,
-                                     BoundingBox globalAabb, Matrix globalTransform,
-                                     const R3D_InstanceBuffer* instances, int count);
+R3DAPI void R3D_DrawModelPro(R3D_Model model, Matrix transform);
 
 /**
- * @brief Draws a decal using a transformation matrix.
+ * @brief Queues an instanced model draw command.
  *
- * This function renders a decal in 3D space at the given position.
- *
- * @param decal A pointer to the decal to render.
- * @param transform A transformation matrix that defines how to position, rotate, and scale the decal.
+ * Draws multiple instances using the provided instance buffer.
+ * Executed during R3D_End().
  */
-R3DAPI void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform);
+R3DAPI void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int count);
 
 /**
- * @brief Draws a decal with instancing support.
+ * @brief Queues an instanced model draw command with an additional transform.
  *
- * This function renders a decal multiple times for each instance.
- *
- * @param decal A pointer to the decal to render. Cannot be NULL.
- * @param instances A pointer tot the instance buffer to use. Cannot be NULL.
- * @param count The number of instances to render. Clamped between 1 and instance buffer capacity.
+ * The transform is applied to all instances. Executed during R3D_End().
  */
-R3DAPI void R3D_DrawDecalInstanced(const R3D_Decal* decal, const R3D_InstanceBuffer* instances, int count);
+R3DAPI void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform);
+
+/**
+ * @brief Queues an animated model draw command.
+ *
+ * Uses the provided animation player to compute the pose.
+ * Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawAnimatedModel(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, float scale);
+
+/**
+ * @brief Queues an animated model draw command with rotation and non-uniform scale.
+ *
+ * Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawAnimatedModelEx(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, Quaternion rotation, Vector3 scale);
+
+/**
+ * @brief Queues an animated model draw command using a full transform matrix.
+ *
+ * Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matrix transform);
+
+/**
+ * @brief Queues an instanced animated model draw command.
+ *
+ * Draws multiple animated instances using the provided instance buffer.
+ * Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count);
+
+/**
+ * @brief Queues an instanced animated model draw command with an additional transform.
+ *
+ * The transform is applied to all instances. Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform);
+
+/**
+ * @brief Queues a decal draw command.
+ *
+ * The decal is transformed by the given matrix.
+ * Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawDecal(R3D_Decal decal, Matrix transform);
+
+/**
+ * @brief Queues an instanced decal draw command.
+ *
+ * Draws multiple decals using the provided instance buffer.
+ * Executed during R3D_End().
+ */
+R3DAPI void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count);
 
 #ifdef __cplusplus
 } // extern "C"
