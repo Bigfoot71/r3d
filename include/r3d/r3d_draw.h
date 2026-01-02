@@ -180,7 +180,7 @@ R3DAPI void R3D_DrawDecal(const R3D_Decal* decal, Matrix transform);
 /**
  * @brief Draws a decal with instancing support.
  *
- * This function renders a model multiple times for each instance.
+ * This function renders a decal multiple times for each instance.
  *
  * @param decal A pointer to the decal to render. Cannot be NULL.
  * @param instances A pointer tot the instance buffer to use. Cannot be NULL.
