@@ -9,6 +9,7 @@
 #include "./r3d_cache.h"
 
 #include <r3d/r3d_environment.h>
+#include <r3d/r3d_material.h>
 #include <stdalign.h>
 #include <raymath.h>
 #include <stddef.h>
@@ -52,6 +53,7 @@ bool r3d_cache_init(R3D_Flags flags)
     R3D_MOD_CACHE.matCubeViews[5] = MatrixLookAt((Vector3) {0}, (Vector3) { 0.0f,  0.0f, -1.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
 
     R3D_MOD_CACHE.environment = R3D_ENVIRONMENT_BASE;
+    R3D_MOD_CACHE.material = R3D_MATERIAL_BASE;
 
     R3D_MOD_CACHE.textureColorSpace = R3D_COLORSPACE_SRGB;
     R3D_MOD_CACHE.textureFilter = TEXTURE_FILTER_TRILINEAR;

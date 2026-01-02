@@ -9,7 +9,6 @@
 #ifndef R3D_MODEL_H
 #define R3D_MODEL_H
 
-#include "./r3d_animation.h"
 #include "./r3d_material.h"
 #include "./r3d_skeleton.h"
 #include "./r3d_platform.h"
@@ -40,8 +39,6 @@ typedef struct R3D_Model {
 
     BoundingBox aabb;                   ///< Axis-Aligned Bounding Box encompassing the whole model.
     R3D_Skeleton skeleton;              ///< Skeleton hierarchy and bind pose used for skinning (NULL if non-skinned).
-
-    R3D_AnimationPlayer* player;        ///< Animation player controlling the skeleton. If NULL the model uses its bind pose.
 
 } R3D_Model;
 
@@ -91,11 +88,11 @@ R3DAPI R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size, co
  * @warning The model's bounding box calculation assumes that the mesh's
  * bounding boxes has already been computed.
  *
- * @param mesh Pointer to the mesh to be wrapped in a model structure.
+ * @param mesh The mesh to be wrapped in a model structure.
  *
  * @return Model structure containing the specified mesh.
  */
-R3DAPI R3D_Model R3D_LoadModelFromMesh(const R3D_Mesh* mesh);
+R3DAPI R3D_Model R3D_LoadModelFromMesh(R3D_Mesh mesh);
 
 /**
  * @brief Unload a model and optionally its materials.
@@ -103,11 +100,11 @@ R3DAPI R3D_Model R3D_LoadModelFromMesh(const R3D_Mesh* mesh);
  * Frees all memory associated with a model, including its meshes.
  * Materials can be optionally unloaded as well.
  *
- * @param model Pointer to the model structure to be unloaded.
+ * @param model The model to be unloaded.
  * @param unloadMaterials If true, also unloads all materials associated with the model.
  * Set to false if textures are still being used elsewhere to avoid freeing shared resources.
  */
-R3DAPI void R3D_UnloadModel(R3D_Model* model, bool unloadMaterials);
+R3DAPI void R3D_UnloadModel(R3D_Model model, bool unloadMaterials);
 
 #ifdef __cplusplus
 } // extern "C"

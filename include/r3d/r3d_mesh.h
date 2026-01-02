@@ -96,29 +96,29 @@ extern "C" {
 /**
  * @brief Creates a 3D mesh from CPU-side mesh data.
  * @param type Primitive type used to interpret vertex data.
- * @param data Pointer to the R3D_MeshData containing vertices and indices (cannot be NULL).
+ * @param data R3D_MeshData containing vertices and indices (cannot be NULL).
  * @param aabb Optional pointer to a bounding box. If NULL, it will be computed automatically.
  * @param usage Hint on how the mesh will be used.
  * @return Created R3D_Mesh.
  * @note The function copies all vertex and index data into GPU buffers.
  */
-R3DAPI R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, const R3D_MeshData* data, const BoundingBox* aabb, R3D_MeshUsage usage);
+R3DAPI R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingBox* aabb, R3D_MeshUsage usage);
 
 /**
  * @brief Destroys a 3D mesh and frees its resources.
- * @param mesh Pointer to the R3D_Mesh to destroy.
+ * @param mesh R3D_Mesh to destroy.
  */
-R3DAPI void R3D_UnloadMesh(R3D_Mesh* mesh);
+R3DAPI void R3D_UnloadMesh(R3D_Mesh mesh);
 
 /**
  * @brief Check if a mesh is valid for rendering.
  * 
  * Returns true if the mesh has a valid VAO and VBO.
  *
- * @param mesh Pointer to the mesh to check.
+ * @param mesh The mesh to check.
  * @return true if valid, false otherwise.
  */
-R3DAPI bool R3D_IsMeshValid(const R3D_Mesh* mesh);
+R3DAPI bool R3D_IsMeshValid(R3D_Mesh mesh);
 
 /**
  * @brief Generate a quad mesh with orientation.
@@ -250,12 +250,12 @@ R3DAPI R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize);
  * If `aabb` is provided, it will be used as the mesh's bounding box; if null,
  * the bounding box is automatically recalculated from the vertex data.
  *
- * @param mesh Pointer to the mesh structure to upload or update.
- * @param data Pointer to the mesh data (vertices and indices) to upload.
+ * @param mesh Pointer to the mesh structure to update.
+ * @param data Mesh data (vertices and indices) to upload.
  * @param aabb Optional bounding box; if null, it is recalculated automatically.
  * @return Returns true if the update is successful, false otherwise.
  */
-R3DAPI bool R3D_UpdateMesh(R3D_Mesh* mesh, const R3D_MeshData* data, const BoundingBox* aabb);
+R3DAPI bool R3D_UpdateMesh(R3D_Mesh* mesh, R3D_MeshData data, const BoundingBox* aabb);
 
 #ifdef __cplusplus
 } // extern "C"

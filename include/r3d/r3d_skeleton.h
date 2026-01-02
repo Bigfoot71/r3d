@@ -87,19 +87,19 @@ R3DAPI R3D_Skeleton R3D_LoadSkeletonFromData(const void* data, unsigned int size
 /**
  * @brief Frees the memory allocated for a skeleton.
  *
- * @param skeleton Pointer to the R3D_Skeleton to destroy.
+ * @param skeleton R3D_Skeleton to destroy.
  */
-R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton* skeleton);
+R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton skeleton);
 
 /**
  * @brief Check if a skeleton is valid.
  * 
  * Returns true if atleast the texBindPose is greater than zero.
  *
- * @param skeleton Pointer to the skeleton to check.
+ * @param skeleton The skeleton to check.
  * @return true if valid, false otherwise.
  */
-R3DAPI bool R3D_IsSkeletonValid(const R3D_Skeleton* skeleton);
+R3DAPI bool R3D_IsSkeletonValid(R3D_Skeleton skeleton);
 
 #ifdef __cplusplus
 } // extern "C"

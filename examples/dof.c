@@ -91,7 +91,7 @@ int main(void)
 
             // Render scene
             R3D_Begin(camDefault);
-                R3D_DrawMeshInstanced(&meshSphere, &matDefault, &instances, INSTANCE_COUNT);
+                R3D_DrawMeshInstanced(meshSphere, matDefault, instances, INSTANCE_COUNT);
             R3D_End();
 
             // Display DoF values
@@ -115,7 +115,7 @@ int main(void)
 
     // Cleanup
     R3D_UnloadInstanceBuffer(instances);
-    R3D_UnloadMesh(&meshSphere);
+    R3D_UnloadMesh(meshSphere);
     R3D_Close();
 
     CloseWindow();

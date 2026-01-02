@@ -62,8 +62,8 @@ int main(void)
 
         // Draw scene
         R3D_Begin(camera);
-            R3D_DrawMesh(&plane, &material, MatrixTranslate(0, -0.5f, 0));
-            R3D_DrawMeshInstanced(&sphere, &material, &instances, GRID_SIZE*GRID_SIZE);
+            R3D_DrawMesh(plane, material, (Vector3) {0, -0.5f, 0}, 1.0f);
+            R3D_DrawMeshInstanced(sphere, material, instances, GRID_SIZE*GRID_SIZE);
         R3D_End();
 
         // Optionally show lights shapes
@@ -82,8 +82,8 @@ int main(void)
 
     // Cleanup
     R3D_UnloadInstanceBuffer(instances);
-    R3D_UnloadMesh(&sphere);
-    R3D_UnloadMesh(&plane);
+    R3D_UnloadMesh(sphere);
+    R3D_UnloadMesh(plane);
     R3D_Close();
 
     CloseWindow();

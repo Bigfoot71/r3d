@@ -56,7 +56,7 @@ int main(void)
             // Draw spheres
             R3D_Begin(camera);
                 for (int i = 0; i < 5; i++) {
-                    R3D_DrawMesh(&sphere, &materials[i], MatrixTranslate((float)i - 2, 0, 0));
+                    R3D_DrawMesh(sphere, materials[i], (Vector3) {(float)i - 2, 0, 0}, 1.0f);
                 }
             R3D_End();
 
@@ -70,8 +70,9 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadMesh(&sphere);
+    R3D_UnloadMesh(sphere);
     R3D_Close();
+
     CloseWindow();
 
     return 0;

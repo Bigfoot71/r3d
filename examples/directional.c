@@ -66,8 +66,8 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMesh(&plane, &material, MatrixTranslate(0, -0.5f, 0));
-                R3D_DrawMeshInstanced(&sphere, &material, &instances, INSTANCE_COUNT);
+                R3D_DrawMesh(plane, material, (Vector3) {0, -0.5f, 0}, 1.0f);
+                R3D_DrawMeshInstanced(sphere, material, instances, INSTANCE_COUNT);
             R3D_End();
 
             DrawFPS(10, 10);
@@ -77,9 +77,9 @@ int main(void)
 
     // Cleanup
     R3D_UnloadInstanceBuffer(instances);
-    R3D_UnloadMaterial(&material);
-    R3D_UnloadMesh(&sphere);
-    R3D_UnloadMesh(&plane);
+    R3D_UnloadMaterial(material);
+    R3D_UnloadMesh(sphere);
+    R3D_UnloadMesh(plane);
     R3D_Close();
 
     CloseWindow();

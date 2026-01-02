@@ -54,9 +54,9 @@ int main(void)
 
     // Load animations
     R3D_AnimationLib dancerAnims = R3D_LoadAnimationLib(RESOURCES_PATH "dancer.glb");
-    dancer.player = R3D_LoadAnimationPlayer(&dancer.skeleton, &dancerAnims);
-    dancer.player->states[0].weight = 1.0f;
-    dancer.player->states[0].loop = true;
+    R3D_AnimationPlayer dancerPlayer = R3D_LoadAnimationPlayer(dancer.skeleton, dancerAnims);
+    dancerPlayer.states[0].weight = 1.0f;
+    dancerPlayer.states[0].loop = true;
 
     // Setup lights with shadows
     R3D_Light lights[2];
@@ -89,7 +89,7 @@ int main(void)
         float delta = GetFrameTime();
 
         UpdateCamera(&camera, CAMERA_FREE);
-        R3D_UpdateAnimationPlayer(dancer.player, delta);
+        R3D_UpdateAnimationPlayer(&dancerPlayer, delta);
 
         // Animate lights
         R3D_SetLightColor(lights[0], ColorFromHSV(90.0f * GetTime() + 90.0f, 1.0f, 1.0f));
@@ -99,9 +99,9 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMesh(&plane, &planeMat, MatrixIdentity());
-                R3D_DrawModel(&dancer, (Vector3){0, 0, 1.5f}, 1.0f);
-                R3D_DrawModelInstanced(&dancer, &instances, 4);
+                R3D_DrawMesh(plane, planeMat, Vector3Zero(), 1.0f);
+                R3D_DrawAnimatedModel(dancer, dancerPlayer, (Vector3){0, 0, 1.5f}, 1.0f);
+                R3D_DrawAnimatedModelInstanced(dancer, dancerPlayer, instances, 4);
             R3D_End();
 
             DrawText("Model made by zhuoyi0904", 10, GetScreenHeight() - 26, 16, LIME);
@@ -110,9 +110,11 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadMesh(&plane);
-    R3D_UnloadMaterial(&planeMat);
-    R3D_UnloadModel(&dancer, true);
+    R3D_UnloadAnimationPlayer(dancerPlayer);
+    R3D_UnloadAnimationLib(dancerAnims);
+    R3D_UnloadModel(dancer, true);
+    R3D_UnloadMaterial(planeMat);
+    R3D_UnloadMesh(plane);
     R3D_Close();
 
     CloseWindow();

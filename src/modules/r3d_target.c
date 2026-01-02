@@ -207,10 +207,9 @@ void r3d_target_resize(int resW, int resH)
     }
 }
 
-void r3d_target_set_blit_screen(const RenderTexture* screen)
+void r3d_target_set_blit_screen(RenderTexture screen)
 {
-    if (screen != NULL) R3D_MOD_TARGET.screen = *screen;
-    else R3D_MOD_TARGET.screen.id = 0;
+    R3D_MOD_TARGET.screen = screen;
 }
 
 void r3d_target_set_blit_mode(bool keepAspect, bool blitLinear)

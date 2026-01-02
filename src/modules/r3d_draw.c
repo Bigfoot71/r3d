@@ -156,11 +156,6 @@ static int compare_front_to_back(const void* a, const void* b)
 // INTERNAL DRAW FUNCTIONS
 // ========================================
 
-static inline const BoundingBox* get_group_aabb(const r3d_draw_group_t* group)
-{
-    return r3d_draw_has_instances(group) ? &group->instanced.allAabb : &group->aabb;
-}
-
 static GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
 {
     switch (primitive) {
@@ -305,7 +300,7 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
     for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++)
     {
         const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[i];
-        const BoundingBox* aabb = get_group_aabb(group);
+        const BoundingBox* aabb = &group->aabb;
 
         if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
             R3D_MOD_DRAW.visibleGroups[i] = true;
@@ -331,7 +326,7 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
     }
 
     const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
-    const BoundingBox* aabb = get_group_aabb(group);
+    const BoundingBox* aabb = &group->aabb;
 
     // If the AABB is 'zero', the object is considered visible
     if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
@@ -481,7 +476,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     GLenum primitive = get_opengl_primitive(call->mesh.primitiveType);
 
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-    const R3D_InstanceBuffer* instances = &group->instanced.buffer;
+    const R3D_InstanceBuffer* instances = &group->instances;
 
     glBindVertexArray(call->mesh.vao);
 
@@ -522,9 +517,9 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     }
 
     if (call->mesh.ebo == 0) {
-        glDrawArraysInstanced(primitive, 0, call->mesh.vertexCount, group->instanced.count);
+        glDrawArraysInstanced(primitive, 0, call->mesh.vertexCount, group->instanceCount);
     }
     else {
-        glDrawElementsInstanced(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL, group->instanced.count);
+        glDrawElementsInstanced(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL, group->instanceCount);
     }
 }

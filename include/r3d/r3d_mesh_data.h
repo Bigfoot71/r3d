@@ -75,9 +75,9 @@ R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
 
 /**
  * @brief Releases memory used by a mesh data container.
- * @param meshData Pointer to the R3D_MeshData to destroy.
+ * @param meshData R3D_MeshData to destroy.
  */
-R3DAPI void R3D_UnloadMeshData(R3D_MeshData* meshData);
+R3DAPI void R3D_UnloadMeshData(R3D_MeshData meshData);
 
 /**
  * @brief Check if mesh data is valid.
@@ -85,10 +85,10 @@ R3DAPI void R3D_UnloadMeshData(R3D_MeshData* meshData);
  * Returns true if the mesh data contains at least one vertex buffer
  * with a positive number of vertices.
  *
- * @param meshData Pointer to the mesh data to check.
+ * @param meshData Mesh data to check.
  * @return true if valid, false otherwise.
  */
-R3DAPI bool R3D_IsMeshDataValid(const R3D_MeshData* meshData);
+R3DAPI bool R3D_IsMeshDataValid(R3D_MeshData meshData);
 
 /**
  * @brief Generate a quad mesh with specified dimensions, resolution, and orientation.
@@ -270,7 +270,7 @@ R3DAPI R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize);
  * @param meshData Source mesh data to duplicate.
  * @return A new R3D_MeshData containing a copy of the source data.
  */
-R3DAPI R3D_MeshData R3D_DuplicateMeshData(const R3D_MeshData* meshData);
+R3DAPI R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData);
 
 /**
  * @brief Merges two mesh data containers into a single one.
@@ -278,7 +278,7 @@ R3DAPI R3D_MeshData R3D_DuplicateMeshData(const R3D_MeshData* meshData);
  * @param b Second mesh data.
  * @return A new R3D_MeshData containing the merged geometry.
  */
-R3DAPI R3D_MeshData R3D_MergeMeshData(const R3D_MeshData* a, const R3D_MeshData* b);
+R3DAPI R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b);
 
 /**
  * @brief Translates all vertices by a given offset.
@@ -338,7 +338,7 @@ R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData);
  * @param meshData Mesh data to analyze.
  * @return The computed bounding box.
  */
-R3DAPI BoundingBox R3D_CalculateMeshDataBoundingBox(const R3D_MeshData* meshData);
+R3DAPI BoundingBox R3D_CalculateMeshDataBoundingBox(R3D_MeshData meshData);
 
 #ifdef __cplusplus
 } // extern "C"

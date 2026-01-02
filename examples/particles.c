@@ -96,15 +96,15 @@ int main(void)
 
         BeginDrawing();
             R3D_Begin(camera);
-                R3D_DrawMeshInstanced(&mesh, &material, &instances, particleCount);
+                R3D_DrawMeshInstanced(mesh, material, instances, particleCount);
             R3D_End();
             DrawFPS(10, 10);
         EndDrawing();
     }
 
     R3D_UnloadInstanceBuffer(instances);
-    R3D_UnloadMaterial(&material);
-    R3D_UnloadMesh(&mesh);
+    R3D_UnloadMaterial(material);
+    R3D_UnloadMesh(mesh);
     R3D_Close();
 
     CloseWindow();

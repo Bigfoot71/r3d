@@ -35,8 +35,7 @@ int main(void)
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(64, R3D_INSTANCE_POSITION | R3D_INSTANCE_SCALE);
     Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
     Vector3* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE);
-    for (int i = 0; i < 64; i++)
-    {
+    for (int i = 0; i < 64; i++) {
         float scaleFactor = GetRandomValue(25, 50) / 10.0f;
         scales[i] = (Vector3) {scaleFactor, scaleFactor, 1.0f};
         positions[i] = (Vector3) {
@@ -75,18 +74,18 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMesh(&meshGround, &matGround, MatrixIdentity());
-                R3D_DrawMeshInstanced(&meshBillboard, &matBillboard, &instances, 64);
+                R3D_DrawMesh(meshGround, matGround, Vector3Zero(), 1.0f);
+                R3D_DrawMeshInstanced(meshBillboard, matBillboard, instances, 64);
             R3D_End();
 
         EndDrawing();
     }
 
     // Cleanup
-    R3D_UnloadMaterial(&matBillboard);
-    R3D_UnloadMesh(&meshBillboard);
-    R3D_UnloadMesh(&meshGround);
+    R3D_UnloadMesh(meshBillboard);
+    R3D_UnloadMesh(meshGround);
     R3D_Close();
+
     CloseWindow();
 
     return 0;

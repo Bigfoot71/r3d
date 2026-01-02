@@ -56,7 +56,7 @@ int main(void)
         R3D_Begin(camera);
             for (int x = 0; x < 7; x++) {
                 for (int y = 0; y < 7; y++) {
-                    R3D_DrawMesh(&sphere, &materials[y * 7 + x], MatrixTranslate((float)x - 3, (float)y - 3, 0.0f));
+                    R3D_DrawMesh(sphere, materials[y * 7 + x], (Vector3) {(float)x - 3, (float)y - 3, 0.0f}, 1.0f);
                 }
             }
         R3D_End();
@@ -65,8 +65,8 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadMesh(&sphere);
     R3D_UnloadSkybox(skybox);
+    R3D_UnloadMesh(sphere);
     R3D_Close();
 
     CloseWindow();

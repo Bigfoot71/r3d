@@ -10,6 +10,7 @@
 #define R3D_MODULE_CACHE_H
 
 #include <r3d/r3d_environment.h>
+#include <r3d/r3d_material.h>
 #include <r3d/r3d_core.h>
 #include <glad.h>
 
@@ -83,6 +84,7 @@ typedef struct {
 extern struct r3d_cache {
     GLuint uniformBuffers[R3D_CACHE_UNIFORM_COUNT]; //< Current view state uniform buffer
     R3D_Environment environment;                    //< Current environment settings
+    R3D_Material material;                          //< Default material to use
     r3d_view_state_t viewState;                     //< Current view state
     R3D_ColorSpace textureColorSpace;               //< Default texture color space for model loading
     TextureFilter textureFilter;                    //< Default texture filter for model loading

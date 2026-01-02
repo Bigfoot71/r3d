@@ -83,8 +83,8 @@ int main(void)
 
             // Draw scene
             R3D_Begin(camera);
-                R3D_DrawMesh(&ground, &groundMat, MatrixIdentity());
-                R3D_DrawModel(&model, (Vector3){0,0,0}, 1.0f);
+                R3D_DrawMesh(ground, groundMat, Vector3Zero(), 1.0f);
+                R3D_DrawModel(model, Vector3Zero(), 1.0f);
             R3D_End();
 
             DrawText("Model made by MaximePages", 10, GetScreenHeight()-26, 16, LIME);
@@ -93,7 +93,7 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadModel(&model, true);
+    R3D_UnloadModel(model, true);
     R3D_UnloadSkybox(skybox);
     R3D_Close();
 

@@ -105,14 +105,14 @@ int main(void)
             R3D_Begin(camera);
 
             for (int i = 0; i < 6; i++) {
-                R3D_DrawMesh(&meshPlane, &materialWalls, matRoom[i]);
+                R3D_DrawMeshPro(meshPlane, materialWalls, matRoom[i]);
             }
 
             if (decalCount > 0) {
-                R3D_DrawDecalInstanced(&decal, &instances, decalCount);
+                R3D_DrawDecalInstanced(decal, instances, decalCount);
             }
 
-            R3D_DrawDecal(&decal, MatrixTransform(targetPosition, decalRotation, decalScale));
+            R3D_DrawDecal(decal, MatrixTransform(targetPosition, decalRotation, decalScale));
 
         R3D_End();
 
@@ -126,7 +126,7 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadMesh(&meshPlane);
+    R3D_UnloadMesh(meshPlane);
     R3D_Close();
 
     CloseWindow();

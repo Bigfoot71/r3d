@@ -138,48 +138,56 @@ R3DAPI R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath);
 R3DAPI R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int size, const char* hint);
 
 /**
- * @brief Frees memory allocated for model animations.
- * @param animLib Pointer to the animation library to free.
+ * @brief Releases all resources associated with an animation library.
+ * @param animLib Animation library to unload.
  */
-R3DAPI void R3D_UnloadAnimationLib(R3D_AnimationLib* animLib);
+R3DAPI void R3D_UnloadAnimationLib(R3D_AnimationLib animLib);
 
 /**
- * @brief Retrieves the index of a named animation within an animation library.
- * @param animLib Pointer to the animation library.
- * @param name Name of the animation to look for (case-sensitive).
- * @return Zero-based index of the matching animation, or -1 if not found.
+ * @brief Returns the index of an animation by name.
+ * @param animLib Animation library to search.
+ * @param name Name of the animation (case-sensitive).
+ * @return Zero-based index if found, or -1 if not found.
  */
-R3DAPI int R3D_GetAnimationIndex(const R3D_AnimationLib* animLib, const char* name);
+R3DAPI int R3D_GetAnimationIndex(R3D_AnimationLib animLib, const char* name);
 
 /**
- * @brief Finds a named animation in an array of animations.
- * @param animLib Pointer to the animation library.
- * @param name Name of the animation to find (case-sensitive).
- * @return Pointer to the matching animation, or NULL if not found.
+ * @brief Retrieves an animation by name.
+ * @param animLib Animation library to search.
+ * @param name Name of the animation (case-sensitive).
+ * @return Pointer to the animation, or NULL if not found.
  */
-R3DAPI R3D_Animation* R3D_GetAnimation(const R3D_AnimationLib* animLib, const char* name);
+R3DAPI R3D_Animation* R3D_GetAnimation(R3D_AnimationLib animLib, const char* name);
 
 // ----------------------------------------
 // ANIMATION: Animation Player Functions
 // ----------------------------------------
 
 /**
- * @brief Creates a new animation player for a skeleton and animation library.
+ * @brief Creates an animation player for a skeleton and animation library.
  *
- * Allocates internal structures for managing animation states and poses.
+ * Allocates the internal data required to manage animation state and poses.
  *
- * @param skeleton Pointer to the target skeleton.
- * @param animLib Pointer to the animation library containing available animations.
- * @return Pointer to a newly created animation player, or NULL on failure.
+ * @param skeleton Skeleton used by the player.
+ * @param animLib Animation library providing available animations.
+ * @return Newly created animation player, or zeroed struct on failure.
  */
-R3DAPI R3D_AnimationPlayer* R3D_LoadAnimationPlayer(const R3D_Skeleton* skeleton, const R3D_AnimationLib* animLib);
+R3DAPI R3D_AnimationPlayer R3D_LoadAnimationPlayer(R3D_Skeleton skeleton, R3D_AnimationLib animLib);
 
 /**
- * @brief Destroys an animation player and frees its allocated resources.
+ * @brief Releases all resources used by an animation player.
  *
- * @param player Pointer to the animation player to destroy.
+ * @param player Animation player to unload.
  */
-R3DAPI void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer* player);
+R3DAPI void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer player);
+
+/**
+ * @brief Determines whether an animation player is valid.
+ *
+ * @param player Animation player to check.
+ * @return true if the player is valid, false otherwise.
+ */
+R3DAPI bool R3D_IsAnimationPlayerValid(R3D_AnimationPlayer player);
 
 /**
  * @brief Advances the animation player's time for all active animation states.
