@@ -175,10 +175,6 @@ void main()
         finalPosition = vec3(sMatModel * vec4(finalPosition, 1.0));
         finalNormal = sMatNormal * finalNormal;
         finalTangent = sMatNormal * finalTangent;
-
-    #if defined(DECAL)
-        finalMatModel = finalMatModel * sMatModel;
-    #endif // DECAL
     }
 
     if (uInstancing)
