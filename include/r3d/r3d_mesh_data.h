@@ -75,7 +75,7 @@ R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
 
 /**
  * @brief Releases memory used by a mesh data container.
- * @param meshData Pointer to the R3D_MeshData to destroy.
+ * @param meshData R3D_MeshData to destroy.
  */
 R3DAPI void R3D_UnloadMeshData(R3D_MeshData meshData);
 
@@ -85,7 +85,7 @@ R3DAPI void R3D_UnloadMeshData(R3D_MeshData meshData);
  * Returns true if the mesh data contains at least one vertex buffer
  * with a positive number of vertices.
  *
- * @param meshData Pointer to the mesh data to check.
+ * @param meshData Mesh data to check.
  * @return true if valid, false otherwise.
  */
 R3DAPI bool R3D_IsMeshDataValid(R3D_MeshData meshData);
