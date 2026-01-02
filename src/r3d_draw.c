@@ -657,7 +657,7 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
@@ -720,7 +720,7 @@ void raster_decal(const r3d_draw_call_t* call)
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
@@ -803,7 +803,7 @@ void raster_forward(const r3d_draw_call_t* call)
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexAlbedo, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexNormal, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, BLACK));
+    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexEmission, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uTexORM, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
