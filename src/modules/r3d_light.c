@@ -336,14 +336,14 @@ bool r3d_light_init(void)
     R3D_MOD_LIGHT.lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.lights));
     R3D_MOD_LIGHT.capacityLights = LIGHT_RESERVE_COUNT;
     if (!R3D_MOD_LIGHT.lights) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init light module; Main light array allocation failed");
+        TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light array allocation failed");
         return false;
     }
 
     for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
         R3D_MOD_LIGHT.arrays[i].lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.arrays[i].lights));
         if (R3D_MOD_LIGHT.arrays[i].lights == NULL) {
-            TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light array %i allocation failed", i);
+            TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light list array %i allocation failed", i);
             for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_LIGHT.arrays[j].lights);
             return false;
         }
