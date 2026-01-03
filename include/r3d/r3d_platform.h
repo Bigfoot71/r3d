@@ -1,4 +1,4 @@
-/* r3d_animation.h -- R3D API Macro.
+/* r3d_platform.h -- Platform definitions.
  *
  * Copyright (c) 2025 Le Juez Victor
  *
