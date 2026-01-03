@@ -846,7 +846,7 @@ void pass_scene_shadow(void)
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
-        if (!r3d_light_shadow_should_be_upadted(light, true)) {
+        if (!r3d_light_shadow_should_be_updated(light, true)) {
             continue;
         }
 
