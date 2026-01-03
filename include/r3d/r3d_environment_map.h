@@ -17,7 +17,10 @@
 // STRUCT TYPES
 // ========================================
 
-typedef uint32_t R3D_EnvironmentMap;
+typedef struct R3D_EnvironmentMap {
+    uint32_t irradiance;
+    uint32_t prefilter;
+} R3D_EnvironmentMap;
 
 // ========================================
 // PUBLIC API

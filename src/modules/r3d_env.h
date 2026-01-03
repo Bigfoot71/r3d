@@ -38,16 +38,28 @@ bool r3d_env_init(void);
 void r3d_env_quit(void);
 
 /*
- * Requests a new environment map layer.
+ * Requests a new irradiance map layer.
  * Returns the layer index, or -1 on failure.
  */
-int r3d_env_reserve_map_layer(void);
+int r3d_env_reserve_irradiance_layer(void);
 
 /*
- * Releases a previously reserved environment map layer.
+ * Releases a previously reserved irradiance map layer.
  * After this call, the layer can be reused.
  */
-void r3d_env_release_map_layer(int layer);
+void r3d_env_release_irradiance_layer(int layer);
+
+/*
+ * Requests a new prefilter map layer.
+ * Returns the layer index, or -1 on failure.
+ */
+int r3d_env_reserve_prefilter_layer(void);
+
+/*
+ * Releases a previously reserved prefilter map layer.
+ * After this call, the layer can be reused.
+ */
+void r3d_env_release_prefilter_layer(int layer);
 
 /*
  * Binds the irradiance framebuffer for the given layer and cubemap face.

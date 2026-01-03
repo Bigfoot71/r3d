@@ -21,10 +21,17 @@ static struct r3d_env {
     GLuint prefilterArray;
     GLuint framebuffer;
     
-    int* freeLayers;        // List of free layers
-    int freeCount;          // Number of free layers
-    int freeCapacity;       // freeLayers array capacity
-    int totalLayers;        // Total number of layers allocated
+    // Irradiance layer management
+    int* freeIrradianceLayers;
+    int irradianceFreeCount;
+    int irradianceFreeCapacity;
+    int irradianceTotalLayers;
+
+    // Prefilter layer management
+    int* freePrefilterLayers;
+    int prefilterFreeCount;
+    int prefilterFreeCapacity;
+    int prefilterTotalLayers;
 
 } R3D_MOD_ENV;
 
@@ -107,34 +114,57 @@ static bool resize_cubemap_array(GLuint* texture, int size, int oldLayers, int n
     return true;
 }
 
-static bool expand_capacity(void)
+static bool expand_irradiance_capacity(void)
 {
-    int newCapacity = R3D_MOD_ENV.totalLayers + R3D_ENV_MAP_INTIIAL_CAP;
+    int newCapacity = R3D_MOD_ENV.irradianceTotalLayers + R3D_ENV_MAP_INTIIAL_CAP;
 
     if (!resize_cubemap_array(&R3D_MOD_ENV.irradianceArray, R3D_ENV_IRRADIANCE_SIZE, 
-                              R3D_MOD_ENV.totalLayers, newCapacity, false)) {
+                              R3D_MOD_ENV.irradianceTotalLayers, newCapacity, false)) {
         return false;
     }
+
+    int oldTotal = R3D_MOD_ENV.irradianceTotalLayers;
+    R3D_MOD_ENV.irradianceTotalLayers = newCapacity;
+    
+    // Reallocate the free layers array if necessary
+    if (R3D_MOD_ENV.irradianceFreeCount + R3D_ENV_MAP_INTIIAL_CAP > R3D_MOD_ENV.irradianceFreeCapacity) {
+        R3D_MOD_ENV.irradianceFreeCapacity = R3D_MOD_ENV.irradianceTotalLayers;
+        int* newFree = RL_REALLOC(R3D_MOD_ENV.freeIrradianceLayers, R3D_MOD_ENV.irradianceFreeCapacity * sizeof(int));
+        if (!newFree) return false;
+        R3D_MOD_ENV.freeIrradianceLayers = newFree;
+    }
+    
+    // Add new layers to free list
+    for (int i = oldTotal; i < newCapacity; i++) {
+        R3D_MOD_ENV.freeIrradianceLayers[R3D_MOD_ENV.irradianceFreeCount++] = i;
+    }
+    
+    return true;
+}
+
+static bool expand_prefilter_capacity(void)
+{
+    int newCapacity = R3D_MOD_ENV.prefilterTotalLayers + R3D_ENV_MAP_INTIIAL_CAP;
 
     if (!resize_cubemap_array(&R3D_MOD_ENV.prefilterArray, R3D_ENV_PREFILTER_SIZE,
-                              R3D_MOD_ENV.totalLayers, newCapacity, true)) {
+                              R3D_MOD_ENV.prefilterTotalLayers, newCapacity, true)) {
         return false;
     }
 
-    int oldTotal = R3D_MOD_ENV.totalLayers;
-    R3D_MOD_ENV.totalLayers = newCapacity;
+    int oldTotal = R3D_MOD_ENV.prefilterTotalLayers;
+    R3D_MOD_ENV.prefilterTotalLayers = newCapacity;
     
-    // Reallocate the freeLayers array if necessary
-    if (R3D_MOD_ENV.freeCount + R3D_ENV_MAP_INTIIAL_CAP > R3D_MOD_ENV.freeCapacity) {
-        R3D_MOD_ENV.freeCapacity = R3D_MOD_ENV.totalLayers;
-        int* newFree = RL_REALLOC(R3D_MOD_ENV.freeLayers, R3D_MOD_ENV.freeCapacity * sizeof(int));
+    // Reallocate the free layers array if necessary
+    if (R3D_MOD_ENV.prefilterFreeCount + R3D_ENV_MAP_INTIIAL_CAP > R3D_MOD_ENV.prefilterFreeCapacity) {
+        R3D_MOD_ENV.prefilterFreeCapacity = R3D_MOD_ENV.prefilterTotalLayers;
+        int* newFree = RL_REALLOC(R3D_MOD_ENV.freePrefilterLayers, R3D_MOD_ENV.prefilterFreeCapacity * sizeof(int));
         if (!newFree) return false;
-        R3D_MOD_ENV.freeLayers = newFree;
+        R3D_MOD_ENV.freePrefilterLayers = newFree;
     }
     
-    // Adding new layers
+    // Add new layers to free list
     for (int i = oldTotal; i < newCapacity; i++) {
-        R3D_MOD_ENV.freeLayers[R3D_MOD_ENV.freeCount++] = i;
+        R3D_MOD_ENV.freePrefilterLayers[R3D_MOD_ENV.prefilterFreeCount++] = i;
     }
     
     return true;
@@ -152,9 +182,18 @@ bool r3d_env_init(void)
     glGenTextures(1, &R3D_MOD_ENV.prefilterArray);
     glGenFramebuffers(1, &R3D_MOD_ENV.framebuffer);
 
-    R3D_MOD_ENV.freeCapacity = R3D_ENV_MAP_INTIIAL_CAP * 2;
-    R3D_MOD_ENV.freeLayers = RL_MALLOC(R3D_MOD_ENV.freeCapacity * sizeof(int));
-    if (!R3D_MOD_ENV.freeLayers) {
+    // Allocate irradiance free layers array
+    R3D_MOD_ENV.irradianceFreeCapacity = R3D_ENV_MAP_INTIIAL_CAP * 2;
+    R3D_MOD_ENV.freeIrradianceLayers = RL_MALLOC(R3D_MOD_ENV.irradianceFreeCapacity * sizeof(int));
+    if (!R3D_MOD_ENV.freeIrradianceLayers) {
+        r3d_env_quit();
+        return false;
+    }
+
+    // Allocate prefilter free layers array
+    R3D_MOD_ENV.prefilterFreeCapacity = R3D_ENV_MAP_INTIIAL_CAP * 2;
+    R3D_MOD_ENV.freePrefilterLayers = RL_MALLOC(R3D_MOD_ENV.prefilterFreeCapacity * sizeof(int));
+    if (!R3D_MOD_ENV.freePrefilterLayers) {
         r3d_env_quit();
         return false;
     }
@@ -174,28 +213,51 @@ void r3d_env_quit(void)
         glDeleteFramebuffers(1, &R3D_MOD_ENV.framebuffer);
     }
 
-    RL_FREE(R3D_MOD_ENV.freeLayers);
+    RL_FREE(R3D_MOD_ENV.freeIrradianceLayers);
+    RL_FREE(R3D_MOD_ENV.freePrefilterLayers);
 }
 
-int r3d_env_reserve_map_layer(void)
+int r3d_env_reserve_irradiance_layer(void)
 {
-    if (R3D_MOD_ENV.freeCount > 0) {
-        return R3D_MOD_ENV.freeLayers[--R3D_MOD_ENV.freeCount];
+    if (R3D_MOD_ENV.irradianceFreeCount > 0) {
+        return R3D_MOD_ENV.freeIrradianceLayers[--R3D_MOD_ENV.irradianceFreeCount];
     }
 
-    if (!expand_capacity()) return -1;
+    if (!expand_irradiance_capacity()) return -1;
 
-    return R3D_MOD_ENV.freeLayers[--R3D_MOD_ENV.freeCount];
+    return R3D_MOD_ENV.freeIrradianceLayers[--R3D_MOD_ENV.irradianceFreeCount];
 }
 
-void r3d_env_release_map_layer(int layer)
+void r3d_env_release_irradiance_layer(int layer)
 {
-    if (layer < 0 || layer >= R3D_MOD_ENV.totalLayers) {
+    if (layer < 0 || layer >= R3D_MOD_ENV.irradianceTotalLayers) {
         return;
     }
 
-    if (R3D_MOD_ENV.freeCount < R3D_MOD_ENV.freeCapacity) {
-        R3D_MOD_ENV.freeLayers[R3D_MOD_ENV.freeCount++] = layer;
+    if (R3D_MOD_ENV.irradianceFreeCount < R3D_MOD_ENV.irradianceFreeCapacity) {
+        R3D_MOD_ENV.freeIrradianceLayers[R3D_MOD_ENV.irradianceFreeCount++] = layer;
+    }
+}
+
+int r3d_env_reserve_prefilter_layer(void)
+{
+    if (R3D_MOD_ENV.prefilterFreeCount > 0) {
+        return R3D_MOD_ENV.freePrefilterLayers[--R3D_MOD_ENV.prefilterFreeCount];
+    }
+
+    if (!expand_prefilter_capacity()) return -1;
+
+    return R3D_MOD_ENV.freePrefilterLayers[--R3D_MOD_ENV.prefilterFreeCount];
+}
+
+void r3d_env_release_prefilter_layer(int layer)
+{
+    if (layer < 0 || layer >= R3D_MOD_ENV.prefilterTotalLayers) {
+        return;
+    }
+
+    if (R3D_MOD_ENV.prefilterFreeCount < R3D_MOD_ENV.prefilterFreeCapacity) {
+        R3D_MOD_ENV.freePrefilterLayers[R3D_MOD_ENV.prefilterFreeCount++] = layer;
     }
 }
 

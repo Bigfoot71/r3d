@@ -85,31 +85,40 @@ static void gen_prefilter(int layerMap, R3D_Cubemap cubemap)
 
 R3D_EnvironmentMap R3D_GenEnvironmentMap(R3D_Cubemap cubemap)
 {
-    R3D_EnvironmentMap envmap = 0;
+    R3D_EnvironmentMap envmap = {0};
 
-    int layerMap = r3d_env_reserve_map_layer();
-    if (layerMap < 0) {
+    int irradiance = r3d_env_reserve_irradiance_layer();
+    if (irradiance < 0) {
         TraceLog(LOG_WARNING, "");
         return envmap;
     }
 
-    gen_irradiance(layerMap, cubemap);
-    gen_prefilter(layerMap, cubemap);
+    int prefilter = r3d_env_reserve_prefilter_layer();
+    if (prefilter < 0) {
+        r3d_env_release_irradiance_layer(irradiance);
+        TraceLog(LOG_WARNING, "");
+        return envmap;
+    }
 
-    envmap = (int)layerMap + 1;
+    gen_irradiance(irradiance, cubemap);
+    gen_prefilter(prefilter, cubemap);
+
+    envmap.irradiance = irradiance + 1;
+    envmap.prefilter = prefilter + 1;
 
     return envmap;
 }
 
 void R3D_UpdateEnvironmentMap(R3D_EnvironmentMap envmap, R3D_Cubemap cubemap)
 {
-    if (envmap == 0) {
+    if (envmap.irradiance == 0 || envmap.prefilter == 0) {
         TraceLog(LOG_WARNING, "");
         return;
     }
 
-    int layerMap = (int)envmap - 1;
+    int irradiance = (int)envmap.irradiance - 1;
+    int prefilter = (int)envmap.prefilter - 1;
 
-    gen_irradiance(layerMap, cubemap);
-    gen_prefilter(layerMap, cubemap);
+    gen_irradiance(irradiance, cubemap);
+    gen_prefilter(prefilter, cubemap);
 }
