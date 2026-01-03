@@ -11,15 +11,13 @@
 
 #include "./r3d_cubemap.h"
 #include <raylib.h>
+#include <stdint.h>
 
 // ========================================
 // STRUCT TYPES
 // ========================================
 
-typedef struct R3D_EnvironmentMap {
-    R3D_Cubemap irradiance;
-    R3D_Cubemap prefilter;
-} R3D_EnvironmentMap;
+typedef uint32_t R3D_EnvironmentMap;
 
 // ========================================
 // PUBLIC API
