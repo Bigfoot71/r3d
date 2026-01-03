@@ -22,7 +22,7 @@
     do {                                        \
         var_name = r3d_light_get(id);           \
         if (var_name == NULL) {                 \
-            TraceLog(LOG_ERROR, "Invalid light [ID %i] given to '%s'", id, __func__);  \
+            TraceLog(LOG_ERROR, "R3D: Invalid light [ID %i] given to '%s'", id, __func__);  \
             return __VA_ARGS__;                 \
         }                                       \
     } while(0)
