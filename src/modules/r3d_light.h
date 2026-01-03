@@ -25,7 +25,7 @@
          r3d_light_iter(&light, R3D_LIGHT_ARRAY_VISIBLE); )
 
 // ========================================
-// LIGHT STRUCTURES
+// MODULE STRUCTURES
 // ========================================
 
 typedef struct {
@@ -69,10 +69,6 @@ typedef struct {
     bool shadow;                            //< Indicates whether the light generates shadows
 } r3d_light_t;
 
-// ========================================
-// MODULE STATE
-// ========================================
-
 typedef enum {
     R3D_LIGHT_ARRAY_VISIBLE,
     R3D_LIGHT_ARRAY_VALID,
@@ -84,6 +80,10 @@ typedef struct {
     R3D_Light* lights;
     int count;
 } r3d_light_array_t;
+
+// ========================================
+// MODULE STATE
+// ========================================
 
 extern struct r3d_light {
     r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
