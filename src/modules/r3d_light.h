@@ -164,7 +164,7 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
  * Indicate whether the shadow map should be rendered.
  * The internal update state can be reset after the query.
  */
-bool r3d_light_shadow_should_be_upadted(r3d_light_t* light, bool willBeUpdated);
+bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated);
 
 // ========================================
 // INLINE QUERIES
