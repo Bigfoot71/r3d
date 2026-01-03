@@ -22,6 +22,7 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_cache.h"
 #include "./modules/r3d_draw.h"
+#include "./modules/r3d_env.h"
 
 // ========================================
 // PUBLIC API
@@ -36,6 +37,7 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
     r3d_light_init();
     r3d_cache_init(flags);
     r3d_draw_init();
+    r3d_env_init();
 
     // Defines suitable clipping plane distances for r3d
     rlSetClipPlanes(0.05f, 4000.0f);
@@ -50,6 +52,7 @@ void R3D_Close(void)
     r3d_light_quit();
     r3d_cache_quit();
     r3d_draw_quit();
+    r3d_env_quit();
 }
 
 bool R3D_HasState(R3D_Flags flags)
