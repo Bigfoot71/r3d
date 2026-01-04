@@ -40,8 +40,8 @@ typedef struct {
 
 /* === Functions === */
 
-r3d_frustum_t r3d_frustum_create(Matrix matrixViewProjection);
-BoundingBox r3d_frustum_get_bounding_box(Matrix matViewProjection);
+r3d_frustum_t r3d_frustum_create(Matrix viewProj);
+BoundingBox r3d_frustum_get_bounding_box(Matrix viewProj);
 bool r3d_frustum_is_point_in(const r3d_frustum_t* frustum, const Vector3* position);
 bool r3d_frustum_is_points_in(const r3d_frustum_t* frustum, const Vector3* positions, int count);
 bool r3d_frustum_is_sphere_in(const r3d_frustum_t* frustum, const Vector3* position, float radius);

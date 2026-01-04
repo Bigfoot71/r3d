@@ -46,58 +46,58 @@ static inline float r3d_frustum_distance_to_plane(const Vector4* plane, const Ve
 
 /* === Public functions === */
 
-r3d_frustum_t r3d_frustum_create(Matrix matrixViewProjection)
+r3d_frustum_t r3d_frustum_create(Matrix viewProj)
 {
     r3d_frustum_t frustum = { 0 };
 
     frustum.planes[R3D_PLANE_RIGHT] = r3d_frustum_normalize_plane((Vector4) {
-        matrixViewProjection.m3 - matrixViewProjection.m0,
-        matrixViewProjection.m7 - matrixViewProjection.m4,
-        matrixViewProjection.m11 - matrixViewProjection.m8,
-        matrixViewProjection.m15 - matrixViewProjection.m12
+        viewProj.m3 - viewProj.m0,
+        viewProj.m7 - viewProj.m4,
+        viewProj.m11 - viewProj.m8,
+        viewProj.m15 - viewProj.m12
     });
 
     frustum.planes[R3D_PLANE_LEFT] = r3d_frustum_normalize_plane((Vector4) {
-        matrixViewProjection.m3 + matrixViewProjection.m0,
-        matrixViewProjection.m7 + matrixViewProjection.m4,
-        matrixViewProjection.m11 + matrixViewProjection.m8,
-        matrixViewProjection.m15 + matrixViewProjection.m12
+        viewProj.m3 + viewProj.m0,
+        viewProj.m7 + viewProj.m4,
+        viewProj.m11 + viewProj.m8,
+        viewProj.m15 + viewProj.m12
     });
 
     frustum.planes[R3D_PLANE_TOP] = r3d_frustum_normalize_plane((Vector4) {
-        matrixViewProjection.m3 - matrixViewProjection.m1,
-        matrixViewProjection.m7 - matrixViewProjection.m5,
-        matrixViewProjection.m11 - matrixViewProjection.m9,
-        matrixViewProjection.m15 - matrixViewProjection.m13
+        viewProj.m3 - viewProj.m1,
+        viewProj.m7 - viewProj.m5,
+        viewProj.m11 - viewProj.m9,
+        viewProj.m15 - viewProj.m13
     });
 
     frustum.planes[R3D_PLANE_BOTTOM] = r3d_frustum_normalize_plane((Vector4) {
-        matrixViewProjection.m3 + matrixViewProjection.m1,
-        matrixViewProjection.m7 + matrixViewProjection.m5,
-        matrixViewProjection.m11 + matrixViewProjection.m9,
-        matrixViewProjection.m15 + matrixViewProjection.m13
+        viewProj.m3 + viewProj.m1,
+        viewProj.m7 + viewProj.m5,
+        viewProj.m11 + viewProj.m9,
+        viewProj.m15 + viewProj.m13
     });
 
     frustum.planes[R3D_PLANE_BACK] = r3d_frustum_normalize_plane((Vector4) {
-        matrixViewProjection.m3 - matrixViewProjection.m2,
-        matrixViewProjection.m7 - matrixViewProjection.m6,
-        matrixViewProjection.m11 - matrixViewProjection.m10,
-        matrixViewProjection.m15 - matrixViewProjection.m14
+        viewProj.m3 - viewProj.m2,
+        viewProj.m7 - viewProj.m6,
+        viewProj.m11 - viewProj.m10,
+        viewProj.m15 - viewProj.m14
     });
 
     frustum.planes[R3D_PLANE_FRONT] = r3d_frustum_normalize_plane((Vector4) {
-        matrixViewProjection.m3 + matrixViewProjection.m2,
-        matrixViewProjection.m7 + matrixViewProjection.m6,
-        matrixViewProjection.m11 + matrixViewProjection.m10,
-        matrixViewProjection.m15 + matrixViewProjection.m14
+        viewProj.m3 + viewProj.m2,
+        viewProj.m7 + viewProj.m6,
+        viewProj.m11 + viewProj.m10,
+        viewProj.m15 + viewProj.m14
     });
 
     return frustum;
 }
 
-BoundingBox r3d_frustum_get_bounding_box(Matrix matViewProjection)
+BoundingBox r3d_frustum_get_bounding_box(Matrix viewProj)
 {
-    Matrix matInv = MatrixInvert(matViewProjection);
+    Matrix matInv = MatrixInvert(viewProj);
 
     // Points in clip space with correct w component
     Vector4 clipCorners[8] = {
