@@ -1,4 +1,4 @@
-/* r3d_helper.h -- R3D helper details.
+/* r3d_helper.h -- Common R3D Helpers
  *
  * Copyright (c) 2025 Le Juez Victor
  *

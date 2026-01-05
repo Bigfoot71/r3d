@@ -1,3 +1,11 @@
+/* r3d_pass.c -- Common R3D Passes
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
 #include "./r3d_pass.h"
 #include <raymath.h>
 #include <rlgl.h>
