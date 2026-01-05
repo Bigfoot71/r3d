@@ -47,10 +47,11 @@ static void init_light(r3d_light_t* light, R3D_LightType type)
     light->type = type;
     light->enabled = false;
 
-    /* --- Set common shadow config --- */
+    /* --- Set default light/shadow state --- */
 
     light->state.shadowUpdate = R3D_SHADOW_UPDATE_INTERVAL;
     light->state.shadowShouldBeUpdated = true;
+    light->state.matrixShouldBeUpdated = true;
     light->state.shadowFrequencySec = 0.016f;
     light->state.shadowTimerSec = 0.0f;
 
@@ -495,20 +496,15 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
     return (r3d_rect_t) {x, y, w, h};
 }
 
-bool r3d_light_iter(r3d_light_t** light, int array_type)
+bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array)
 {
     static int index = 0;
 
     index = (*light == NULL) ? 0 : index + 1;
-    if (index >= R3D_MOD_LIGHT.arrays[array_type].count) return false;
-    *light = &R3D_MOD_LIGHT.lights[R3D_MOD_LIGHT.arrays[array_type].lights[index]];
+    if (index >= R3D_MOD_LIGHT.arrays[array].count) return false;
+    *light = &R3D_MOD_LIGHT.lights[R3D_MOD_LIGHT.arrays[array].lights[index]];
 
     return true;
-}
-
-void r3d_light_update_matrix(r3d_light_t* light)
-{
-    light->state.matrixShouldBeUpdated = true;
 }
 
 void r3d_light_enable_shadows(r3d_light_t* light, int resolution)
@@ -579,7 +575,7 @@ bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated)
         case R3D_SHADOW_UPDATE_INTERVAL:
             light->state.shadowShouldBeUpdated = false;
             break;
-        case R3D_SHADOW_UPDATE_CONTINUOUS:
+        default:
             break;
         }
     }

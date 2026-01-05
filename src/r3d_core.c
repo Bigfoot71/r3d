@@ -7,7 +7,6 @@
  */
 
 #include <r3d/r3d_core.h>
-
 #include <raymath.h>
 #include <rlgl.h>
 #include <glad.h>
@@ -15,14 +14,21 @@
 #include <assimp/cimport.h>
 #include <float.h>
 
+#include "./r3d_core_state.h"
+
 #include "./modules/r3d_primitive.h"
 #include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
-#include "./modules/r3d_cache.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
+
+// ========================================
+// SHARED CORE STATE
+// ========================================
+
+struct r3d_core_state R3D;
 
 // ========================================
 // PUBLIC API
@@ -30,12 +36,28 @@
 
 void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
 {
+    memset(&R3D, 0, sizeof(R3D));
+
+    R3D.matCubeViews[0] = MatrixLookAt((Vector3) {0}, (Vector3) { 1.0f,  0.0f,  0.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
+    R3D.matCubeViews[1] = MatrixLookAt((Vector3) {0}, (Vector3) {-1.0f,  0.0f,  0.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
+    R3D.matCubeViews[2] = MatrixLookAt((Vector3) {0}, (Vector3) { 0.0f,  1.0f,  0.0f}, (Vector3) {0.0f,  0.0f,  1.0f});
+    R3D.matCubeViews[3] = MatrixLookAt((Vector3) {0}, (Vector3) { 0.0f, -1.0f,  0.0f}, (Vector3) {0.0f,  0.0f, -1.0f});
+    R3D.matCubeViews[4] = MatrixLookAt((Vector3) {0}, (Vector3) { 0.0f,  0.0f,  1.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
+    R3D.matCubeViews[5] = MatrixLookAt((Vector3) {0}, (Vector3) { 0.0f,  0.0f, -1.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
+
+    R3D.environment = R3D_ENVIRONMENT_BASE;
+    R3D.material = R3D_MATERIAL_BASE;
+
+    R3D.textureColorSpace = R3D_COLORSPACE_SRGB;
+    R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
+    R3D.layers = R3D_LAYER_ALL;
+    R3D.state = flags;
+
     r3d_primitive_init();
     r3d_texture_init();
     r3d_target_init(resWidth, resHeight);
     r3d_shader_init();
     r3d_light_init();
-    r3d_cache_init(flags);
     r3d_draw_init();
     r3d_env_init();
 
@@ -50,24 +72,23 @@ void R3D_Close(void)
     r3d_target_quit();
     r3d_shader_quit();
     r3d_light_quit();
-    r3d_cache_quit();
     r3d_draw_quit();
     r3d_env_quit();
 }
 
 bool R3D_HasState(R3D_Flags flags)
 {
-    return R3D_CACHE_FLAGS_HAS(state, flags);
+    return R3D_CORE_FLAGS_HAS(state, flags);
 }
 
 void R3D_SetState(R3D_Flags flags)
 {
-    R3D_CACHE_FLAGS_ASSIGN(state, flags);
+    R3D_CORE_FLAGS_ASSIGN(state, flags);
 }
 
 void R3D_ClearState(R3D_Flags flags)
 {
-    R3D_CACHE_FLAGS_CLEAR(state, flags);
+    R3D_CORE_FLAGS_CLEAR(state, flags);
 }
 
 void R3D_GetResolution(int* width, int* height)
@@ -87,30 +108,30 @@ void R3D_UpdateResolution(int width, int height)
 
 void R3D_SetTextureFilter(TextureFilter filter)
 {
-    R3D_CACHE_SET(textureFilter, filter);
+    R3D.textureFilter = filter;
 }
 
 void R3D_SetTextureColorSpace(R3D_ColorSpace space)
 {
-    R3D_CACHE_SET(textureColorSpace, space);
+    R3D.textureColorSpace = space;
 }
 
 R3D_Layer R3D_GetActiveLayers(void)
 {
-    return R3D_CACHE_GET(layers);
+    return R3D.layers;
 }
 
 void R3D_SetActiveLayers(R3D_Layer bitfield)
 {
-    R3D_CACHE_SET(layers, bitfield);
+    R3D.layers = bitfield;
 }
 
 void R3D_EnableLayers(R3D_Layer bitfield)
 {
-    R3D_CACHE_FLAGS_ASSIGN(layers, bitfield);
+    R3D_CORE_FLAGS_ASSIGN(layers, bitfield);
 }
 
 void R3D_DisableLayers(R3D_Layer bitfield)
 {
-    R3D_CACHE_FLAGS_CLEAR(layers, bitfield);
+    R3D_CORE_FLAGS_CLEAR(layers, bitfield);
 }

@@ -15,7 +15,7 @@
 #include <r3d/r3d_skeleton.h>
 #include <r3d/r3d_mesh.h>
 
-#include "../details/r3d_frustum.h"
+#include "../common/r3d_frustum.h"
 
 // ========================================
 // HELPER MACROS

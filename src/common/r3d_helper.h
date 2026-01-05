@@ -6,8 +6,8 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#ifndef R3D_DETAILS_MACROS_H
-#define R3D_DETAILS_MACROS_H
+#ifndef R3D_COMMON_HELPER_H
+#define R3D_COMMON_HELPER_H
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -69,4 +69,4 @@ static inline int r3d_lsb_index(uint32_t value)
     return index;
 }
 
-#endif // R3D_DETAILS_MACROS_H
+#endif // R3D_COMMON_HELPER_H

@@ -15,7 +15,7 @@
 
 #include "./modules/r3d_primitive.h"
 #include "./modules/r3d_shader.h"
-#include "./modules/r3d_cache.h"
+#include "./r3d_core_state.h"
 
 // ========================================
 // INTERNAL FUNCTIONS
@@ -98,7 +98,7 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap.texture, 0);
         glClear(GL_DEPTH_BUFFER_BIT);
 
-        R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatView, R3D_CACHE_GET(matCubeViews[i]));
+        R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatView, R3D.matCubeViews[i]);
         R3D_PRIMITIVE_DRAW_CUBE();
     }
 
@@ -116,16 +116,16 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
     return cubemap;
 }
 
-static R3D_Cubemap load_cubemap_from_line_horizontal(Image image, int size)
+static R3D_Cubemap load_cubemap_from_line_vertical(Image image, int size)
 {
-    bool mustRelease = false;
+    Image workImage = image;
+
     if (image.format != PIXELFORMAT_UNCOMPRESSED_R16G16B16) {
-        image = ImageCopy(image);
-        ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R16G16B16);
-        mustRelease = true;
+        workImage = ImageCopy(image);
+        ImageFormat(&workImage, PIXELFORMAT_UNCOMPRESSED_R16G16B16);
     }
 
-    int faceSize = size*size*3*sizeof(uint16_t);
+    int faceSize = size * size * 3 * sizeof(uint16_t);
     R3D_Cubemap cubemap = R3D_LoadCubemapEmpty(size);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
@@ -133,42 +133,46 @@ static R3D_Cubemap load_cubemap_from_line_horizontal(Image image, int size)
         glTexSubImage2D(
             GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
             0, 0, size, size, GL_RGB, GL_HALF_FLOAT,
-            (uint8_t*)image.data + i * faceSize
+            (uint8_t*)workImage.data + i * faceSize
         );
     }
+
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 
-    if (mustRelease) {
-        UnloadImage(image);
+    if (workImage.data != image.data) {
+        UnloadImage(workImage);
     }
 
     return cubemap;
 }
 
-static Image alloc_work_faces_image(int size)
+static Image alloc_work_faces_image(Image source, int size)
 {
     Image image = {0};
+    
+    int faceSize = GetPixelDataSize(size, size, source.format);
 
-    image.data = RL_MALLOC(size * size * 6 * 3 * sizeof(uint16_t));
+    image.data = RL_MALLOC(6 * faceSize);
     image.width = size;
     image.height = 6 * size;
-    image.format = PIXELFORMAT_UNCOMPRESSED_R16G16B16;
+    image.format = source.format;
     image.mipmaps = 1;
 
     return image;
 }
 
-static R3D_Cubemap load_cubemap_from_line_vertical(Image image, int size)
+static R3D_Cubemap load_cubemap_from_line_horizontal(Image image, int size)
 {
-    Image faces = alloc_work_faces_image(size);
-
+    Image faces = alloc_work_faces_image(image, size);  // ← Passe l'image source
+    
     for (int i = 0; i < 6; i++) {
         Rectangle srcRect = {(float)i * size, 0, (float)size, (float)size};
-        Rectangle dstRect = (Rectangle){0, (float)i * size, (float)size, (float)size};
+        Rectangle dstRect = {0, (float)i * size, (float)size, (float)size};
         ImageDraw(&faces, image, srcRect, dstRect, WHITE);
     }
 
-    R3D_Cubemap cubemap = load_cubemap_from_line_horizontal(faces, size);
+    R3D_Cubemap cubemap = load_cubemap_from_line_vertical(faces, size);
     UnloadImage(faces);
 
     return cubemap;
@@ -189,14 +193,14 @@ static R3D_Cubemap load_cubemap_from_cross_three_by_four(Image image, int size)
     srcRecs[4].x = 0;           srcRecs[4].y = (float)size;
     srcRecs[5].x = 2.0f * size; srcRecs[5].y = (float)size;
 
-    Image faces = alloc_work_faces_image(size);
+    Image faces = alloc_work_faces_image(image, size);
 
     for (int i = 0; i < 6; i++) {
         Rectangle dstRec = {0, (float)i * size, (float)size, (float)size};
         ImageDraw(&faces, image, srcRecs[i], dstRec, WHITE);
     }
 
-    R3D_Cubemap cubemap = load_cubemap_from_line_horizontal(faces, size);
+    R3D_Cubemap cubemap = load_cubemap_from_line_vertical(faces, size);
     UnloadImage(faces);
 
     return cubemap;
@@ -217,14 +221,14 @@ static R3D_Cubemap load_cubemap_from_cross_four_by_three(Image image, int size)
     srcRecs[4].x = (float)size; srcRecs[4].y = (float)size;
     srcRecs[5].x = 3.0f * size; srcRecs[5].y = (float)size;
 
-    Image faces = alloc_work_faces_image(size);
+    Image faces = alloc_work_faces_image(image, size);
 
     for (int i = 0; i < 6; i++) {
         Rectangle dstRec = {0, (float)i * size, (float)size, (float)size};
         ImageDraw(&faces, image, srcRecs[i], dstRec, WHITE);
     }
 
-    R3D_Cubemap cubemap = load_cubemap_from_line_horizontal(faces, size);
+    R3D_Cubemap cubemap = load_cubemap_from_line_vertical(faces, size);
     UnloadImage(faces);
 
     return cubemap;

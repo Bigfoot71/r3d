@@ -15,7 +15,7 @@
 #include <assimp/mesh.h>
 #include <float.h>
 
-#include "../details/r3d_math.h"
+#include "../common/r3d_math.h"
 
 // ========================================
 // CONSTANTS

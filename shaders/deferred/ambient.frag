@@ -8,13 +8,13 @@
 
 #version 330 core
 
-#ifdef IBL
+/* === Extensions === */
+
+#extension GL_ARB_texture_cube_map_array : enable
 
 /* === Includes === */
 
-#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
-#include "../include/ibl.glsl"
 #include "../include/pbr.glsl"
 
 /* === Varyings === */
@@ -31,14 +31,16 @@ uniform sampler2D uTexSSIL;
 uniform sampler2D uTexSSR;
 uniform sampler2D uTexORM;
 
-uniform samplerCube uCubeIrradiance;
-uniform samplerCube uCubePrefilter;
+uniform samplerCubeArray uCubeIrradiance;
+uniform samplerCubeArray uCubePrefilter;
 uniform sampler2D uTexBrdfLut;
 
-uniform float uAmbientEnergy;
-uniform float uReflectEnergy;
 uniform float uMipCountSSR;
-uniform vec4 uQuatSkybox;
+
+/* === Blocks === */
+
+#include "../include/blocks/view.glsl"
+#include "../include/blocks/env.glsl"
 
 /* === Fragments === */
 
@@ -56,86 +58,24 @@ void main()
     float ssao = texture(uTexSSAO, vTexCoord).r;
     vec4 ssil = texture(uTexSSIL, vTexCoord);
 
-    float occlusion = orm.r * ssao * ssil.a;
-    float roughness = orm.g;
-    float metalness = orm.b;
+    orm.x *= ssao * ssil.w;
 
-    vec3 position = V_GetWorldPosition(uTexDepth, vTexCoord);
+    vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
+    vec3 P = V_GetWorldPosition(uTexDepth, vTexCoord);
     vec3 N = V_GetWorldNormal(uTexNormal, vTexCoord);
-    vec3 V = normalize(uView.position - position);
+    vec3 V = normalize(uView.position - P);
     float NdotV = max(dot(N, V), 0.0);
+    vec3 kD = albedo * (1.0 - orm.z);
 
-    vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
+    vec3 irradiance = vec3(0.0);
+    vec3 radiance = vec3(0.0);
 
-    /* --- Diffuse --- */
+    E_ComputeAmbientAndProbes(irradiance, radiance, kD, orm, F0, P, N, V, NdotV);
+    irradiance += ssil.rgb * kD * ssil.rgb * orm.x;
 
-    vec3 kS = IBL_FresnelSchlickRoughness(NdotV, F0, roughness);
-    vec3 kD = (1.0 - kS) * (1.0 - metalness);
+    vec3 kS_approx = F0 * (1.0 - orm.y * 0.5);
+    radiance = mix(radiance, kS_approx * ssr.rgb, ssr.w);
 
-    vec3 Nr = M_Rotate3D(N, uQuatSkybox);
-    vec3 irradiance = texture(uCubeIrradiance, Nr).rgb;
-    vec3 diffuse = albedo * kD * (irradiance + ssil.rgb);
-
-    FragDiffuse = vec4(diffuse * occlusion * uAmbientEnergy, 1.0);
-
-    /* --- Specular --- */
-
-    vec3 R = M_Rotate3D(reflect(-V, N), uQuatSkybox);
-
-    const float MAX_REFLECTION_LOD = 7.0;
-    vec3 radiance = textureLod(uCubePrefilter, R, roughness * MAX_REFLECTION_LOD).rgb;
-    float specularOcclusion = IBL_GetSpecularOcclusion(NdotV, occlusion, roughness);
-    vec3 specularBRDF = IBL_GetMultiScatterBRDF(uTexBrdfLut, NdotV, roughness, F0);
-
-    vec3 specular = mix(radiance, ssr.rgb, ssr.a) * specularBRDF;
-    specular *= specularOcclusion * uReflectEnergy;
-    FragSpecular = vec4(specular, 1.0);
+    FragDiffuse = vec4(irradiance, 1.0);
+    FragSpecular = vec4(radiance, 1.0);
 }
-
-#else
-
-/* === Varyings === */
-
-noperspective in vec2 vTexCoord;
-
-/* === Uniforms === */
-
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexSSAO;
-uniform sampler2D uTexSSIL;
-uniform sampler2D uTexSSR;
-uniform sampler2D uTexORM;
-
-uniform vec3 uAmbientColor;
-uniform float uAmbientEnergy;
-uniform float uMipCountSSR;
-
-/* === Fragments === */
-
-layout(location = 0) out vec4 FragDiffuse;
-layout(location = 1) out vec4 FragSpecular;
-
-/* === Main === */
-
-void main()
-{
-    vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
-    vec3 orm = texture(uTexORM, vTexCoord).rgb;
-
-    vec4 ssr = textureLod(uTexSSR, vTexCoord, orm.g * uMipCountSSR);
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-    vec4 ssil = texture(uTexSSIL, vTexCoord);
-
-    vec3 ambient = albedo * (uAmbientColor + ssil.rgb);
-    ambient *= orm.r * ssao * ssil.a;
-    ambient *= (1.0 - orm.b);
-
-    FragDiffuse = vec4(ambient * uAmbientEnergy, 1.0);
-
-    // Small tweak to get a consistent SSR
-    vec3 F0 = mix(vec3(0.04), albedo, orm.b);
-    vec3 specular = ssr.rgb * F0 * ssr.a * orm.r;
-    FragSpecular = vec4(specular, 1.0);
-}
-
-#endif

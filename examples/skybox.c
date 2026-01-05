@@ -29,9 +29,11 @@ int main(void)
         }
     }
 
-    // Load and enable skybox
-    R3D_Skybox skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox1.png", CUBEMAP_LAYOUT_AUTO_DETECT);
+    // Load skybox and ambient map
+    R3D_Cubemap skybox = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox1.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_AmbientMap ambient = R3D_GenAmbientMap(skybox, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
     R3D_ENVIRONMENT_SET(background.sky, skybox);
+    R3D_ENVIRONMENT_SET(ambient.map, ambient);
 
     // Setup camera
     Camera3D camera = {
@@ -65,7 +67,8 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadSkybox(skybox);
+    R3D_UnloadAmbientMap(ambient);
+    R3D_UnloadCubemap(skybox);
     R3D_UnloadMesh(sphere);
     R3D_Close();
 

@@ -26,9 +26,11 @@ int main(void)
     Matrix modelMatrix = MatrixIdentity();
     float modelScale = 1.0f;
 
-    // Load skybox
-    R3D_Skybox skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox2.png", CUBEMAP_LAYOUT_AUTO_DETECT);
+    // Load skybox and ambient map
+    R3D_Cubemap skybox = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox2.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_AmbientMap ambient = R3D_GenAmbientMap(skybox, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
     R3D_ENVIRONMENT_SET(background.sky, skybox);
+    R3D_ENVIRONMENT_SET(ambient.map, ambient);
 
     // Setup directional light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
@@ -74,7 +76,8 @@ int main(void)
 
     // Cleanup
     R3D_UnloadModel(model, true);
-    R3D_UnloadSkybox(skybox);
+    R3D_UnloadAmbientMap(ambient);
+    R3D_UnloadCubemap(skybox);
     R3D_Close();
 
     CloseWindow();

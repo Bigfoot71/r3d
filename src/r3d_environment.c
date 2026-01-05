@@ -9,7 +9,7 @@
 #include <r3d/r3d_environment.h>
 #include <raymath.h>
 
-#include "./modules/r3d_cache.h"
+#include "./r3d_core_state.h"
 
 // ========================================
 // PUBLIC API
@@ -17,10 +17,10 @@
 
 R3DAPI R3D_Environment* R3D_GetEnvironment(void)
 {
-	return &R3D_CACHE_GET(environment);
+	return &R3D.environment;
 }
 
 R3DAPI void R3D_SetEnvironment(const R3D_Environment* env)
 {
-	R3D_CACHE_SET(environment, *env);
+	R3D.environment = *env;
 }

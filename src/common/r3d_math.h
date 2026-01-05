@@ -1,5 +1,5 @@
-#ifndef R3D_MATH_H
-#define R3D_MATH_H
+#ifndef R3D_COMMON_MATH_H
+#define R3D_COMMON_MATH_H
 
 #include <raylib.h>
 #include <raymath.h>
@@ -595,4 +595,4 @@ static inline Matrix r3d_matrix_normal(const Matrix* transform)
     return result;
 }
 
-#endif // R3D_MATH_H
+#endif // R3D_COMMON_MATH_H

@@ -5,7 +5,7 @@
 #	define RESOURCES_PATH "./"
 #endif
 
-static void ToggleLight(R3D_Light light, R3D_Skybox sky);
+static void ToggleLight(R3D_Light light, R3D_Cubemap skybox, R3D_AmbientMap ambient);
 
 int main(void)
 {
@@ -27,10 +27,11 @@ int main(void)
     R3D_ENVIRONMENT_SET(ssil.enabled, true);
     R3D_ENVIRONMENT_SET(ssil.energy, 4.0f);
 
-    // Load and set skybox
-    R3D_Skybox skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox3.png", CUBEMAP_LAYOUT_AUTO_DETECT);
+    // Load skybox and ambient map
+    R3D_Cubemap skybox = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox3.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_AmbientMap ambient = R3D_GenAmbientMap(skybox, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
     R3D_ENVIRONMENT_SET(background.sky, skybox);
-    R3D_ENVIRONMENT_SET(ambient.reflect, 0.6f);
+    R3D_ENVIRONMENT_SET(ambient.map, ambient);
 
     // Load model
     R3D_Model model = R3D_LoadModel(RESOURCES_PATH "emission.glb");
@@ -64,7 +65,7 @@ int main(void)
 
         // Input
         if (IsKeyPressed(KEY_SPACE)) {
-            ToggleLight(light, skybox);
+            ToggleLight(light, skybox, ambient);
         }
         if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
             camera.position.y = Clamp(camera.position.y + 0.01f * GetMouseDelta().y, 0.25f, 2.5f);
@@ -89,6 +90,8 @@ int main(void)
 
     // Cleanup
     R3D_UnloadModel(model, true);
+    R3D_UnloadAmbientMap(ambient);
+    R3D_UnloadCubemap(skybox);
     R3D_UnloadMesh(plane);
     R3D_Close();
 
@@ -97,15 +100,17 @@ int main(void)
     return 0;
 }
 
-void ToggleLight(R3D_Light light, R3D_Skybox sky)
+void ToggleLight(R3D_Light light, R3D_Cubemap skybox, R3D_AmbientMap ambient)
 {
     if (R3D_IsLightActive(light)) {
         R3D_SetLightActive(light, false);
-        R3D_ENVIRONMENT_SET(background.sky, (R3D_Skybox) {0});
+        R3D_ENVIRONMENT_SET(background.sky, (R3D_Cubemap) {0});
+        R3D_ENVIRONMENT_SET(ambient.map, (R3D_AmbientMap) {0});
         R3D_ENVIRONMENT_SET(background.color, BLACK);
         R3D_ENVIRONMENT_SET(ambient.color, BLACK);
     } else {
         R3D_SetLightActive(light, true);
-        R3D_ENVIRONMENT_SET(background.sky, sky);
+        R3D_ENVIRONMENT_SET(background.sky, skybox);
+        R3D_ENVIRONMENT_SET(ambient.map, ambient);
     }
 }

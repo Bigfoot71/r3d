@@ -1,5 +1,5 @@
-#ifndef R3D_DETAILS_DEBUG_H
-#define R3D_DETAILS_DEBUG_H
+#ifndef R3D_COMMON_DEBUG_H
+#define R3D_COMMON_DEBUG_H
 
 #include <raylib.h>
 #include <glad.h>
@@ -17,4 +17,4 @@ static inline void r3d_debug_check_opengl_error(const char* msg)
     }
 }
 
-#endif // R3D_DETAILS_DEBUG_H
+#endif // R3D_COMMON_DEBUG_H

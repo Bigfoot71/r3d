@@ -1,5 +1,5 @@
-#ifndef R3D_DETAILS_IMAGE_H
-#define R3D_DETAILS_IMAGE_H
+#ifndef R3D_COMMON_IMAGE_H
+#define R3D_COMMON_IMAGE_H
 
 #include <raylib.h>
 
@@ -30,4 +30,4 @@
  */
 Image r3d_compose_images_rgb(const Image* sources[3], Color defaultColor);
 
-#endif // R3D_DETAILS_IMAGE_H
+#endif // R3D_COMMON_IMAGE_H

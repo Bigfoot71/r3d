@@ -17,8 +17,8 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef R3D_DETAILS_FRUSTUM_H
-#define R3D_DETAILS_FRUSTUM_H
+#ifndef R3D_COMMON_FRUSTUM_H
+#define R3D_COMMON_FRUSTUM_H
 
 #include <raylib.h>
 
@@ -48,4 +48,4 @@ bool r3d_frustum_is_sphere_in(const r3d_frustum_t* frustum, const Vector3* posit
 bool r3d_frustum_is_aabb_in(const r3d_frustum_t* frustum, const BoundingBox* aabb);
 bool r3d_frustum_is_obb_in(const r3d_frustum_t* frustum, const BoundingBox* aabb, const Matrix* transform);
 
-#endif // R3D_DETAILS_FRUSTUM_H
+#endif // R3D_COMMON_FRUSTUM_H

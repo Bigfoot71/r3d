@@ -17,8 +17,8 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef R3D_HALF_H
-#define R3D_HALF_H
+#ifndef R3D_COMMON_HALF_H
+#define R3D_COMMON_HALF_H
 
 #include <stdint.h>
 
@@ -80,4 +80,4 @@ static inline float r3d_cvt_hf(r3d_half_t y)
     return v.f;
 }
 
-#endif // R3D_HALF_H
+#endif // R3D_COMMON_HALF_H

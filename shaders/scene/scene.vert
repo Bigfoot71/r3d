@@ -52,11 +52,11 @@ uniform bool uInstancing;
 uniform bool uSkinning;
 uniform int uBillboard;
 
-#if defined(FORWARD)
-uniform mat4 uMatLightVP[LIGHT_FORWARD_COUNT];
+#if defined(FORWARD) || defined(PROBE)
+uniform mat4 uMatLightVP[NUM_FORWARD_LIGHTS];
 #endif // FORWARD
 
-#if defined(DEPTH) || defined(DEPTH_CUBE)
+#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 uniform mat4 uMatInvView;   // inv view only for billboard modes
 uniform mat4 uMatVP;
 #endif // DEPTH || DEPTH_CUBE
@@ -69,8 +69,8 @@ flat   out vec3 vEmission;
 smooth out vec4 vColor;
 smooth out mat3 vTBN;
 
-#if defined(FORWARD)
-smooth out vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
+#if defined(FORWARD) || defined(PROBE)
+smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 #endif // FORWARD
 
 #if defined(DECAL)
@@ -190,7 +190,7 @@ void main()
     #endif // DECAL
     }
 
-#if defined(DEPTH) || defined(DEPTH_CUBE)
+#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     if (uBillboard == BILLBOARD_FRONT) {
         BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
     }
@@ -216,13 +216,13 @@ void main()
     vColor = aColor * iColor * uAlbedoColor;
     vTBN = mat3(T, B, N);
 
-#if defined(FORWARD)
-    for (int i = 0; i < LIGHT_FORWARD_COUNT; i++) {
+#if defined(FORWARD) || defined(PROBE)
+    for (int i = 0; i < NUM_FORWARD_LIGHTS; i++) {
         vPosLightSpace[i] = uMatLightVP[i] * vec4(vPosition, 1.0);
     }
 #endif // FORWARD
 
-#if defined(DEPTH) || defined(DEPTH_CUBE)
+#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     gl_Position = uMatVP * vec4(vPosition, 1.0);
 #else
     gl_Position = uView.viewProj * vec4(vPosition, 1.0);

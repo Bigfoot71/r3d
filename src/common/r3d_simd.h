@@ -17,7 +17,7 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef R3D_SIMD_H
+#ifndef R3D_COMMON_SIMD_H
 
 #if defined(__FMA__) && defined(__AVX2__)
     #define R3D_HAS_FMA_AVX2
@@ -78,4 +78,4 @@
     #include <arm_neon.h>
 #endif
 
-#endif // R3D_SIMD_H
+#endif // R3D_COMMON_SIMD_H

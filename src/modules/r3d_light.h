@@ -13,8 +13,8 @@
 #include <raylib.h>
 #include <glad.h>
 
-#include "../details/r3d_frustum.h"
-#include "../details/r3d_math.h"
+#include "../common/r3d_frustum.h"
+#include "../common/r3d_math.h"
 
 // ========================================
 // HELPER MACROS
@@ -140,13 +140,7 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
  * Internal helper to iterate over lights by category.
  * Stateful and not thread-safe.
  */
-bool r3d_light_iter(r3d_light_t** light, int array_type);
-
-/*
- * Mark a light as needing its matrices and bounding box updated.
- * Actual computation is deferred.
- */
-void r3d_light_update_matrix(r3d_light_t* light);
+bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array);
 
 /*
  * Enable shadows for a light and configure shadow parameters.

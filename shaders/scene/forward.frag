@@ -8,12 +8,15 @@
 
 #version 330 core
 
+/* === Extensions === */
+
+#extension GL_ARB_texture_cube_map_array : enable
+
 /* === Includes === */
 
 #include "../include/light.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
-#include "../include/ibl.glsl"
 
 /* === Structs === */
 
@@ -47,7 +50,7 @@ flat   in vec3 vEmission;
 smooth in vec4 vColor;
 smooth in mat3 vTBN;
 
-in vec4 vPosLightSpace[LIGHT_FORWARD_COUNT];
+in vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 
 /* === Uniforms === */
 
@@ -56,30 +59,29 @@ uniform sampler2D uTexEmission;
 uniform sampler2D uTexNormal;
 uniform sampler2D uTexORM;
 
-uniform samplerCube uShadowMapCube[LIGHT_FORWARD_COUNT];
-uniform sampler2D uShadowMap2D[LIGHT_FORWARD_COUNT];
+uniform samplerCube uShadowMapCube[NUM_FORWARD_LIGHTS];
+uniform sampler2D uShadowMap2D[NUM_FORWARD_LIGHTS];
 
-uniform float uEmissionEnergy;
+uniform samplerCubeArray uCubeIrradiance;
+uniform samplerCubeArray uCubePrefilter;
+uniform sampler2D uTexBrdfLut;
+
 uniform float uNormalScale;
 uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
 
-uniform vec3 uAmbientColor;
-uniform vec3 uEmissionColor;
-
-uniform samplerCube uCubeIrradiance;
-uniform samplerCube uCubePrefilter;
-uniform sampler2D uTexBrdfLut;
-uniform vec4 uQuatSkybox;
-uniform bool uHasSkybox;
-uniform float uAmbientEnergy;
-uniform float uReflectEnergy;
-
-uniform Light uLights[LIGHT_FORWARD_COUNT];
-
-uniform float uAlphaCutoff;
 uniform vec3 uViewPosition;
+
+#if defined(PROBE)
+uniform bool uProbeInterior;
+#endif // PROBE
+
+uniform Light uLights[NUM_FORWARD_LIGHTS];
+
+/* === Blocks === */
+
+#include "../include/blocks/env.glsl"
 
 /* === Constants === */
 
@@ -215,10 +217,12 @@ void main()
     float occlusion = uOcclusion * orm.x;
     float roughness = uRoughness * orm.y;
     float metalness = uMetalness * orm.z;
+    float dielectric = (1.0 - metalness);
 
-    /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
+    /* Compute F0 (reflectance at normal incidence) and diffuse coefficient */
 
     vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo.rgb);
+    vec3 kD = dielectric * albedo.rgb;
 
     /* Sample normal and compute view direction vector */
 
@@ -237,7 +241,7 @@ void main()
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
 
-    for (int i = 0; i < LIGHT_FORWARD_COUNT; i++)
+    for (int i = 0; i < NUM_FORWARD_LIGHTS; i++)
     {
         if (!uLights[i].enabled) {
             continue;
@@ -274,14 +278,14 @@ void main()
         /* Compute diffuse lighting */
 
         vec3 diffLight = L_Diffuse(cLdotH, cNdotV, cNdotL, roughness);
-        diffLight *= lightColE * (1.0 - metalness); // 0.0 for pure metal, 1.0 for dielectric
+        diffLight *= lightColE * dielectric;
 
         /* Compute specular lighting */
 
         vec3 specLight =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
         specLight *= lightColE * light.specular;
 
-        /* --- Calculating a random rotation matrix for shadow debanding --- */
+        /*  Calculating a random rotation matrix for shadow debanding */
 
         float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
         float sr = sin(r), cr = cos(r);
@@ -324,35 +328,14 @@ void main()
         specular += specLight * shadow;
     }
 
-    /* Compute ambient - (IBL diffuse) */
+    /* Compute ambient */
 
-    vec3 ambient = uAmbientColor;
-
-    if (uHasSkybox) {
-        vec3 kS = IBL_FresnelSchlickRoughness(cNdotV, F0, roughness);
-        vec3 kD = (1.0 - kS) * (1.0 - metalness);
-
-        vec3 Nr = M_Rotate3D(N, uQuatSkybox);
-        ambient = kD * texture(uCubeIrradiance, Nr).rgb;
-        ambient *= uAmbientEnergy;
-    }
-    else {
-        ambient *= (1.0 - metalness) * uAmbientEnergy;
-    }
-
-    diffuse += ambient * occlusion;
-
-    /* Skybox reflection - (IBL specular) */
-
-    if (uHasSkybox) {
-        vec3 R = M_Rotate3D(reflect(-V, N), uQuatSkybox);
-
-        const float MAX_REFLECTION_LOD = 7.0;
-        vec3 radiance = textureLod(uCubePrefilter, R, roughness * MAX_REFLECTION_LOD).rgb;
-        float specularOcclusion = IBL_GetSpecularOcclusion(cNdotV, occlusion, roughness);
-        vec3 specBRDF = IBL_GetMultiScatterBRDF(uTexBrdfLut, cNdotV, roughness, F0);
-        specular += radiance * specBRDF * specularOcclusion * uReflectEnergy;
-    }
+#if defined(PROBE)
+    if (uProbeInterior) E_ComputeAmbientColor(diffuse, kD, occlusion);
+    else E_ComputeAmbientOnly(diffuse, specular, kD, orm, F0, vPosition, N, V, cNdotV);
+#else
+    E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, vPosition, N, V, cNdotV);
+#endif
 
     /* Compute the final fragment color */
 
