@@ -32,7 +32,6 @@ typedef enum R3D_CubemapLayout {
 
 typedef struct R3D_Cubemap {
     uint32_t texture;
-    uint32_t fbo;
     int size;
 } R3D_Cubemap;
 

@@ -90,7 +90,10 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
     R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatProj, matProj);
     R3D_SHADER_BIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular, panorama.id);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, cubemap.fbo);
+    GLuint workFBO;
+    glGenFramebuffers(1, &workFBO);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, workFBO);
     glViewport(0, 0, size, size);
     glDisable(GL_CULL_FACE);
 
@@ -104,6 +107,7 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &workFBO);
     UnloadTexture(panorama);
 
     glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
@@ -243,8 +247,6 @@ R3D_Cubemap R3D_LoadCubemapEmpty(int size)
     R3D_Cubemap cubemap = {0};
     cubemap.size = size;
 
-    glGenFramebuffers(1, &cubemap.fbo);
-
     glGenTextures(1, &cubemap.texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
 
@@ -322,6 +324,5 @@ R3D_Cubemap R3D_LoadCubemapFromImage(Image image, R3D_CubemapLayout layout)
 
 void R3D_UnloadCubemap(R3D_Cubemap cubemap)
 {
-    glDeleteFramebuffers(1, &cubemap.fbo);
     glDeleteTextures(1, &cubemap.texture);
 }
