@@ -32,8 +32,8 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexture;
-uniform vec2 uTexelSize;
+uniform sampler2D uSourceTex;
+uniform vec2 uSourceTexel;
 
 /* === Fragments === */
 
@@ -136,11 +136,11 @@ void main()
 {
     vec2 pos = vTexCoord;
 
-    vec3 rgbN = FxaaTexOff(uTexture, pos.xy, ivec2( 0,-1), uTexelSize).xyz;
-    vec3 rgbW = FxaaTexOff(uTexture, pos.xy, ivec2(-1, 0), uTexelSize).xyz;
-    vec3 rgbM = FxaaTexOff(uTexture, pos.xy, ivec2( 0, 0), uTexelSize).xyz;
-    vec3 rgbE = FxaaTexOff(uTexture, pos.xy, ivec2( 1, 0), uTexelSize).xyz;
-    vec3 rgbS = FxaaTexOff(uTexture, pos.xy, ivec2( 0, 1), uTexelSize).xyz;
+    vec3 rgbN = FxaaTexOff(uSourceTex, pos.xy, ivec2( 0,-1), uSourceTexel).xyz;
+    vec3 rgbW = FxaaTexOff(uSourceTex, pos.xy, ivec2(-1, 0), uSourceTexel).xyz;
+    vec3 rgbM = FxaaTexOff(uSourceTex, pos.xy, ivec2( 0, 0), uSourceTexel).xyz;
+    vec3 rgbE = FxaaTexOff(uSourceTex, pos.xy, ivec2( 1, 0), uSourceTexel).xyz;
+    vec3 rgbS = FxaaTexOff(uSourceTex, pos.xy, ivec2( 0, 1), uSourceTexel).xyz;
     
     float lumaN = FxaaLuma(rgbN);
     float lumaW = FxaaLuma(rgbW);
@@ -163,10 +163,10 @@ void main()
     float blendL = max(0.0, (rangeL / range) - FXAA_SUBPIX_TRIM) * FXAA_SUBPIX_TRIM_SCALE; 
     blendL = min(FXAA_SUBPIX_CAP, blendL);
     
-    vec3 rgbNW = FxaaTexOff(uTexture, pos.xy, ivec2(-1,-1), uTexelSize).xyz;
-    vec3 rgbNE = FxaaTexOff(uTexture, pos.xy, ivec2( 1,-1), uTexelSize).xyz;
-    vec3 rgbSW = FxaaTexOff(uTexture, pos.xy, ivec2(-1, 1), uTexelSize).xyz;
-    vec3 rgbSE = FxaaTexOff(uTexture, pos.xy, ivec2( 1, 1), uTexelSize).xyz;
+    vec3 rgbNW = FxaaTexOff(uSourceTex, pos.xy, ivec2(-1,-1), uSourceTexel).xyz;
+    vec3 rgbNE = FxaaTexOff(uSourceTex, pos.xy, ivec2( 1,-1), uSourceTexel).xyz;
+    vec3 rgbSW = FxaaTexOff(uSourceTex, pos.xy, ivec2(-1, 1), uSourceTexel).xyz;
+    vec3 rgbSE = FxaaTexOff(uSourceTex, pos.xy, ivec2( 1, 1), uSourceTexel).xyz;
     rgbL += (rgbNW + rgbNE + rgbSW + rgbSE);
     rgbL *= vec3(1.0/9.0);
     
@@ -185,7 +185,7 @@ void main()
         abs((0.25 * lumaNE) + (-0.5 * lumaE) + (0.25 * lumaSE));
         
     bool horzSpan = edgeHorz >= edgeVert;
-    float lengthSign = horzSpan ? -uTexelSize.y : -uTexelSize.x;
+    float lengthSign = horzSpan ? -uSourceTexel.y : -uSourceTexel.x;
     
     if(!horzSpan) {
         lumaN = lumaW;
@@ -211,7 +211,7 @@ void main()
     gradientN *= FXAA_SEARCH_THRESHOLD;
     
     vec2 posP = posN;
-    vec2 offNP = horzSpan ? vec2(uTexelSize.x, 0.0) : vec2(0.0, uTexelSize.y); 
+    vec2 offNP = horzSpan ? vec2(uSourceTexel.x, 0.0) : vec2(0.0, uSourceTexel.y); 
     float lumaEndN = lumaN;
     float lumaEndP = lumaN;
     bool doneN = false;
@@ -221,10 +221,10 @@ void main()
     
     for(int i = 0; i < FXAA_SEARCH_STEPS; i++) {
         if(!doneN) {
-            lumaEndN = FxaaLuma(texture(uTexture, posN.xy).xyz);
+            lumaEndN = FxaaLuma(texture(uSourceTex, posN.xy).xyz);
         }
         if(!doneP) {
-            lumaEndP = FxaaLuma(texture(uTexture, posP.xy).xyz);
+            lumaEndP = FxaaLuma(texture(uSourceTex, posP.xy).xyz);
         }
         
         doneN = doneN || (abs(lumaEndN - lumaN) >= gradientN);
@@ -253,7 +253,7 @@ void main()
     float spanLength = (dstP + dstN);
     dstN = directionN ? dstN : dstP;
     float subPixelOffset = (0.5 + (dstN * (-1.0/spanLength))) * lengthSign;
-    vec3 rgbF = texture(uTexture, vec2(
+    vec3 rgbF = texture(uSourceTex, vec2(
         pos.x + (horzSpan ? 0.0 : subPixelOffset),
         pos.y + (horzSpan ? subPixelOffset : 0.0))).xyz;
 

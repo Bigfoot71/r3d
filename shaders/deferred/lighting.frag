@@ -48,11 +48,11 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexDepth;
-uniform sampler2D uTexSSAO;
-uniform sampler2D uTexORM;
+uniform sampler2D uAlbedoTex;
+uniform sampler2D uNormalTex;
+uniform sampler2D uDepthTex;
+uniform sampler2D uSsaoTex;
+uniform sampler2D uOrmTex;
 
 uniform Light uLight;
 
@@ -178,8 +178,8 @@ void main()
 {
     /* Sample albedo and ORM texture and extract values */
     
-    vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
-    vec3 orm = texture(uTexORM, vTexCoord).rgb;
+    vec3 albedo = texture(uAlbedoTex, vTexCoord).rgb;
+    vec3 orm = texture(uOrmTex, vTexCoord).rgb;
     float roughness = orm.g;
     float metalness = orm.b;
 
@@ -189,8 +189,8 @@ void main()
 
     /* Get position and normal in world space */
 
-    vec3 position = V_GetWorldPosition(uTexDepth, vTexCoord);
-    vec3 N = V_GetWorldNormal(uTexNormal, vTexCoord);
+    vec3 position = V_GetWorldPosition(uDepthTex, vTexCoord);
+    vec3 N = V_GetWorldNormal(uNormalTex, vTexCoord);
 
     /* Compute view direction and the dot product of the normal and view direction */
     
@@ -269,7 +269,7 @@ void main()
 
 	/* Apply SSAO to diffuse lighting (accordingly to light affect) */
 
-    diffuse *= mix(1.0, texture(uTexSSAO, vTexCoord).r, uSSAOLightAffect);
+    diffuse *= mix(1.0, texture(uSsaoTex, vTexCoord).r, uSSAOLightAffect);
 
     /* Compute final lighting contribution */
 

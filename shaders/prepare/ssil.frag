@@ -25,10 +25,10 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexLight;
-uniform sampler2D uTexPrevSSIL;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexDepth;
+uniform sampler2D uLightingTex;
+uniform sampler2D uHistoryTex;
+uniform sampler2D uNormalTex;
+uniform sampler2D uDepthTex;
 
 uniform float uSampleCount;
 uniform float uSampleRadius;
@@ -67,8 +67,8 @@ uint UpdateSectors(float minHorizon, float maxHorizon, uint outBitfield)
 
 vec3 SampleLight(vec2 texCoord)
 {
-    vec3 indirect = texture(uTexPrevSSIL, texCoord).rgb;
-    vec3 direct = texture(uTexLight, texCoord).rgb;
+    vec3 indirect = texture(uHistoryTex, texCoord).rgb;
+    vec3 direct = texture(uLightingTex, texCoord).rgb;
     return direct + uBounce * indirect;
 }
 
@@ -82,8 +82,8 @@ void main()
     float visibility = 0.0;
     vec3 lighting = vec3(0.0);
 
-    vec3 position = V_GetViewPosition(uTexDepth, vTexCoord);
-    vec3 normal = V_GetViewNormal(uTexNormal, vTexCoord);
+    vec3 position = V_GetViewPosition(uDepthTex, vTexCoord);
+    vec3 normal = V_GetViewNormal(uNormalTex, vTexCoord);
     vec3 camera = normalize(-position);
 
     float sliceRotation = M_TAU / (uSliceCount - 1.0);
@@ -116,8 +116,8 @@ void main()
             float sampleStep = (currentSample + jitter) / uSampleCount + sampleOffset;
             vec2 sampleUV = vTexCoord - sampleStep * sampleScale * omega * uView.aspect;
 
-            vec3 samplePosition = V_GetViewPosition(uTexDepth, sampleUV);
-            vec3 sampleNormal = V_GetViewNormal(uTexNormal, sampleUV);
+            vec3 samplePosition = V_GetViewPosition(uDepthTex, sampleUV);
+            vec3 sampleNormal = V_GetViewNormal(uNormalTex, sampleUV);
             vec3 sampleLight = SampleLight(sampleUV);
 
             vec3 sampleDistance = samplePosition - position;
@@ -150,7 +150,7 @@ void main()
         visibility += 1.0 - float(BitCount(occlusion)) / float(SECTOR_COUNT);
     }
 
-    vec4 history = texture(uTexPrevSSIL, vTexCoord);
+    vec4 history = texture(uHistoryTex, vTexCoord);
     visibility /= uSliceCount;
     lighting /= uSliceCount;
 

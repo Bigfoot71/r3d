@@ -22,16 +22,16 @@ smooth in vec4 vClipPos;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexNormal; // Unused - placeholder for future implementation
-uniform sampler2D uTexEmission;
-uniform sampler2D uTexORM;
-uniform sampler2D uTexDepth;
+uniform sampler2D uAlbedoMap;
+uniform sampler2D uNormalMap;   // Unused - placeholder for future implementation
+uniform sampler2D uEmissionMap;
+uniform sampler2D uOrmMap;
+uniform sampler2D uDepthTex;
 
-uniform mat4 uMatNormal; // Unused - placeholder for future implementation
+uniform mat4 uMatNormal;        // Unused - placeholder for future implementation
 
 uniform float uAlphaCutoff;
-uniform float uNormalScale; // Unused - placeholder for future implementation
+uniform float uNormalScale;     // Unused - placeholder for future implementation
 uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
@@ -55,7 +55,7 @@ void main()
     vec2 fragTexCoord = screenPos * 0.5 + 0.5;
 
     // Reconstruct position in view space
-    vec3 positionViewSpace = V_GetViewPosition(uTexDepth, fragTexCoord);
+    vec3 positionViewSpace = V_GetViewPosition(uDepthTex, fragTexCoord);
 
     // Convert from world space to decal projector's model space
     vec4 positionModelSpace = vMatDecal * vec4(positionViewSpace, 1.0);
@@ -72,14 +72,14 @@ void main()
     vec2 decalTexCoord = uTexCoordOffset + (positionModelSpace.xz + 0.5) * uTexCoordScale;
 
     // Sample albedo texture and discard if below alpha cutoff
-    vec4 albedo = vColor * texture(uTexAlbedo, decalTexCoord);
+    vec4 albedo = vColor * texture(uAlbedoMap, decalTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
 	// Apply material values
     FragAlbedo = albedo;	
-    FragEmission = vec4(vEmission, 1.0) * texture(uTexEmission, decalTexCoord);
+    FragEmission = vec4(vEmission, 1.0) * texture(uEmissionMap, decalTexCoord);
 
-    vec3 orm = texture(uTexORM, decalTexCoord).xyz;
+    vec3 orm = texture(uOrmMap, decalTexCoord).xyz;
     FragORM.x = uOcclusion * orm.x;
     FragORM.y = uRoughness * orm.y;
     FragORM.z = uMetalness * orm.z;

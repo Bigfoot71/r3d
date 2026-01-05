@@ -12,23 +12,23 @@
 #version 330 core
 
 noperspective in vec2 vTexCoord;
-uniform sampler2D uTexSource;
-uniform int uMipSource;
+uniform sampler2D uSourceTex;
+uniform int uSourceLod;
 out vec4 FragColor;
 
 void main()
 {
-    vec2 halfPixel = 0.5 / vec2(textureSize(uTexSource, uMipSource));
-    float lod = float(uMipSource);
+    vec2 halfPixel = 0.5 / vec2(textureSize(uSourceTex, uSourceLod));
+    float lod = float(uSourceLod);
 
-    vec4 sum = textureLod(uTexSource, vTexCoord + vec2(-halfPixel.x * 2.0, 0.0), lod);
-    sum += textureLod(uTexSource, vTexCoord + vec2(-halfPixel.x, halfPixel.y), lod) * 2.0;
-    sum += textureLod(uTexSource, vTexCoord + vec2(0.0, halfPixel.y * 2.0), lod);
-    sum += textureLod(uTexSource, vTexCoord + vec2(halfPixel.x, halfPixel.y), lod) * 2.0;
-    sum += textureLod(uTexSource, vTexCoord + vec2(halfPixel.x * 2.0, 0.0), lod);
-    sum += textureLod(uTexSource, vTexCoord + vec2(halfPixel.x, -halfPixel.y), lod) * 2.0;
-    sum += textureLod(uTexSource, vTexCoord + vec2(0.0, -halfPixel.y * 2.0), lod);
-    sum += textureLod(uTexSource, vTexCoord + vec2(-halfPixel.x, -halfPixel.y), lod) * 2.0;
+    vec4 sum = textureLod(uSourceTex, vTexCoord + vec2(-halfPixel.x * 2.0, 0.0), lod);
+    sum += textureLod(uSourceTex, vTexCoord + vec2(-halfPixel.x, halfPixel.y), lod) * 2.0;
+    sum += textureLod(uSourceTex, vTexCoord + vec2(0.0, halfPixel.y * 2.0), lod);
+    sum += textureLod(uSourceTex, vTexCoord + vec2(halfPixel.x, halfPixel.y), lod) * 2.0;
+    sum += textureLod(uSourceTex, vTexCoord + vec2(halfPixel.x * 2.0, 0.0), lod);
+    sum += textureLod(uSourceTex, vTexCoord + vec2(halfPixel.x, -halfPixel.y), lod) * 2.0;
+    sum += textureLod(uSourceTex, vTexCoord + vec2(0.0, -halfPixel.y * 2.0), lod);
+    sum += textureLod(uSourceTex, vTexCoord + vec2(-halfPixel.x, -halfPixel.y), lod) * 2.0;
 
     FragColor = sum / 12.0;
 }

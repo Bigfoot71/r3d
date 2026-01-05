@@ -23,17 +23,17 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexDepth;
-uniform sampler2D uTexSSAO;
-uniform sampler2D uTexSSIL;
-uniform sampler2D uTexSSR;
-uniform sampler2D uTexORM;
+uniform sampler2D uAlbedoTex;
+uniform sampler2D uNormalTex;
+uniform sampler2D uDepthTex;
+uniform sampler2D uSsaoTex;
+uniform sampler2D uSsilTex;
+uniform sampler2D uSsrTex;
+uniform sampler2D uOrmTex;
 
-uniform samplerCubeArray uCubeIrradiance;
-uniform samplerCubeArray uCubePrefilter;
-uniform sampler2D uTexBrdfLut;
+uniform samplerCubeArray uIrradianceTex;
+uniform samplerCubeArray uPrefilterTex;
+uniform sampler2D uBrdfLutTex;
 
 uniform float uMipCountSSR;
 
@@ -51,18 +51,18 @@ layout(location = 1) out vec4 FragSpecular;
 
 void main()
 {
-    vec3 albedo = texture(uTexAlbedo, vTexCoord).rgb;
-    vec3 orm = texture(uTexORM, vTexCoord).rgb;
+    vec3 albedo = texture(uAlbedoTex, vTexCoord).rgb;
+    vec3 orm = texture(uOrmTex, vTexCoord).rgb;
 
-    vec4 ssr = textureLod(uTexSSR, vTexCoord, orm.g * uMipCountSSR);
-    float ssao = texture(uTexSSAO, vTexCoord).r;
-    vec4 ssil = texture(uTexSSIL, vTexCoord);
+    vec4 ssr = textureLod(uSsrTex, vTexCoord, orm.g * uMipCountSSR);
+    float ssao = texture(uSsaoTex, vTexCoord).r;
+    vec4 ssil = texture(uSsilTex, vTexCoord);
 
     orm.x *= ssao * ssil.w;
 
     vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
-    vec3 P = V_GetWorldPosition(uTexDepth, vTexCoord);
-    vec3 N = V_GetWorldNormal(uTexNormal, vTexCoord);
+    vec3 P = V_GetWorldPosition(uDepthTex, vTexCoord);
+    vec3 N = V_GetWorldNormal(uNormalTex, vTexCoord);
     vec3 V = normalize(uView.position - P);
     float NdotV = max(dot(N, V), 0.0);
     vec3 kD = albedo * (1.0 - orm.z);

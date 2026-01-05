@@ -10,7 +10,7 @@
 
 in vec3 vPosition;
 
-uniform sampler2D uTexEquirectangular;
+uniform sampler2D uPanoramaTex;
 
 out vec4 FragColor;
 
@@ -25,6 +25,6 @@ vec2 SampleSphericalMap(vec3 v)
 void main()
 {
     vec2 uv = SampleSphericalMap(normalize(vPosition));
-    vec3 color = texture(uTexEquirectangular, uv).rgb;
+    vec3 color = texture(uPanoramaTex, uv).rgb;
     FragColor = vec4(color, 1.0);
 }

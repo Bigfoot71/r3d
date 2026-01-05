@@ -36,7 +36,7 @@ layout(location = 13) in vec4 iColor;
 
 /* === Uniforms === */
 
-uniform sampler1D uTexBoneMatrices;
+uniform sampler1D uBoneMatricesTex;
 
 uniform mat4 uMatModel;
 uniform mat4 uMatNormal;
@@ -84,10 +84,10 @@ mat4 BoneMatrix(int boneID)
 {
     int baseIndex = 4 * boneID;
 
-    vec4 row0 = texelFetch(uTexBoneMatrices, baseIndex + 0, 0);
-    vec4 row1 = texelFetch(uTexBoneMatrices, baseIndex + 1, 0);
-    vec4 row2 = texelFetch(uTexBoneMatrices, baseIndex + 2, 0);
-    vec4 row3 = texelFetch(uTexBoneMatrices, baseIndex + 3, 0);
+    vec4 row0 = texelFetch(uBoneMatricesTex, baseIndex + 0, 0);
+    vec4 row1 = texelFetch(uBoneMatricesTex, baseIndex + 1, 0);
+    vec4 row2 = texelFetch(uBoneMatricesTex, baseIndex + 2, 0);
+    vec4 row3 = texelFetch(uBoneMatricesTex, baseIndex + 3, 0);
 
     return transpose(mat4(row0, row1, row2, row3));
 }
