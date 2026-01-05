@@ -48,8 +48,6 @@ int main(void)
         .fovy = 60
     };
 
-    DisableCursor();
-
     // Main loop
     while (!WindowShouldClose())
     {
