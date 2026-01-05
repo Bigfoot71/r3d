@@ -18,6 +18,10 @@
 * [ ] **Skybox Generation Support**
   Add support for procedural skybox generation.
 
+* [ ] **Improve Shadow Map Management**
+  Instead of using one shadow map per light, implement an internal batching system with a 2D texture array and `Sample2DArray` in shaders.
+  *Note: This would remove per-light independent shadow map resolutions.*
+
 ## **v0.8**
 
 * [ ] **Add Support for Custom Screen-Space Shaders (Post-Processing)**
@@ -29,23 +33,9 @@
 * [ ] **Better logs**
   Add better logs for initialization, shutdown, loading operations, and failures.
 
-## **v0.9**
-
-* [ ] **Improve Shadow Map Management**
-  Instead of using one shadow map per light, implement an internal batching system with a 2D texture array and `Sample2DArray` in shaders.
-  *Note: This would remove per-light independent shadow map resolutions.*
-
-* [ ] **Implement Cascaded Shadow Maps (CSM)**
-  Add CSM support for directional lights.
-
-* [ ] **Make a Wiki**
-  Add wiki pages to the Github repository.
-
-*Note: v0.9 features are still unsure and/or incomplete.*
-
 ## **Ideas (Not Planned Yet)**
 
-* [ ] After implementing `Sampler2DArray` for shadow maps, explore using UBOs for lights, but also for environment and matrices/camera data.
-* [ ] Provide an easy way to configure the number of lights in forward shaders (preferably runtime-configurable).
 * [ ] Implement a system to save loaded skyboxes together with their generated irradiance and prefiltered textures for later reloading.
 * [ ] Improve support for shadow/transparency interaction (e.g., colored shadows).
+* [ ] Implement Cascaded Shadow Maps (or alternative) for directional lights.
+* [ ] Make wiki pages for the repo, consider it for the release.
