@@ -1,3 +1,5 @@
+#include "r3d/r3d_environment.h"
+#include "raylib.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -15,29 +17,23 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
     // Create sphere mesh
-    R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 64, 64);
+    R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 32, 64);
 
-    // Create grid of materials (metalness and roughness)
-    R3D_Material materials[7 * 7];
-    for (int x = 0; x < 7; x++) {
-        for (int y = 0; y < 7; y++) {
-            int i = y * 7 + x;
-            materials[i] = R3D_GetDefaultMaterial();
-            materials[i].orm.metalness = (float)x / 7;
-            materials[i].orm.roughness = (float)y / 7;
-            materials[i].albedo.color = ColorFromHSV(((float)x / 7) * 360, 1, 1);
-        }
-    }
+    // Load and generate skyboxes
+    R3D_Cubemap skyProcedural = R3D_GenCubemapSky(512, R3D_CUBEMAP_SKY_BASE);
+    R3D_Cubemap skyPanorama = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox1.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
 
-    // Load skybox and ambient map
-    R3D_Cubemap skybox = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox1.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
-    R3D_AmbientMap ambient = R3D_GenAmbientMap(skybox, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
-    R3D_ENVIRONMENT_SET(background.sky, skybox);
-    R3D_ENVIRONMENT_SET(ambient.map, ambient);
+    // Generate ambient maps
+    R3D_AmbientMap ambientProcedural = R3D_GenAmbientMap(skyProcedural, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
+    R3D_AmbientMap ambientPanorama = R3D_GenAmbientMap(skyPanorama, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
+
+    // Set default sky/ambient maps
+    R3D_ENVIRONMENT_SET(background.sky, skyPanorama);
+    R3D_ENVIRONMENT_SET(ambient.map, ambientPanorama);
 
     // Setup camera
     Camera3D camera = {
-        .position = {0, 0, 5},
+        .position = {0, 0, 10},
         .target = {0, 0, 0},
         .up = {0, 1, 0},
         .fovy = 60
@@ -54,11 +50,25 @@ int main(void)
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (R3D_ENVIRONMENT_GET(background.sky.texture) == skyPanorama.texture) {
+                R3D_ENVIRONMENT_SET(background.sky, skyProcedural);
+                R3D_ENVIRONMENT_SET(ambient.map, ambientProcedural);
+            }
+            else {
+                R3D_ENVIRONMENT_SET(background.sky, skyPanorama);
+                R3D_ENVIRONMENT_SET(ambient.map, ambientPanorama);
+            }
+        }
+
         // Draw sphere grid
         R3D_Begin(camera);
-            for (int x = 0; x < 7; x++) {
-                for (int y = 0; y < 7; y++) {
-                    R3D_DrawMesh(sphere, materials[y * 7 + x], (Vector3) {(float)x - 3, (float)y - 3, 0.0f}, 1.0f);
+            for (int x = 0; x <= 8; x++) {
+                for (int y = 0; y <= 8; y++) {
+                    R3D_Material material = R3D_MATERIAL_BASE;
+                    material.orm.roughness = Remap((float)y, 0.0f, 8.0f, 0.0f, 1.0f);
+                    material.orm.metalness = Remap((float)x, 0.0f, 8.0f, 0.0f, 1.0f);
+                    R3D_DrawMesh(sphere, material, (Vector3) {(float)(x - 4) * 1.25f, ((float)y - 4) * 1.25f, 0.0f}, 1.0f);
                 }
             }
         R3D_End();
@@ -67,8 +77,10 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadAmbientMap(ambient);
-    R3D_UnloadCubemap(skybox);
+    R3D_UnloadAmbientMap(ambientProcedural);
+    R3D_UnloadAmbientMap(ambientPanorama);
+    R3D_UnloadCubemap(skyProcedural);
+    R3D_UnloadCubemap(skyPanorama);
     R3D_UnloadMesh(sphere);
     R3D_Close();
 
