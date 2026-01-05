@@ -1147,6 +1147,11 @@ void pass_scene_probes(void)
             Matrix viewProj = r3d_matrix_multiply(&probe->view[iFace], &probe->proj[iFace]);
             Matrix invView = MatrixInvert(probe->view[iFace]);
 
+            /* --- Generates the list of visible groups for the current face of the capture --- */
+
+            const r3d_frustum_t* frustum = &probe->frustum[iFace];
+            r3d_draw_compute_visible_groups(frustum);
+
             /* --- Render scene --- */
 
             R3D_SHADER_USE(scene.probe);
@@ -1165,7 +1170,7 @@ void pass_scene_probes(void)
             r3d_env_capture_bind_fbo(iFace, 0);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            R3D_DRAW_FOR_EACH(call, true, &probe->frustum[iFace], PROBES_DRAW_LISTS) {
+            R3D_DRAW_FOR_EACH(call, true, frustum, PROBES_DRAW_LISTS) {
                 pass_scene_probe_send_lights(call, probe->shadows);
                 raster_probe(call, &invView, &viewProj);
             }
