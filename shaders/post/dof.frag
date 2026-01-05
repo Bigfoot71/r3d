@@ -28,8 +28,8 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexColor;
-uniform sampler2D uTexDepth;
+uniform sampler2D uSceneTex;
+uniform sampler2D uDepthTex;
 
 uniform float uFocusPoint;
 uniform float uFocusScale;
@@ -55,11 +55,11 @@ float GetBlurSize(float depth)
 
 void main()
 {
-    vec2 texelSize = 1.0 / vec2(textureSize(uTexColor, 0));
-    vec3 color = texture(uTexColor, vTexCoord).rgb;
+    vec2 texelSize = 1.0 / vec2(textureSize(uSceneTex, 0));
+    vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     // Center depth and CoC
-    float centerDepth = V_GetLinearDepth(uTexDepth, vTexCoord);
+    float centerDepth = V_GetLinearDepth(uDepthTex, vTexCoord);
     float centerSize  = GetBlurSize(centerDepth);
 
     //scatter as gather
@@ -70,8 +70,8 @@ void main()
     {
         vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 
-        vec3 sampleColor = texture(uTexColor, tc).rgb;
-        float sampleDepth = V_GetLinearDepth(uTexDepth, tc);
+        vec3 sampleColor = texture(uSceneTex, tc).rgb;
+        float sampleDepth = V_GetLinearDepth(uDepthTex, tc);
         float sampleSize  = GetBlurSize(sampleDepth);
 
         if (sampleDepth > centerDepth) {

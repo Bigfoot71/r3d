@@ -119,7 +119,7 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 
     R3D_SHADER_USE(prepare.cubemapFromEquirectangular);
     R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatProj, matProj);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular, panorama.id);
+    R3D_SHADER_BIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uPanoramaTex, panorama.id);
 
     GLuint workFBO;
     glGenFramebuffers(1, &workFBO);
@@ -136,7 +136,7 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
         R3D_PRIMITIVE_DRAW_CUBE();
     }
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uTexEquirectangular);
+    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uPanoramaTex);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glDeleteFramebuffers(1, &workFBO);
     UnloadTexture(panorama);

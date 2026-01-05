@@ -21,10 +21,10 @@ smooth in mat3 vTBN;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexEmission;
-uniform sampler2D uTexORM;
+uniform sampler2D uAlbedoMap;
+uniform sampler2D uNormalMap;
+uniform sampler2D uEmissionMap;
+uniform sampler2D uOrmMap;
 
 uniform float uAlphaCutoff;
 uniform float uNormalScale;
@@ -43,17 +43,17 @@ layout(location = 3) out vec3 FragORM;
 
 void main()
 {
-    vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
+    vec4 albedo = vColor * texture(uAlbedoMap, vTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
-    vec3 N = normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    vec3 N = normalize(vTBN * M_NormalScale(texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
     if (!gl_FrontFacing) N = -N; // Flip for back facing triangles with double sided meshes
 
     FragAlbedo = albedo.rgb;
-    FragEmission = vEmission * texture(uTexEmission, vTexCoord).rgb;
+    FragEmission = vEmission * texture(uEmissionMap, vTexCoord).rgb;
     FragNormal = M_EncodeOctahedral(N);
 
-    vec3 orm = texture(uTexORM, vTexCoord).rgb;
+    vec3 orm = texture(uOrmMap, vTexCoord).rgb;
 
     FragORM.r = uOcclusion * orm.x;
     FragORM.g = uRoughness * orm.y;

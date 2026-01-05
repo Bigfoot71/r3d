@@ -12,22 +12,20 @@
 #version 330 core
 
 noperspective in vec2 vTexCoord;
-
-uniform sampler2D uTexSource;
-uniform int uMipSource;
-
+uniform sampler2D uSourceTex;
+uniform int uSourceLod;
 out vec4 FragColor;
 
 void main()
 {
-    vec2 halfPixel = 0.5 / vec2(textureSize(uTexSource, uMipSource));
-    float lod = float(uMipSource);
+    vec2 halfPixel = 0.5 / vec2(textureSize(uSourceTex, uSourceLod));
+    float lod = float(uSourceLod);
 
-    vec4 sum = textureLod(uTexSource, vTexCoord, lod) * 4.0;
-    sum += textureLod(uTexSource, vTexCoord - halfPixel.xy, lod);
-    sum += textureLod(uTexSource, vTexCoord + halfPixel.xy, lod);
-    sum += textureLod(uTexSource, vTexCoord + vec2(halfPixel.x, -halfPixel.y), lod);
-    sum += textureLod(uTexSource, vTexCoord - vec2(halfPixel.x, -halfPixel.y), lod);
+    vec4 sum = textureLod(uSourceTex, vTexCoord, lod) * 4.0;
+    sum += textureLod(uSourceTex, vTexCoord - halfPixel.xy, lod);
+    sum += textureLod(uSourceTex, vTexCoord + halfPixel.xy, lod);
+    sum += textureLod(uSourceTex, vTexCoord + vec2(halfPixel.x, -halfPixel.y), lod);
+    sum += textureLod(uSourceTex, vTexCoord - vec2(halfPixel.x, -halfPixel.y), lod);
 
     FragColor = sum / 8.0;
 }

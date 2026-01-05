@@ -17,8 +17,8 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexDiffuse;
-uniform sampler2D uTexSpecular;
+uniform sampler2D uDiffuseTex;
+uniform sampler2D uSpecularTex;
 
 /* === Fragments === */
 
@@ -28,8 +28,8 @@ layout(location = 0) out vec3 FragColor;
 
 void main()
 {
-    vec3 diffuse = texture(uTexDiffuse, vTexCoord).rgb;
-    vec3 specular = texture(uTexSpecular, vTexCoord).rgb;
+    vec3 diffuse = texture(uDiffuseTex, vTexCoord).rgb;
+    vec3 specular = texture(uSpecularTex, vTexCoord).rgb;
 
     FragColor = diffuse + specular;
 }

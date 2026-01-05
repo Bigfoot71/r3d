@@ -29,7 +29,7 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexColor;        //< Scene color texture
+uniform sampler2D uSceneTex;        //< Scene color texture
 uniform float uTonemapExposure;     //< Tonemap exposure
 uniform float uTonemapWhite;        //< Tonemap white point, not used with AGX
 uniform int uTonemapMode;           //< Tonemap mode used (e.g. TONEMAP_LINEAR)
@@ -219,7 +219,7 @@ vec3 LinearToSRGB(vec3 color)
 
 void main()
 {
-    vec3 color = texture(uTexColor, vTexCoord).rgb;
+    vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     color = Tonemapping(color, uTonemapExposure, uTonemapWhite);
     color = Adjustments(color, uBrightness, uContrast, uSaturation);

@@ -15,7 +15,7 @@ smooth in vec4 vColor;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexAlbedo;
+uniform sampler2D uAlbedoMap;
 uniform float uAlphaCutoff;
 
 /* === Main function === */
@@ -24,6 +24,6 @@ void main()
 {
     // NOTE: The depth is automatically written
 
-    float alpha = vColor.a * texture(uTexAlbedo, vTexCoord).a;
+    float alpha = vColor.a * texture(uAlbedoMap, vTexCoord).a;
     if (alpha < uAlphaCutoff) discard;
 }

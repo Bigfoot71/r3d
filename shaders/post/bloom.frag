@@ -20,8 +20,8 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexColor;
-uniform sampler2D uTexBloomBlur;
+uniform sampler2D uSceneTex;
+uniform sampler2D uBloomTex;
 
 uniform lowp int uBloomMode;
 uniform float uBloomIntensity;
@@ -35,10 +35,10 @@ out vec3 FragColor;
 void main()
 {
     // Sampling scene color texture
-    vec3 color = texture(uTexColor, vTexCoord).rgb;
+    vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     // Apply bloom
-    vec3 bloom = texture(uTexBloomBlur, vTexCoord).rgb;
+    vec3 bloom = texture(uBloomTex, vTexCoord).rgb;
     bloom *= uBloomIntensity;
 
     if (uBloomMode == BLOOM_MIX) {

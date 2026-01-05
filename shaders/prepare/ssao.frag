@@ -24,8 +24,8 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexDepth;
-uniform sampler2D uTexNormal;
+uniform sampler2D uNormalTex;
+uniform sampler2D uDepthTex;
 
 uniform int uSampleCount;
 uniform float uRadius;
@@ -57,8 +57,8 @@ vec2 TapLocation(int i, float spinAngle, out float rNorm)
 
 void main()
 {
-    vec3 position = V_GetViewPosition(uTexDepth, vTexCoord);
-    vec3 normal = V_GetViewNormal(uTexNormal, vTexCoord);
+    vec3 position = V_GetViewPosition(uDepthTex, vTexCoord);
+    vec3 normal = V_GetViewNormal(uNormalTex, vTexCoord);
 
     // Compute the radius in screen space
     float projScale = uView.proj[0][0];
@@ -81,7 +81,7 @@ void main()
         vec2 offset = vTexCoord + dir * ssRadius * rNorm;
 
         // The "SAO" paper recommends using mipmaps of the linearized depth here, but hey
-        vec3 samplePos = V_GetViewPosition(uTexDepth, offset);
+        vec3 samplePos = V_GetViewPosition(uDepthTex, offset);
         vec3 v = samplePos - position;
 
         float vv = dot(v, v);

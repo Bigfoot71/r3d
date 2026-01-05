@@ -54,17 +54,17 @@ in vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 
 /* === Uniforms === */
 
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexEmission;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexORM;
+uniform sampler2D uAlbedoMap;
+uniform sampler2D uEmissionMap;
+uniform sampler2D uNormalMap;
+uniform sampler2D uOrmMap;
 
 uniform samplerCube uShadowMapCube[NUM_FORWARD_LIGHTS];
 uniform sampler2D uShadowMap2D[NUM_FORWARD_LIGHTS];
 
-uniform samplerCubeArray uCubeIrradiance;
-uniform samplerCubeArray uCubePrefilter;
-uniform sampler2D uTexBrdfLut;
+uniform samplerCubeArray uIrradianceTex;
+uniform samplerCubeArray uPrefilterTex;
+uniform sampler2D uBrdfLutTex;
 
 uniform float uNormalScale;
 uniform float uOcclusion;
@@ -210,9 +210,9 @@ void main()
 {
     /* Sample material maps */
 
-    vec4 albedo = vColor * texture(uTexAlbedo, vTexCoord);
-    vec3 emission = vEmission * texture(uTexEmission, vTexCoord).rgb;
-    vec3 orm = texture(uTexORM, vTexCoord).rgb;
+    vec4 albedo = vColor * texture(uAlbedoMap, vTexCoord);
+    vec3 emission = vEmission * texture(uEmissionMap, vTexCoord).rgb;
+    vec3 orm = texture(uOrmMap, vTexCoord).rgb;
 
     float occlusion = uOcclusion * orm.x;
     float roughness = uRoughness * orm.y;
@@ -226,7 +226,7 @@ void main()
 
     /* Sample normal and compute view direction vector */
 
-    vec3 N = normalize(vTBN * M_NormalScale(texture(uTexNormal, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    vec3 N = normalize(vTBN * M_NormalScale(texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
     if (!gl_FrontFacing) N = -N; // Flip for back facing triangles with double sided meshes
 
     vec3 V = normalize(uViewPosition - vPosition);

@@ -25,8 +25,8 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexColor;
-uniform sampler2D uTexDepth;
+uniform sampler2D uSceneTex;
+uniform sampler2D uDepthTex;
 
 uniform lowp int uFogMode;
 uniform vec3 uFogColor;
@@ -70,8 +70,8 @@ float FogFactor(float dist, int mode, float density, float start, float end)
 
 void main()
 {
-    float depth = V_GetLinearDepth(uTexDepth, vTexCoord);
-    vec3 color = texture(uTexColor, vTexCoord).rgb;
+    float depth = V_GetLinearDepth(uDepthTex, vTexCoord);
+    vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     float fogFactor = FogFactor(depth, uFogMode, uFogDensity, uFogStart, uFogEnd);
     fogFactor *= uSkyAffect * step(depth, uView.far);

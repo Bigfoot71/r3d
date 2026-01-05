@@ -23,9 +23,9 @@ in vec3 vPosition;
 
 /* === Uniforms === */
 
-uniform samplerCube uTexCubemap;    //< Source cubemap
-uniform float uResolution;          //< Resolution of the source cubemap
-uniform float uNumLevels;           //< Level count of the source cubemap
+uniform samplerCube uSourceTex;     //< Source cubemap
+uniform float uSourceNumLevels;     //< Level count of the source cubemap
+uniform float uSourceFaceSize;      //< Resolution of the source cubemap
 uniform float uRoughness;           //< Roughness (relative to mip level)
 
 /* === Fragments === */
@@ -98,7 +98,7 @@ void main()
     /* --- Handle the case where roughness = 0 (perfect mirror) --- */
 
     if (uRoughness <= EPSILON) {
-        FragColor = textureLod(uTexCubemap, N, 0.0);
+        FragColor = textureLod(uSourceTex, N, 0.0);
         return;
     }
 
@@ -129,10 +129,10 @@ void main()
             float HdotV = max(dot(H, V), 0.0);
 
             float pdf = (D * NdotH) / max(4.0 * HdotV, EPSILON);
-            float mipLevel = ComputeMipLevel(pdf, uResolution);
-            mipLevel = clamp(mipLevel, 0.0, uNumLevels - 1.0);
+            float mipLevel = ComputeMipLevel(pdf, uSourceFaceSize);
+            mipLevel = clamp(mipLevel, 0.0, uSourceNumLevels - 1.0);
 
-            vec3 sampleColor = textureLod(uTexCubemap, L, mipLevel).rgb;
+            vec3 sampleColor = textureLod(uSourceTex, L, mipLevel).rgb;
             prefilteredColor += sampleColor * NdotL;
             totalWeight += NdotL;
         }

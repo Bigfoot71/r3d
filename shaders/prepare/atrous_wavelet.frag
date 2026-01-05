@@ -19,9 +19,9 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexSource;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexDepth;
+uniform sampler2D uSourceTex;
+uniform sampler2D uNormalTex;
+uniform sampler2D uDepthTex;
 
 uniform int uStepSize;  // Powers of 2: 1, 2, 4, 8... for each pass
 
@@ -91,18 +91,18 @@ void main()
     vec4 result = vec4(0.0);
     float totalWeight = 0.0;
 
-    vec2 texelSize = 1.0 / vec2(textureSize(uTexSource, 0));
-    vec3 centerNormal = V_GetViewNormal(uTexNormal, vTexCoord);
-    float centerDepth = V_GetLinearDepth(uTexDepth, vTexCoord);
+    vec2 texelSize = 1.0 / vec2(textureSize(uSourceTex, 0));
+    vec3 centerNormal = V_GetViewNormal(uNormalTex, vTexCoord);
+    float centerDepth = V_GetLinearDepth(uDepthTex, vTexCoord);
 
     for (int i = 0; i < KERNEL_SIZE; ++i)
     {
         vec2 offset = vec2(OFFSETS[i] * uStepSize) * texelSize;
         vec2 uv = vTexCoord + offset;
 
-        vec4 sampleValue = texture(uTexSource, uv);
-        vec3 sampleNormal = V_GetViewNormal(uTexNormal, uv);
-        float sampleDepth = V_GetLinearDepth(uTexDepth, uv);
+        vec4 sampleValue = texture(uSourceTex, uv);
+        vec3 sampleNormal = V_GetViewNormal(uNormalTex, uv);
+        float sampleDepth = V_GetLinearDepth(uDepthTex, uv);
 
         float wNormal = NormalWeight(centerNormal, sampleNormal);
         float wDepth = DepthWeight(centerDepth, sampleDepth);

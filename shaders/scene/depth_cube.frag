@@ -12,7 +12,7 @@ smooth in vec3 vPosition;
 smooth in vec2 vTexCoord;
 smooth in vec4 vColor;
 
-uniform sampler2D uTexAlbedo;
+uniform sampler2D uAlbedoMap;
 
 uniform float uAlphaCutoff;
 uniform vec3 uViewPosition;
@@ -20,7 +20,7 @@ uniform float uFar;
 
 void main()
 {
-    float alpha = vColor.a * texture(uTexAlbedo, vTexCoord).a;
+    float alpha = vColor.a * texture(uAlbedoMap, vTexCoord).a;
     if (alpha < uAlphaCutoff) discard;
 
     gl_FragDepth = length(vPosition - uViewPosition) / uFar;

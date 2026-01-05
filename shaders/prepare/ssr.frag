@@ -20,11 +20,11 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uTexColor;
-uniform sampler2D uTexAlbedo;
-uniform sampler2D uTexNormal;
-uniform sampler2D uTexORM;
-uniform sampler2D uTexDepth;
+uniform sampler2D uLightingTex;
+uniform sampler2D uAlbedoTex;
+uniform sampler2D uNormalTex;
+uniform sampler2D uOrmTex;
+uniform sampler2D uDepthTex;
 
 uniform int uMaxRaySteps;
 uniform int uBinarySearchSteps;
@@ -53,9 +53,9 @@ float ScreenEdgeFade(vec2 uv)
 
 vec4 SampleScene(vec2 texCoord)
 {
-    vec3 albedo = texture(uTexAlbedo, texCoord).rgb;
-    vec3 light = texture(uTexColor, texCoord).rgb;
-    vec3 orm = texture(uTexORM, texCoord).rgb;
+    vec3 albedo = texture(uAlbedoTex, texCoord).rgb;
+    vec3 light = texture(uLightingTex, texCoord).rgb;
+    vec3 orm = texture(uOrmTex, texCoord).rgb;
 
     vec3 ambient = uAmbientColor * uAmbientEnergy;
     ambient *= albedo * (1.0 - orm.b);
@@ -73,7 +73,7 @@ vec3 BinarySearch(vec3 startPos, vec3 endPos)
         vec3 midPos = (startPos + endPos) * 0.5;
         vec2 uv = V_WorldToScreen(midPos);
 
-        vec3 sampledViewPos = V_GetViewPosition(uTexDepth, uv);
+        vec3 sampledViewPos = V_GetViewPosition(uDepthTex, uv);
         vec3 midViewPos = (uView.view * vec4(midPos, 1.0)).xyz;
 
         float depthDiff = sampledViewPos.z - midViewPos.z;
@@ -103,7 +103,7 @@ vec4 TraceReflectionRay(vec3 startPos, vec3 reflectionDir)
         vec2 uv = V_WorldToScreen(currentPos);
         if (V_OffScreen(uv)) break;
 
-        vec3 sampledViewPos = V_GetViewPosition(uTexDepth, uv);
+        vec3 sampledViewPos = V_GetViewPosition(uDepthTex, uv);
         vec3 currentViewPos = (uView.view * vec4(currentPos, 1.0)).xyz;
 
         float depthDiff = sampledViewPos.z - currentViewPos.z;
@@ -126,10 +126,10 @@ void main()
 {
     FragColor = vec4(0.0);
 
-    float depth = texture(uTexDepth, vTexCoord).r;
+    float depth = texture(uDepthTex, vTexCoord).r;
     if (depth > 1.0 - 1e-5) return;
 
-    vec3 worldNormal = V_GetWorldNormal(uTexNormal, vTexCoord);
+    vec3 worldNormal = V_GetWorldNormal(uNormalTex, vTexCoord);
     vec3 worldPos = V_GetWorldPosition(vTexCoord, depth);
 
     vec3 viewDir = normalize(worldPos - uView.position);

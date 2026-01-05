@@ -10,10 +10,10 @@
 
 noperspective in vec2 vTexCoord;
 
-uniform samplerCube uCube;
-uniform float uSrcTexel;
-uniform float uSrcLod;
-uniform int uFace;
+uniform samplerCube uSourceTex;
+uniform float uSourceTexel;
+uniform float uSourceLod;
+uniform int uSourceFace;
 
 out vec4 FragColor;
 
@@ -35,7 +35,7 @@ vec3 GetDirection(vec2 uv, int face)
 
 void main()
 {
-    float offset = uSrcTexel * 0.5;
+    float offset = uSourceTexel * 0.5;
 
     vec2 offsets[4] = vec2[4](
         vec2(-offset, -offset),
@@ -46,10 +46,10 @@ void main()
 
     vec4 result = vec4(0.0);
 
-    result += textureLod(uCube, GetDirection(vTexCoord + offsets[0], uFace), uSrcLod);
-    result += textureLod(uCube, GetDirection(vTexCoord + offsets[1], uFace), uSrcLod);
-    result += textureLod(uCube, GetDirection(vTexCoord + offsets[2], uFace), uSrcLod);
-    result += textureLod(uCube, GetDirection(vTexCoord + offsets[3], uFace), uSrcLod);
+    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[0], uSourceFace), uSourceLod);
+    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[1], uSourceFace), uSourceLod);
+    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[2], uSourceFace), uSourceLod);
+    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[3], uSourceFace), uSourceLod);
 
     FragColor = result * 0.25;
 }
