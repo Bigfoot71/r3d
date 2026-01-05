@@ -8,7 +8,7 @@
 int main(void)
 {
     // Initialize window
-    InitWindow(800, 450, "[r3d] - Basic example");
+    InitWindow(800, 450, "[r3d] - Probe example");
     SetTargetFPS(60);
 
     // Initialize R3D
