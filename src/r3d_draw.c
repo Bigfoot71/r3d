@@ -1196,7 +1196,7 @@ void pass_scene_probes(void)
                 R3D_SHADER_USE(scene.skybox);
                 glDisable(GL_CULL_FACE);
 
-                R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uSkyTex, R3D.environment.background.sky.texture);
+                R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
                 R3D_SHADER_SET_FLOAT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
                 R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatView, probe->view[iFace]);
@@ -1204,7 +1204,7 @@ void pass_scene_probes(void)
 
                 R3D_PRIMITIVE_DRAW_CUBE();
 
-                R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyTex);
+                R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
             }
             else {
                 Vector4 background = {
@@ -1794,7 +1794,7 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_USE(scene.skybox);
         glDisable(GL_CULL_FACE);
 
-        R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uSkyTex, R3D.environment.background.sky.texture);
+        R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
         R3D_SHADER_SET_FLOAT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
         R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatView, R3D.viewState.view);
@@ -1802,7 +1802,7 @@ void pass_scene_background(r3d_target_t sceneTarget)
 
         R3D_PRIMITIVE_DRAW_CUBE();
 
-        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyTex);
+        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
     }
     else {
         Vector4 background = {

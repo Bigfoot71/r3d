@@ -555,7 +555,7 @@ typedef struct {
     r3d_shader_uniform_vec4_t uRotation;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_mat4_t uMatProj;
-    r3d_shader_uniform_samplerCube_t uSkyTex;
+    r3d_shader_uniform_samplerCube_t uSkyMap;
     r3d_shader_uniform_float_t uSkyEnergy;
 } r3d_shader_scene_skybox_t;
 

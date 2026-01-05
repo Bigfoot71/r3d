@@ -564,12 +564,12 @@ void r3d_shader_load_scene_skybox(void)
     GET_LOCATION(scene.skybox, uRotation);
     GET_LOCATION(scene.skybox, uMatView);
     GET_LOCATION(scene.skybox, uMatProj);
-    GET_LOCATION(scene.skybox, uSkyTex);
+    GET_LOCATION(scene.skybox, uSkyMap);
     GET_LOCATION(scene.skybox, uSkyEnergy);
 
     USE_SHADER(scene.skybox);
 
-    SET_SAMPLER_CUBE(scene.skybox, uSkyTex, 0);
+    SET_SAMPLER_CUBE(scene.skybox, uSkyMap, 0);
 }
 
 void r3d_shader_load_scene_depth(void)
