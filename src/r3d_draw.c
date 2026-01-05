@@ -573,7 +573,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
     /* --- Send matrices --- */
 
     R3D_SHADER_SET_MAT4(scene.depth, uMatModel, group->transform);
-    R3D_SHADER_SET_MAT4(scene.depth, uMatVP, *matVP);
+    R3D_SHADER_SET_MAT4(scene.depth, uMatViewProj, *matVP);
 
     /* --- Send skinning related data --- */
 
@@ -641,7 +641,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     /* --- Send matrices --- */
 
     R3D_SHADER_SET_MAT4(scene.depthCube, uMatModel, group->transform);
-    R3D_SHADER_SET_MAT4(scene.depthCube, uMatVP, *matVP);
+    R3D_SHADER_SET_MAT4(scene.depthCube, uMatViewProj, *matVP);
 
     /* --- Send skinning related data --- */
 
@@ -719,7 +719,7 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     R3D_SHADER_SET_MAT4(scene.probe, uMatInvView, *invView);
     R3D_SHADER_SET_MAT4(scene.probe, uMatModel, group->transform);
     R3D_SHADER_SET_MAT4(scene.probe, uMatNormal, matNormal);
-    R3D_SHADER_SET_MAT4(scene.probe, uMatVP, *viewProj);
+    R3D_SHADER_SET_MAT4(scene.probe, uMatViewProj, *viewProj);
 
     /* --- Send skinning related data --- */
 
@@ -1103,7 +1103,7 @@ static void pass_scene_probe_send_lights(const r3d_draw_call_t* call, bool probe
             else {
                 R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowTexelSize, light->shadowTexelSize);
                 R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uShadowMap2D[iLight], light->shadowMap.tex);
-                R3D_SHADER_SET_MAT4(scene.probe, uMatLightVP[iLight], light->matVP);
+                R3D_SHADER_SET_MAT4(scene.probe, uLightViewProj[iLight], light->matVP);
             }
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowSoftness, light->shadowSoftness);
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowDepthBias, light->shadowDepthBias);
@@ -1721,7 +1721,7 @@ static void pass_scene_forward_send_lights(const r3d_draw_call_t* call)
             else {
                 R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowTexelSize, light->shadowTexelSize);
                 R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uShadowMap2D[iLight], light->shadowMap.tex);
-                R3D_SHADER_SET_MAT4(scene.forward, uMatLightVP[iLight], light->matVP);
+                R3D_SHADER_SET_MAT4(scene.forward, uLightViewProj[iLight], light->matVP);
             }
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowSoftness, light->shadowSoftness);
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowDepthBias, light->shadowDepthBias);

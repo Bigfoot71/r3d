@@ -53,12 +53,12 @@ uniform bool uSkinning;
 uniform int uBillboard;
 
 #if defined(FORWARD) || defined(PROBE)
-uniform mat4 uMatLightVP[NUM_FORWARD_LIGHTS];
+uniform mat4 uLightViewProj[NUM_FORWARD_LIGHTS];
 #endif // FORWARD
 
 #if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 uniform mat4 uMatInvView;   // inv view only for billboard modes
-uniform mat4 uMatVP;
+uniform mat4 uMatViewProj;
 #endif // DEPTH || DEPTH_CUBE
 
 /* === Varyings === */
@@ -218,12 +218,12 @@ void main()
 
 #if defined(FORWARD) || defined(PROBE)
     for (int i = 0; i < NUM_FORWARD_LIGHTS; i++) {
-        vPosLightSpace[i] = uMatLightVP[i] * vec4(vPosition, 1.0);
+        vPosLightSpace[i] = uLightViewProj[i] * vec4(vPosition, 1.0);
     }
 #endif // FORWARD
 
 #if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
-    gl_Position = uMatVP * vec4(vPosition, 1.0);
+    gl_Position = uMatViewProj * vec4(vPosition, 1.0);
 #else
     gl_Position = uView.viewProj * vec4(vPosition, 1.0);
 #endif

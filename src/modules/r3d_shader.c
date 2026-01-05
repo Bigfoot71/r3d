@@ -523,7 +523,7 @@ void r3d_shader_load_scene_forward(void)
     int shadowMapSlot = 10;
     for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++)
     {
-        GET_LOCATION_ARRAY(scene.forward, uMatLightVP, i);
+        GET_LOCATION_ARRAY(scene.forward, uLightViewProj, i);
         GET_LOCATION_ARRAY(scene.forward, uShadowMapCube, i);
         GET_LOCATION_ARRAY(scene.forward, uShadowMap2D, i);
 
@@ -582,7 +582,7 @@ void r3d_shader_load_scene_depth(void)
     GET_LOCATION(scene.depth, uBoneMatricesTex);
     GET_LOCATION(scene.depth, uMatInvView);
     GET_LOCATION(scene.depth, uMatModel);
-    GET_LOCATION(scene.depth, uMatVP);
+    GET_LOCATION(scene.depth, uMatViewProj);
     GET_LOCATION(scene.depth, uAlbedoColor);
     GET_LOCATION(scene.depth, uTexCoordOffset);
     GET_LOCATION(scene.depth, uTexCoordScale);
@@ -608,7 +608,7 @@ void r3d_shader_load_scene_depth_cube(void)
     GET_LOCATION(scene.depthCube, uBoneMatricesTex);
     GET_LOCATION(scene.depthCube, uMatInvView);
     GET_LOCATION(scene.depthCube, uMatModel);
-    GET_LOCATION(scene.depthCube, uMatVP);
+    GET_LOCATION(scene.depthCube, uMatViewProj);
     GET_LOCATION(scene.depthCube, uAlbedoColor);
     GET_LOCATION(scene.depthCube, uTexCoordOffset);
     GET_LOCATION(scene.depthCube, uTexCoordScale);
@@ -650,7 +650,7 @@ void r3d_shader_load_scene_probe(void)
     GET_LOCATION(scene.probe, uMatInvView);
     GET_LOCATION(scene.probe, uMatNormal);
     GET_LOCATION(scene.probe, uMatModel);
-    GET_LOCATION(scene.probe, uMatVP);
+    GET_LOCATION(scene.probe, uMatViewProj);
     GET_LOCATION(scene.probe, uAlbedoColor);
     GET_LOCATION(scene.probe, uEmissionColor);
     GET_LOCATION(scene.probe, uEmissionEnergy);
@@ -687,7 +687,7 @@ void r3d_shader_load_scene_probe(void)
     int shadowMapSlot = 10;
     for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++)
     {
-        GET_LOCATION_ARRAY(scene.probe, uMatLightVP, i);
+        GET_LOCATION_ARRAY(scene.probe, uLightViewProj, i);
         GET_LOCATION_ARRAY(scene.probe, uShadowMapCube, i);
         GET_LOCATION_ARRAY(scene.probe, uShadowMap2D, i);
 

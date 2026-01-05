@@ -389,7 +389,7 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uMatLightVP[R3D_SHADER_NUM_FORWARD_LIGHTS];
+    r3d_shader_uniform_mat4_t uLightViewProj[R3D_SHADER_NUM_FORWARD_LIGHTS];
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_vec4_t uAlbedoColor;
@@ -441,7 +441,7 @@ typedef struct {
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
@@ -457,7 +457,7 @@ typedef struct {
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
@@ -473,11 +473,11 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uMatLightVP[R3D_SHADER_NUM_FORWARD_LIGHTS];
+    r3d_shader_uniform_mat4_t uLightViewProj[R3D_SHADER_NUM_FORWARD_LIGHTS];
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_mat4_t uMatVP;
+    r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_vec4_t uAlbedoColor;
     r3d_shader_uniform_vec3_t uEmissionColor;
     r3d_shader_uniform_float_t uEmissionEnergy;
