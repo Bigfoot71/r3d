@@ -101,6 +101,7 @@ int main(void)
 
     // Cleanup
     R3D_UnloadModel(model, true);
+    R3D_UnloadAmbientMap(ambient);
     R3D_UnloadCubemap(skybox);
     R3D_Close();
 
