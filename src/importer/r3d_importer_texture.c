@@ -31,7 +31,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
-#include "../details/r3d_image.h"
+#include "../common/r3d_image.h"
 
 // ========================================
 // INTERNAL STRUCTURES

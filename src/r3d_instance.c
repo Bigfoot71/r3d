@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <glad.h>
 
-#include "./details/r3d_helper.h"
+#include "./common/r3d_helper.h"
 
 // ========================================
 // INTERNAL CONSTANTS

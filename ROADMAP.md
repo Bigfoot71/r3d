@@ -12,7 +12,7 @@
 * [x] **Merge Scene Vertex Shaders**
   Merge all vertex shaders used by the `scene` module into a single unified vertex shader.
 
-* [ ] **Skybox Revision and Reflection Probes**
+* [x] **Skybox Revision and Reflection Probes**
   Revise the skybox system and add support for reflection probes, including probe blending.
 
 * [ ] **Skybox Generation Support**

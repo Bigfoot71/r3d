@@ -22,17 +22,20 @@
 
 #include "r3d_animation.h"
 #include "r3d_core.h"
+#include "r3d_cubemap.h"
 #include "r3d_culling.h"
 #include "r3d_decal.h"
 #include "r3d_draw.h"
+#include "r3d_ambient_map.h"
 #include "r3d_environment.h"
+#include "r3d_instance.h"
 #include "r3d_lighting.h"
 #include "r3d_material.h"
 #include "r3d_mesh_data.h"
 #include "r3d_mesh.h"
 #include "r3d_model.h"
+#include "r3d_probe.h"
 #include "r3d_skeleton.h"
-#include "r3d_skybox.h"
 #include "r3d_utils.h"
 
 #endif // R3D_H

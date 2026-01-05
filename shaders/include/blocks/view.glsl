@@ -24,32 +24,32 @@ layout(std140) uniform ViewBlock {
     View uView;
 };
 
-vec2 GetNDC(vec2 texCoord)
+vec2 V_GetNDC(vec2 texCoord)
 {
     return vec2(texCoord * 2.0 - 1.0);
 }
 
-vec4 GetNDC(vec2 texCoord, float depth)
+vec4 V_GetNDC(vec2 texCoord, float depth)
 {
     return vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
 }
 
-vec4 GetNDC(sampler2D texDepth, vec2 texCoord)
+vec4 V_GetNDC(sampler2D texDepth, vec2 texCoord)
 {
     float depth = texture(texDepth, texCoord).r;
-    return GetNDC(texCoord, depth);
+    return V_GetNDC(texCoord, depth);
 }
 
 vec3 V_GetViewPosition(vec2 texCoord, float depth)
 {
-    vec4 ndcPos = GetNDC(texCoord, depth);
+    vec4 ndcPos = V_GetNDC(texCoord, depth);
     vec4 viewPos = uView.invProj * ndcPos;
     return viewPos.xyz / viewPos.w;
 }
 
 vec3 V_GetViewPosition(sampler2D texDepth, vec2 texCoord)
 {
-    vec4 ndcPos = GetNDC(texDepth, texCoord);
+    vec4 ndcPos = V_GetNDC(texDepth, texCoord);
     vec4 viewPos = uView.invProj * ndcPos;
     return viewPos.xyz / viewPos.w;
 }

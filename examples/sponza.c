@@ -27,7 +27,8 @@ int main(void)
     R3D_Model sponza = R3D_LoadModel(RESOURCES_PATH "sponza.glb");
 
     // Load skybox (disabled by default)
-    R3D_Skybox skybox = R3D_LoadSkybox(RESOURCES_PATH "sky/skybox3.png", CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_Cubemap skybox = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox3.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_AmbientMap ambient = R3D_GenAmbientMap(skybox, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
     bool skyEnabled = false;
 
     // Setup lights
@@ -59,8 +60,14 @@ int main(void)
 
         // Toggle skybox
         if (IsKeyPressed(KEY_ZERO)) {
-            if (skyEnabled) R3D_ENVIRONMENT_SET(background.sky, (R3D_Skybox){0});
-            else R3D_ENVIRONMENT_SET(background.sky, skybox);
+            if (skyEnabled) {
+                R3D_ENVIRONMENT_SET(background.sky, (R3D_Cubemap){0});
+                R3D_ENVIRONMENT_SET(ambient.map, (R3D_AmbientMap){0});
+            }
+            else {
+                R3D_ENVIRONMENT_SET(background.sky, skybox);
+                R3D_ENVIRONMENT_SET(ambient.map, ambient);
+            }
             skyEnabled = !skyEnabled;
         }
 
@@ -134,7 +141,8 @@ int main(void)
 
     // Cleanup
     R3D_UnloadModel(sponza, true);
-    R3D_UnloadSkybox(skybox);
+    R3D_UnloadAmbientMap(ambient);
+    R3D_UnloadCubemap(skybox);
     R3D_Close();
 
     CloseWindow();

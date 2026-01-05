@@ -22,7 +22,7 @@
     do {                                        \
         var_name = r3d_light_get(id);           \
         if (var_name == NULL) {                 \
-            TraceLog(LOG_ERROR, "Invalid light [ID %i] given to '%s'", id, __func__);  \
+            TraceLog(LOG_ERROR, "R3D: Invalid light [ID %i] given to '%s'", id, __func__);  \
             return __VA_ARGS__;                 \
         }                                       \
     } while(0)
@@ -123,11 +123,13 @@ Vector3 R3D_GetLightPosition(R3D_Light id)
 void R3D_SetLightPosition(R3D_Light id, Vector3 position)
 {
     GET_LIGHT_OR_RETURN(light, id);
+
     if (light->type == R3D_LIGHT_DIR) {
         TraceLog(LOG_WARNING, "R3D: Can't set position for light [ID %i]; it's directional and position is set automatically", id);
         return;
     }
-    r3d_light_update_matrix(light);
+
+    light->state.matrixShouldBeUpdated = true;
     light->position = position;
 }
 
@@ -140,24 +142,29 @@ Vector3 R3D_GetLightDirection(R3D_Light id)
 void R3D_SetLightDirection(R3D_Light id, Vector3 direction)
 {
     GET_LIGHT_OR_RETURN(light, id);
+
     if (light->type == R3D_LIGHT_OMNI) {
         TraceLog(LOG_WARNING, "R3D: Can't set direction for light [ID %i]; it's omni-directional and doesn't have a direction", id);
         return;
     }
-    r3d_light_update_matrix(light);
+
+    light->state.matrixShouldBeUpdated = true;
     light->direction = Vector3Normalize(direction);
 }
 
 void R3D_LightLookAt(R3D_Light id, Vector3 position, Vector3 target)
 {
     GET_LIGHT_OR_RETURN(light, id);
+
     if (light->type != R3D_LIGHT_OMNI) {
+        light->state.matrixShouldBeUpdated = true;
         light->direction = Vector3Normalize(Vector3Subtract(target, position));
     }
+
     if (light->type != R3D_LIGHT_DIR) {
+        light->state.matrixShouldBeUpdated = true;
         light->position = position;
     }
-    r3d_light_update_matrix(light);
 }
 
 float R3D_GetLightEnergy(R3D_Light id)
@@ -193,7 +200,8 @@ float R3D_GetLightRange(R3D_Light id)
 void R3D_SetLightRange(R3D_Light id, float range)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    r3d_light_update_matrix(light);
+
+    light->state.matrixShouldBeUpdated = true;
     light->range = range;
 }
 
@@ -238,11 +246,13 @@ float R3D_GetLightOuterCutOff(R3D_Light id)
 void R3D_SetLightOuterCutOff(R3D_Light id, float degrees)
 {
     GET_LIGHT_OR_RETURN(light, id);
+
     if (light->type == R3D_LIGHT_DIR || light->type == R3D_LIGHT_OMNI) {
         TraceLog(LOG_WARNING, "R3D: Can't set outer cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
         return;
     }
-    r3d_light_update_matrix(light);
+
+    light->state.matrixShouldBeUpdated = true;
     light->outerCutOff = cosf(degrees * DEG2RAD);
 }
 

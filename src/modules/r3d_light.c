@@ -47,10 +47,11 @@ static void init_light(r3d_light_t* light, R3D_LightType type)
     light->type = type;
     light->enabled = false;
 
-    /* --- Set common shadow config --- */
+    /* --- Set default light/shadow state --- */
 
     light->state.shadowUpdate = R3D_SHADOW_UPDATE_INTERVAL;
     light->state.shadowShouldBeUpdated = true;
+    light->state.matrixShouldBeUpdated = true;
     light->state.shadowFrequencySec = 0.016f;
     light->state.shadowTimerSec = 0.0f;
 
@@ -336,14 +337,14 @@ bool r3d_light_init(void)
     R3D_MOD_LIGHT.lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.lights));
     R3D_MOD_LIGHT.capacityLights = LIGHT_RESERVE_COUNT;
     if (!R3D_MOD_LIGHT.lights) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init light module; Main light array allocation failed");
+        TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light array allocation failed");
         return false;
     }
 
     for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
         R3D_MOD_LIGHT.arrays[i].lights = RL_MALLOC(LIGHT_RESERVE_COUNT * sizeof(*R3D_MOD_LIGHT.arrays[i].lights));
         if (R3D_MOD_LIGHT.arrays[i].lights == NULL) {
-            TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light array %i allocation failed", i);
+            TraceLog(LOG_FATAL, "R3D: Failed to init light module; Light list array %i allocation failed", i);
             for (int j = 0; j <= i; j++) RL_FREE(R3D_MOD_LIGHT.arrays[j].lights);
             return false;
         }
@@ -495,20 +496,15 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
     return (r3d_rect_t) {x, y, w, h};
 }
 
-bool r3d_light_iter(r3d_light_t** light, int array_type)
+bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array)
 {
     static int index = 0;
 
     index = (*light == NULL) ? 0 : index + 1;
-    if (index >= R3D_MOD_LIGHT.arrays[array_type].count) return false;
-    *light = &R3D_MOD_LIGHT.lights[R3D_MOD_LIGHT.arrays[array_type].lights[index]];
+    if (index >= R3D_MOD_LIGHT.arrays[array].count) return false;
+    *light = &R3D_MOD_LIGHT.lights[R3D_MOD_LIGHT.arrays[array].lights[index]];
 
     return true;
-}
-
-void r3d_light_update_matrix(r3d_light_t* light)
-{
-    light->state.matrixShouldBeUpdated = true;
 }
 
 void r3d_light_enable_shadows(r3d_light_t* light, int resolution)
@@ -579,7 +575,7 @@ bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated)
         case R3D_SHADOW_UPDATE_INTERVAL:
             light->state.shadowShouldBeUpdated = false;
             break;
-        case R3D_SHADOW_UPDATE_CONTINUOUS:
+        default:
             break;
         }
     }

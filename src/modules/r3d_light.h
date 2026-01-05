@@ -13,8 +13,8 @@
 #include <raylib.h>
 #include <glad.h>
 
-#include "../details/r3d_frustum.h"
-#include "../details/r3d_math.h"
+#include "../common/r3d_frustum.h"
+#include "../common/r3d_math.h"
 
 // ========================================
 // HELPER MACROS
@@ -25,7 +25,7 @@
          r3d_light_iter(&light, R3D_LIGHT_ARRAY_VISIBLE); )
 
 // ========================================
-// LIGHT STRUCTURES
+// MODULE STRUCTURES
 // ========================================
 
 typedef struct {
@@ -69,10 +69,6 @@ typedef struct {
     bool shadow;                            //< Indicates whether the light generates shadows
 } r3d_light_t;
 
-// ========================================
-// MODULE STATE
-// ========================================
-
 typedef enum {
     R3D_LIGHT_ARRAY_VISIBLE,
     R3D_LIGHT_ARRAY_VALID,
@@ -84,6 +80,10 @@ typedef struct {
     R3D_Light* lights;
     int count;
 } r3d_light_array_t;
+
+// ========================================
+// MODULE STATE
+// ========================================
 
 extern struct r3d_light {
     r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
@@ -140,13 +140,7 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
  * Internal helper to iterate over lights by category.
  * Stateful and not thread-safe.
  */
-bool r3d_light_iter(r3d_light_t** light, int array_type);
-
-/*
- * Mark a light as needing its matrices and bounding box updated.
- * Actual computation is deferred.
- */
-void r3d_light_update_matrix(r3d_light_t* light);
+bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array);
 
 /*
  * Enable shadows for a light and configure shadow parameters.

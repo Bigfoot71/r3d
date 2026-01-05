@@ -16,8 +16,8 @@
 #include <rlgl.h>
 #include <glad.h>
 
-#include "../details/r3d_frustum.h"
-#include "../details/r3d_math.h"
+#include "../common/r3d_frustum.h"
+#include "../common/r3d_math.h"
 
 // ========================================
 // MODULE STATE

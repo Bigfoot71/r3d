@@ -12,7 +12,7 @@
 #include <r3d/r3d_mesh.h>
 
 #include "./importer/r3d_importer.h"
-#include "./modules/r3d_cache.h"
+#include "./r3d_core_state.h"
 
 // ========================================
 // INTERNAL FUNCTIONS
@@ -21,7 +21,7 @@
 static bool import_model(r3d_importer_t* importer, R3D_Model* model)
 {
     r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
-        importer, R3D_CACHE_GET(textureColorSpace), R3D_CACHE_GET(textureFilter)
+        importer, R3D.textureColorSpace, R3D.textureFilter
     );
 
     if (textureCache == NULL) {

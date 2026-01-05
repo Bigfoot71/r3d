@@ -45,7 +45,7 @@ typedef enum R3D_ShadowUpdateMode {
 } R3D_ShadowUpdateMode;
 
 // ========================================
-// ALIASES TYPES
+// HANDLES TYPES
 // ========================================
 
 /**

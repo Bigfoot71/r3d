@@ -9,9 +9,9 @@
 #ifndef R3D_ENVIRONMENT_H
 #define R3D_ENVIRONMENT_H
 
+#include "./r3d_ambient_map.h"
 #include "./r3d_platform.h"
-#include "./r3d_skybox.h"
-#include <raylib.h>
+#include "./r3d_cubemap.h"
 
 /**
  * @defgroup Environment
@@ -62,7 +62,6 @@
         .ambient = {                                    \
             .color = {0, 0, 0, 255},                    \
             .energy = 1.0f,                             \
-            .reflect = 1.0f,                            \
         },                                              \
         .ssao = {                                       \
             .sampleCount = 16,                          \
@@ -187,9 +186,9 @@ typedef enum R3D_Tonemap {
  * @brief Background and skybox configuration.
  */
 typedef struct R3D_EnvBackground {
-    Color color;            ///< Background color when skybox is disabled
+    Color color;            ///< Background color when there is no skybox
     float energy;           ///< Energy multiplier applied to background (skybox or color)
-    R3D_Skybox sky;         ///< Skybox asset (used if ID is non-zero)
+    R3D_Cubemap sky;        ///< Skybox asset (used if ID is non-zero)
     Quaternion rotation;    ///< Skybox rotation (pitch, yaw, roll as quaternion)
 } R3D_EnvBackground;
 
@@ -197,9 +196,9 @@ typedef struct R3D_EnvBackground {
  * @brief Ambient lighting configuration.
  */
 typedef struct R3D_EnvAmbient {
-    Color color;            ///< Ambient light color when skybox is disabled
-    float energy;           ///< Energy multiplier for ambient light (skybox or color)
-    float reflect;          ///< Reflection intensity from skybox (no effect if skybox disabled)
+    Color color;            ///< Ambient light color when there is no ambient map
+    float energy;           ///< Energy multiplier for ambient light (map or color)
+    R3D_AmbientMap map;     ///< IBL environment map, can be generated from skybox
 } R3D_EnvAmbient;
 
 /**

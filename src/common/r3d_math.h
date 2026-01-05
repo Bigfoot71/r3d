@@ -1,5 +1,13 @@
-#ifndef R3D_MATH_H
-#define R3D_MATH_H
+/* r3d_math.h -- Common R3D Math
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
+#ifndef R3D_COMMON_MATH_H
+#define R3D_COMMON_MATH_H
 
 #include <raylib.h>
 #include <raymath.h>
@@ -595,4 +603,4 @@ static inline Matrix r3d_matrix_normal(const Matrix* transform)
     return result;
 }
 
-#endif // R3D_MATH_H
+#endif // R3D_COMMON_MATH_H
