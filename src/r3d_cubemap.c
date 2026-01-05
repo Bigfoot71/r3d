@@ -84,11 +84,12 @@ static R3D_Cubemap allocate_cubemap(int size)
     R3D_Cubemap cubemap = {0};
     cubemap.size = size;
 
+    glGenFramebuffers(1, &cubemap.fbo);
+
     glGenTextures(1, &cubemap.texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
 
     int mipLevels = 1 + (int)floor(log2(size));
-
     for (int level = 0; level < mipLevels; level++) {
         int mipSize = size >> level;
         for (int i = 0; i < 6; i++) {
@@ -121,10 +122,7 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
     R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatProj, matProj);
     R3D_SHADER_BIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uPanoramaTex, panorama.id);
 
-    GLuint workFBO;
-    glGenFramebuffers(1, &workFBO);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, workFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemap.fbo);
     glViewport(0, 0, size, size);
     glDisable(GL_CULL_FACE);
 
@@ -138,7 +136,6 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 
     R3D_SHADER_UNBIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uPanoramaTex);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &workFBO);
     UnloadTexture(panorama);
 
     glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
@@ -322,7 +319,57 @@ R3D_Cubemap R3D_LoadCubemapFromImage(Image image, R3D_CubemapLayout layout)
     return cubemap;
 }
 
+R3D_Cubemap R3D_GenCubemapSky(int size, R3D_CubemapSky params)
+{
+    R3D_Cubemap cubemap = allocate_cubemap(size);
+    R3D_UpdateCubemapSky(&cubemap, params);
+    return cubemap;
+}
+
 void R3D_UnloadCubemap(R3D_Cubemap cubemap)
 {
+    glDeleteFramebuffers(1, &cubemap.fbo);
     glDeleteTextures(1, &cubemap.texture);
+}
+
+void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
+{
+    Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
+
+    R3D_SHADER_USE(prepare.cubemapSkybox);
+    R3D_SHADER_SET_MAT4(prepare.cubemapSkybox, uMatProj, matProj);
+
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyTopColor, params.skyTopColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyHorizonColor, params.skyHorizonColor);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSkyHorizonCurve, params.skyHorizonCurve);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSkyEnergy, params.skyEnergy);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundBottomColor, params.groundBottomColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundHorizonColor, params.groundHorizonColor);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uGroundHorizonCurve, params.groundHorizonCurve);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uGroundEnergy, params.groundEnergy);
+    R3D_SHADER_SET_VEC3(prepare.cubemapSkybox, uSunDirection, Vector3Normalize(Vector3Negate(params.sunDirection)));
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSunColor, params.sunColor);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunSize, params.sunSize);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunCurve, params.sunCurve);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunEnergy, params.sunEnergy);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, cubemap->fbo);
+    glViewport(0, 0, cubemap->size, cubemap->size);
+    glDisable(GL_CULL_FACE);
+
+    for (int i = 0; i < 6; i++) {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap->texture, 0);
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        R3D_SHADER_SET_MAT4(prepare.cubemapSkybox, uMatView, R3D.matCubeViews[i]);
+        R3D_PRIMITIVE_DRAW_CUBE();
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
+    glEnable(GL_CULL_FACE);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->texture);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }

@@ -34,6 +34,7 @@
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap_irradiance.frag.h>
 #include <shaders/cubemap_prefilter.frag.h>
+#include <shaders/cubemap_skybox.frag.h>
 #include <shaders/scene.vert.h>
 #include <shaders/geometry.frag.h>
 #include <shaders/forward.frag.h>
@@ -424,6 +425,29 @@ void r3d_shader_load_prepare_cubemap_prefilter(void)
     USE_SHADER(prepare.cubemapPrefilter);
 
     SET_SAMPLER_CUBE(prepare.cubemapPrefilter, uSourceTex, 0);
+}
+
+void r3d_shader_load_prepare_cubemap_skybox(void)
+{
+    LOAD_SHADER(prepare.cubemapSkybox, CUBEMAP_VERT, CUBEMAP_SKYBOX_FRAG);
+
+    GET_LOCATION(prepare.cubemapSkybox, uMatProj);
+    GET_LOCATION(prepare.cubemapSkybox, uMatView);
+    GET_LOCATION(prepare.cubemapSkybox, uSkyTopColor);
+    GET_LOCATION(prepare.cubemapSkybox, uSkyHorizonColor);
+    GET_LOCATION(prepare.cubemapSkybox, uSkyHorizonCurve);
+    GET_LOCATION(prepare.cubemapSkybox, uSkyEnergy);
+    GET_LOCATION(prepare.cubemapSkybox, uGroundBottomColor);
+    GET_LOCATION(prepare.cubemapSkybox, uGroundHorizonColor);
+    GET_LOCATION(prepare.cubemapSkybox, uGroundHorizonCurve);
+    GET_LOCATION(prepare.cubemapSkybox, uGroundEnergy);
+    GET_LOCATION(prepare.cubemapSkybox, uSunDirection);
+    GET_LOCATION(prepare.cubemapSkybox, uSunColor);
+    GET_LOCATION(prepare.cubemapSkybox, uSunSize);
+    GET_LOCATION(prepare.cubemapSkybox, uSunCurve);
+    GET_LOCATION(prepare.cubemapSkybox, uSunEnergy);
+
+    USE_SHADER(prepare.cubemapSkybox);
 }
 
 void r3d_shader_load_scene_geometry(void)
@@ -975,6 +999,7 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);
+    UNLOAD_SHADER(prepare.cubemapSkybox);
 
     UNLOAD_SHADER(scene.geometry);
     UNLOAD_SHADER(scene.forward);

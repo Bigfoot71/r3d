@@ -364,6 +364,25 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_mat4_t uMatProj;
+    r3d_shader_uniform_mat4_t uMatView;
+    r3d_shader_uniform_vec3_t uSkyTopColor;
+    r3d_shader_uniform_vec3_t uSkyHorizonColor;
+    r3d_shader_uniform_float_t uSkyHorizonCurve;
+    r3d_shader_uniform_float_t uSkyEnergy;
+    r3d_shader_uniform_vec3_t uGroundBottomColor;
+    r3d_shader_uniform_vec3_t uGroundHorizonColor;
+    r3d_shader_uniform_float_t uGroundHorizonCurve;
+    r3d_shader_uniform_float_t uGroundEnergy;
+    r3d_shader_uniform_vec3_t uSunDirection;
+    r3d_shader_uniform_vec3_t uSunColor;
+    r3d_shader_uniform_float_t uSunSize;
+    r3d_shader_uniform_float_t uSunCurve;
+    r3d_shader_uniform_float_t uSunEnergy;
+} r3d_shader_prepare_cubemap_skybox_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -682,6 +701,7 @@ extern struct r3d_shader {
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
         r3d_shader_prepare_cubemap_irradiance_t cubemapIrradiance;
         r3d_shader_prepare_cubemap_prefilter_t cubemapPrefilter;
+        r3d_shader_prepare_cubemap_skybox_t cubemapSkybox;
     } prepare;
 
     // Scene shaders
@@ -732,6 +752,7 @@ void r3d_shader_load_prepare_cubeface_down(void);
 void r3d_shader_load_prepare_cubemap_from_equirectangular(void);
 void r3d_shader_load_prepare_cubemap_irradiance(void);
 void r3d_shader_load_prepare_cubemap_prefilter(void);
+void r3d_shader_load_prepare_cubemap_skybox(void);
 void r3d_shader_load_scene_geometry(void);
 void r3d_shader_load_scene_forward(void);
 void r3d_shader_load_scene_background(void);
@@ -765,6 +786,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func cubemapFromEquirectangular;
         r3d_shader_loader_func cubemapIrradiance;
         r3d_shader_loader_func cubemapPrefilter;
+        r3d_shader_loader_func cubemapSkybox;
     } prepare;
 
     // Scene shaders
@@ -810,6 +832,7 @@ static const struct r3d_shader_loader {
         .cubemapFromEquirectangular = r3d_shader_load_prepare_cubemap_from_equirectangular,
         .cubemapIrradiance = r3d_shader_load_prepare_cubemap_irradiance,
         .cubemapPrefilter = r3d_shader_load_prepare_cubemap_prefilter,
+        .cubemapSkybox = r3d_shader_load_prepare_cubemap_skybox,
     },
 
     .scene = {
