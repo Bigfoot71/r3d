@@ -79,9 +79,40 @@ static int get_cubemap_size_from_layout(Image image, R3D_CubemapLayout layout)
     return size;
 }
 
+static R3D_Cubemap allocate_cubemap(int size)
+{
+    R3D_Cubemap cubemap = {0};
+    cubemap.size = size;
+
+    glGenTextures(1, &cubemap.texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
+
+    int mipLevels = 1 + (int)floor(log2(size));
+
+    for (int level = 0; level < mipLevels; level++) {
+        int mipSize = size >> level;
+        for (int i = 0; i < 6; i++) {
+            glTexImage2D(
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, GL_RGB16F,
+                mipSize, mipSize, 0, GL_RGB, GL_HALF_FLOAT, NULL
+            );
+        }
+    }
+
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return cubemap;
+}
+
 static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 {
-    R3D_Cubemap cubemap = R3D_LoadCubemapEmpty(size);
+    R3D_Cubemap cubemap = allocate_cubemap(size);
     Texture2D panorama = LoadTextureFromImage(image);
     SetTextureFilter(panorama, TEXTURE_FILTER_BILINEAR);
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
@@ -130,7 +161,7 @@ static R3D_Cubemap load_cubemap_from_line_vertical(Image image, int size)
     }
 
     int faceSize = size * size * 3 * sizeof(uint16_t);
-    R3D_Cubemap cubemap = R3D_LoadCubemapEmpty(size);
+    R3D_Cubemap cubemap = allocate_cubemap(size);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
     for (int i = 0; i < 6; i++) {
@@ -241,37 +272,6 @@ static R3D_Cubemap load_cubemap_from_cross_four_by_three(Image image, int size)
 // ========================================
 // PUBLIC API
 // ========================================
-
-R3D_Cubemap R3D_LoadCubemapEmpty(int size)
-{
-    R3D_Cubemap cubemap = {0};
-    cubemap.size = size;
-
-    glGenTextures(1, &cubemap.texture);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
-
-    int mipLevels = 1 + (int)floor(log2(size));
-
-    for (int level = 0; level < mipLevels; level++) {
-        int mipSize = size >> level;
-        for (int i = 0; i < 6; i++) {
-            glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, GL_RGB16F,
-                mipSize, mipSize, 0, GL_RGB, GL_HALF_FLOAT, NULL
-            );
-        }
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-    return cubemap;
-}
 
 R3D_Cubemap R3D_LoadCubemap(const char* fileName, R3D_CubemapLayout layout)
 {

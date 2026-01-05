@@ -59,8 +59,6 @@ typedef struct R3D_Cubemap {
 extern "C" {
 #endif
 
-R3DAPI R3D_Cubemap R3D_LoadCubemapEmpty(int size);
-
 /**
  * @brief Loads a cubemap from an image file.
  *
