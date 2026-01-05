@@ -236,6 +236,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_from_equirectangular.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_irradiance.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_prefilter.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/cubemap_skybox.frag"
     "${R3D_ROOT_PATH}/shaders/scene/scene.vert"
     "${R3D_ROOT_PATH}/shaders/scene/geometry.frag"
     "${R3D_ROOT_PATH}/shaders/scene/forward.frag"
