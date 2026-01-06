@@ -34,24 +34,19 @@ out vec3 FragColor;
 
 void main()
 {
-    // Sampling scene color texture
     vec3 color = texture(uSceneTex, vTexCoord).rgb;
-
-    // Apply bloom
     vec3 bloom = texture(uBloomTex, vTexCoord).rgb;
-    bloom *= uBloomIntensity;
 
     if (uBloomMode == BLOOM_MIX) {
         color = mix(color, bloom, uBloomIntensity);
     }
     else if (uBloomMode == BLOOM_ADDITIVE) {
-        color += bloom;
+        color += bloom * uBloomIntensity;
     }
     else if (uBloomMode == BLOOM_SCREEN) {
-        bloom = clamp(bloom, vec3(0.0), vec3(1.0));
+        bloom = clamp(bloom * uBloomIntensity, vec3(0.0), vec3(1.0));
         color = max((color + bloom) - (color * bloom), vec3(0.0));
     }
 
-    // Final color output
     FragColor = vec3(color);
 }
