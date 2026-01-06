@@ -1765,11 +1765,9 @@ void pass_scene_forward(r3d_target_t sceneTarget)
         raster_forward(call);
     }
 
-    if (R3D.environment.background.sky.texture != 0) {
-        R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex);
-        R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex);
-        R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uBrdfLutTex);
-    }
+    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex);
+    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex);
+    R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uBrdfLutTex);
 
     for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
         R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.forward, uShadowMapCube[i]);
