@@ -73,14 +73,21 @@ typedef uint32_t R3D_Layer;
 #define R3D_LAYER_ALL   0xFFFFFFFF
 
 /**
- * @brief Specifies the color space of a texture.
+ * @brief Specifies the color space for user-provided colors and color textures.
  *
- * This enum defines how a texture's colors are interpreted during rendering.
- * It is used with color textures such as albedo and emission.
+ * This enum defines how colors are interpreted for material inputs:
+ * - Surface colors (e.g., albedo or emission tint)
+ * - Color textures (albedo, emission maps)
+ *
+ * Lighting values (direct or indirect light) are always linear and
+ * are not affected by this setting.
+ *
+ * Used with `R3D_SetColorSpace()` to control whether input colors
+ * should be treated as linear or sRGB.
  */
 typedef enum {
-    R3D_COLORSPACE_LINEAR,  ///< Linear color space, no gamma correction applied.
-    R3D_COLORSPACE_SRGB     ///< sRGB color space, gamma correction applied on load.
+    R3D_COLORSPACE_LINEAR,  ///< Linear color space: values are used as-is.
+    R3D_COLORSPACE_SRGB     ///< sRGB color space: values are converted to linear on load.
 } R3D_ColorSpace;
 
 // ========================================
@@ -180,17 +187,23 @@ R3DAPI void R3D_UpdateResolution(int width, int height);
 R3DAPI void R3D_SetTextureFilter(TextureFilter filter);
 
 /**
- * @brief Sets the color space for color textures such as albedo and emission.
+ * @brief Set the working color space for user-provided surface colors and color textures.
  *
- * This function specifies whether textures representing visible colors
- * should be interpreted as linear or sRGB. The chosen color space
- * is applied automatically when loading the texture.
+ * Defines how all *color inputs* should be interpreted:
+ * - surface colors provided in materials (e.g. albedo/emission tints)
+ * - color textures such as albedo and emission maps
  *
- * The default texture color space is `R3D_COLORSPACE_SRGB`.
+ * When set to sRGB, these values are converted to linear before shading.
+ * When set to linear, values are used as-is.
  *
- * @param space The color space to use (linear or sRGB).
+ * This does NOT affect lighting inputs (direct or indirect light),
+ * which are always expected to be provided in linear space.
+ *
+ * The default color space is `R3D_COLORSPACE_SRGB`.
+ *
+ * @param space Color space to use for color inputs (linear or sRGB).
  */
-R3DAPI void R3D_SetTextureColorSpace(R3D_ColorSpace space);
+R3DAPI void R3D_SetColorSpace(R3D_ColorSpace space);
 
 /**
  * @brief Get the currently active global rendering layers.

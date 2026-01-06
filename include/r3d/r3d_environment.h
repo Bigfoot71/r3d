@@ -54,13 +54,13 @@
 #define R3D_ENVIRONMENT_BASE                            \
     R3D_LITERAL(R3D_Environment) {                      \
         .background = {                                 \
-            .color = {80, 80, 80, 255},                 \
+            .color = GRAY,                              \
             .energy = 1.0f,                             \
             .sky = {0},                                 \
             .rotation = {0.0f, 0.0f, 0.0f, 1.0f},       \
         },                                              \
         .ambient = {                                    \
-            .color = {0, 0, 0, 255},                    \
+            .color = BLACK,                             \
             .energy = 1.0f,                             \
         },                                              \
         .ssao = {                                       \

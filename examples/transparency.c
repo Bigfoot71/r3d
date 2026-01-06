@@ -14,7 +14,7 @@ int main(void)
     R3D_Mesh mesh = R3D_GenMeshCube(1, 1, 1);
     R3D_Model cube = R3D_LoadModelFromMesh(mesh);
     cube.materials[0].transparencyMode = R3D_TRANSPARENCY_ALPHA;
-    cube.materials[0].albedo.color = (Color){100, 100, 255, 100};
+    cube.materials[0].albedo.color = (Color){150, 150, 255, 100};
     cube.materials[0].orm.occlusion = 1.0f;
     cube.materials[0].orm.roughness = 0.2f;
     cube.materials[0].orm.metalness = 0.2f;

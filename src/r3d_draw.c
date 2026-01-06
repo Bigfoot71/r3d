@@ -28,6 +28,7 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
+#include "r3d/r3d_core.h"
 
 // ========================================
 // HELPER MACROS
@@ -556,7 +557,7 @@ void upload_env_state(void)
     }
 
     env.uAmbient.rotation = background->rotation;
-    env.uAmbient.color = ColorNormalize(ambient->color);
+    env.uAmbient.color = r3d_color_to_vec4(ambient->color);
     env.uAmbient.energy = ambient->energy;
     env.uAmbient.irradiance = (int)ambient->map.irradiance - 1;
     env.uAmbient.prefilter = (int)ambient->map.prefilter - 1;
@@ -600,7 +601,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
     /* --- Set transparency material data --- */
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_COL4(scene.depth, uAlbedoColor, call->material.albedo.color);
+    R3D_SHADER_SET_COL4(scene.depth, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
         R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, shadow ? 0.1f : 0.99f);
@@ -668,7 +669,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     /* --- Set transparency material data --- */
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_COL4(scene.depthCube, uAlbedoColor, call->material.albedo.color);
+    R3D_SHADER_SET_COL4(scene.depthCube, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
         R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, shadow ? 0.1f : 0.99f);
@@ -750,8 +751,8 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.probe, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.probe, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.probe, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.probe, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -828,8 +829,8 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.geometry, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.geometry, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.geometry, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.geometry, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -891,8 +892,8 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -969,8 +970,8 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.forward, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.forward, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.forward, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.forward, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -1207,12 +1208,10 @@ void pass_scene_probes(void)
                 R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
             }
             else {
-                Vector4 background = {
-                    ((float)R3D.environment.background.color.r * R3D.environment.background.energy) / 255,
-                    ((float)R3D.environment.background.color.g * R3D.environment.background.energy) / 255,
-                    ((float)R3D.environment.background.color.b * R3D.environment.background.energy) / 255,
-                    1.0f,
-                };
+                Vector4 background = r3d_color_to_linear_scaled_vec4(
+                    R3D.environment.background.color, R3D.colorSpace,
+                    R3D.environment.background.energy
+                );
                 R3D_SHADER_USE(scene.background);
                 R3D_SHADER_SET_VEC4(scene.background, uColor, background);
                 R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1495,7 +1494,7 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFadeStart, R3D.environment.ssr.edgeFadeStart);
     R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFadeEnd, R3D.environment.ssr.edgeFadeEnd);
 
-    R3D_SHADER_SET_COL3(prepare.ssr, uAmbientColor, R3D.environment.ambient.color);
+    R3D_SHADER_SET_VEC3(prepare.ssr, uAmbientColor, r3d_color_to_vec3(R3D.environment.ambient.color));
     R3D_SHADER_SET_FLOAT(prepare.ssr, uAmbientEnergy, R3D.environment.ambient.energy);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1805,12 +1804,10 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
     }
     else {
-        Vector4 background = {
-            ((float)R3D.environment.background.color.r * R3D.environment.background.energy) / 255,
-            ((float)R3D.environment.background.color.g * R3D.environment.background.energy) / 255,
-            ((float)R3D.environment.background.color.b * R3D.environment.background.energy) / 255,
-            1.0f,
-        };
+        Vector4 background = r3d_color_to_linear_scaled_vec4(
+            R3D.environment.background.color, R3D.colorSpace,
+            R3D.environment.background.energy
+        );
         R3D_SHADER_USE(scene.background);
         R3D_SHADER_SET_VEC4(scene.background, uColor, background);
         R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1835,7 +1832,7 @@ r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_2D(post.fog, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_INT(post.fog, uFogMode, R3D.environment.fog.mode);
-    R3D_SHADER_SET_COL3(post.fog, uFogColor, R3D.environment.fog.color);
+    R3D_SHADER_SET_COL3(post.fog, uFogColor, R3D.colorSpace, R3D.environment.fog.color);
     R3D_SHADER_SET_FLOAT(post.fog, uFogStart, R3D.environment.fog.start);
     R3D_SHADER_SET_FLOAT(post.fog, uFogEnd, R3D.environment.fog.end);
     R3D_SHADER_SET_FLOAT(post.fog, uFogDensity, R3D.environment.fog.density);

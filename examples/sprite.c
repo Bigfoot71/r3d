@@ -15,10 +15,12 @@ int main(void)
 
     // Initialize R3D
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_SetTextureFilter(TEXTURE_FILTER_POINT);
 
     // Set background/ambient color
     R3D_ENVIRONMENT_SET(background.color, (Color){102, 191, 255, 255});
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 19, 25, 255});
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
 
     // Create ground mesh and material
     R3D_Mesh meshGround = R3D_GenMeshPlane(200, 200, 1, 1);
@@ -30,8 +32,8 @@ int main(void)
     meshSprite.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     R3D_Material matSprite = R3D_GetDefaultMaterial();
+    matSprite.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "spritesheet.png", WHITE);
     matSprite.billboardMode = R3D_BILLBOARD_Y_AXIS;
-    matSprite.albedo.texture = LoadTexture(RESOURCES_PATH "spritesheet.png");
 
     // Setup spotlight
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);

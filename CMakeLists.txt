@@ -199,6 +199,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_texture.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_target.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_shader.c"
+    "${R3D_ROOT_PATH}/src/modules/r3d_opengl.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_light.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_draw.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_env.c"

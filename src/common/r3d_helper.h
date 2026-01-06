@@ -29,6 +29,10 @@
 #   define CLAMP(v, min, max) ((v) < (min) ? (min) : ((v) > (max) ? (max) : (v)))
 #endif
 
+#ifndef SATURATE
+#   define SATURATE(x) (CLAMP(x, 0.0f, 1.0f))
+#endif
+
 #ifndef ARRAY_SIZE
 #   define ARRAY_SIZE(arr) (sizeof((arr)) / sizeof((arr)[0]))
 #endif

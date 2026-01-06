@@ -1,3 +1,4 @@
+#include "r3d/r3d_material.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -18,17 +19,14 @@ int main(void)
     // Initialize R3D
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
-    // Load decal texture
-    Texture2D texture = LoadTexture(RESOURCES_PATH "decal.png");
-
     // Create wall material
     R3D_Material materialWalls = R3D_GetDefaultMaterial();
-    materialWalls.albedo.color = DARKGRAY;
+    materialWalls.albedo.color = GRAY;
 
     // Create decal material
     R3D_Decal decal;
     decal.material = R3D_GetDefaultMaterial();
-    decal.material.albedo.texture = texture;
+    decal.material.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "decal.png", WHITE);
 
     // Create room mesh and transforms
     float roomSize = 32.0f;
@@ -126,6 +124,7 @@ int main(void)
     }
 
     // Cleanup
+    R3D_UnloadMaterial(decal.material);
     R3D_UnloadMesh(meshPlane);
     R3D_Close();
 

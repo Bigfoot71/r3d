@@ -20,7 +20,7 @@ int main(void)
 
     // Background and ambient
     R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
-    R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
+    R3D_ENVIRONMENT_SET(ambient.color, GRAY);
 
     // Load Sponza model
     R3D_SetTextureFilter(TEXTURE_FILTER_ANISOTROPIC_8X);

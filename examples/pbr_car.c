@@ -16,7 +16,7 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), flags);
 
     // Set environment
-    R3D_ENVIRONMENT_SET(background.color, BLACK);
+    R3D_ENVIRONMENT_SET(background.color, DARKGRAY);
     R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
     // Post-processing
@@ -33,7 +33,7 @@ int main(void)
     // Ground mesh
     R3D_Mesh ground = R3D_GenMeshPlane(10.0f, 10.0f, 1, 1);
     R3D_Material groundMat = R3D_GetDefaultMaterial();
-    groundMat.albedo.color = (Color){31, 31, 31, 255};
+    groundMat.albedo.color = DARKGRAY;
     groundMat.orm.roughness = 0.0f;
     groundMat.orm.metalness = 0.5f;
 
