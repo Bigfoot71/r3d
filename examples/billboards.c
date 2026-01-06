@@ -13,10 +13,12 @@ int main(void)
 
     // Initialize R3D
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_SetTextureFilter(TEXTURE_FILTER_POINT);
 
     // Set background/ambient color
     R3D_ENVIRONMENT_SET(background.color, (Color){102, 191, 255, 255});
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 19, 25, 255});
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
 
     // Create ground mesh and material
     R3D_Mesh meshGround = R3D_GenMeshPlane(200, 200, 1, 1);
@@ -28,8 +30,8 @@ int main(void)
     meshBillboard.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     R3D_Material matBillboard = R3D_GetDefaultMaterial();
+    matBillboard.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "tree.png", WHITE);
     matBillboard.billboardMode = R3D_BILLBOARD_Y_AXIS;
-    matBillboard.albedo.texture = LoadTexture(RESOURCES_PATH "tree.png");
 
     // Create transforms for instanced billboards
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(64, R3D_INSTANCE_POSITION | R3D_INSTANCE_SCALE);
@@ -82,6 +84,7 @@ int main(void)
     }
 
     // Cleanup
+    R3D_UnloadMaterial(matBillboard);
     R3D_UnloadMesh(meshBillboard);
     R3D_UnloadMesh(meshGround);
     R3D_Close();
