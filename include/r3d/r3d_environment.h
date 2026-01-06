@@ -67,8 +67,8 @@
             .sampleCount = 16,                          \
             .intensity = 1.0f,                          \
             .power = 1.5f,                              \
-            .radius = 0.5f,                             \
-            .bias = 0.025f,                             \
+            .radius = 0.35f,                            \
+            .bias = 0.007f,                             \
             .lightAffect = 0.0f,                        \
             .enabled = false,                           \
         },                                              \
@@ -210,8 +210,8 @@ typedef struct R3D_EnvSSAO {
     int sampleCount;        ///< Number of samples to compute SSAO (default: 16)
     float intensity;        ///< Base occlusion strength multiplier (default: 1.0)
     float power;            ///< Exponential falloff for sharper darkening (default: 1.5)
-    float radius;           ///< Sampling radius in world space (default: 0.5)
-    float bias;             ///< Depth bias to prevent self-shadowing artifacts (default: 0.005)
+    float radius;           ///< Sampling radius in world space (default: 0.25)
+    float bias;             ///< Depth bias to prevent self-shadowing, good value is ~2% of the radius (default: 0.007)
     float lightAffect;      ///< How much SSAO affects direct lighting [0.0-1.0] (default: 0.0)
     bool enabled;           ///< Enable/disable SSAO effect (default: false)
 } R3D_EnvSSAO;
