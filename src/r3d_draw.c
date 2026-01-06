@@ -556,7 +556,7 @@ void upload_env_state(void)
     }
 
     env.uAmbient.rotation = background->rotation;
-    env.uAmbient.color = ColorNormalize(ambient->color);
+    env.uAmbient.color = r3d_color_normalize_vec4(ambient->color);
     env.uAmbient.energy = ambient->energy;
     env.uAmbient.irradiance = (int)ambient->map.irradiance - 1;
     env.uAmbient.prefilter = (int)ambient->map.prefilter - 1;
@@ -1207,12 +1207,9 @@ void pass_scene_probes(void)
                 R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
             }
             else {
-                Vector4 background = {
-                    ((float)R3D.environment.background.color.r * R3D.environment.background.energy) / 255,
-                    ((float)R3D.environment.background.color.g * R3D.environment.background.energy) / 255,
-                    ((float)R3D.environment.background.color.b * R3D.environment.background.energy) / 255,
-                    1.0f,
-                };
+                Vector4 background = r3d_srgb_to_linear_vec4(R3D.environment.background.color);
+                background = Vector4Scale(background, R3D.environment.background.energy);
+
                 R3D_SHADER_USE(scene.background);
                 R3D_SHADER_SET_VEC4(scene.background, uColor, background);
                 R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1495,7 +1492,7 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFadeStart, R3D.environment.ssr.edgeFadeStart);
     R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFadeEnd, R3D.environment.ssr.edgeFadeEnd);
 
-    R3D_SHADER_SET_COL3(prepare.ssr, uAmbientColor, R3D.environment.ambient.color);
+    R3D_SHADER_SET_VEC3(prepare.ssr, uAmbientColor, r3d_color_normalize_vec3(R3D.environment.ambient.color));
     R3D_SHADER_SET_FLOAT(prepare.ssr, uAmbientEnergy, R3D.environment.ambient.energy);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1805,12 +1802,9 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
     }
     else {
-        Vector4 background = {
-            ((float)R3D.environment.background.color.r * R3D.environment.background.energy) / 255,
-            ((float)R3D.environment.background.color.g * R3D.environment.background.energy) / 255,
-            ((float)R3D.environment.background.color.b * R3D.environment.background.energy) / 255,
-            1.0f,
-        };
+        Vector4 background = r3d_srgb_to_linear_vec4(R3D.environment.background.color);
+        background = Vector4Scale(background, R3D.environment.background.energy);
+
         R3D_SHADER_USE(scene.background);
         R3D_SHADER_SET_VEC4(scene.background, uColor, background);
         R3D_PRIMITIVE_DRAW_SCREEN();

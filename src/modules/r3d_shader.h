@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <glad.h>
 
+#include "../common/r3d_math.h"
+
 // ========================================
 // MODULE CONSTANTS
 // ========================================
@@ -107,64 +109,42 @@
 #define R3D_SHADER_SET_VEC2(shader_name, uniform, ...) do {                                         \
     const Vector2 tmp = (__VA_ARGS__);                                                              \
     if (!Vector2Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
+        glUniform2fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&tmp));                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-        glUniform2fv(                                                                               \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            1, (float*)(&R3D_MOD_SHADER.shader_name.uniform.val)                                    \
-        );                                                                                          \
     }                                                                                               \
 } while(0)
 
 #define R3D_SHADER_SET_VEC3(shader_name, uniform, ...) do {                                         \
     const Vector3 tmp = (__VA_ARGS__);                                                              \
     if (!Vector3Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
+        glUniform3fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&tmp));                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-        glUniform3fv(                                                                               \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            1, (float*)(&R3D_MOD_SHADER.shader_name.uniform.val)                                    \
-        );                                                                                          \
     }                                                                                               \
 } while(0)
 
 #define R3D_SHADER_SET_VEC4(shader_name, uniform, ...) do {                                         \
     const Vector4 tmp = (__VA_ARGS__);                                                              \
     if (!Vector4Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
+        glUniform4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&tmp));                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-        glUniform4fv(                                                                               \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            1, (float*)(&R3D_MOD_SHADER.shader_name.uniform.val)                                    \
-        );                                                                                          \
     }                                                                                               \
 } while(0)
 
-#define R3D_SHADER_SET_COL3(shader_name, uniform, value) do {                                       \
-    const Vector3 v = {                                                                             \
-        (value).r / 255.0f,                                                                         \
-        (value).g / 255.0f,                                                                         \
-        (value).b / 255.0f                                                                          \
-    };                                                                                              \
-    if (!Vector3Equals(R3D_MOD_SHADER.shader_name.uniform.val, v)) {                                \
-        R3D_MOD_SHADER.shader_name.uniform.val = v;                                                 \
-        glUniform3fv(                                                                               \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            1, (float*)(&R3D_MOD_SHADER.shader_name.uniform.val)                                    \
-        );                                                                                          \
+#define R3D_SHADER_SET_COL3(shader_name, uniform, ...) do {                                         \
+    const Color tmp = (__VA_ARGS__);                                                                \
+    if (memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
+        const Vector3 v = r3d_srgb_to_linear_vec3((__VA_ARGS__));                                   \
+        glUniform3fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
     }                                                                                               \
 } while(0)
 
-#define R3D_SHADER_SET_COL4(shader_name, uniform, value) do {                                       \
-    const Vector4 v = {                                                                             \
-        (value).r / 255.0f,                                                                         \
-        (value).g / 255.0f,                                                                         \
-        (value).b / 255.0f,                                                                         \
-        (value).a / 255.0f                                                                          \
-    };                                                                                              \
-    if (!Vector4Equals(R3D_MOD_SHADER.shader_name.uniform.val, v)) {                                \
-        R3D_MOD_SHADER.shader_name.uniform.val = v;                                                 \
-        glUniform4fv(                                                                               \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            1, (float*)(&R3D_MOD_SHADER.shader_name.uniform.val)                                    \
-        );                                                                                          \
+#define R3D_SHADER_SET_COL4(shader_name, uniform, ...) do {                                         \
+    const Color tmp = (__VA_ARGS__);                                                                \
+    if (memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
+        const Vector4 v = r3d_srgb_to_linear_vec4((__VA_ARGS__));                                   \
+        glUniform4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
     }                                                                                               \
 } while(0)
 
@@ -190,6 +170,8 @@ typedef struct { float val; int loc; } r3d_shader_uniform_float_t;
 typedef struct { Vector2 val; int loc; } r3d_shader_uniform_vec2_t;
 typedef struct { Vector3 val; int loc; } r3d_shader_uniform_vec3_t;
 typedef struct { Vector4 val; int loc; } r3d_shader_uniform_vec4_t;
+typedef struct { Color val; int loc; } r3d_shader_uniform_col3_t;       //< Represents a vec3, used to determine whether a linear conversion is necessary
+typedef struct { Color val; int loc; } r3d_shader_uniform_col4_t;       //< Represents a vec4, used to determine whether a linear conversion is necessary
 
 typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 
@@ -366,16 +348,16 @@ typedef struct {
     unsigned int id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
-    r3d_shader_uniform_vec3_t uSkyTopColor;
-    r3d_shader_uniform_vec3_t uSkyHorizonColor;
+    r3d_shader_uniform_col3_t uSkyTopColor;
+    r3d_shader_uniform_col3_t uSkyHorizonColor;
     r3d_shader_uniform_float_t uSkyHorizonCurve;
     r3d_shader_uniform_float_t uSkyEnergy;
-    r3d_shader_uniform_vec3_t uGroundBottomColor;
-    r3d_shader_uniform_vec3_t uGroundHorizonColor;
+    r3d_shader_uniform_col3_t uGroundBottomColor;
+    r3d_shader_uniform_col3_t uGroundHorizonColor;
     r3d_shader_uniform_float_t uGroundHorizonCurve;
     r3d_shader_uniform_float_t uGroundEnergy;
     r3d_shader_uniform_vec3_t uSunDirection;
-    r3d_shader_uniform_vec3_t uSunColor;
+    r3d_shader_uniform_col3_t uSunColor;
     r3d_shader_uniform_float_t uSunSize;
     r3d_shader_uniform_float_t uSunCurve;
     r3d_shader_uniform_float_t uSunEnergy;
@@ -386,9 +368,9 @@ typedef struct {
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
+    r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_float_t uEmissionEnergy;
-    r3d_shader_uniform_vec3_t uEmissionColor;
+    r3d_shader_uniform_col3_t uEmissionColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
@@ -411,8 +393,8 @@ typedef struct {
     r3d_shader_uniform_mat4_t uLightViewProj[R3D_SHADER_NUM_FORWARD_LIGHTS];
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
-    r3d_shader_uniform_vec3_t uEmissionColor;
+    r3d_shader_uniform_col4_t uAlbedoColor;
+    r3d_shader_uniform_col3_t uEmissionColor;
     r3d_shader_uniform_float_t uEmissionEnergy;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
@@ -461,7 +443,7 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatViewProj;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
+    r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
@@ -477,7 +459,7 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatViewProj;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
+    r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
@@ -497,8 +479,8 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatViewProj;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
-    r3d_shader_uniform_vec3_t uEmissionColor;
+    r3d_shader_uniform_col4_t uAlbedoColor;
+    r3d_shader_uniform_col3_t uEmissionColor;
     r3d_shader_uniform_float_t uEmissionEnergy;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
@@ -546,9 +528,9 @@ typedef struct {
     unsigned int id;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
-    r3d_shader_uniform_vec4_t uAlbedoColor;
+    r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_float_t uEmissionEnergy;
-    r3d_shader_uniform_vec3_t uEmissionColor;
+    r3d_shader_uniform_col3_t uEmissionColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
@@ -644,7 +626,7 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uSceneTex;
     r3d_shader_uniform_sampler2D_t uDepthTex;
     r3d_shader_uniform_int_t uFogMode;
-    r3d_shader_uniform_vec3_t uFogColor;
+    r3d_shader_uniform_col3_t uFogColor;
     r3d_shader_uniform_float_t uFogStart;
     r3d_shader_uniform_float_t uFogEnd;
     r3d_shader_uniform_float_t uFogDensity;
