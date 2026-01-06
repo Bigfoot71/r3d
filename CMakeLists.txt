@@ -139,16 +139,18 @@ if(R3D_RAYLIB_VENDORED)
     set(R3D_RAYLIB_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/raylib")
     set(R3D_RAYLIB_CMAKELISTS "${R3D_RAYLIB_SUBMODULE_PATH}/CMakeLists.txt")
 
-    # Vendored assimp configuration here!
+    # Vendored raylib configuration here!
     if(EXISTS "${R3D_RAYLIB_CMAKELISTS}")
         message(STATUS "Using vendored raylib from: ${R3D_RAYLIB_SUBMODULE_PATH}")
+
+        # Enable HDR image support
+		set(SUPPORT_FILEFORMAT_HDR ON CACHE BOOL "" FORCE)
 
         # Disable model loading and mesh generation support
         # to avoid symbol redefinition errors with Assimp,
         # and because it's not needed with r3d
 
         set(CUSTOMIZE_BUILD ON CACHE BOOL "" FORCE)
-		set(SUPPORT_FILEFORMAT_HDR ON CACHE BOOL "" FORCE)
         set(SUPPORT_FILEFORMAT_OBJ OFF CACHE BOOL "" FORCE)
         set(SUPPORT_FILEFORMAT_MTL OFF CACHE BOOL "" FORCE)
         set(SUPPORT_FILEFORMAT_IQM OFF CACHE BOOL "" FORCE)
