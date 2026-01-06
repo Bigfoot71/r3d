@@ -135,11 +135,7 @@
     const Color tmp = (__VA_ARGS__);                                                                \
     if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||                                 \
         memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
-        Vector3 v = {0};                                                                            \
-        switch ((space)) {                                                                          \
-        case R3D_COLORSPACE_SRGB: v = r3d_srgb_to_linear_vec3(tmp); break;                          \
-        default: v = r3d_color_normalize_vec3(tmp); break;                                          \
-        }                                                                                           \
+        Vector3 v = r3d_color_to_linear_vec3(tmp, (space));                                         \
         glUniform3fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
         R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
@@ -150,11 +146,7 @@
     const Color tmp = (__VA_ARGS__);                                                                \
     if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||                                 \
         memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
-        Vector4 v = {0};                                                                            \
-        switch ((space)) {                                                                          \
-        case R3D_COLORSPACE_SRGB: v = r3d_srgb_to_linear_vec4(tmp); break;                          \
-        default: v = r3d_color_normalize_vec4(tmp); break;                                          \
-        }                                                                                           \
+        Vector4 v = r3d_color_to_linear_vec4(tmp, (space));                                         \
         glUniform4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
         R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \

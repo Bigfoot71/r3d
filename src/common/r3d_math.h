@@ -9,7 +9,7 @@
 #ifndef R3D_COMMON_MATH_H
 #define R3D_COMMON_MATH_H
 
-#include <raylib.h>
+#include <r3d/r3d_core.h>
 #include <raymath.h>
 #include <string.h>
 #include <math.h>
@@ -58,25 +58,7 @@ typedef struct {
 // COLOR FUNCTIONS
 // ========================================
 
-static inline float r3d_srgb8_to_linear_channel(uint8_t srgb8)
-{
-    float srgb = srgb8 * (1.0f / 255.0f);
-    
-    return (srgb <= R3D_SRGB_LINEAR_THRESHOLD) 
-        ? srgb * R3D_SRGB_LINEAR_FACTOR
-        : powf((srgb + R3D_SRGB_ALPHA) * R3D_SRGB_INV_ALPHA, R3D_SRGB_GAMMA);
-}
-
-static inline uint8_t r3d_linear_to_srgb8_channel(float linear)
-{
-    float srgb = (linear <= R3D_SRGB_NONLINEAR_THRESHOLD)
-        ? 12.92f * linear
-        : (1.0f + R3D_SRGB_ALPHA) * powf(linear, R3D_SRGB_INV_GAMMA) - R3D_SRGB_ALPHA;
-    
-    return (uint8_t)(SATURATE(srgb) * 255.0f + 0.5f);
-}
-
-static inline Vector3 r3d_color_normalize_vec3(Color color)
+static inline Vector3 r3d_color_to_vec3(Color color)
 {
     return (Vector3) {
         color.r * (1.0f / 255.0f),
@@ -85,7 +67,7 @@ static inline Vector3 r3d_color_normalize_vec3(Color color)
     };
 }
 
-static inline Vector4 r3d_color_normalize_vec4(Color color)
+static inline Vector4 r3d_color_to_vec4(Color color)
 {
     return (Vector4) {
         color.r * (1.0f / 255.0f),
@@ -95,43 +77,99 @@ static inline Vector4 r3d_color_normalize_vec4(Color color)
     };
 }
 
-static inline Vector3 r3d_srgb_to_linear_vec3(Color color)
+static inline float r3d_srgb8_to_linear(uint8_t srgb8)
+{
+    float srgb = srgb8 * (1.0f / 255.0f);
+    
+    return (srgb <= R3D_SRGB_LINEAR_THRESHOLD) 
+        ? srgb * R3D_SRGB_LINEAR_FACTOR
+        : powf((srgb + R3D_SRGB_ALPHA) * R3D_SRGB_INV_ALPHA, R3D_SRGB_GAMMA);
+}
+
+static inline uint8_t r3d_linear_to_srgb8(float linear)
+{
+    float srgb = (linear <= R3D_SRGB_NONLINEAR_THRESHOLD)
+        ? 12.92f * linear
+        : (1.0f + R3D_SRGB_ALPHA) * powf(linear, R3D_SRGB_INV_GAMMA) - R3D_SRGB_ALPHA;
+    
+    return (uint8_t)(SATURATE(srgb) * 255.0f + 0.5f);
+}
+
+static inline Vector3 r3d_color_srgb_to_linear_vec3(Color color)
 {
     return (Vector3) {
-        r3d_srgb8_to_linear_channel(color.r),
-        r3d_srgb8_to_linear_channel(color.g),
-        r3d_srgb8_to_linear_channel(color.b)
+        r3d_srgb8_to_linear(color.r),
+        r3d_srgb8_to_linear(color.g),
+        r3d_srgb8_to_linear(color.b)
     };
 }
 
-static inline Vector4 r3d_srgb_to_linear_vec4(Color color)
+static inline Vector4 r3d_color_srgb_to_linear_vec4(Color color)
 {
     return (Vector4) {
-        r3d_srgb8_to_linear_channel(color.r),
-        r3d_srgb8_to_linear_channel(color.g),
-        r3d_srgb8_to_linear_channel(color.b),
+        r3d_srgb8_to_linear(color.r),
+        r3d_srgb8_to_linear(color.g),
+        r3d_srgb8_to_linear(color.b),
         color.a * (1.0f / 255.0f)
     };
 }
 
-static inline Color r3d_linear_to_srgb_vec3(Vector3 linear)
+static inline Color r3d_color_linear_to_srgb_vec3(Vector3 linear)
 {
     return (Color) {
-        r3d_linear_to_srgb8_channel(linear.x),
-        r3d_linear_to_srgb8_channel(linear.y),
-        r3d_linear_to_srgb8_channel(linear.z),
+        r3d_linear_to_srgb8(linear.x),
+        r3d_linear_to_srgb8(linear.y),
+        r3d_linear_to_srgb8(linear.z),
         255
     };
 }
 
-static inline Color r3d_linear_to_srgb_vec4(Vector4 linear)
+static inline Color r3d_color_linear_to_srgb_vec4(Vector4 linear)
 {
     return (Color) {
-        r3d_linear_to_srgb8_channel(linear.x),
-        r3d_linear_to_srgb8_channel(linear.y),
-        r3d_linear_to_srgb8_channel(linear.z),
+        r3d_linear_to_srgb8(linear.x),
+        r3d_linear_to_srgb8(linear.y),
+        r3d_linear_to_srgb8(linear.z),
         (uint8_t)(SATURATE(linear.w) * 255.0f + 0.5f)
     };
+}
+
+static inline Vector3 r3d_color_to_linear_vec3(Color color, R3D_ColorSpace space)
+{
+    switch (space) {
+    case R3D_COLORSPACE_SRGB: return r3d_color_srgb_to_linear_vec3(color);
+    default: break;
+    }
+
+    return r3d_color_to_vec3(color);
+}
+
+static inline Vector4 r3d_color_to_linear_vec4(Color color, R3D_ColorSpace space)
+{
+    switch (space) {
+    case R3D_COLORSPACE_SRGB: return r3d_color_srgb_to_linear_vec4(color);
+    default: break;
+    }
+
+    return r3d_color_to_vec4(color);
+}
+
+static inline Vector3 r3d_color_to_linear_scaled_vec3(Color color, R3D_ColorSpace space, float scale)
+{
+    Vector3 result = r3d_color_to_linear_vec3(color, space);
+    result.x *= scale;
+    result.y *= scale;
+    result.z *= scale;
+    return result;
+}
+
+static inline Vector4 r3d_color_to_linear_scaled_vec4(Color color, R3D_ColorSpace space, float scale)
+{
+    Vector4 result = r3d_color_to_linear_vec4(color, space);
+    result.x *= scale;
+    result.y *= scale;
+    result.z *= scale;
+    return result;
 }
 
 // ========================================
