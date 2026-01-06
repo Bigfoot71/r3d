@@ -9,6 +9,7 @@
 #ifndef R3D_MODULE_SHADER_H
 #define R3D_MODULE_SHADER_H
 
+#include <r3d/r3d_core.h>
 #include <stdalign.h>
 #include <raylib.h>
 #include <stdint.h>
@@ -130,20 +131,32 @@
     }                                                                                               \
 } while(0)
 
-#define R3D_SHADER_SET_COL3(shader_name, uniform, ...) do {                                         \
+#define R3D_SHADER_SET_COL3(shader_name, uniform, space, ...) do {                                  \
     const Color tmp = (__VA_ARGS__);                                                                \
-    if (memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
-        const Vector3 v = r3d_srgb_to_linear_vec3((__VA_ARGS__));                                   \
+    if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||                                 \
+        memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
+        Vector3 v = {0};                                                                            \
+        switch ((space)) {                                                                          \
+        case R3D_COLORSPACE_SRGB: v = r3d_srgb_to_linear_vec3(tmp); break;                          \
+        default: v = r3d_color_normalize_vec3(tmp); break;                                          \
+        }                                                                                           \
         glUniform3fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
+        R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
     }                                                                                               \
 } while(0)
 
-#define R3D_SHADER_SET_COL4(shader_name, uniform, ...) do {                                         \
+#define R3D_SHADER_SET_COL4(shader_name, uniform, space, ...) do {                                  \
     const Color tmp = (__VA_ARGS__);                                                                \
-    if (memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
-        const Vector4 v = r3d_srgb_to_linear_vec4((__VA_ARGS__));                                   \
+    if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||                                 \
+        memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
+        Vector4 v = {0};                                                                            \
+        switch ((space)) {                                                                          \
+        case R3D_COLORSPACE_SRGB: v = r3d_srgb_to_linear_vec4(tmp); break;                          \
+        default: v = r3d_color_normalize_vec4(tmp); break;                                          \
+        }                                                                                           \
         glUniform4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
+        R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                                    \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
     }                                                                                               \
 } while(0)
@@ -170,8 +183,9 @@ typedef struct { float val; int loc; } r3d_shader_uniform_float_t;
 typedef struct { Vector2 val; int loc; } r3d_shader_uniform_vec2_t;
 typedef struct { Vector3 val; int loc; } r3d_shader_uniform_vec3_t;
 typedef struct { Vector4 val; int loc; } r3d_shader_uniform_vec4_t;
-typedef struct { Color val; int loc; } r3d_shader_uniform_col3_t;       //< Represents a vec3, used to determine whether a linear conversion is necessary
-typedef struct { Color val; int loc; } r3d_shader_uniform_col4_t;       //< Represents a vec4, used to determine whether a linear conversion is necessary
+
+typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uniform_col3_t; //< Represents a vec3
+typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uniform_col4_t; //< Represents a vec4
 
 typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 

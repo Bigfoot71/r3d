@@ -339,16 +339,16 @@ void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
     R3D_SHADER_USE(prepare.cubemapSkybox);
     R3D_SHADER_SET_MAT4(prepare.cubemapSkybox, uMatProj, matProj);
 
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyTopColor, params.skyTopColor);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyHorizonColor, params.skyHorizonColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyTopColor, R3D.colorSpace, params.skyTopColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyHorizonColor, R3D.colorSpace, params.skyHorizonColor);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSkyHorizonCurve, params.skyHorizonCurve);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSkyEnergy, params.skyEnergy);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundBottomColor, params.groundBottomColor);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundHorizonColor, params.groundHorizonColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundBottomColor, R3D.colorSpace, params.groundBottomColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundHorizonColor, R3D.colorSpace, params.groundHorizonColor);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uGroundHorizonCurve, params.groundHorizonCurve);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uGroundEnergy, params.groundEnergy);
     R3D_SHADER_SET_VEC3(prepare.cubemapSkybox, uSunDirection, Vector3Normalize(Vector3Negate(params.sunDirection)));
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSunColor, params.sunColor);
+    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSunColor, R3D.colorSpace, params.sunColor);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunSize, params.sunSize);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunCurve, params.sunCurve);
     R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunEnergy, params.sunEnergy);

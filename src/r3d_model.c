@@ -21,7 +21,7 @@
 static bool import_model(r3d_importer_t* importer, R3D_Model* model)
 {
     r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
-        importer, R3D.textureColorSpace, R3D.textureFilter
+        importer, R3D.colorSpace, R3D.textureFilter
     );
 
     if (textureCache == NULL) {

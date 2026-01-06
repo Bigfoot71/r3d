@@ -28,6 +28,7 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
+#include "r3d/r3d_core.h"
 
 // ========================================
 // HELPER MACROS
@@ -600,7 +601,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
     /* --- Set transparency material data --- */
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_COL4(scene.depth, uAlbedoColor, call->material.albedo.color);
+    R3D_SHADER_SET_COL4(scene.depth, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
         R3D_SHADER_SET_FLOAT(scene.depth, uAlphaCutoff, shadow ? 0.1f : 0.99f);
@@ -668,7 +669,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* m
     /* --- Set transparency material data --- */
 
     R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_SET_COL4(scene.depthCube, uAlbedoColor, call->material.albedo.color);
+    R3D_SHADER_SET_COL4(scene.depthCube, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
         R3D_SHADER_SET_FLOAT(scene.depthCube, uAlphaCutoff, shadow ? 0.1f : 0.99f);
@@ -750,8 +751,8 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.probe, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.probe, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.probe, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.probe, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -828,8 +829,8 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.geometry, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.geometry, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.geometry, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.geometry, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -891,8 +892,8 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -969,8 +970,8 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4(scene.forward, uAlbedoColor, call->material.albedo.color);
-    R3D_SHADER_SET_COL3(scene.forward, uEmissionColor, call->material.emission.color);
+    R3D_SHADER_SET_COL4(scene.forward, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
+    R3D_SHADER_SET_COL3(scene.forward, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
     /* --- Bind active texture maps --- */
 
@@ -1829,7 +1830,7 @@ r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_2D(post.fog, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_INT(post.fog, uFogMode, R3D.environment.fog.mode);
-    R3D_SHADER_SET_COL3(post.fog, uFogColor, R3D.environment.fog.color);
+    R3D_SHADER_SET_COL3(post.fog, uFogColor, R3D.colorSpace, R3D.environment.fog.color);
     R3D_SHADER_SET_FLOAT(post.fog, uFogStart, R3D.environment.fog.start);
     R3D_SHADER_SET_FLOAT(post.fog, uFogEnd, R3D.environment.fog.end);
     R3D_SHADER_SET_FLOAT(post.fog, uFogDensity, R3D.environment.fog.density);

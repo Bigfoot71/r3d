@@ -65,8 +65,8 @@ extern struct r3d_core_state {
     R3D_Environment environment;        //< Current environment settings
     R3D_Material material;              //< Default material to use
     r3d_core_view_t viewState;          //< Current view state
-    R3D_ColorSpace textureColorSpace;   //< Default texture color space for model loading
     TextureFilter textureFilter;        //< Default texture filter for model loading
+    R3D_ColorSpace colorSpace;          //< Color space that must be considered for supplied colors or surface colors
     Matrix matCubeViews[6];             //< Pre-computed view matrices for cubemap faces
     R3D_Layer layers;                   //< Active rendering layers
     R3D_Flags state;                    //< Renderer state flags

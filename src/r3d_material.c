@@ -44,7 +44,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color)
         return map;
     }
 
-    bool srgb = (R3D.textureColorSpace == R3D_COLORSPACE_SRGB);
+    bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
@@ -63,7 +63,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* file
         return map;
     }
 
-    bool srgb = (R3D.textureColorSpace == R3D_COLORSPACE_SRGB);
+    bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
@@ -91,7 +91,7 @@ R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float ene
         return map;
     }
 
-    bool srgb = (R3D.textureColorSpace == R3D_COLORSPACE_SRGB);
+    bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
@@ -111,7 +111,7 @@ R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* 
         return map;
     }
 
-    bool srgb = (R3D.textureColorSpace == R3D_COLORSPACE_SRGB);
+    bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
