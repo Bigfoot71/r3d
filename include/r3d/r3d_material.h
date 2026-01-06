@@ -234,7 +234,7 @@ R3DAPI void R3D_UnloadMaterial(R3D_Material material);
  * @param color Multiplicative tint applied in the shader.
  * @return Albedo map structure. Returns an empty map on failure.
  */
-R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color);
+R3DAPI R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color);
 
 /**
  * @brief Load an albedo (base color) map from memory.
@@ -247,7 +247,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color);
  * @param color Multiplicative tint applied in the shader.
  * @return Albedo map structure. Returns an empty map on failure.
  */
-R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* fileData, int dataSize, Color color);
+R3DAPI R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* fileData, int dataSize, Color color);
 
 /**
  * @brief Unload an albedo map texture.
@@ -256,7 +256,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* file
  *
  * @param map Albedo map to unload.
  */
-void R3D_UnloadAlbedoMap(R3D_AlbedoMap map);
+R3DAPI void R3D_UnloadAlbedoMap(R3D_AlbedoMap map);
 
 /**
  * @brief Load an emission map from file.
@@ -268,7 +268,7 @@ void R3D_UnloadAlbedoMap(R3D_AlbedoMap map);
  * @param energy Emission intensity multiplier.
  * @return Emission map. Returns an empty map on failure.
  */
-R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float energy);
+R3DAPI R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float energy);
 
 /**
  * @brief Load an emission map from memory.
@@ -282,7 +282,7 @@ R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float ene
  * @param energy Emission intensity multiplier.
  * @return Emission map. Returns an empty map on failure.
  */
-R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* fileData, int dataSize, Color color, float energy);
+R3DAPI R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* fileData, int dataSize, Color color, float energy);
 
 /**
  * @brief Unload an emission map texture.
@@ -291,7 +291,7 @@ R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* 
  *
  * @param map Emission map to unload.
  */
-void R3D_UnloadEmissionMap(R3D_EmissionMap map);
+R3DAPI void R3D_UnloadEmissionMap(R3D_EmissionMap map);
 
 /**
  * @brief Load a normal map from file.
@@ -302,7 +302,7 @@ void R3D_UnloadEmissionMap(R3D_EmissionMap map);
  * @param scale Normal intensity multiplier.
  * @return Normal map. Returns an empty map on failure.
  */
-R3D_NormalMap R3D_LoadNormalMap(const char* fileName, float scale);
+R3DAPI R3D_NormalMap R3D_LoadNormalMap(const char* fileName, float scale);
 
 /**
  * @brief Load a normal map from memory.
@@ -315,7 +315,7 @@ R3D_NormalMap R3D_LoadNormalMap(const char* fileName, float scale);
  * @param scale Normal intensity multiplier.
  * @return Normal map. Returns an empty map on failure.
  */
-R3D_NormalMap R3D_LoadNormalMapFromMemory(const char* fileType, const void* fileData, int dataSize, float scale);
+R3DAPI R3D_NormalMap R3D_LoadNormalMapFromMemory(const char* fileType, const void* fileData, int dataSize, float scale);
 
 /**
  * @brief Unload a normal map texture.
@@ -324,7 +324,7 @@ R3D_NormalMap R3D_LoadNormalMapFromMemory(const char* fileType, const void* file
  *
  * @param map Normal map to unload.
  */
-void R3D_UnloadNormalMap(R3D_NormalMap map);
+R3DAPI void R3D_UnloadNormalMap(R3D_NormalMap map);
 
 /**
  * @brief Load a combined ORM (Occlusion-Roughness-Metalness) map from file.
@@ -337,7 +337,7 @@ void R3D_UnloadNormalMap(R3D_NormalMap map);
  * @param metalness Metalness multiplier.
  * @return ORM map. Returns an empty map on failure.
  */
-R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness, float metalness);
+R3DAPI R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness, float metalness);
 
 /**
  * @brief Load a combined ORM (Occlusion-Roughness-Metalness) map from memory.
@@ -352,8 +352,8 @@ R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness
  * @param metalness Metalness multiplier.
  * @return ORM map. Returns an empty map on failure.
  */
-R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, int dataSize,
-                                    float occlusion, float roughness, float metalness);
+R3DAPI R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, int dataSize,
+                                           float occlusion, float roughness, float metalness);
 
 /**
  * @brief Unload an ORM map texture.
@@ -362,7 +362,7 @@ R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, 
  *
  * @param map ORM map to unload.
  */
-void R3D_UnloadOrmMap(R3D_OrmMap map);
+R3DAPI void R3D_UnloadOrmMap(R3D_OrmMap map);
 
 #ifdef __cplusplus
 } // extern "C"
