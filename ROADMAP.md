@@ -15,7 +15,7 @@
 * [x] **Skybox Revision and Reflection Probes**
   Revise the skybox system and add support for reflection probes, including probe blending.
 
-* [ ] **Skybox Generation Support**
+* [x] **Skybox Generation Support**
   Add support for procedural skybox generation.
 
 * [ ] **Improve Shadow Map Management**
