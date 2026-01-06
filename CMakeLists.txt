@@ -144,7 +144,7 @@ if(R3D_RAYLIB_VENDORED)
         message(STATUS "Using vendored raylib from: ${R3D_RAYLIB_SUBMODULE_PATH}")
 
         # Enable HDR image support
-		set(SUPPORT_FILEFORMAT_HDR ON CACHE BOOL "" FORCE)
+        set(SUPPORT_FILEFORMAT_HDR ON CACHE BOOL "" FORCE)
 
         # Disable model loading and mesh generation support
         # to avoid symbol redefinition errors with Assimp,
@@ -311,7 +311,7 @@ endif()
 
 if(R3D_BUILD_DOCS)
     find_package(Doxygen QUIET)
-	
+
     if(Doxygen_FOUND)
         set(DOXYGEN_IN ${R3D_ROOT_PATH}/Doxyfile.in)
         set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
