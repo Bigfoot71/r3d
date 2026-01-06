@@ -1355,7 +1355,7 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_BIND_SAMPLER_2D(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER_2D(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 3; i++) {
         R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
         R3D_SHADER_BIND_SAMPLER_2D(prepare.atrousWavelet, uSourceTex, r3d_target_get(ssaoTarget));
         R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepSize, 1 << i);
