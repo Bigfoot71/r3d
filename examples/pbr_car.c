@@ -22,8 +22,9 @@ int main(void)
     // Post-processing
     R3D_ENVIRONMENT_SET(ssr.enabled, true);
     R3D_ENVIRONMENT_SET(ssao.enabled, true);
-    R3D_ENVIRONMENT_SET(ssao.radius, 2.0f);
-    R3D_ENVIRONMENT_SET(bloom.intensity, 0.1f);
+    R3D_ENVIRONMENT_SET(ssao.radius, 1.0f);
+    R3D_ENVIRONMENT_SET(bloom.levels, 0.5f);
+    R3D_ENVIRONMENT_SET(bloom.intensity, 0.025f);
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);
     R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
 
