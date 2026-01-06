@@ -209,7 +209,7 @@ typedef struct {
 
 typedef struct {
 
-    alignas(16) struct r3d_shader_block_env_probe
+    struct r3d_shader_block_env_probe
     {
         alignas(16) Vector3 position;
         alignas(4) float falloff;
@@ -220,7 +220,7 @@ typedef struct {
     }
     uProbes[R3D_SHADER_NUM_PROBES];
 
-    alignas(16) struct r3d_shader_block_env_ambient
+    struct r3d_shader_block_env_ambient
     {
         alignas(16) Vector4 rotation;
         alignas(16) Vector4 color;
