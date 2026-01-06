@@ -77,10 +77,26 @@ typedef struct r3d_importer_texture_cache r3d_importer_texture_cache_t;
 // PUBLIC FUNCTIONS
 // ========================================
 
+/**
+ * Create an Assimp importer and cache data used for loading
+ * by reading from a file.
+ */
 bool r3d_importer_create_from_file(r3d_importer_t* importer, const char* filePath);
+
+/**
+ * Create an Assimp importer and cache data used for loading
+ * by reading from memory.
+ */
 bool r3d_importer_create_from_memory(r3d_importer_t* importer, const void* data, uint32_t size, const char* hint);
+
+/**
+ * Release the Assimp importer along with all associated cached data.
+ */
 void r3d_importer_destroy(r3d_importer_t* importer);
 
+/**
+ * Return the index of a bone by its name, stored in a hash table.
+ */
 int r3d_importer_get_bone_index(const r3d_importer_t* importer, const char* name);
 
 /**
