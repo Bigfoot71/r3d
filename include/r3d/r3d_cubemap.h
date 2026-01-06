@@ -90,7 +90,7 @@ typedef struct R3D_CubemapSky {
     float groundHorizonCurve;   // Gradient curve exponent (typical: 0.02)
     float groundEnergy;         // Ground brightness multiplier
 
-    Vector3 sunDirection;       // Direction from which light comes (not normalized)
+    Vector3 sunDirection;       // Direction from which light comes (can take not normalized)
     Color sunColor;             // Sun disk color
     float sunSize;              // Sun angular size in radians (real sun: ~0.0087 rad = 0.5°)
     float sunCurve;             // Sun edge softness exponent (typical: 0.15)
