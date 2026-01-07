@@ -1,3 +1,4 @@
+#include "r3d/r3d_material.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -14,6 +15,7 @@ int main(void)
     R3D_Mesh plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
     R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 64, 64);
     R3D_Material material = R3D_GetDefaultMaterial();
+    material.transparencyMode = R3D_TRANSPARENCY_PREPASS;
 
     // Setup environment
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
@@ -21,7 +23,7 @@ int main(void)
     // Create light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
     R3D_LightLookAt(light, (Vector3){0, 10, 5}, (Vector3){0});
-    R3D_EnableShadow(light, 4096);
+    R3D_EnableShadow(light);
     R3D_SetLightActive(light, true);
 
     // Setup camera

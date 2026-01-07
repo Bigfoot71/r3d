@@ -8,6 +8,10 @@
 
 #version 330 core
 
+/* === Extensions === */
+
+#extension GL_ARB_texture_cube_map_array : enable
+
 /* === Includes === */
 
 #include "../include/blocks/view.glsl"
@@ -19,16 +23,13 @@
 
 struct Light
 {
-    mat4 matVP;                     //< View/projection matrix of the light, used for directional and spot shadow projection
-    sampler2D shadowMap;            //< 2D shadow map used for directional and spot shadow projection
-    samplerCube shadowCubemap;      //< Cube shadow map used for omni-directional shadow projection
+    mat4 viewProj;                  //< View/projection matrix of the light, used for directional and spot shadow projection
     vec3 color;                     //< Light color modulation tint
     vec3 position;                  //< Light position (spot/omni)
     vec3 direction;                 //< Light direction (spot/dir)
     float specular;                 //< Specular factor (not physically accurate but provides more flexibility)
     float energy;                   //< Light energy factor
     float range;                    //< Maximum distance the light can travel before being completely attenuated (spot/omni)
-    float size;                     //< Light size, currently used only for shadows (PCSS)
     float near;                     //< Near plane for the shadow map projection
     float far;                      //< Far plane for the shadow map projection
     float attenuation;              //< Additional light attenuation factor (spot/omni)
@@ -38,6 +39,7 @@ struct Light
     float shadowTexelSize;          //< Size of a texel in the 2D shadow map
     float shadowDepthBias;          //< Constant depth bias applied to shadow mapping to reduce shadow acne
     float shadowSlopeBias;          //< Additional bias scaled by surface slope to reduce artifacts on angled geometry
+    int shadowLayer;                //< Index of the layer to be sampled, relative to the light type
     lowp int type;                  //< Light type (dir/spot/omni)
     bool shadow;                    //< Indicates whether the light generates shadows
 };
@@ -53,6 +55,10 @@ uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 uniform sampler2D uSsaoTex;
 uniform sampler2D uOrmTex;
+
+uniform sampler2DArray uShadowDirTex;
+uniform sampler2DArray uShadowSpotTex;
+uniform samplerCubeArray uShadowOmniTex;
 
 uniform Light uLight;
 
@@ -84,7 +90,7 @@ float ShadowDir(vec3 position, float cNdotL, mat2 diskRot)
 {
     /* --- Light Space Projection --- */
 
-    vec4 projPos = uLight.matVP * vec4(position, 1.0);
+    vec4 projPos = uLight.viewProj * vec4(position, 1.0);
     vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
 
     /* --- Shadow Bias and Depth Adjustment --- */
@@ -98,7 +104,7 @@ float ShadowDir(vec3 position, float cNdotL, mat2 diskRot)
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 offset = diskRot * VOGEL_DISK[i] * uLight.shadowSoftness;
-        shadow += step(currentDepth, texture(uLight.shadowMap, projCoords.xy + offset).r);
+        shadow += step(currentDepth, texture(uShadowDirTex, vec3(projCoords.xy + offset, uLight.shadowLayer)).r);
     }
     shadow /= float(SHADOW_SAMPLES);
 
@@ -117,7 +123,7 @@ float ShadowSpot(vec3 position, float cNdotL, mat2 diskRot)
 {
     /* --- Light Space Projection --- */
 
-    vec4 projPos = uLight.matVP * vec4(position, 1.0);
+    vec4 projPos = uLight.viewProj * vec4(position, 1.0);
     vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
 
     /* --- Shadow Bias and Depth Adjustment --- */
@@ -131,7 +137,7 @@ float ShadowSpot(vec3 position, float cNdotL, mat2 diskRot)
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 offset = diskRot * VOGEL_DISK[i] * uLight.shadowSoftness;
-        shadow += step(currentDepth, texture(uLight.shadowMap, projCoords.xy + offset).r);
+        shadow += step(currentDepth, texture(uShadowSpotTex, vec3(projCoords.xy + offset, uLight.shadowLayer)).r);
     }
 
     /* --- Final Shadow Value --- */
@@ -163,7 +169,7 @@ float ShadowOmni(vec3 position, float cNdotL, mat2 diskRot)
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 diskOffset = diskRot * VOGEL_DISK[i] * uLight.shadowSoftness;
         vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
-        float sampleDepth = texture(uLight.shadowCubemap, sampleDir).r * uLight.far;
+        float sampleDepth = texture(uShadowOmniTex, vec4(sampleDir, float(uLight.shadowLayer))).r * uLight.far;
         shadow += step(currentDepth, sampleDepth);
     }
 

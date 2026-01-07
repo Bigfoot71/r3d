@@ -39,7 +39,7 @@ int main(void)
         R3D_SetLightActive(lights[i], true);
         R3D_SetLightEnergy(lights[i], 4.0f);
         R3D_SetShadowUpdateMode(lights[i], R3D_SHADOW_UPDATE_MANUAL);
-        R3D_EnableShadow(lights[i], 4096);
+        R3D_EnableShadow(lights[i]);
     }
 
     // Setup camera

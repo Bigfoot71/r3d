@@ -28,7 +28,6 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
-#include "r3d/r3d_core.h"
 
 // ========================================
 // HELPER MACROS
@@ -52,8 +51,8 @@ static void update_view_state(Camera3D camera, double aspect, double near, doubl
 static void upload_view_state(void);
 static void upload_env_state(void);
 
-static void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
-static void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP);
+static void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj);
+static void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj);
 static void raster_geometry(const r3d_draw_call_t* call);
 static void raster_decal(const r3d_draw_call_t* call);
 static void raster_forward(const r3d_draw_call_t* call);
@@ -567,14 +566,14 @@ void upload_env_state(void)
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env);
 }
 
-void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
+void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj)
 {
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
 
     /* --- Send matrices --- */
 
     R3D_SHADER_SET_MAT4(scene.depth, uMatModel, group->transform);
-    R3D_SHADER_SET_MAT4(scene.depth, uMatViewProj, *matVP);
+    R3D_SHADER_SET_MAT4(scene.depth, uMatViewProj, *viewProj);
 
     /* --- Send skinning related data --- */
 
@@ -635,14 +634,14 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.depth, uAlbedoMap);
 }
 
-void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* matVP)
+void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj)
 {
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
 
     /* --- Send matrices --- */
 
     R3D_SHADER_SET_MAT4(scene.depthCube, uMatModel, group->transform);
-    R3D_SHADER_SET_MAT4(scene.depthCube, uMatViewProj, *matVP);
+    R3D_SHADER_SET_MAT4(scene.depthCube, uMatViewProj, *viewProj);
 
     /* --- Send skinning related data --- */
 
@@ -1016,16 +1015,13 @@ void pass_scene_shadow(void)
             continue;
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, light->shadowMap.fbo);
-        glViewport(0, 0, light->shadowMap.resolution, light->shadowMap.resolution);
-
         if (light->type == R3D_LIGHT_OMNI) {
             R3D_SHADER_USE(scene.depthCube);
             R3D_SHADER_SET_FLOAT(scene.depthCube, uFar, light->far);
             R3D_SHADER_SET_VEC3(scene.depthCube, uViewPosition, light->position);
 
             for (int iFace = 0; iFace < 6; iFace++) {
-                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + iFace, light->shadowMap.tex, 0);
+                r3d_light_shadow_bind_fbo(light->type, light->shadowLayer, iFace);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 const r3d_frustum_t* frustum = &light->frustum[iFace];
@@ -1033,7 +1029,7 @@ void pass_scene_shadow(void)
 
                 #define COND (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
                 R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-                    raster_depth_cube(call, true, &light->matVP[iFace]);
+                    raster_depth_cube(call, true, &light->viewProj[iFace]);
                 }
                 #undef COND
             }
@@ -1042,6 +1038,7 @@ void pass_scene_shadow(void)
             R3D_SHADER_UNBIND_SAMPLER_1D(scene.depthCube, uBoneMatricesTex);
         }
         else {
+            r3d_light_shadow_bind_fbo(light->type, light->shadowLayer, 0);
             glClear(GL_DEPTH_BUFFER_BIT);
             R3D_SHADER_USE(scene.depth);
 
@@ -1050,7 +1047,7 @@ void pass_scene_shadow(void)
 
             #define COND (call->mesh.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
             R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
-                raster_depth(call, true, &light->matVP[0]);
+                raster_depth(call, true, &light->viewProj[0]);
             }
             #undef COND
 
@@ -1098,17 +1095,14 @@ static void pass_scene_probe_send_lights(const r3d_draw_call_t* call, bool probe
         }
 
         if (light->shadow && probeShadows) {
-            if (light->type == R3D_LIGHT_OMNI) {
-                R3D_SHADER_BIND_SAMPLER_CUBE(scene.probe, uShadowMapCube[iLight], light->shadowMap.tex);
-            }
-            else {
+            if (light->type != R3D_LIGHT_OMNI) {
                 R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowTexelSize, light->shadowTexelSize);
-                R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uShadowMap2D[iLight], light->shadowMap.tex);
-                R3D_SHADER_SET_MAT4(scene.probe, uLightViewProj[iLight], light->matVP);
+                R3D_SHADER_SET_MAT4(scene.probe, uLightViewProj[iLight], light->viewProj);
             }
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowSoftness, light->shadowSoftness);
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowDepthBias, light->shadowDepthBias);
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowSlopeBias, light->shadowSlopeBias);
+            R3D_SHADER_SET_INT(scene.probe, uLights[iLight].shadowLayer, light->shadowLayer);
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].near, light->near);
             R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].far, light->far);
             R3D_SHADER_SET_INT(scene.probe, uLights[iLight].shadow, true);
@@ -1162,9 +1156,14 @@ void pass_scene_probes(void)
             glDepthMask(GL_TRUE);
             glEnable(GL_BLEND);
 
+            R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.probe, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
+            R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.probe, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+            R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.probe, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+
             R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.probe, uIrradianceTex, r3d_env_irradiance_get());
             R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.probe, uPrefilterTex, r3d_env_prefilter_get());
             R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+
             R3D_SHADER_SET_VEC3(scene.probe, uViewPosition, probe->position);
             R3D_SHADER_SET_INT(scene.probe, uProbeInterior, probe->interior);
 
@@ -1180,10 +1179,9 @@ void pass_scene_probes(void)
             R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.probe, uPrefilterTex);
             R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uBrdfLutTex);
 
-            for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
-                R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.probe, uShadowMapCube[i]);
-                R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uShadowMap2D[i]);
-            }
+            R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.probe, uShadowDirTex);
+            R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.probe, uShadowSpotTex);
+            R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.probe, uShadowOmniTex);
 
             // NOTE: The storage texture of the matrices may have been bind during drawcalls
             R3D_SHADER_UNBIND_SAMPLER_1D(scene.probe, uBoneMatricesTex);
@@ -1536,6 +1534,10 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
     R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
 
+    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
+    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(deferred.lighting, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+
     R3D_SHADER_SET_FLOAT(deferred.lighting, uSSAOLightAffect, R3D.environment.ssao.lightAffect);
 
     /* --- Calculate lighting contributions --- */
@@ -1575,13 +1577,9 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
 
         // Sending shadow map data
         if (light->shadow) {
-            if (light->type == R3D_LIGHT_OMNI) {
-                R3D_SHADER_BIND_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap, light->shadowMap.tex);
-            }
-            else {
+            if (light->type != R3D_LIGHT_OMNI) {
                 R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowTexelSize, light->shadowTexelSize);
-                R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uLight.shadowMap, light->shadowMap.tex);
-                R3D_SHADER_SET_MAT4(deferred.lighting, uLight.matVP, light->matVP);
+                R3D_SHADER_SET_MAT4(deferred.lighting, uLight.viewProj, light->viewProj);
                 if (light->type == R3D_LIGHT_DIR) {
                     R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->position);
                 }
@@ -1589,6 +1587,7 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
             R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowSoftness, light->shadowSoftness);
             R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowDepthBias, light->shadowDepthBias);
             R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowSlopeBias, light->shadowSlopeBias);
+            R3D_SHADER_SET_INT(deferred.lighting, uLight.shadowLayer, light->shadowLayer);
             R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.near, light->near);
             R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.far, light->far);
             R3D_SHADER_SET_INT(deferred.lighting, uLight.shadow, true);
@@ -1608,8 +1607,9 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uDepthTex);
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uOrmTex);
 
-    R3D_SHADER_UNBIND_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uLight.shadowMap);
+    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowDirTex);
+    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowSpotTex);
+    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(deferred.lighting, uShadowOmniTex);
 
     /* --- Reset undesired state --- */
 
@@ -1714,17 +1714,14 @@ static void pass_scene_forward_send_lights(const r3d_draw_call_t* call)
         }
 
         if (light->shadow) {
-            if (light->type == R3D_LIGHT_OMNI) {
-                R3D_SHADER_BIND_SAMPLER_CUBE(scene.forward, uShadowMapCube[iLight], light->shadowMap.tex);
-            }
-            else {
+            if (light->type != R3D_LIGHT_OMNI) {
                 R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowTexelSize, light->shadowTexelSize);
-                R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uShadowMap2D[iLight], light->shadowMap.tex);
-                R3D_SHADER_SET_MAT4(scene.forward, uLightViewProj[iLight], light->matVP);
+                R3D_SHADER_SET_MAT4(scene.forward, uLightViewProj[iLight], light->viewProj);
             }
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowSoftness, light->shadowSoftness);
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowDepthBias, light->shadowDepthBias);
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowSlopeBias, light->shadowSlopeBias);
+            R3D_SHADER_SET_INT(scene.forward, uLights[iLight].shadowLayer, light->shadowLayer);
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].near, light->near);
             R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].far, light->far);
             R3D_SHADER_SET_INT(scene.forward, uLights[iLight].shadow, true);
@@ -1753,6 +1750,10 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
 
+    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.forward, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
+    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.forward, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.forward, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+
     R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex, r3d_env_irradiance_get());
     R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex, r3d_env_prefilter_get());
     R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
@@ -1765,14 +1766,13 @@ void pass_scene_forward(r3d_target_t sceneTarget)
         raster_forward(call);
     }
 
+    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.forward, uShadowDirTex);
+    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.forward, uShadowSpotTex);
+    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uShadowOmniTex);
+
     R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex);
     R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex);
     R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uBrdfLutTex);
-
-    for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
-        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.forward, uShadowMapCube[i]);
-        R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uShadowMap2D[i]);
-    }
 
     // NOTE: The storage texture of the matrices may have been bind during drawcalls
     R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uBoneMatricesTex);

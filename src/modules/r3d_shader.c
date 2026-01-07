@@ -126,6 +126,14 @@ struct r3d_shader R3D_MOD_SHADER;
     );                                                                          \
 } while(0)
 
+#define SET_SAMPLER_2D_ARRAY(shader_name, uniform, value) do {                  \
+    R3D_MOD_SHADER.shader_name.uniform.slot2DArr = (value);                     \
+    glUniform1i(                                                                \
+        R3D_MOD_SHADER.shader_name.uniform.loc,                                 \
+        R3D_MOD_SHADER.shader_name.uniform.slot2DArr                            \
+    );                                                                          \
+} while(0)
+
 #define SET_SAMPLER_CUBE_ARRAY(shader_name, uniform, value) do {                \
     R3D_MOD_SHADER.shader_name.uniform.slotCubeArr = (value);                   \
     glUniform1i(                                                                \
@@ -524,6 +532,9 @@ void r3d_shader_load_scene_forward(void)
     GET_LOCATION(scene.forward, uEmissionMap);
     GET_LOCATION(scene.forward, uNormalMap);
     GET_LOCATION(scene.forward, uOrmMap);
+    GET_LOCATION(scene.forward, uShadowDirTex);
+    GET_LOCATION(scene.forward, uShadowSpotTex);
+    GET_LOCATION(scene.forward, uShadowOmniTex);
     GET_LOCATION(scene.forward, uIrradianceTex);
     GET_LOCATION(scene.forward, uPrefilterTex);
     GET_LOCATION(scene.forward, uBrdfLutTex);
@@ -540,17 +551,15 @@ void r3d_shader_load_scene_forward(void)
     SET_SAMPLER_2D(scene.forward, uEmissionMap, 2);
     SET_SAMPLER_2D(scene.forward, uNormalMap, 3);
     SET_SAMPLER_2D(scene.forward, uOrmMap, 4);
-    SET_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex, 5);
-    SET_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex, 6);
-    SET_SAMPLER_2D(scene.forward, uBrdfLutTex, 7);
+    SET_SAMPLER_2D_ARRAY(scene.forward, uShadowDirTex, 5);
+    SET_SAMPLER_2D_ARRAY(scene.forward, uShadowSpotTex, 6);
+    SET_SAMPLER_CUBE_ARRAY(scene.forward, uShadowOmniTex, 7);
+    SET_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex, 8);
+    SET_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex, 9);
+    SET_SAMPLER_2D(scene.forward, uBrdfLutTex, 10);
 
-    int shadowMapSlot = 10;
-    for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++)
-    {
+    for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
         GET_LOCATION_ARRAY(scene.forward, uLightViewProj, i);
-        GET_LOCATION_ARRAY(scene.forward, uShadowMapCube, i);
-        GET_LOCATION_ARRAY(scene.forward, uShadowMap2D, i);
-
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, color);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, position);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, direction);
@@ -566,12 +575,10 @@ void r3d_shader_load_scene_forward(void)
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowTexelSize);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowDepthBias);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowSlopeBias);
+        GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadowLayer);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, type);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, enabled);
         GET_LOCATION_ARRAY_STRUCT(scene.forward, uLights, i, shadow);
-
-        SET_SAMPLER_CUBE(scene.forward, uShadowMapCube[i], shadowMapSlot++);
-        SET_SAMPLER_2D(scene.forward, uShadowMap2D[i], shadowMapSlot++);
     }
 }
 
@@ -687,6 +694,9 @@ void r3d_shader_load_scene_probe(void)
     GET_LOCATION(scene.probe, uEmissionMap);
     GET_LOCATION(scene.probe, uNormalMap);
     GET_LOCATION(scene.probe, uOrmMap);
+    GET_LOCATION(scene.probe, uShadowDirTex);
+    GET_LOCATION(scene.probe, uShadowSpotTex);
+    GET_LOCATION(scene.probe, uShadowOmniTex);
     GET_LOCATION(scene.probe, uIrradianceTex);
     GET_LOCATION(scene.probe, uPrefilterTex);
     GET_LOCATION(scene.probe, uBrdfLutTex);
@@ -704,17 +714,16 @@ void r3d_shader_load_scene_probe(void)
     SET_SAMPLER_2D(scene.probe, uEmissionMap, 2);
     SET_SAMPLER_2D(scene.probe, uNormalMap, 3);
     SET_SAMPLER_2D(scene.probe, uOrmMap, 4);
-    SET_SAMPLER_CUBE_ARRAY(scene.probe, uIrradianceTex, 5);
-    SET_SAMPLER_CUBE_ARRAY(scene.probe, uPrefilterTex, 6);
-    SET_SAMPLER_2D(scene.probe, uBrdfLutTex, 7);
+    SET_SAMPLER_2D_ARRAY(scene.probe, uShadowDirTex, 5);
+    SET_SAMPLER_2D_ARRAY(scene.probe, uShadowSpotTex, 6);
+    SET_SAMPLER_CUBE_ARRAY(scene.probe, uShadowOmniTex, 7);
+    SET_SAMPLER_CUBE_ARRAY(scene.probe, uIrradianceTex, 8);
+    SET_SAMPLER_CUBE_ARRAY(scene.probe, uPrefilterTex, 9);
+    SET_SAMPLER_2D(scene.probe, uBrdfLutTex, 10);
 
     int shadowMapSlot = 10;
-    for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++)
-    {
+    for (int i = 0; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
         GET_LOCATION_ARRAY(scene.probe, uLightViewProj, i);
-        GET_LOCATION_ARRAY(scene.probe, uShadowMapCube, i);
-        GET_LOCATION_ARRAY(scene.probe, uShadowMap2D, i);
-
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, color);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, position);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, direction);
@@ -730,12 +739,10 @@ void r3d_shader_load_scene_probe(void)
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, shadowTexelSize);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, shadowDepthBias);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, shadowSlopeBias);
+        GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, shadowLayer);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, type);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, enabled);
         GET_LOCATION_ARRAY_STRUCT(scene.probe, uLights, i, shadow);
-
-        SET_SAMPLER_CUBE(scene.probe, uShadowMapCube[i], shadowMapSlot++);
-        SET_SAMPLER_2D(scene.probe, uShadowMap2D[i], shadowMapSlot++);
     }
 }
 
@@ -827,11 +834,14 @@ void r3d_shader_load_deferred_lighting(void)
     GET_LOCATION(deferred.lighting, uDepthTex);
     GET_LOCATION(deferred.lighting, uSsaoTex);
     GET_LOCATION(deferred.lighting, uOrmTex);
+
+    GET_LOCATION(deferred.lighting, uShadowDirTex);
+    GET_LOCATION(deferred.lighting, uShadowSpotTex);
+    GET_LOCATION(deferred.lighting, uShadowOmniTex);
+
     GET_LOCATION(deferred.lighting, uSSAOLightAffect);
 
-    GET_LOCATION(deferred.lighting, uLight.matVP);
-    GET_LOCATION(deferred.lighting, uLight.shadowMap);
-    GET_LOCATION(deferred.lighting, uLight.shadowCubemap);
+    GET_LOCATION(deferred.lighting, uLight.viewProj);
     GET_LOCATION(deferred.lighting, uLight.color);
     GET_LOCATION(deferred.lighting, uLight.position);
     GET_LOCATION(deferred.lighting, uLight.direction);
@@ -847,6 +857,7 @@ void r3d_shader_load_deferred_lighting(void)
     GET_LOCATION(deferred.lighting, uLight.shadowTexelSize);
     GET_LOCATION(deferred.lighting, uLight.shadowDepthBias);
     GET_LOCATION(deferred.lighting, uLight.shadowSlopeBias);
+    GET_LOCATION(deferred.lighting, uLight.shadowLayer);
     GET_LOCATION(deferred.lighting, uLight.type);
     GET_LOCATION(deferred.lighting, uLight.shadow);
 
@@ -858,8 +869,9 @@ void r3d_shader_load_deferred_lighting(void)
     SET_SAMPLER_2D(deferred.lighting, uSsaoTex, 3);
     SET_SAMPLER_2D(deferred.lighting, uOrmTex, 4);
 
-    SET_SAMPLER_2D(deferred.lighting, uLight.shadowMap, 5);
-    SET_SAMPLER_CUBE(deferred.lighting, uLight.shadowCubemap, 6);
+    SET_SAMPLER_2D_ARRAY(deferred.lighting, uShadowDirTex, 5);
+    SET_SAMPLER_2D_ARRAY(deferred.lighting, uShadowSpotTex, 6);
+    SET_SAMPLER_CUBE_ARRAY(deferred.lighting, uShadowOmniTex, 7);
 }
 
 void r3d_shader_load_deferred_compose(void)

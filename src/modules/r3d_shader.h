@@ -62,6 +62,11 @@
     glBindTexture(GL_TEXTURE_CUBE_MAP, (texId));                                                    \
 } while(0)
 
+#define R3D_SHADER_BIND_SAMPLER_2D_ARRAY(shader_name, uniform, texId) do {                          \
+    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2DArr);                    \
+    glBindTexture(GL_TEXTURE_2D_ARRAY, (texId));                                                    \
+} while(0)
+
 #define R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(shader_name, uniform, texId) do {                        \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCubeArr);                  \
     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, (texId));                                              \
@@ -80,6 +85,11 @@
 #define R3D_SHADER_UNBIND_SAMPLER_CUBE(shader_name, uniform) do {                                   \
     glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCube);                     \
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);                                                          \
+} while(0)
+
+#define R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(shader_name, uniform) do {                               \
+    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2DArr);                    \
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);                                                          \
 } while(0)
 
 #define R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(shader_name, uniform) do {                             \
@@ -168,6 +178,7 @@
 typedef struct { int slot1D; int loc; } r3d_shader_uniform_sampler1D_t;
 typedef struct { int slot2D; int loc; } r3d_shader_uniform_sampler2D_t;
 typedef struct { int slotCube; int loc; } r3d_shader_uniform_samplerCube_t;
+typedef struct { int slot2DArr; int loc; } r3d_shader_uniform_sampler2DArray_t;
 typedef struct { int slotCubeArr; int loc; } r3d_shader_uniform_samplerCubeArray_t;
 
 typedef struct { int val; int loc; } r3d_shader_uniform_int_t;
@@ -411,8 +422,9 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uEmissionMap;
     r3d_shader_uniform_sampler2D_t uNormalMap;
     r3d_shader_uniform_sampler2D_t uOrmMap;
-    r3d_shader_uniform_samplerCube_t uShadowMapCube[R3D_SHADER_NUM_FORWARD_LIGHTS];
-    r3d_shader_uniform_sampler2D_t uShadowMap2D[R3D_SHADER_NUM_FORWARD_LIGHTS];
+    r3d_shader_uniform_sampler2DArray_t uShadowDirTex;
+    r3d_shader_uniform_sampler2DArray_t uShadowSpotTex;
+    r3d_shader_uniform_samplerCubeArray_t uShadowOmniTex;
     r3d_shader_uniform_samplerCubeArray_t uIrradianceTex;
     r3d_shader_uniform_samplerCubeArray_t uPrefilterTex;
     r3d_shader_uniform_sampler2D_t uBrdfLutTex;
@@ -437,6 +449,7 @@ typedef struct {
         r3d_shader_uniform_float_t shadowTexelSize;
         r3d_shader_uniform_float_t shadowDepthBias;
         r3d_shader_uniform_float_t shadowSlopeBias;
+        r3d_shader_uniform_int_t shadowLayer;
         r3d_shader_uniform_int_t type;
         r3d_shader_uniform_int_t enabled;
         r3d_shader_uniform_int_t shadow;
@@ -497,8 +510,9 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uEmissionMap;
     r3d_shader_uniform_sampler2D_t uNormalMap;
     r3d_shader_uniform_sampler2D_t uOrmMap;
-    r3d_shader_uniform_samplerCube_t uShadowMapCube[R3D_SHADER_NUM_FORWARD_LIGHTS];
-    r3d_shader_uniform_sampler2D_t uShadowMap2D[R3D_SHADER_NUM_FORWARD_LIGHTS];
+    r3d_shader_uniform_sampler2DArray_t uShadowDirTex;
+    r3d_shader_uniform_sampler2DArray_t uShadowSpotTex;
+    r3d_shader_uniform_samplerCubeArray_t uShadowOmniTex;
     r3d_shader_uniform_samplerCubeArray_t uIrradianceTex;
     r3d_shader_uniform_samplerCubeArray_t uPrefilterTex;
     r3d_shader_uniform_sampler2D_t uBrdfLutTex;
@@ -524,6 +538,7 @@ typedef struct {
         r3d_shader_uniform_float_t shadowTexelSize;
         r3d_shader_uniform_float_t shadowDepthBias;
         r3d_shader_uniform_float_t shadowSlopeBias;
+        r3d_shader_uniform_int_t shadowLayer;
         r3d_shader_uniform_int_t type;
         r3d_shader_uniform_int_t enabled;
         r3d_shader_uniform_int_t shadow;
@@ -584,9 +599,7 @@ typedef struct {
 typedef struct {
     unsigned int id;
     struct {
-        r3d_shader_uniform_mat4_t matVP;
-        r3d_shader_uniform_sampler2D_t shadowMap;
-        r3d_shader_uniform_samplerCube_t shadowCubemap;
+        r3d_shader_uniform_mat4_t viewProj;
         r3d_shader_uniform_vec3_t color;
         r3d_shader_uniform_vec3_t position;
         r3d_shader_uniform_vec3_t direction;
@@ -602,6 +615,7 @@ typedef struct {
         r3d_shader_uniform_float_t shadowTexelSize;
         r3d_shader_uniform_float_t shadowDepthBias;
         r3d_shader_uniform_float_t shadowSlopeBias;
+        r3d_shader_uniform_int_t shadowLayer;
         r3d_shader_uniform_int_t type;
         r3d_shader_uniform_int_t shadow;
     } uLight;
@@ -610,6 +624,9 @@ typedef struct {
     r3d_shader_uniform_sampler2D_t uDepthTex;
     r3d_shader_uniform_sampler2D_t uSsaoTex;
     r3d_shader_uniform_sampler2D_t uOrmTex;
+    r3d_shader_uniform_sampler2DArray_t uShadowDirTex;
+    r3d_shader_uniform_sampler2DArray_t uShadowSpotTex;
+    r3d_shader_uniform_samplerCubeArray_t uShadowOmniTex;
     r3d_shader_uniform_float_t uSSAOLightAffect;
 } r3d_shader_deferred_lighting_t;
 

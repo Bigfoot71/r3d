@@ -392,25 +392,27 @@ R3DAPI void R3D_SetLightOuterCutOff(R3D_Light id, float degrees);
 // ----------------------------------------
 
 /**
- * @brief Enables shadow casting for a light and sets its shadow map resolution.
+ * @brief Enables shadow rendering for a light.
  *
- * Allocates a shadow map at the given resolution and enables shadow rendering.
- * This function can be called multiple times to resize the shadow map, but doing so
- * reallocates GPU resources and has a performance cost.
+ * Turns on shadow rendering for the light. The engine will allocate a shadow
+ * map if needed, or reuse one previously allocated for another light.
+ *
+ * Shadow map resolutions are fixed: 2048x2048 for spot and point lights,
+ * and 4096x4096 for directional lights.
  *
  * @param id The ID of the light.
- * @param resolution The shadow map resolution.
  *
- * @note Shadow maps are memory-intensive. High resolutions (e.g. 4K) consume significant
- * GPU memory; creating many high-resolution shadow maps may lead crashes...
+ * @note Creating too many shadow-casting lights can exhaust GPU memory and
+ * potentially crash the graphics driver. Disabling shadows on one light and
+ * enabling them on another is free, since existing shadow maps are reused.
  */
-R3DAPI void R3D_EnableShadow(R3D_Light id, int resolution);
+R3DAPI void R3D_EnableShadow(R3D_Light id);
 
 /**
- * @brief Disables shadow casting for a light.
+ * @brief Disables shadow rendering for a light.
  *
- * Disables shadow rendering for the light. The shadow map is preserved in memory,
- * and may be reused later, even if the light itself is destroyed.
+ * Turns off shadow rendering for the light. The associated shadow map is
+ * kept in memory and may later be reused by another light.
  *
  * @param id The ID of the light.
  */

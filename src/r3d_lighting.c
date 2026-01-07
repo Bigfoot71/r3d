@@ -256,10 +256,10 @@ void R3D_SetLightOuterCutOff(R3D_Light id, float degrees)
     light->outerCutOff = cosf(degrees * DEG2RAD);
 }
 
-void R3D_EnableShadow(R3D_Light id, int resolution)
+void R3D_EnableShadow(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    r3d_light_enable_shadows(light, resolution);
+    r3d_light_enable_shadows(light);
 }
 
 void R3D_DisableShadow(R3D_Light id)
