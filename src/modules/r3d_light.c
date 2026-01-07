@@ -7,6 +7,7 @@
  */
 
 #include "./r3d_light.h"
+#include "r3d/r3d_lighting.h"
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +19,28 @@
 // ========================================
 
 struct r3d_light R3D_MOD_LIGHT;
+
+// ========================================
+// CONSTANTS
+// ========================================
+
+static const GLenum R3D_LIGHT_SHADOW_TARGET[] = {
+    [R3D_LIGHT_DIR]  = GL_TEXTURE_2D_ARRAY,
+    [R3D_LIGHT_SPOT] = GL_TEXTURE_2D_ARRAY,
+    [R3D_LIGHT_OMNI] = GL_TEXTURE_CUBE_MAP_ARRAY,
+};
+
+static const int R3D_LIGHT_SHADOW_SIZE[] = {
+    [R3D_LIGHT_DIR]  = R3D_LIGHT_SHADOW_DIR_SIZE,
+    [R3D_LIGHT_SPOT] = R3D_LIGHT_SHADOW_SPOT_SIZE,
+    [R3D_LIGHT_OMNI] = R3D_LIGHT_SHADOW_OMNI_SIZE,
+};
+
+static const int R3D_LIGHT_SHADOW_GROWTH[] = {
+    [R3D_LIGHT_DIR]  = R3D_LIGHT_SHADOW_DIR_GROWTH,
+    [R3D_LIGHT_SPOT] = R3D_LIGHT_SHADOW_SPOT_GROWTH,
+    [R3D_LIGHT_OMNI] = R3D_LIGHT_SHADOW_OMNI_GROWTH,
+};
 
 // ========================================
 // SHADOW LAYER POOL FUNCTIONS
@@ -139,32 +162,15 @@ static bool expand_shadow_array_capacity(R3D_LightType type)
 {
     r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.shadowPools[type];
     GLuint* shadowArray = &R3D_MOD_LIGHT.shadowArrays[type];
-    GLenum shadowTarget = GL_NONE;
-    int shadowSize = 0;
+    GLenum shadowTarget = R3D_LIGHT_SHADOW_TARGET[type];
+    int shadowSize = R3D_LIGHT_SHADOW_SIZE[type];
+    int growth = R3D_LIGHT_SHADOW_GROWTH[type];
 
-    switch (type) {
-    case R3D_LIGHT_DIR:
-        shadowTarget = GL_TEXTURE_2D_ARRAY;
-        shadowSize = R3D_LIGHT_SHADOW_DIR_SIZE;
-        break;
-    case R3D_LIGHT_SPOT:
-        shadowTarget = GL_TEXTURE_2D_ARRAY;
-        shadowSize = R3D_LIGHT_SHADOW_SPOT_SIZE;
-        break;
-    case R3D_LIGHT_OMNI:
-        shadowTarget = GL_TEXTURE_CUBE_MAP_ARRAY;
-        shadowSize = R3D_LIGHT_SHADOW_OMNI_SIZE;
-        break;
-    default:
-        assert(false);
-        break;
-    }
-
-    if (!resize_shadow_array(shadowArray, shadowTarget, shadowSize, pool->totalLayers, pool->totalLayers + R3D_LIGHT_SHADOW_INITIAL_CAP)) {
+    if (!resize_shadow_array(shadowArray, shadowTarget, shadowSize, pool->totalLayers, pool->totalLayers + growth)) {
         return false;
     }
 
-    return shadow_pool_expand(pool, R3D_LIGHT_SHADOW_INITIAL_CAP);
+    return shadow_pool_expand(pool, growth);
 }
 
 // ========================================
@@ -431,7 +437,7 @@ bool r3d_light_init(void)
 
     // Initialize shadow pools
     for (int i = 0; i < R3D_LIGHT_TYPE_COUNT; i++) {
-        if (!shadow_pool_init(&R3D_MOD_LIGHT.shadowPools[i], R3D_LIGHT_SHADOW_INITIAL_CAP)) {
+        if (!shadow_pool_init(&R3D_MOD_LIGHT.shadowPools[i], R3D_LIGHT_SHADOW_GROWTH[i])) {
             TraceLog(LOG_FATAL, "R3D: Failed to init shadow pool number %i", i);
             r3d_light_quit();
             return false;
@@ -691,30 +697,11 @@ bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated)
 
 void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face)
 {
-    GLuint shadowArray = R3D_MOD_LIGHT.shadowArrays[type];
-    int shadowSize = 0;
-    int stride = 0;
+    assert((type == R3D_LIGHT_OMNI && face >= 0 && face < 6) || (type != R3D_LIGHT_OMNI && face == 0));
 
-    switch (type) {
-    case R3D_LIGHT_DIR:
-        assert(face == 0);
-        shadowSize = R3D_LIGHT_SHADOW_DIR_SIZE;
-        stride = 1;
-        break;
-    case R3D_LIGHT_SPOT:
-        assert(face == 0);
-        shadowSize = R3D_LIGHT_SHADOW_SPOT_SIZE;
-        stride = 1;
-        break;
-    case R3D_LIGHT_OMNI:
-        assert(face >= 0 && face < 6);
-        shadowSize = R3D_LIGHT_SHADOW_OMNI_SIZE;
-        stride = 6;
-        break;
-    default:
-        assert(false);
-        break;
-    }
+    GLuint shadowArray = R3D_MOD_LIGHT.shadowArrays[type];
+    int shadowSize = R3D_LIGHT_SHADOW_SIZE[type];
+    int stride = (type == R3D_LIGHT_OMNI) ? 6 : 1;
 
     glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_LIGHT.workFramebuffer);
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowArray, 0, layer * stride + face);
