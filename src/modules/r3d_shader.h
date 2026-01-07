@@ -40,63 +40,11 @@
     glUseProgram(R3D_MOD_SHADER.shader_name.id);                                                    \
 } while(0)
 
-#define R3D_SHADER_SLOT_SAMPLER_1D(shader_name, uniform)                                            \
-    R3D_MOD_SHADER.shader_name.uniform.slot1D                                                       \
+#define R3D_SHADER_SLOT_SAMPLER(shader_name, uniform)                                               \
+    R3D_MOD_SHADER.shader_name.uniform.slot                                                         \
 
-#define R3D_SHADER_SLOT_SAMPLER_2D(shader_name, uniform)                                            \
-    R3D_MOD_SHADER.shader_name.uniform.slot2D                                                       \
-
-#define R3D_SHADER_SLOT_SAMPLER_CUBE(shader_name, uniform)                                          \
-    R3D_MOD_SHADER.shader_name.uniform.slotCube                                                     \
-
-#define R3D_SHADER_BIND_SAMPLER_1D(shader_name, uniform, texId) do {                                \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot1D);                       \
-    glBindTexture(GL_TEXTURE_1D, (texId));                                                          \
-} while(0)
-
-#define R3D_SHADER_BIND_SAMPLER_2D(shader_name, uniform, texId) do {                                \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2D);                       \
-    glBindTexture(GL_TEXTURE_2D, (texId));                                                          \
-} while(0)
-
-#define R3D_SHADER_BIND_SAMPLER_CUBE(shader_name, uniform, texId) do {                              \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCube);                     \
-    glBindTexture(GL_TEXTURE_CUBE_MAP, (texId));                                                    \
-} while(0)
-
-#define R3D_SHADER_BIND_SAMPLER_2D_ARRAY(shader_name, uniform, texId) do {                          \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2DArr);                    \
-    glBindTexture(GL_TEXTURE_2D_ARRAY, (texId));                                                    \
-} while(0)
-
-#define R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(shader_name, uniform, texId) do {                        \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCubeArr);                  \
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, (texId));                                              \
-} while(0)
-
-#define R3D_SHADER_UNBIND_SAMPLER_1D(shader_name, uniform) do {                                     \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot1D);                       \
-    glBindTexture(GL_TEXTURE_1D, 0);                                                                \
-} while(0)
-
-#define R3D_SHADER_UNBIND_SAMPLER_2D(shader_name, uniform) do {                                     \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2D);                       \
-    glBindTexture(GL_TEXTURE_2D, 0);                                                                \
-} while(0)
-
-#define R3D_SHADER_UNBIND_SAMPLER_CUBE(shader_name, uniform) do {                                   \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCube);                     \
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);                                                          \
-} while(0)
-
-#define R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(shader_name, uniform) do {                               \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slot2DArr);                    \
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);                                                          \
-} while(0)
-
-#define R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(shader_name, uniform) do {                             \
-    glActiveTexture(GL_TEXTURE0 + R3D_MOD_SHADER.shader_name.uniform.slotCubeArr);                  \
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);                                                    \
+#define R3D_SHADER_BIND_SAMPLER(shader_name, uniform, texId) do {                                   \
+    r3d_shader_bind_sampler(R3D_MOD_SHADER.shader_name.uniform.slot, (texId));                      \
 } while(0)
 
 #define R3D_SHADER_SET_INT(shader_name, uniform, value) do {                                        \
@@ -174,24 +122,110 @@
 } while(0)
 
 // ========================================
+// SAMPLER ENUMS
+// ========================================
+
+/*
+ * Slot '0' is reserved for texture operations exclusively on the client side.
+ * Note that the specification guarantees at least 80 binding slots for textures.
+ * See: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glActiveTexture.xhtml
+ */
+typedef enum {
+
+    // Material maps
+    R3D_SHADER_SAMPLER_MAP_ALBEDO       = 1,
+    R3D_SHADER_SAMPLER_MAP_EMISSION     = 2,
+    R3D_SHADER_SAMPLER_MAP_NORMAL       = 3,
+    R3D_SHADER_SAMPLER_MAP_ORM          = 4,
+
+    // Shadow maps
+    R3D_SHADER_SAMPLER_SHADOW_DIR       = 10,
+    R3D_SHADER_SAMPLER_SHADOW_SPOT      = 11,
+    R3D_SHADER_SAMPLER_SHADOW_OMNI      = 12,
+
+    // IBL maps
+    R3D_SHADER_SAMPLER_IBL_IRRADIANCE   = 15,
+    R3D_SHADER_SAMPLER_IBL_PREFILTER    = 16,
+    R3D_SHADER_SAMPLER_IBL_BRDF_LUT     = 17,
+
+    // Scene miscs
+    R3D_SHADER_SAMPLER_BONE_MATRICES    = 20,
+
+    // Buffers
+    R3D_SHADER_SAMPLER_BUFFER_DEPTH     = 25,
+    R3D_SHADER_SAMPLER_BUFFER_ALBEDO    = 26,
+    R3D_SHADER_SAMPLER_BUFFER_NORMAL    = 27,
+    R3D_SHADER_SAMPLER_BUFFER_ORM       = 28,
+    R3D_SHADER_SAMPLER_BUFFER_DIFFUSE   = 29,
+    R3D_SHADER_SAMPLER_BUFFER_SPECULAR  = 30,
+    R3D_SHADER_SAMPLER_BUFFER_SSAO      = 31,
+    R3D_SHADER_SAMPLER_BUFFER_SSIL      = 32,
+    R3D_SHADER_SAMPLER_BUFFER_SSR       = 33,
+    R3D_SHADER_SAMPLER_BUFFER_BLOOM     = 34,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE     = 35,
+
+    // Unamed for special passes
+    R3D_SHADER_SAMPLER_SOURCE_2D        = 50,
+    R3D_SHADER_SAMPLER_SOURCE_CUBE      = 55,
+
+    // Sentinel
+    R3D_SHADER_SAMPLER_COUNT
+
+} r3d_shader_sampler_t;
+
+// ========================================
+// SAMPLER TYPES
+// ========================================
+
+static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
+{
+    [R3D_SHADER_SAMPLER_MAP_ALBEDO]       = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_MAP_EMISSION]     = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_MAP_NORMAL]       = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_MAP_ORM]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SHADOW_DIR]       = GL_TEXTURE_2D_ARRAY,
+    [R3D_SHADER_SAMPLER_SHADOW_SPOT]      = GL_TEXTURE_2D_ARRAY,
+    [R3D_SHADER_SAMPLER_SHADOW_OMNI]      = GL_TEXTURE_CUBE_MAP_ARRAY,
+    [R3D_SHADER_SAMPLER_IBL_IRRADIANCE]   = GL_TEXTURE_CUBE_MAP_ARRAY,
+    [R3D_SHADER_SAMPLER_IBL_PREFILTER]    = GL_TEXTURE_CUBE_MAP_ARRAY,
+    [R3D_SHADER_SAMPLER_IBL_BRDF_LUT]     = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BONE_MATRICES]    = GL_TEXTURE_1D,
+    [R3D_SHADER_SAMPLER_BUFFER_DEPTH]     = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_ALBEDO]    = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_NORMAL]    = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_ORM]       = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_DIFFUSE]   = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]  = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SSAO]      = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SSIL]      = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SSR]       = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_BLOOM]     = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SCENE]     = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SOURCE_2D]        = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SOURCE_CUBE]      = GL_TEXTURE_CUBE_MAP,
+};
+
+// ========================================
 // UNIFORMS TYPES
 // ========================================
 
-typedef struct { int slot1D; int loc; } r3d_shader_uniform_sampler1D_t;
-typedef struct { int slot2D; int loc; } r3d_shader_uniform_sampler2D_t;
-typedef struct { int slotCube; int loc; } r3d_shader_uniform_samplerCube_t;
-typedef struct { int slot2DArr; int loc; } r3d_shader_uniform_sampler2DArray_t;
-typedef struct { int slotCubeArr; int loc; } r3d_shader_uniform_samplerCubeArray_t;
+/* Represents any sampler type, stores only the corresponding texture slot */
+typedef struct { int slot; } r3d_shader_uniform_sampler_t;
 
+/* Represents scalars (bool/int and float), stores the value and uniform location */
 typedef struct { int val; int loc; } r3d_shader_uniform_int_t;
 typedef struct { float val; int loc; } r3d_shader_uniform_float_t;
+
+/* Represents vectors, stores the value and uniform location */
 typedef struct { Vector2 val; int loc; } r3d_shader_uniform_vec2_t;
 typedef struct { Vector3 val; int loc; } r3d_shader_uniform_vec3_t;
 typedef struct { Vector4 val; int loc; } r3d_shader_uniform_vec4_t;
 
-typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uniform_col3_t; //< Represents a vec3
-typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uniform_col4_t; //< Represents a vec4
+/* Represents SDR color vectors plus the color space they should be interpreted in */
+typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uniform_col3_t;
+typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uniform_col4_t;
 
+/* Represents matrices, stores only the uniform location for efficiency */
 typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 
 // ========================================
@@ -283,28 +317,28 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSourceTex;
-    r3d_shader_uniform_sampler2D_t uNormalTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uStepSize;
 } r3d_shader_prepare_atrous_wavelet_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSourceTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uSourceLod;
 } r3d_shader_prepare_blur_down_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSourceTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uSourceLod;
 } r3d_shader_prepare_blur_up_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uNormalTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uSampleCount;
     r3d_shader_uniform_float_t uRadius;
     r3d_shader_uniform_float_t uBias;
@@ -314,10 +348,10 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uLightingTex;
-    r3d_shader_uniform_sampler2D_t uHistoryTex;
-    r3d_shader_uniform_sampler2D_t uNormalTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uLightingTex;
+    r3d_shader_uniform_sampler_t uHistoryTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_float_t uSampleCount;
     r3d_shader_uniform_float_t uSampleRadius;
     r3d_shader_uniform_float_t uSliceCount;
@@ -330,11 +364,11 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uLightingTex;
-    r3d_shader_uniform_sampler2D_t uAlbedoTex;
-    r3d_shader_uniform_sampler2D_t uNormalTex;
-    r3d_shader_uniform_sampler2D_t uOrmTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uLightingTex;
+    r3d_shader_uniform_sampler_t uAlbedoTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uOrmTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uMaxRaySteps;
     r3d_shader_uniform_int_t uBinarySearchSteps;
     r3d_shader_uniform_float_t uRayMarchLength;
@@ -348,7 +382,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexture;
+    r3d_shader_uniform_sampler_t uTexture;
     r3d_shader_uniform_vec2_t uTexelSize;
     r3d_shader_uniform_vec4_t uPrefilter;
     r3d_shader_uniform_int_t uDstLevel;
@@ -356,14 +390,14 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uTexture;
+    r3d_shader_uniform_sampler_t uTexture;
     r3d_shader_uniform_vec2_t uFilterRadius;
     r3d_shader_uniform_float_t uSrcLevel;
 } r3d_shader_prepare_bloom_up_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_samplerCube_t uSourceTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_float_t uSourceTexel;
     r3d_shader_uniform_float_t uSourceLod;
     r3d_shader_uniform_int_t uSourceFace;
@@ -373,21 +407,21 @@ typedef struct {
     unsigned int id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
-    r3d_shader_uniform_sampler2D_t uPanoramaTex;
+    r3d_shader_uniform_sampler_t uPanoramaTex;
 } r3d_shader_prepare_cubemap_from_equirectangular_t;
 
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
-    r3d_shader_uniform_samplerCube_t uSourceTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
 } r3d_shader_prepare_cubemap_irradiance_t;
 
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
-    r3d_shader_uniform_samplerCube_t uSourceTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_float_t uSourceNumLevels;
     r3d_shader_uniform_float_t uSourceFaceSize;
     r3d_shader_uniform_float_t uRoughness;
@@ -414,7 +448,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_col4_t uAlbedoColor;
@@ -425,10 +459,10 @@ typedef struct {
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
-    r3d_shader_uniform_sampler2D_t uAlbedoMap;
-    r3d_shader_uniform_sampler2D_t uNormalMap;
-    r3d_shader_uniform_sampler2D_t uEmissionMap;
-    r3d_shader_uniform_sampler2D_t uOrmMap;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
+    r3d_shader_uniform_sampler_t uNormalMap;
+    r3d_shader_uniform_sampler_t uEmissionMap;
+    r3d_shader_uniform_sampler_t uOrmMap;
     r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;
@@ -438,7 +472,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_col4_t uAlbedoColor;
@@ -449,16 +483,16 @@ typedef struct {
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
-    r3d_shader_uniform_sampler2D_t uAlbedoMap;
-    r3d_shader_uniform_sampler2D_t uEmissionMap;
-    r3d_shader_uniform_sampler2D_t uNormalMap;
-    r3d_shader_uniform_sampler2D_t uOrmMap;
-    r3d_shader_uniform_sampler2DArray_t uShadowDirTex;
-    r3d_shader_uniform_sampler2DArray_t uShadowSpotTex;
-    r3d_shader_uniform_samplerCubeArray_t uShadowOmniTex;
-    r3d_shader_uniform_samplerCubeArray_t uIrradianceTex;
-    r3d_shader_uniform_samplerCubeArray_t uPrefilterTex;
-    r3d_shader_uniform_sampler2D_t uBrdfLutTex;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
+    r3d_shader_uniform_sampler_t uEmissionMap;
+    r3d_shader_uniform_sampler_t uNormalMap;
+    r3d_shader_uniform_sampler_t uOrmMap;
+    r3d_shader_uniform_sampler_t uShadowDirTex;
+    r3d_shader_uniform_sampler_t uShadowSpotTex;
+    r3d_shader_uniform_sampler_t uShadowOmniTex;
+    r3d_shader_uniform_sampler_t uIrradianceTex;
+    r3d_shader_uniform_sampler_t uPrefilterTex;
+    r3d_shader_uniform_sampler_t uBrdfLutTex;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
@@ -468,7 +502,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatViewProj;
@@ -478,13 +512,13 @@ typedef struct {
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
-    r3d_shader_uniform_sampler2D_t uAlbedoMap;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
     r3d_shader_uniform_float_t uAlphaCutoff;
 } r3d_shader_scene_depth_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatViewProj;
@@ -494,7 +528,7 @@ typedef struct {
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
-    r3d_shader_uniform_sampler2D_t uAlbedoMap;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
     r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_vec3_t uViewPosition;
     r3d_shader_uniform_float_t uFar;
@@ -502,7 +536,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -515,16 +549,16 @@ typedef struct {
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
-    r3d_shader_uniform_sampler2D_t uAlbedoMap;
-    r3d_shader_uniform_sampler2D_t uEmissionMap;
-    r3d_shader_uniform_sampler2D_t uNormalMap;
-    r3d_shader_uniform_sampler2D_t uOrmMap;
-    r3d_shader_uniform_sampler2DArray_t uShadowDirTex;
-    r3d_shader_uniform_sampler2DArray_t uShadowSpotTex;
-    r3d_shader_uniform_samplerCubeArray_t uShadowOmniTex;
-    r3d_shader_uniform_samplerCubeArray_t uIrradianceTex;
-    r3d_shader_uniform_samplerCubeArray_t uPrefilterTex;
-    r3d_shader_uniform_sampler2D_t uBrdfLutTex;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
+    r3d_shader_uniform_sampler_t uEmissionMap;
+    r3d_shader_uniform_sampler_t uNormalMap;
+    r3d_shader_uniform_sampler_t uOrmMap;
+    r3d_shader_uniform_sampler_t uShadowDirTex;
+    r3d_shader_uniform_sampler_t uShadowSpotTex;
+    r3d_shader_uniform_sampler_t uShadowOmniTex;
+    r3d_shader_uniform_sampler_t uIrradianceTex;
+    r3d_shader_uniform_sampler_t uPrefilterTex;
+    r3d_shader_uniform_sampler_t uBrdfLutTex;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
@@ -543,11 +577,11 @@ typedef struct {
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
-    r3d_shader_uniform_sampler2D_t uAlbedoMap;
-    r3d_shader_uniform_sampler2D_t uNormalMap;
-    r3d_shader_uniform_sampler2D_t uEmissionMap;
-    r3d_shader_uniform_sampler2D_t uOrmMap;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
+    r3d_shader_uniform_sampler_t uNormalMap;
+    r3d_shader_uniform_sampler_t uEmissionMap;
+    r3d_shader_uniform_sampler_t uOrmMap;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;
@@ -565,56 +599,56 @@ typedef struct {
     r3d_shader_uniform_vec4_t uRotation;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_mat4_t uMatProj;
-    r3d_shader_uniform_samplerCube_t uSkyMap;
+    r3d_shader_uniform_sampler_t uSkyMap;
     r3d_shader_uniform_float_t uSkyEnergy;
 } r3d_shader_scene_skybox_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uAlbedoTex;
-    r3d_shader_uniform_sampler2D_t uNormalTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
-    r3d_shader_uniform_sampler2D_t uSsaoTex;
-    r3d_shader_uniform_sampler2D_t uSsilTex;
-    r3d_shader_uniform_sampler2D_t uSsrTex;
-    r3d_shader_uniform_sampler2D_t uOrmTex;
-    r3d_shader_uniform_samplerCubeArray_t uIrradianceTex;
-    r3d_shader_uniform_samplerCubeArray_t uPrefilterTex;
-    r3d_shader_uniform_sampler2D_t uBrdfLutTex;
+    r3d_shader_uniform_sampler_t uAlbedoTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_sampler_t uSsaoTex;
+    r3d_shader_uniform_sampler_t uSsilTex;
+    r3d_shader_uniform_sampler_t uSsrTex;
+    r3d_shader_uniform_sampler_t uOrmTex;
+    r3d_shader_uniform_sampler_t uIrradianceTex;
+    r3d_shader_uniform_sampler_t uPrefilterTex;
+    r3d_shader_uniform_sampler_t uBrdfLutTex;
     r3d_shader_uniform_float_t uMipCountSSR;
 } r3d_shader_deferred_ambient_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uAlbedoTex;
-    r3d_shader_uniform_sampler2D_t uNormalTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
-    r3d_shader_uniform_sampler2D_t uSsaoTex;
-    r3d_shader_uniform_sampler2D_t uOrmTex;
-    r3d_shader_uniform_sampler2DArray_t uShadowDirTex;
-    r3d_shader_uniform_sampler2DArray_t uShadowSpotTex;
-    r3d_shader_uniform_samplerCubeArray_t uShadowOmniTex;
+    r3d_shader_uniform_sampler_t uAlbedoTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_sampler_t uSsaoTex;
+    r3d_shader_uniform_sampler_t uOrmTex;
+    r3d_shader_uniform_sampler_t uShadowDirTex;
+    r3d_shader_uniform_sampler_t uShadowSpotTex;
+    r3d_shader_uniform_sampler_t uShadowOmniTex;
     r3d_shader_uniform_float_t uSSAOLightAffect;
 } r3d_shader_deferred_lighting_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uDiffuseTex;
-    r3d_shader_uniform_sampler2D_t uSpecularTex;
+    r3d_shader_uniform_sampler_t uDiffuseTex;
+    r3d_shader_uniform_sampler_t uSpecularTex;
 } r3d_shader_deferred_compose_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSceneTex;
-    r3d_shader_uniform_sampler2D_t uBloomTex;
+    r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_sampler_t uBloomTex;
     r3d_shader_uniform_int_t uBloomMode;
     r3d_shader_uniform_float_t uBloomIntensity;
 } r3d_shader_post_bloom_t;
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSceneTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uFogMode;
     r3d_shader_uniform_col3_t uFogColor;
     r3d_shader_uniform_float_t uFogStart;
@@ -625,8 +659,8 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSceneTex;
-    r3d_shader_uniform_sampler2D_t uDepthTex;
+    r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_float_t uFocusPoint;
     r3d_shader_uniform_float_t uFocusScale;
     r3d_shader_uniform_float_t uMaxBlurSize;
@@ -635,7 +669,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSceneTex;
+    r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_float_t uTonemapExposure;
     r3d_shader_uniform_float_t uTonemapWhite;
     r3d_shader_uniform_int_t uTonemapMode;
@@ -646,7 +680,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler2D_t uSourceTex;
+    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_vec2_t uSourceTexel;
 } r3d_shader_post_fxaa_t;
 
@@ -655,6 +689,9 @@ typedef struct {
 // ========================================
 
 extern struct r3d_shader {
+
+    // Samplers state
+    GLuint samplerBindings[R3D_SHADER_SAMPLER_COUNT];
 
     // Uniform buffers
     GLuint uniformBuffers[R3D_SHADER_BLOCK_COUNT];
@@ -849,6 +886,18 @@ bool r3d_shader_init();
  * Called once during `R3D_Close()`
  */
 void r3d_shader_quit();
+
+/*
+ * Binds the texture to the specified sampler.
+ * Called by `R3D_SHADER_BIND_SAMPLER`, no need to call it manually.
+ */
+void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture);
+
+/*
+ * Iterates through all samplers to unbind any textures that were bound.
+ * Must be called at the end of each frame to avoid leaving a dirty state to raylib.
+ */
+void r3d_shader_unbind_samplers(void);
 
 /*
  * Upload and bind the specified uniform block with the provided data.

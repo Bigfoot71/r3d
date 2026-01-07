@@ -623,7 +623,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* viewPr
     /* --- Send skinning related data --- */
 
     if (group->texPose > 0) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.depth, uBoneMatricesTex, group->texPose);
+        R3D_SHADER_BIND_SAMPLER(scene.depth, uBoneMatricesTex, group->texPose);
         R3D_SHADER_SET_INT(scene.depth, uSkinning, true);
     }
     else {
@@ -644,7 +644,7 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* viewPr
 
     /* --- Set transparency material data --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.depth, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.depth, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_SET_COL4(scene.depth, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
@@ -673,10 +673,6 @@ void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* viewPr
         R3D_SHADER_SET_INT(scene.depth, uInstancing, false);
         r3d_draw(call);
     }
-
-    /* --- Unbind samplers --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.depth, uAlbedoMap);
 }
 
 void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj)
@@ -691,7 +687,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* v
     /* --- Send skinning related data --- */
 
     if (group->texPose > 0) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.depthCube, uBoneMatricesTex, group->texPose);
+        R3D_SHADER_BIND_SAMPLER(scene.depthCube, uBoneMatricesTex, group->texPose);
         R3D_SHADER_SET_INT(scene.depthCube, uSkinning, true);
     }
     else {
@@ -712,7 +708,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* v
 
     /* --- Set transparency material data --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.depthCube, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.depthCube, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_SET_COL4(scene.depthCube, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
 
     if (call->material.transparencyMode == R3D_TRANSPARENCY_PREPASS) {
@@ -747,10 +743,6 @@ void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* v
     rlDisableVertexArray();
     rlDisableVertexBuffer();
     rlDisableVertexBufferElement();
-
-    /* --- Unbind samplers --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.depthCube, uAlbedoMap);
 }
 
 void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj)
@@ -769,7 +761,7 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     /* --- Send skinning related data --- */
 
     if (group->texPose > 0) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.probe, uBoneMatricesTex, group->texPose);
+        R3D_SHADER_BIND_SAMPLER(scene.probe, uBoneMatricesTex, group->texPose);
         R3D_SHADER_SET_INT(scene.probe, uSkinning, true);
     }
     else {
@@ -800,10 +792,10 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.probe, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.probe, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER(scene.probe, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.probe, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -820,13 +812,6 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
         R3D_SHADER_SET_INT(scene.probe, uInstancing, false);
         r3d_draw(call);
     }
-
-    /* --- Unbind all bound texture maps --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uAlbedoMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uNormalMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uEmissionMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uOrmMap);
 }
 
 void raster_geometry(const r3d_draw_call_t* call)
@@ -843,7 +828,7 @@ void raster_geometry(const r3d_draw_call_t* call)
     /* --- Send skinning related data --- */
 
     if (group->texPose > 0) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.geometry, uBoneMatricesTex, group->texPose);
+        R3D_SHADER_BIND_SAMPLER(scene.geometry, uBoneMatricesTex, group->texPose);
         R3D_SHADER_SET_INT(scene.geometry, uSkinning, true);
     }
     else {
@@ -878,10 +863,10 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.geometry, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.geometry, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.geometry, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER(scene.geometry, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.geometry, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -897,13 +882,6 @@ void raster_geometry(const r3d_draw_call_t* call)
         R3D_SHADER_SET_INT(scene.geometry, uInstancing, false);
         r3d_draw(call);
     }
-
-    /* --- Unbind all bound texture maps --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uAlbedoMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uNormalMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uEmissionMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.geometry, uOrmMap);
 }
 
 void raster_decal(const r3d_draw_call_t* call)
@@ -941,10 +919,10 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -965,13 +943,6 @@ void raster_decal(const r3d_draw_call_t* call)
         R3D_SHADER_SET_INT(scene.decal, uInstancing, false);
         r3d_primitive_draw(R3D_PRIMITIVE_CUBE);
     }
-
-    /* --- Unbind all bound texture maps --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uAlbedoMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uNormalMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uEmissionMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uOrmMap);
 }
 
 void raster_forward(const r3d_draw_call_t* call)
@@ -988,7 +959,7 @@ void raster_forward(const r3d_draw_call_t* call)
     /* --- Send skinning related data --- */
 
     if (group->texPose > 0) {
-        R3D_SHADER_BIND_SAMPLER_1D(scene.forward, uBoneMatricesTex, group->texPose);
+        R3D_SHADER_BIND_SAMPLER(scene.forward, uBoneMatricesTex, group->texPose);
         R3D_SHADER_SET_INT(scene.forward, uSkinning, true);
     }
     else {
@@ -1019,10 +990,10 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -1039,13 +1010,6 @@ void raster_forward(const r3d_draw_call_t* call)
         R3D_SHADER_SET_INT(scene.forward, uInstancing, false);
         r3d_draw(call);
     }
-
-    /* --- Unbind all bound texture maps --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uAlbedoMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uNormalMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uEmissionMap);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uOrmMap);
 }
 
 void pass_scene_shadow(void)
@@ -1078,9 +1042,6 @@ void pass_scene_shadow(void)
                 }
                 #undef COND
             }
-
-            // The bone matrices texture may have been bind during drawcalls, so UNBIND!
-            R3D_SHADER_UNBIND_SAMPLER_1D(scene.depthCube, uBoneMatricesTex);
         }
         else {
             r3d_light_shadow_bind_fbo(light->type, light->shadowLayer, 0);
@@ -1095,9 +1056,6 @@ void pass_scene_shadow(void)
                 raster_depth(call, true, &light->viewProj[0]);
             }
             #undef COND
-
-            // The bone matrices texture may have been bind during drawcalls, so UNBIND!
-            R3D_SHADER_UNBIND_SAMPLER_1D(scene.depth, uBoneMatricesTex);
         }
     }
 }
@@ -1137,13 +1095,13 @@ void pass_scene_probes(void)
             glDepthMask(GL_TRUE);
             glEnable(GL_BLEND);
 
-            R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.probe, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
-            R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.probe, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
-            R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.probe, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+            R3D_SHADER_BIND_SAMPLER(scene.probe, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
+            R3D_SHADER_BIND_SAMPLER(scene.probe, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+            R3D_SHADER_BIND_SAMPLER(scene.probe, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
 
-            R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.probe, uIrradianceTex, r3d_env_irradiance_get());
-            R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.probe, uPrefilterTex, r3d_env_prefilter_get());
-            R3D_SHADER_BIND_SAMPLER_2D(scene.probe, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+            R3D_SHADER_BIND_SAMPLER(scene.probe, uIrradianceTex, r3d_env_irradiance_get());
+            R3D_SHADER_BIND_SAMPLER(scene.probe, uPrefilterTex, r3d_env_prefilter_get());
+            R3D_SHADER_BIND_SAMPLER(scene.probe, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
             R3D_SHADER_SET_VEC3(scene.probe, uViewPosition, probe->position);
             R3D_SHADER_SET_INT(scene.probe, uProbeInterior, probe->interior);
@@ -1156,17 +1114,6 @@ void pass_scene_probes(void)
                 raster_probe(call, &invView, &viewProj);
             }
 
-            R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.probe, uIrradianceTex);
-            R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.probe, uPrefilterTex);
-            R3D_SHADER_UNBIND_SAMPLER_2D(scene.probe, uBrdfLutTex);
-
-            R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.probe, uShadowDirTex);
-            R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.probe, uShadowSpotTex);
-            R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.probe, uShadowOmniTex);
-
-            // NOTE: The storage texture of the matrices may have been bind during drawcalls
-            R3D_SHADER_UNBIND_SAMPLER_1D(scene.probe, uBoneMatricesTex);
-
             /* --- Render background --- */
 
             glDepthMask(GL_FALSE);
@@ -1176,15 +1123,13 @@ void pass_scene_probes(void)
                 R3D_SHADER_USE(scene.skybox);
                 glDisable(GL_CULL_FACE);
 
-                R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
+                R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
                 R3D_SHADER_SET_FLOAT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
                 R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatView, probe->view[iFace]);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatProj, probe->proj[iFace]);
 
                 R3D_PRIMITIVE_DRAW_CUBE();
-
-                R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
             }
             else {
                 Vector4 background = r3d_color_to_linear_scaled_vec4(
@@ -1203,7 +1148,7 @@ void pass_scene_probes(void)
             glDisable(GL_DEPTH_TEST);
             glDisable(GL_BLEND);
 
-            R3D_SHADER_BIND_SAMPLER_CUBE(prepare.cubefaceDown, uSourceTex, r3d_env_capture_get());
+            R3D_SHADER_BIND_SAMPLER(prepare.cubefaceDown, uSourceTex, r3d_env_capture_get());
             R3D_SHADER_SET_INT(prepare.cubefaceDown, uSourceFace, iFace);
 
             for (int mipLevel = 1; mipLevel < R3D_ENV_CAPTURE_MIPS; mipLevel++) {
@@ -1212,8 +1157,6 @@ void pass_scene_probes(void)
                 R3D_SHADER_SET_FLOAT(prepare.cubefaceDown, uSourceLod, mipLevel - 1);
                 R3D_PRIMITIVE_DRAW_SCREEN();
             }
-
-            R3D_SHADER_UNBIND_SAMPLER_CUBE(prepare.cubefaceDown, uSourceTex);
         }
 
         /* --- Generate irradiance and prefilter maps --- */
@@ -1242,9 +1185,6 @@ void pass_scene_geometry(void)
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DEFERRED_INST, R3D_DRAW_DEFERRED) {
         raster_geometry(call);
     }
-
-    // The bone matrices texture may have been bind during drawcalls, so UNBIND!
-    R3D_SHADER_UNBIND_SAMPLER_1D(scene.geometry, uBoneMatricesTex);
 }
 
 void pass_scene_prepass(void)
@@ -1275,9 +1215,6 @@ void pass_scene_prepass(void)
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS) {
         raster_geometry(call);
     }
-
-    // NOTE: The storage texture of the matrices may have been bind during drawcalls
-    R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uBoneMatricesTex);
 }
 
 void pass_scene_decals(void)
@@ -1290,14 +1227,12 @@ void pass_scene_decals(void)
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
 
-    R3D_SHADER_BIND_SAMPLER_2D(scene.decal, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DECAL_INST, R3D_DRAW_DECAL) {
         raster_decal(call);
     }
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.decal, uDepthTex);
 }
 
 r3d_target_t pass_prepare_ssao(void)
@@ -1319,31 +1254,24 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.environment.ssao.intensity);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uPower, R3D.environment.ssao.power);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssao, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssao, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uNormalTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssao, uDepthTex);
 
     /* --- Denoise SSAO --- */
 
     R3D_SHADER_USE(prepare.atrousWavelet);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     for (int i = 0; i < 3; i++) {
         R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
-        R3D_SHADER_BIND_SAMPLER_2D(prepare.atrousWavelet, uSourceTex, r3d_target_get(ssaoTarget));
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(ssaoTarget));
         R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepSize, 1 << i);
         R3D_PRIMITIVE_DRAW_SCREEN();
     }
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.atrousWavelet, uSourceTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.atrousWavelet, uNormalTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.atrousWavelet, uDepthTex);
 
     return r3d_target_swap_ssao(ssaoTarget);
 }
@@ -1375,10 +1303,10 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_TARGET_BIND(SSIL_CURRENT);
     R3D_SHADER_USE(prepare.ssil);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uHistoryTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(SSIL_HISTORY), BLACK));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssil, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uHistoryTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(SSIL_HISTORY), BLACK));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleCount, (float)R3D.environment.ssil.sampleCount);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleRadius, R3D.environment.ssil.sampleRadius);
@@ -1391,11 +1319,6 @@ r3d_target_t pass_prepare_ssil(void)
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uLightingTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uHistoryTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uNormalTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssil, uDepthTex);
-
     /* --- Blur SSIL (Dual Filtering) --- */
 
     r3d_target_t SSIL_MIP = R3D_TARGET_SSIL_MIP;
@@ -1407,7 +1330,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     // Downsample
     R3D_SHADER_USE(prepare.blurDown);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uSourceTex, r3d_target_get(SSIL_CURRENT));
+    R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(SSIL_CURRENT));
     for (int mipLevel = 1; mipLevel < mipMax; mipLevel++)
     {
         int dstW, dstH;
@@ -1419,14 +1342,13 @@ r3d_target_t pass_prepare_ssil(void)
         R3D_PRIMITIVE_DRAW_SCREEN();
 
         if (mipLevel == 1) {
-            R3D_SHADER_BIND_SAMPLER_2D(prepare.blurDown, uSourceTex, r3d_target_get(SSIL_MIP));
+            R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(SSIL_MIP));
         }
     }
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurDown, uSourceTex);
 
     // Upsample
     R3D_SHADER_USE(prepare.blurUp);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.blurUp, uSourceTex, r3d_target_get(SSIL_MIP));
+    R3D_SHADER_BIND_SAMPLER(prepare.blurUp, uSourceTex, r3d_target_get(SSIL_MIP));
     for (int mipLevel = mipMax - 2; mipLevel >= 0; mipLevel--)
     {
         int dstW, dstH;
@@ -1437,7 +1359,6 @@ r3d_target_t pass_prepare_ssil(void)
         R3D_SHADER_SET_INT(prepare.blurUp, uSourceLod, mipLevel + 1);
         R3D_PRIMITIVE_DRAW_SCREEN();
     }
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.blurUp, uSourceTex);
 
     /* --- Swap history --- */
 
@@ -1459,11 +1380,11 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_TARGET_BIND(R3D_TARGET_SSR);
     R3D_SHADER_USE(prepare.ssr);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.ssr, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_INT(prepare.ssr, uMaxRaySteps, R3D.environment.ssr.maxRaySteps);
     R3D_SHADER_SET_INT(prepare.ssr, uBinarySearchSteps, R3D.environment.ssr.binarySearchSteps);
@@ -1477,12 +1398,6 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_SHADER_SET_FLOAT(prepare.ssr, uAmbientEnergy, R3D.environment.ambient.energy);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uLightingTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uAlbedoTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uNormalTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uOrmTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.ssr, uDepthTex);
 
     r3d_target_gen_mipmap(R3D_TARGET_SSR);
 
@@ -1509,15 +1424,15 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
 
     R3D_SHADER_USE(deferred.lighting);
 
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.lighting, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
 
-    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
-    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
-    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(deferred.lighting, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
 
     R3D_SHADER_SET_FLOAT(deferred.lighting, uSSAOLightAffect, R3D.environment.ssao.lightAffect);
 
@@ -1561,17 +1476,6 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
         R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
-    /* --- Unbind all textures --- */
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uAlbedoTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uNormalTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uDepthTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.lighting, uOrmTex);
-
-    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowDirTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(deferred.lighting, uShadowSpotTex);
-    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(deferred.lighting, uShadowOmniTex);
-
     /* --- Reset undesired state --- */
 
     glDisable(GL_SCISSOR_TEST);
@@ -1591,30 +1495,19 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_TARGET_BIND(R3D_TARGET_LIGHTING);
     R3D_SHADER_USE(deferred.ambient);
 
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uSsrTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssrSource), BLANK));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
-    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(deferred.ambient, uIrradianceTex, r3d_env_irradiance_get());
-    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(deferred.ambient, uPrefilterTex, r3d_env_prefilter_get());
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.ambient, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsrTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssrSource), BLANK));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uIrradianceTex, r3d_env_irradiance_get());
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uPrefilterTex, r3d_env_prefilter_get());
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
     R3D_SHADER_SET_FLOAT(deferred.ambient, uMipCountSSR, (float)r3d_target_get_mip_count(R3D_TARGET_SSR));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uAlbedoTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uNormalTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uDepthTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uSsaoTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uSsilTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uSsrTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uOrmTex);
-    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(deferred.ambient, uIrradianceTex);
-    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(deferred.ambient, uPrefilterTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.ambient, uBrdfLutTex);
 }
 
 void pass_deferred_compose(r3d_target_t sceneTarget)
@@ -1628,13 +1521,10 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE(deferred.compose);
 
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uDiffuseTex, r3d_target_get(R3D_TARGET_DIFFUSE));
-    R3D_SHADER_BIND_SAMPLER_2D(deferred.compose, uSpecularTex, r3d_target_get(R3D_TARGET_SPECULAR));
+    R3D_SHADER_BIND_SAMPLER(deferred.compose, uDiffuseTex, r3d_target_get(R3D_TARGET_DIFFUSE));
+    R3D_SHADER_BIND_SAMPLER(deferred.compose, uSpecularTex, r3d_target_get(R3D_TARGET_SPECULAR));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uDiffuseTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uSpecularTex);
 }
 
 void pass_scene_forward(r3d_target_t sceneTarget)
@@ -1647,13 +1537,13 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
 
-    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.forward, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
-    R3D_SHADER_BIND_SAMPLER_2D_ARRAY(scene.forward, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
-    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.forward, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
 
-    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex, r3d_env_irradiance_get());
-    R3D_SHADER_BIND_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex, r3d_env_prefilter_get());
-    R3D_SHADER_BIND_SAMPLER_2D(scene.forward, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uIrradianceTex, r3d_env_irradiance_get());
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uPrefilterTex, r3d_env_prefilter_get());
+    R3D_SHADER_BIND_SAMPLER(scene.forward, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
     R3D_SHADER_SET_VEC3(scene.forward, uViewPosition, R3D.viewState.viewPosition);
 
@@ -1662,17 +1552,6 @@ void pass_scene_forward(r3d_target_t sceneTarget)
         upload_light_array_block_for_mesh(call, true);
         raster_forward(call);
     }
-
-    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.forward, uShadowDirTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D_ARRAY(scene.forward, uShadowSpotTex);
-    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uShadowOmniTex);
-
-    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uIrradianceTex);
-    R3D_SHADER_UNBIND_SAMPLER_CUBE_ARRAY(scene.forward, uPrefilterTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(scene.forward, uBrdfLutTex);
-
-    // NOTE: The storage texture of the matrices may have been bind during drawcalls
-    R3D_SHADER_UNBIND_SAMPLER_1D(scene.forward, uBoneMatricesTex);
 }
 
 void pass_scene_background(r3d_target_t sceneTarget)
@@ -1688,15 +1567,13 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_USE(scene.skybox);
         glDisable(GL_CULL_FACE);
 
-        R3D_SHADER_BIND_SAMPLER_CUBE(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
+        R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
         R3D_SHADER_SET_FLOAT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
         R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatView, R3D.viewState.view);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatProj, R3D.viewState.proj);
 
         R3D_PRIMITIVE_DRAW_CUBE();
-
-        R3D_SHADER_UNBIND_SAMPLER_CUBE(scene.skybox, uSkyMap);
     }
     else {
         Vector4 background = r3d_color_to_linear_scaled_vec4(
@@ -1723,8 +1600,8 @@ r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE(post.fog);
 
-    R3D_SHADER_BIND_SAMPLER_2D(post.fog, uSceneTex, r3d_target_get(sceneTarget));
-    R3D_SHADER_BIND_SAMPLER_2D(post.fog, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(post.fog, uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(post.fog, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_INT(post.fog, uFogMode, R3D.environment.fog.mode);
     R3D_SHADER_SET_COL3(post.fog, uFogColor, R3D.colorSpace, R3D.environment.fog.color);
@@ -1735,9 +1612,6 @@ r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.fog, uSceneTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.fog, uDepthTex);
-
     return sceneTarget;
 }
 
@@ -1746,8 +1620,8 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE(post.dof);
 
-    R3D_SHADER_BIND_SAMPLER_2D(post.dof, uSceneTex, r3d_target_get(sceneTarget));
-    R3D_SHADER_BIND_SAMPLER_2D(post.dof, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(post.dof, uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(post.dof, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_FLOAT(post.dof, uFocusPoint, R3D.environment.dof.focusPoint);
     R3D_SHADER_SET_FLOAT(post.dof, uFocusScale, R3D.environment.dof.focusScale);
@@ -1755,9 +1629,6 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_SET_INT(post.dof, uDebugMode, R3D.environment.dof.debugMode);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.dof, uSceneTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.dof, uDepthTex);
 
     return sceneTarget;
 }
@@ -1800,7 +1671,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, 0);
     r3d_target_set_mip_level(0, 0);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, sceneSourceID);
+    R3D_SHADER_BIND_SAMPLER(prepare.bloomDown, uTexture, sceneSourceID);
 
     R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {txSrcW, txSrcH});
     R3D_SHADER_SET_VEC4(prepare.bloomDown, uPrefilter, prefilter);
@@ -1812,7 +1683,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     // It's okay to sample the target here
     // Given that we'll be sampling a different level from where we're writing
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomDown, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
+    R3D_SHADER_BIND_SAMPLER(prepare.bloomDown, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
 
     for (int dstLevel = 1; dstLevel < maxLevel; dstLevel++)
     {
@@ -1829,8 +1700,6 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
         R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomDown, uTexture);
-
     /* --- Bloom Upsampling --- */
 
     R3D_SHADER_USE(prepare.bloomUp);
@@ -1839,7 +1708,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     glBlendFunc(GL_ONE, GL_ONE);
     glBlendEquation(GL_FUNC_ADD);
 
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.bloomUp, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
+    R3D_SHADER_BIND_SAMPLER(prepare.bloomUp, uTexture, r3d_target_get(R3D_TARGET_BLOOM));
 
     for (int dstLevel = maxLevel - 2; dstLevel >= 0; dstLevel--)
     {
@@ -1857,8 +1726,6 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
         R3D_PRIMITIVE_DRAW_SCREEN();
     }
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.bloomUp, uTexture);
-
     glDisable(GL_BLEND);
 
     /* --- Apply bloom to the scene --- */
@@ -1866,16 +1733,13 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE(post.bloom);
 
-    R3D_SHADER_BIND_SAMPLER_2D(post.bloom, uSceneTex, sceneSourceID);
-    R3D_SHADER_BIND_SAMPLER_2D(post.bloom, uBloomTex, r3d_target_get(R3D_TARGET_BLOOM));
+    R3D_SHADER_BIND_SAMPLER(post.bloom, uSceneTex, sceneSourceID);
+    R3D_SHADER_BIND_SAMPLER(post.bloom, uBloomTex, r3d_target_get(R3D_TARGET_BLOOM));
 
     R3D_SHADER_SET_INT(post.bloom, uBloomMode, R3D.environment.bloom.mode);
     R3D_SHADER_SET_FLOAT(post.bloom, uBloomIntensity, R3D.environment.bloom.intensity);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.bloom, uSceneTex);
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.bloom, uBloomTex);
 
     return sceneTarget;
 }
@@ -1885,7 +1749,7 @@ r3d_target_t pass_post_output(r3d_target_t sceneTarget)
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE(post.output);
 
-    R3D_SHADER_BIND_SAMPLER_2D(post.output, uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(post.output, uSceneTex, r3d_target_get(sceneTarget));
 
     R3D_SHADER_SET_FLOAT(post.output, uTonemapExposure, R3D.environment.tonemap.exposure);
     R3D_SHADER_SET_FLOAT(post.output, uTonemapWhite, R3D.environment.tonemap.white);
@@ -1896,8 +1760,6 @@ r3d_target_t pass_post_output(r3d_target_t sceneTarget)
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.output, uSceneTex);
-
     return sceneTarget;
 }
 
@@ -1906,18 +1768,18 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE(post.fxaa);
 
-    R3D_SHADER_BIND_SAMPLER_2D(post.fxaa, uSourceTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(post.fxaa, uSourceTex, r3d_target_get(sceneTarget));
 
     R3D_SHADER_SET_VEC2(post.fxaa, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_SIZE});
     R3D_PRIMITIVE_DRAW_SCREEN();
-
-    R3D_SHADER_UNBIND_SAMPLER_2D(post.fxaa, uSourceTex);
 
     return sceneTarget;
 }
 
 void reset_raylib_state(void)
 {
+    r3d_shader_unbind_samplers();
+
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);
     glUseProgram(0);
