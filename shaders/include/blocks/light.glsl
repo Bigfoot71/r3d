@@ -6,8 +6,10 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./math.glsl"
-#include "./pbr.glsl"
+/* === Includes === */
+
+#include "../math.glsl"
+#include "../pbr.glsl"
 
 /* === Defines === */
 
@@ -17,6 +19,44 @@
 #define LIGHT_DIR   0
 #define LIGHT_SPOT  1
 #define LIGHT_OMNI  2
+
+/* === Structures === */
+
+struct Light {
+    mat4 viewProj;
+    vec3 color;
+    vec3 position;
+    vec3 direction;
+    float specular;
+    float energy;
+    float range;
+    float near;
+    float far;
+    float attenuation;
+    float innerCutOff;
+    float outerCutOff;
+    float shadowSoftness;
+    float shadowTexelSize;
+    float shadowDepthBias;
+    float shadowSlopeBias;
+    int shadowLayer;
+    bool enabled;
+    bool shadow;
+    int type;
+};
+
+/* === Uniform Block === */
+
+#ifdef NUM_FORWARD_LIGHTS
+layout(std140) uniform LightArrayBlock {
+    Light uLights[NUM_FORWARD_LIGHTS];
+    int uNumLights;
+};
+#else
+layout(std140) uniform LightBlock {
+    Light uLight;
+};
+#endif
 
 /* === Functions === */
 

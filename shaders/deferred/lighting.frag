@@ -14,35 +14,11 @@
 
 /* === Includes === */
 
+#include "../include/blocks/light.glsl"
 #include "../include/blocks/view.glsl"
 #include "../include/light.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
-
-/* === Structs === */
-
-struct Light
-{
-    mat4 viewProj;                  //< View/projection matrix of the light, used for directional and spot shadow projection
-    vec3 color;                     //< Light color modulation tint
-    vec3 position;                  //< Light position (spot/omni)
-    vec3 direction;                 //< Light direction (spot/dir)
-    float specular;                 //< Specular factor (not physically accurate but provides more flexibility)
-    float energy;                   //< Light energy factor
-    float range;                    //< Maximum distance the light can travel before being completely attenuated (spot/omni)
-    float near;                     //< Near plane for the shadow map projection
-    float far;                      //< Far plane for the shadow map projection
-    float attenuation;              //< Additional light attenuation factor (spot/omni)
-    float innerCutOff;              //< Spot light inner cutoff angle
-    float outerCutOff;              //< Spot light outer cutoff angle
-    float shadowSoftness;           //< Softness factor to simulate a penumbra
-    float shadowTexelSize;          //< Size of a texel in the 2D shadow map
-    float shadowDepthBias;          //< Constant depth bias applied to shadow mapping to reduce shadow acne
-    float shadowSlopeBias;          //< Additional bias scaled by surface slope to reduce artifacts on angled geometry
-    int shadowLayer;                //< Index of the layer to be sampled, relative to the light type
-    lowp int type;                  //< Light type (dir/spot/omni)
-    bool shadow;                    //< Indicates whether the light generates shadows
-};
 
 /* === Varyings === */
 
@@ -59,8 +35,6 @@ uniform sampler2D uOrmTex;
 uniform sampler2DArray uShadowDirTex;
 uniform sampler2DArray uShadowSpotTex;
 uniform samplerCubeArray uShadowOmniTex;
-
-uniform Light uLight;
 
 uniform float uSSAOLightAffect;
 

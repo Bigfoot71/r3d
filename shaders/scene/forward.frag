@@ -14,34 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/light.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
-
-/* === Structs === */
-
-struct Light
-{
-    vec3 color;
-    vec3 position;
-    vec3 direction;
-    float specular;
-    float energy;
-    float range;
-    float near;
-    float far;
-    float attenuation;
-    float innerCutOff;
-    float outerCutOff;
-    float shadowSoftness;
-    float shadowTexelSize;
-    float shadowDepthBias;
-    float shadowSlopeBias;
-    int shadowLayer;
-    lowp int type;
-    bool enabled;
-    bool shadow;
-};
 
 /* === Varyings === */
 
@@ -79,10 +53,9 @@ uniform vec3 uViewPosition;
 uniform bool uProbeInterior;
 #endif // PROBE
 
-uniform Light uLights[NUM_FORWARD_LIGHTS];
-
 /* === Blocks === */
 
+#include "../include/blocks/light.glsl"
 #include "../include/blocks/env.glsl"
 
 /* === Constants === */
@@ -243,12 +216,8 @@ void main()
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
 
-    for (int i = 0; i < NUM_FORWARD_LIGHTS; i++)
+    for (int i = 0; i < uNumLights; i++)
     {
-        if (!uLights[i].enabled) {
-            continue;
-        }
-
         Light light = uLights[i];
 
         /* Compute light direction */

@@ -16,6 +16,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/light.glsl"
 #include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
@@ -51,10 +52,6 @@ uniform bool uInstancing;
 
 uniform bool uSkinning;
 uniform int uBillboard;
-
-#if defined(FORWARD) || defined(PROBE)
-uniform mat4 uLightViewProj[NUM_FORWARD_LIGHTS];
-#endif // FORWARD
 
 #if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 uniform mat4 uMatInvView;   // inv view only for billboard modes
@@ -217,8 +214,8 @@ void main()
     vTBN = mat3(T, B, N);
 
 #if defined(FORWARD) || defined(PROBE)
-    for (int i = 0; i < NUM_FORWARD_LIGHTS; i++) {
-        vPosLightSpace[i] = uLightViewProj[i] * vec4(vPosition, 1.0);
+    for (int i = 0; i < uNumLights; i++) {
+        vPosLightSpace[i] = uLights[i].viewProj * vec4(vPosition, 1.0);
     }
 #endif // FORWARD
 

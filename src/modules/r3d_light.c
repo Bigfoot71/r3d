@@ -649,9 +649,9 @@ bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array)
 {
     static int index = 0;
     index = (*light == NULL) ? 0 : index + 1;
-    
+
     if (index >= R3D_MOD_LIGHT.arrays[array].count) return false;
-    
+
     *light = &R3D_MOD_LIGHT.lights[R3D_MOD_LIGHT.arrays[array].lights[index]];
     return true;
 }
@@ -659,7 +659,7 @@ bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array)
 void r3d_light_enable_shadows(r3d_light_t* light)
 {
     if (light->shadow) return;
-    
+
     int layer = -1;
     switch (light->type) {
     case R3D_LIGHT_DIR:
@@ -675,22 +675,22 @@ void r3d_light_enable_shadows(r3d_light_t* light)
         light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_OMNI_SIZE;
         break;
     }
-    
+
     if (layer < 0) {
         TraceLog(LOG_ERROR, "R3D: Failed to reserve shadow layer for light");
         return;
     }
-    
+
+    light->shadowSoftness = 4.0f * light->shadowTexelSize;
+    light->state.shadowShouldBeUpdated = true;
     light->shadowLayer = layer;
     light->shadow = true;
-    light->state.shadowShouldBeUpdated = true;
-    light->shadowSoftness = 4.0f * light->shadowTexelSize;
 }
 
 void r3d_light_disable_shadows(r3d_light_t* light)
 {
     if (!light->shadow) return;
-    
+
     release_shadow_layer(light);
     light->shadow = false;
 }

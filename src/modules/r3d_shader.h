@@ -21,11 +21,13 @@
 // MODULE CONSTANTS
 // ========================================
 
-#define R3D_SHADER_NUM_FORWARD_LIGHTS   8
-#define R3D_SHADER_NUM_PROBES           4
+#define R3D_SHADER_NUM_FORWARD_LIGHTS       8
+#define R3D_SHADER_NUM_PROBES               4
 
-#define R3D_SHADER_BLOCK_VIEW_SLOT      0
-#define R3D_SHADER_BLOCK_ENV_SLOT       1
+#define R3D_SHADER_BLOCK_VIEW_SLOT          0
+#define R3D_SHADER_BLOCK_ENV_SLOT           1
+#define R3D_SHADER_BLOCK_LIGHT_SLOT         2
+#define R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT   3
 
 // ========================================
 // SHADER MANAGEMENT MACROS
@@ -199,6 +201,8 @@ typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 typedef enum {
     R3D_SHADER_BLOCK_VIEW,
     R3D_SHADER_BLOCK_ENV,
+    R3D_SHADER_BLOCK_LIGHT,
+    R3D_SHADER_BLOCK_LIGHT_ARRAY,
     R3D_SHADER_BLOCK_COUNT
 } r3d_shader_block_t;
 
@@ -244,6 +248,34 @@ typedef struct {
     alignas(4) int32_t uNumPrefilterLevels;
 
 } r3d_shader_block_env_t;
+
+typedef struct {
+    alignas(16) Matrix viewProj;
+    alignas(16) Vector3 color;
+    alignas(16) Vector3 position;
+    alignas(16) Vector3 direction;
+    alignas(4) float specular;
+    alignas(4) float energy;
+    alignas(4) float range;
+    alignas(4) float near;
+    alignas(4) float far;
+    alignas(4) float attenuation;
+    alignas(4) float innerCutOff;
+    alignas(4) float outerCutOff;
+    alignas(4) float shadowSoftness;
+    alignas(4) float shadowTexelSize;
+    alignas(4) float shadowDepthBias;
+    alignas(4) float shadowSlopeBias;
+    alignas(4) int32_t shadowLayer;
+    alignas(4) int32_t enabled;
+    alignas(4) int32_t shadow;
+    alignas(4) int32_t type;
+} r3d_shader_block_light_t;
+
+typedef struct {
+    alignas(16) r3d_shader_block_light_t uLights[R3D_SHADER_NUM_FORWARD_LIGHTS];
+    alignas(4) int32_t uNumLights;
+} r3d_shader_block_light_array_t;
 
 // ========================================
 // SHADER STRUCTURES DECLARATIONS
@@ -407,7 +439,6 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uLightViewProj[R3D_SHADER_NUM_FORWARD_LIGHTS];
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_col4_t uAlbedoColor;
@@ -433,27 +464,6 @@ typedef struct {
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
     r3d_shader_uniform_vec3_t uViewPosition;
-    struct {
-        r3d_shader_uniform_vec3_t color;
-        r3d_shader_uniform_vec3_t position;
-        r3d_shader_uniform_vec3_t direction;
-        r3d_shader_uniform_float_t specular;
-        r3d_shader_uniform_float_t energy;
-        r3d_shader_uniform_float_t range;
-        r3d_shader_uniform_float_t near;
-        r3d_shader_uniform_float_t far;
-        r3d_shader_uniform_float_t attenuation;
-        r3d_shader_uniform_float_t innerCutOff;
-        r3d_shader_uniform_float_t outerCutOff;
-        r3d_shader_uniform_float_t shadowSoftness;
-        r3d_shader_uniform_float_t shadowTexelSize;
-        r3d_shader_uniform_float_t shadowDepthBias;
-        r3d_shader_uniform_float_t shadowSlopeBias;
-        r3d_shader_uniform_int_t shadowLayer;
-        r3d_shader_uniform_int_t type;
-        r3d_shader_uniform_int_t enabled;
-        r3d_shader_uniform_int_t shadow;
-    } uLights[R3D_SHADER_NUM_FORWARD_LIGHTS];
 } r3d_shader_scene_forward_t;
 
 typedef struct {
@@ -493,7 +503,6 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler1D_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uLightViewProj[R3D_SHADER_NUM_FORWARD_LIGHTS];
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -522,27 +531,6 @@ typedef struct {
     r3d_shader_uniform_float_t uMetalness;
     r3d_shader_uniform_vec3_t uViewPosition;
     r3d_shader_uniform_int_t uProbeInterior;
-    struct {
-        r3d_shader_uniform_vec3_t color;
-        r3d_shader_uniform_vec3_t position;
-        r3d_shader_uniform_vec3_t direction;
-        r3d_shader_uniform_float_t specular;
-        r3d_shader_uniform_float_t energy;
-        r3d_shader_uniform_float_t range;
-        r3d_shader_uniform_float_t near;
-        r3d_shader_uniform_float_t far;
-        r3d_shader_uniform_float_t attenuation;
-        r3d_shader_uniform_float_t innerCutOff;
-        r3d_shader_uniform_float_t outerCutOff;
-        r3d_shader_uniform_float_t shadowSoftness;
-        r3d_shader_uniform_float_t shadowTexelSize;
-        r3d_shader_uniform_float_t shadowDepthBias;
-        r3d_shader_uniform_float_t shadowSlopeBias;
-        r3d_shader_uniform_int_t shadowLayer;
-        r3d_shader_uniform_int_t type;
-        r3d_shader_uniform_int_t enabled;
-        r3d_shader_uniform_int_t shadow;
-    } uLights[R3D_SHADER_NUM_FORWARD_LIGHTS];
 } r3d_shader_scene_probe_t;
 
 typedef struct {
@@ -598,27 +586,6 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    struct {
-        r3d_shader_uniform_mat4_t viewProj;
-        r3d_shader_uniform_vec3_t color;
-        r3d_shader_uniform_vec3_t position;
-        r3d_shader_uniform_vec3_t direction;
-        r3d_shader_uniform_float_t specular;
-        r3d_shader_uniform_float_t energy;
-        r3d_shader_uniform_float_t range;
-        r3d_shader_uniform_float_t near;
-        r3d_shader_uniform_float_t far;
-        r3d_shader_uniform_float_t attenuation;
-        r3d_shader_uniform_float_t innerCutOff;
-        r3d_shader_uniform_float_t outerCutOff;
-        r3d_shader_uniform_float_t shadowSoftness;
-        r3d_shader_uniform_float_t shadowTexelSize;
-        r3d_shader_uniform_float_t shadowDepthBias;
-        r3d_shader_uniform_float_t shadowSlopeBias;
-        r3d_shader_uniform_int_t shadowLayer;
-        r3d_shader_uniform_int_t type;
-        r3d_shader_uniform_int_t shadow;
-    } uLight;
     r3d_shader_uniform_sampler2D_t uAlbedoTex;
     r3d_shader_uniform_sampler2D_t uNormalTex;
     r3d_shader_uniform_sampler2D_t uDepthTex;

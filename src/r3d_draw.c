@@ -48,8 +48,9 @@
 // ========================================
 
 static void update_view_state(Camera3D camera, double aspect, double near, double far);
-static void upload_view_state(void);
-static void upload_env_state(void);
+static void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow);
+static void upload_view_block(void);
+static void upload_env_block(void);
 
 static void raster_depth(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj);
 static void raster_depth_cube(const r3d_draw_call_t* call, bool shadow, const Matrix* viewProj);
@@ -117,8 +118,8 @@ void R3D_End(void)
 {
     /* --- Upload and bind uniform buffers --- */
 
-    upload_view_state();
-    upload_env_state();
+    upload_view_block();
+    upload_env_block();
 
     /* --- Update and collect all visible lights and probes and them (shadows and probes) --- */
 
@@ -516,7 +517,51 @@ void update_view_state(Camera3D camera, double aspect, double near, double far)
     R3D.viewState.far = far;
 }
 
-void upload_view_state(void)
+void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
+{
+    r3d_shader_block_light_array_t lights = {0};
+
+    R3D_LIGHT_FOR_EACH_VISIBLE(light)
+    {
+        // Check if the geometry "touches" the light area
+        // It's not the most accurate possible but hey
+        if (light->type != R3D_LIGHT_DIR) {
+            if (!CheckCollisionBoxes(light->aabb, call->mesh.aabb)) {
+                continue;
+            }
+        }
+
+        r3d_shader_block_light_t* data = &lights.uLights[lights.uNumLights];
+        data->viewProj = r3d_matrix_transpose(&light->viewProj[0]);
+        data->color = light->color;
+        data->position = light->position;
+        data->direction = light->direction;
+        data->specular = light->specular;
+        data->energy = light->energy;
+        data->range = light->range;
+        data->near = light->near;
+        data->far = light->far;
+        data->attenuation = light->attenuation;
+        data->innerCutOff = light->innerCutOff;
+        data->outerCutOff = light->outerCutOff;
+        data->shadowSoftness = light->shadowSoftness;
+        data->shadowTexelSize = light->shadowTexelSize;
+        data->shadowDepthBias = light->shadowDepthBias;
+        data->shadowSlopeBias = light->shadowSlopeBias;
+        data->shadowLayer = light->shadowLayer;
+        data->enabled = light->enabled;
+        data->shadow = shadow && light->shadow;
+        data->type = light->type;
+
+        if (++lights.uNumLights == R3D_SHADER_NUM_FORWARD_LIGHTS) {
+            break;
+        }
+    }
+
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT_ARRAY, &lights);
+}
+
+void upload_view_block(void)
 {
     r3d_shader_block_view_t view = {
         .viewPosition = R3D.viewState.viewPosition,
@@ -533,7 +578,7 @@ void upload_view_state(void)
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view);
 }
 
-void upload_env_state(void)
+void upload_env_block(void)
 {
     R3D_EnvBackground* background = &R3D.environment.background;
     R3D_EnvAmbient* ambient = &R3D.environment.ambient;
@@ -1057,70 +1102,6 @@ void pass_scene_shadow(void)
     }
 }
 
-static void pass_scene_probe_send_lights(const r3d_draw_call_t* call, bool probeShadows)
-{
-    int iLight = 0;
-
-    R3D_LIGHT_FOR_EACH_VISIBLE(light)
-    {
-        // Check if the geometry "touches" the light area
-        // It's not the most accurate possible but hey
-        if (light->type != R3D_LIGHT_DIR) {
-            if (!CheckCollisionBoxes(light->aabb, call->mesh.aabb)) {
-                continue;
-            }
-        }
-
-        R3D_SHADER_SET_INT(scene.probe, uLights[iLight].enabled, true);
-        R3D_SHADER_SET_INT(scene.probe, uLights[iLight].type, light->type);
-        R3D_SHADER_SET_VEC3(scene.probe, uLights[iLight].color, light->color);
-        R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].specular, light->specular);
-        R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].energy, light->energy);
-
-        if (light->type == R3D_LIGHT_DIR) {
-            R3D_SHADER_SET_VEC3(scene.probe, uLights[iLight].direction, light->direction);
-        }
-        else if (light->type == R3D_LIGHT_SPOT) {
-            R3D_SHADER_SET_VEC3(scene.probe, uLights[iLight].position, light->position);
-            R3D_SHADER_SET_VEC3(scene.probe, uLights[iLight].direction, light->direction);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].range, light->range);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].attenuation, light->attenuation);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].innerCutOff, light->innerCutOff);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].outerCutOff, light->outerCutOff);
-        }
-        else if (light->type == R3D_LIGHT_OMNI) {
-            R3D_SHADER_SET_VEC3(scene.probe, uLights[iLight].position, light->position);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].range, light->range);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].attenuation, light->attenuation);
-        }
-
-        if (light->shadow && probeShadows) {
-            if (light->type != R3D_LIGHT_OMNI) {
-                R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowTexelSize, light->shadowTexelSize);
-                R3D_SHADER_SET_MAT4(scene.probe, uLightViewProj[iLight], light->viewProj);
-            }
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowSoftness, light->shadowSoftness);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowDepthBias, light->shadowDepthBias);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].shadowSlopeBias, light->shadowSlopeBias);
-            R3D_SHADER_SET_INT(scene.probe, uLights[iLight].shadowLayer, light->shadowLayer);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].near, light->near);
-            R3D_SHADER_SET_FLOAT(scene.probe, uLights[iLight].far, light->far);
-            R3D_SHADER_SET_INT(scene.probe, uLights[iLight].shadow, true);
-        }
-        else {
-            R3D_SHADER_SET_INT(scene.probe, uLights[iLight].shadow, false);
-        }
-
-        if (++iLight == R3D_SHADER_NUM_FORWARD_LIGHTS) {
-            break;
-        }
-    }
-
-    for (int i = iLight; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
-        R3D_SHADER_SET_INT(scene.probe, uLights[i].enabled, false);
-    }
-}
-
 void pass_scene_probes(void)
 {
     #define PROBES_DRAW_LISTS   \
@@ -1171,7 +1152,7 @@ void pass_scene_probes(void)
             glClear(GL_DEPTH_BUFFER_BIT);
 
             R3D_DRAW_FOR_EACH(call, true, frustum, PROBES_DRAW_LISTS) {
-                pass_scene_probe_send_lights(call, probe->shadows);
+                upload_light_array_block_for_mesh(call, probe->shadows);
                 raster_probe(call, &invView, &viewProj);
             }
 
@@ -1544,57 +1525,37 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
+        // Send light data to the GPU
+        r3d_shader_block_light_t data = {
+            .viewProj = r3d_matrix_transpose(&light->viewProj[0]),
+            .color = light->color,
+            .position = light->position,
+            .direction = light->direction,
+            .specular = light->specular,
+            .energy = light->energy,
+            .range = light->range,
+            .near = light->near,
+            .far = light->far,
+            .attenuation = light->attenuation,
+            .innerCutOff = light->innerCutOff,
+            .outerCutOff = light->outerCutOff,
+            .shadowSoftness = light->shadowSoftness,
+            .shadowTexelSize = light->shadowTexelSize,
+            .shadowDepthBias = light->shadowDepthBias,
+            .shadowSlopeBias = light->shadowSlopeBias,
+            .shadowLayer = light->shadowLayer,
+            .enabled = light->enabled,
+            .shadow = light->shadow,
+            .type = light->type,
+        };
+        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data);
+
+        // Set scissors rect
         r3d_rect_t dst = {0, 0, R3D_TARGET_WIDTH, R3D_TARGET_HEIGHT};
         if (light->type != R3D_LIGHT_DIR) {
             dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, dst.w, dst.h);
         }
-
         glScissor(dst.x, dst.y, dst.w, dst.h);
-
-        // Sending data common to each type of light
-        R3D_SHADER_SET_VEC3(deferred.lighting, uLight.color, light->color);
-        R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.specular, light->specular);
-        R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.energy, light->energy);
-        R3D_SHADER_SET_INT(deferred.lighting, uLight.type, light->type);
-
-        // Sending specific data according to the type of light
-        if (light->type == R3D_LIGHT_DIR) {
-            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.direction, light->direction);
-        }
-        else if (light->type == R3D_LIGHT_SPOT) {
-            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->position);
-            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.direction, light->direction);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.range, light->range);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.attenuation, light->attenuation);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.innerCutOff, light->innerCutOff);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.outerCutOff, light->outerCutOff);
-        }
-        else if (light->type == R3D_LIGHT_OMNI) {
-            R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->position);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.range, light->range);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.attenuation, light->attenuation);
-        }
-
-        // Sending shadow map data
-        if (light->shadow) {
-            if (light->type != R3D_LIGHT_OMNI) {
-                R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowTexelSize, light->shadowTexelSize);
-                R3D_SHADER_SET_MAT4(deferred.lighting, uLight.viewProj, light->viewProj);
-                if (light->type == R3D_LIGHT_DIR) {
-                    R3D_SHADER_SET_VEC3(deferred.lighting, uLight.position, light->position);
-                }
-            }
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowSoftness, light->shadowSoftness);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowDepthBias, light->shadowDepthBias);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.shadowSlopeBias, light->shadowSlopeBias);
-            R3D_SHADER_SET_INT(deferred.lighting, uLight.shadowLayer, light->shadowLayer);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.near, light->near);
-            R3D_SHADER_SET_FLOAT(deferred.lighting, uLight.far, light->far);
-            R3D_SHADER_SET_INT(deferred.lighting, uLight.shadow, true);
-        }
-        else {
-            R3D_SHADER_SET_INT(deferred.lighting, uLight.shadow, false);
-        }
 
         // Accumulate this light!
         R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1676,70 +1637,6 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
     R3D_SHADER_UNBIND_SAMPLER_2D(deferred.compose, uSpecularTex);
 }
 
-static void pass_scene_forward_send_lights(const r3d_draw_call_t* call)
-{
-    int iLight = 0;
-
-    R3D_LIGHT_FOR_EACH_VISIBLE(light)
-    {
-        // Check if the geometry "touches" the light area
-        // It's not the most accurate possible but hey
-        if (light->type != R3D_LIGHT_DIR) {
-            if (!CheckCollisionBoxes(light->aabb, call->mesh.aabb)) {
-                continue;
-            }
-        }
-
-        R3D_SHADER_SET_INT(scene.forward, uLights[iLight].enabled, true);
-        R3D_SHADER_SET_INT(scene.forward, uLights[iLight].type, light->type);
-        R3D_SHADER_SET_VEC3(scene.forward, uLights[iLight].color, light->color);
-        R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].specular, light->specular);
-        R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].energy, light->energy);
-
-        if (light->type == R3D_LIGHT_DIR) {
-            R3D_SHADER_SET_VEC3(scene.forward, uLights[iLight].direction, light->direction);
-        }
-        else if (light->type == R3D_LIGHT_SPOT) {
-            R3D_SHADER_SET_VEC3(scene.forward, uLights[iLight].position, light->position);
-            R3D_SHADER_SET_VEC3(scene.forward, uLights[iLight].direction, light->direction);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].range, light->range);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].attenuation, light->attenuation);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].innerCutOff, light->innerCutOff);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].outerCutOff, light->outerCutOff);
-        }
-        else if (light->type == R3D_LIGHT_OMNI) {
-            R3D_SHADER_SET_VEC3(scene.forward, uLights[iLight].position, light->position);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].range, light->range);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].attenuation, light->attenuation);
-        }
-
-        if (light->shadow) {
-            if (light->type != R3D_LIGHT_OMNI) {
-                R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowTexelSize, light->shadowTexelSize);
-                R3D_SHADER_SET_MAT4(scene.forward, uLightViewProj[iLight], light->viewProj);
-            }
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowSoftness, light->shadowSoftness);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowDepthBias, light->shadowDepthBias);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].shadowSlopeBias, light->shadowSlopeBias);
-            R3D_SHADER_SET_INT(scene.forward, uLights[iLight].shadowLayer, light->shadowLayer);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].near, light->near);
-            R3D_SHADER_SET_FLOAT(scene.forward, uLights[iLight].far, light->far);
-            R3D_SHADER_SET_INT(scene.forward, uLights[iLight].shadow, true);
-        }
-        else {
-            R3D_SHADER_SET_INT(scene.forward, uLights[iLight].shadow, false);
-        }
-
-        if (++iLight == R3D_SHADER_NUM_FORWARD_LIGHTS) {
-            break;
-        }
-    }
-
-    for (int i = iLight; i < R3D_SHADER_NUM_FORWARD_LIGHTS; i++) {
-        R3D_SHADER_SET_INT(scene.forward, uLights[i].enabled, false);
-    }
-}
-
 void pass_scene_forward(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(sceneTarget, R3D_TARGET_DEPTH);
@@ -1762,7 +1659,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PREPASS_INST, R3D_DRAW_PREPASS, R3D_DRAW_FORWARD_INST, R3D_DRAW_FORWARD) {
-        pass_scene_forward_send_lights(call);
+        upload_light_array_block_for_mesh(call, true);
         raster_forward(call);
     }
 
