@@ -9,6 +9,8 @@
 #ifndef R3D_MODULE_OPENGL_H
 #define R3D_MODULE_OPENGL_H
 
+// TODO: If we're going to do a state cache, it will have to be done here.
+
 #include <raylib.h>
 
 // ========================================
