@@ -48,10 +48,10 @@ static const int R3D_LIGHT_SHADOW_GROWTH[] = {
 
 static bool shadow_pool_init(r3d_light_shadow_pool_t* pool, int initialCapacity)
 {
-    pool->freeLayers = RL_MALLOC(pool->freeCapacity * sizeof(int));
+    pool->freeLayers = RL_MALLOC(initialCapacity * sizeof(int));
     if (!pool->freeLayers) return false;
 
-    pool->freeCapacity = initialCapacity * 2;
+    pool->freeCapacity = initialCapacity;
     pool->freeCount = 0;
     pool->totalLayers = 0;
 
