@@ -125,8 +125,11 @@
 // SAMPLER ENUMS
 // ========================================
 
-// NOTE: Slot '0' is reserved for everything else
-
+/*
+ * Slot '0' is reserved for texture operations exclusively on the client side.
+ * Note that the specification guarantees at least 80 binding slots for textures.
+ * See: https://registry.khronos.org/OpenGL-Refpages/gl4/html/glActiveTexture.xhtml
+ */
 typedef enum {
 
     // Material maps
