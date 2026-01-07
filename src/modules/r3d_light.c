@@ -593,7 +593,7 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
         y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * h, 0.0f);
         w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * w, (float)w) - x;
         h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * h, (float)h) - y;
-        assert(w > 0 && h > 0);
+        assert(w > 0 && h > 0); // should never happen if calculated for visible lights
     }
 
     return (r3d_rect_t) {x, y, w, h};
