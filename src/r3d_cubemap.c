@@ -120,7 +120,7 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 
     R3D_SHADER_USE(prepare.cubemapFromEquirectangular);
     R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatProj, matProj);
-    R3D_SHADER_BIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uPanoramaTex, panorama.id);
+    R3D_SHADER_BIND_SAMPLER(prepare.cubemapFromEquirectangular, uPanoramaTex, panorama.id);
 
     glBindFramebuffer(GL_FRAMEBUFFER, cubemap.fbo);
     glViewport(0, 0, size, size);
@@ -134,7 +134,6 @@ static R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
         R3D_PRIMITIVE_DRAW_CUBE();
     }
 
-    R3D_SHADER_UNBIND_SAMPLER_2D(prepare.cubemapFromEquirectangular, uPanoramaTex);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     UnloadTexture(panorama);
 
@@ -196,8 +195,8 @@ static Image alloc_work_faces_image(Image source, int size)
 
 static R3D_Cubemap load_cubemap_from_line_horizontal(Image image, int size)
 {
-    Image faces = alloc_work_faces_image(image, size);  // ← Passe l'image source
-    
+    Image faces = alloc_work_faces_image(image, size);
+
     for (int i = 0; i < 6; i++) {
         Rectangle srcRect = {(float)i * size, 0, (float)size, (float)size};
         Rectangle dstRect = {0, (float)i * size, (float)size, (float)size};

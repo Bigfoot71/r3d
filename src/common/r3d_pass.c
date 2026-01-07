@@ -25,7 +25,7 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
     const Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     R3D_SHADER_USE(prepare.cubemapIrradiance);
-    R3D_SHADER_BIND_SAMPLER_CUBE(prepare.cubemapIrradiance, uSourceTex, srcCubemap);
+    R3D_SHADER_BIND_SAMPLER(prepare.cubemapIrradiance, uSourceTex, srcCubemap);
 
     R3D_SHADER_SET_MAT4(prepare.cubemapIrradiance, uMatProj, matProj);
 
@@ -38,7 +38,6 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
         R3D_PRIMITIVE_DRAW_CUBE();
     }
 
-    R3D_SHADER_UNBIND_SAMPLER_CUBE(prepare.cubemapIrradiance, uSourceTex);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
@@ -52,7 +51,7 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
     int srcNumLevels = 1 + (int)floor(log2(srcSize));
 
     R3D_SHADER_USE(prepare.cubemapPrefilter);
-    R3D_SHADER_BIND_SAMPLER_CUBE(prepare.cubemapPrefilter, uSourceTex, srcCubemap);
+    R3D_SHADER_BIND_SAMPLER(prepare.cubemapPrefilter, uSourceTex, srcCubemap);
 
     R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatProj, matProj);
     R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceNumLevels, srcNumLevels);
@@ -72,7 +71,6 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
         }
     }
 
-    R3D_SHADER_UNBIND_SAMPLER_CUBE(prepare.cubemapPrefilter, uSourceTex);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
