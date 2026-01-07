@@ -14,33 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/light.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
-
-/* === Structs === */
-
-struct Light
-{
-    vec3 color;
-    vec3 position;
-    vec3 direction;
-    float specular;
-    float energy;
-    float range;
-    float near;
-    float far;
-    float attenuation;
-    float innerCutOff;
-    float outerCutOff;
-    float shadowSoftness;
-    float shadowTexelSize;
-    float shadowDepthBias;
-    float shadowSlopeBias;
-    lowp int type;
-    bool enabled;
-    bool shadow;
-};
 
 /* === Varyings === */
 
@@ -59,8 +34,9 @@ uniform sampler2D uEmissionMap;
 uniform sampler2D uNormalMap;
 uniform sampler2D uOrmMap;
 
-uniform samplerCube uShadowMapCube[NUM_FORWARD_LIGHTS];
-uniform sampler2D uShadowMap2D[NUM_FORWARD_LIGHTS];
+uniform sampler2DArray uShadowDirTex;
+uniform sampler2DArray uShadowSpotTex;
+uniform samplerCubeArray uShadowOmniTex;
 
 uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
@@ -77,10 +53,9 @@ uniform vec3 uViewPosition;
 uniform bool uProbeInterior;
 #endif // PROBE
 
-uniform Light uLights[NUM_FORWARD_LIGHTS];
-
 /* === Blocks === */
 
+#include "../include/blocks/light.glsl"
 #include "../include/blocks/env.glsl"
 
 /* === Constants === */
@@ -125,7 +100,7 @@ float ShadowDir(int i, float cNdotL, mat2 diskRot)
     float shadow = 0.0;
     for (int j = 0; j < SHADOW_SAMPLES; ++j) {
         vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
+        shadow += step(currentDepth, texture(uShadowDirTex, vec3(projCoords.xy + offset, float(light.shadowLayer))).r);
     }
     shadow /= float(SHADOW_SAMPLES);
 
@@ -161,7 +136,7 @@ float ShadowSpot(int i, float cNdotL, mat2 diskRot)
     float shadow = 0.0;
     for (int j = 0; j < SHADOW_SAMPLES; ++j) {
         vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += step(currentDepth, texture(uShadowMap2D[i], projCoords.xy + offset).r);
+        shadow += step(currentDepth, texture(uShadowSpotTex, vec3(projCoords.xy + offset, float(light.shadowLayer))).r);
     }
 
     /* --- Final Shadow Value --- */
@@ -195,7 +170,7 @@ float ShadowOmni(int i, float cNdotL, mat2 diskRot)
     for (int j = 0; j < SHADOW_SAMPLES; ++j) {
         vec2 diskOffset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
         vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
-        float sampleDepth = texture(uShadowMapCube[i], sampleDir).r * light.far;
+        float sampleDepth = texture(uShadowOmniTex, vec4(sampleDir, float(light.shadowLayer))).r * light.far;
         shadow += step(currentDepth, sampleDepth);
     }
 
@@ -241,12 +216,8 @@ void main()
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
 
-    for (int i = 0; i < NUM_FORWARD_LIGHTS; i++)
+    for (int i = 0; i < uNumLights; i++)
     {
-        if (!uLights[i].enabled) {
-            continue;
-        }
-
         Light light = uLights[i];
 
         /* Compute light direction */

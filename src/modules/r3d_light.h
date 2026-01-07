@@ -17,6 +17,20 @@
 #include "../common/r3d_math.h"
 
 // ========================================
+// CONSTANTS
+// ========================================
+
+#define R3D_LIGHT_SHADOW_DIR_SIZE       4096
+#define R3D_LIGHT_SHADOW_SPOT_SIZE      2048
+#define R3D_LIGHT_SHADOW_OMNI_SIZE      2048
+
+#define R3D_LIGHT_INITIAL_CAP           32
+
+#define R3D_LIGHT_SHADOW_DIR_GROWTH     2
+#define R3D_LIGHT_SHADOW_SPOT_GROWTH    4
+#define R3D_LIGHT_SHADOW_OMNI_GROWTH    4
+
+// ========================================
 // HELPER MACROS
 // ========================================
 
@@ -25,7 +39,7 @@
          r3d_light_iter(&light, R3D_LIGHT_ARRAY_VISIBLE); )
 
 // ========================================
-// MODULE STRUCTURES
+// TYPES
 // ========================================
 
 typedef struct {
@@ -37,36 +51,35 @@ typedef struct {
 } r3d_light_state_t;
 
 typedef struct {
-    GLuint fbo, tex;
-    int resolution;
-} r3d_light_shadow_map_t;
 
-typedef struct {
-    Matrix matVP[6];                        //< View/projection matrix of the light (only [0] for dir/spot, 6 for omni lights)
-    r3d_frustum_t frustum[6];               //< Frustum of the light (only [0] for dir/spot, 6 for omni lights) (calculated only if shadows are enabled)
-    BoundingBox aabb;                       //< AABB in world space of the light volume
-    r3d_light_state_t state;                //< Light update config
-    r3d_light_shadow_map_t shadowMap;       //< 2D or Cube shadow map
-    GLuint shadowCubemap;                   //< Cube shadow map used for omni-directional shadow projection
-    Vector3 color;                          //< Light color modulation tint
-    Vector3 position;                       //< Light position (spot/omni)
-    Vector3 direction;                      //< Light direction (spot/dir)
-    float specular;                         //< Specular factor (not physically accurate but provides more flexibility)
-    float energy;                           //< Light energy factor
-    float range;                            //< Maximum distance the light can travel before being completely attenuated (spot/omni)
-    float size;                             //< Light size, currently used only for shadows (PCSS)
-    float near;                             //< Near plane for the shadow map projection
-    float far;                              //< Far plane for the shadow map projection
-    float attenuation;                      //< Additional light attenuation factor (spot/omni)
-    float innerCutOff;                      //< Spot light inner cutoff angle
-    float outerCutOff;                      //< Spot light outer cutoff angle
-    float shadowSoftness;                   //< Softness factor to simulate a penumbra
-    float shadowTexelSize;                  //< Size of a texel in the 2D shadow map
-    float shadowDepthBias;                  //< Constant depth bias applied to shadow mapping to reduce shadow acne
-    float shadowSlopeBias;                  //< Additional bias scaled by surface slope to reduce artifacts on angled geometry
-    R3D_LightType type;                     //< Light type (dir/spot/omni)
-    bool enabled;                           //< Indicates whether the light is on
-    bool shadow;                            //< Indicates whether the light generates shadows
+    r3d_frustum_t frustum[6];   // Frustum (only [0] for dir/spot, 6 for omni)
+    Matrix viewProj[6];         // View/projection matrix (only [0] for dir/spot, 6 for omni)
+    BoundingBox aabb;           // AABB in world space of the light volume
+
+    r3d_light_state_t state;    // Contains the current state useful for the update
+    int shadowLayer;            // Shadow map layer index, -1 if no shadow
+    
+    Vector3 color;
+    Vector3 position;           // Light position (spot/omni)
+    Vector3 direction;          // Light direction (spot/dir)
+    
+    float specular;
+    float energy;
+    float range;                // Maximum distance (spot/omni)
+    float near;                 // Near plane for shadow projection
+    float far;                  // Far plane for shadow projection
+    float attenuation;          // Additional attenuation (spot/omni)
+    float innerCutOff;          // Spot light inner cutoff angle
+    float outerCutOff;          // Spot light outer cutoff angle
+    float shadowSoftness;       // Softness factor for penumbra
+    float shadowTexelSize;      // Size of a texel in shadow map
+    float shadowDepthBias;      // Constant depth bias
+    float shadowSlopeBias;      // Slope-scaled depth bias
+    
+    R3D_LightType type;
+    bool enabled;
+    bool shadow;
+
 } r3d_light_t;
 
 typedef enum {
@@ -81,84 +94,79 @@ typedef struct {
     int count;
 } r3d_light_array_t;
 
+// Shadow layer pool
+typedef struct {
+    int* freeLayers;
+    int freeCount;
+    int freeCapacity;
+    int totalLayers;
+} r3d_light_shadow_pool_t;
+
 // ========================================
 // MODULE STATE
 // ========================================
 
 extern struct r3d_light {
+
+    // Common framebuffer for rendering or copy
+    GLuint workFramebuffer;
+
+    // Shadow map arrays and layer pools
+    GLuint shadowArrays[R3D_LIGHT_TYPE_COUNT];
+    r3d_light_shadow_pool_t shadowPools[R3D_LIGHT_TYPE_COUNT];
+
+    // Light management
     r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
     r3d_light_t* lights;
     int capacityLights;
+
 } R3D_MOD_LIGHT;
 
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
 
-/*
- * Module initialization function.
- * Called once during `R3D_Init()`
- */
+/* Initialize module (called once during R3D_Init) */
 bool r3d_light_init(void);
 
-/*
- * Module deinitialization function.
- * Called once during `R3D_Close()`
- */
+/* Deinitialize module (called once during R3D_Close) */
 void r3d_light_quit(void);
 
-/*
- * Create a new light of the given type.
- * Allocates or reuses an internal slot and initializes default values.
- */
+/* Create a new light of the given type */
 R3D_Light r3d_light_new(R3D_LightType type);
 
-/*
- * Delete a light and return it to the free list.
- * The handle becomes invalid after this call.
- */
+/* Delete a light and return it to the free list */
 void r3d_light_delete(R3D_Light index);
 
-/*
- * Check whether a light handle refers to a valid light.
- */
+/* Check whether a light handle is valid */
 bool r3d_light_is_valid(R3D_Light index);
 
-/*
- * Retrieve the internal light structure from a handle.
- * Returns NULL if the handle is invalid.
- */
+/* Get internal light structure (returns NULL if invalid) */
 r3d_light_t* r3d_light_get(R3D_Light index);
 
-/*
- * Returns the screen-space rectangle covered by the light's influence.
- * Supports SPOT and OMNI lights only, asserts the light is not DIR.
- */
+/* Returns the screen-space rectangle covered by the light's influence */
 r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h);
 
-/*
- * Internal helper to iterate over lights by category.
- * Stateful and not thread-safe.
- */
+/* Iterator for lights by category (stateful, not thread-safe) */
 bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array);
 
-/*
- * Enable shadows for a light and configure shadow parameters.
- * Creates or resizes the shadow map if necessary.
- */
-void r3d_light_enable_shadows(r3d_light_t* light, int resolution);
+/* Enable shadows for a light */
+void r3d_light_enable_shadows(r3d_light_t* light);
 
-/*
- * Update all lights, recompute state, and collect visible lights.
- * Performs frustum culling and shadow updates when needed.
- */
+/* Disable shadows for a light */
+void r3d_light_disable_shadows(r3d_light_t* light);
+
+/* Update all lights and collect visible ones */
 void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPosition);
 
-/*
- * Indicate whether the shadow map should be rendered.
- * The internal update state can be reset after the query.
- */
+/* Check if shadow map should be rendered (updates state if willBeUpdated is true) */
 bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated);
+
+/* Bind shadow framebuffer for a light type */
+void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face);
+
+/* Get a shadow map array texture ID */
+GLuint r3d_light_shadow_get(R3D_LightType type);
 
 // ========================================
 // INLINE QUERIES

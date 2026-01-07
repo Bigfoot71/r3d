@@ -62,13 +62,13 @@ int main(void)
     R3D_Light lights[2];
     lights[0] = R3D_CreateLight(R3D_LIGHT_OMNI);
     R3D_SetLightPosition(lights[0], (Vector3){-10.0f, 25.0f, 0.0f});
-    R3D_EnableShadow(lights[0], 4096);
+    R3D_EnableShadow(lights[0]);
     R3D_SetLightEnergy(lights[0], 1.25f);
     R3D_SetLightActive(lights[0], true);
 
     lights[1] = R3D_CreateLight(R3D_LIGHT_OMNI);
     R3D_SetLightPosition(lights[1], (Vector3){10.0f, 25.0f, 0.0f});
-    R3D_EnableShadow(lights[1], 4096);
+    R3D_EnableShadow(lights[1]);
     R3D_SetLightEnergy(lights[1], 1.25f);
     R3D_SetLightActive(lights[1], true);
 
