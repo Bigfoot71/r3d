@@ -827,6 +827,7 @@ void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture)
         glActiveTexture(GL_TEXTURE0 + sampler);
         glBindTexture(R3D_MOD_SHADER_SAMPLER_TYPES[sampler], texture);
         R3D_MOD_SHADER.samplerBindings[sampler] = texture;
+        glActiveTexture(GL_TEXTURE0);
     }
 }
 
