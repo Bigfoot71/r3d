@@ -30,7 +30,8 @@
 typedef enum R3D_LightType {
     R3D_LIGHT_DIR,                      ///< Directional light, affects the entire scene with parallel rays.
     R3D_LIGHT_SPOT,                     ///< Spot light, emits light in a cone shape.
-    R3D_LIGHT_OMNI                      ///< Omni light, emits light in all directions from a single point.
+    R3D_LIGHT_OMNI,                     ///< Omni light, emits light in all directions from a single point.
+    R3D_LIGHT_TYPE_COUNT
 } R3D_LightType;
 
 /**

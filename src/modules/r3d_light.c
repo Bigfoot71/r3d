@@ -25,17 +25,19 @@ struct r3d_light R3D_MOD_LIGHT;
 
 static bool shadow_pool_init(r3d_light_shadow_pool_t* pool, int initialCapacity)
 {
-    pool->freeCapacity = initialCapacity * 2;
     pool->freeLayers = RL_MALLOC(pool->freeCapacity * sizeof(int));
+    if (!pool->freeLayers) return false;
+
+    pool->freeCapacity = initialCapacity * 2;
     pool->freeCount = 0;
     pool->totalLayers = 0;
-    return (pool->freeLayers != NULL);
+
+    return true;
 }
 
 static void shadow_pool_quit(r3d_light_shadow_pool_t* pool)
 {
     RL_FREE(pool->freeLayers);
-    memset(pool, 0, sizeof(*pool));
 }
 
 static int shadow_pool_reserve(r3d_light_shadow_pool_t* pool)
@@ -80,39 +82,35 @@ static bool shadow_pool_expand(r3d_light_shadow_pool_t* pool, int addCount)
 // SHADOW MAP TEXTURE FUNCTIONS
 // ========================================
 
-static bool allocate_shadow_2d_array(GLuint texture, int size, int layers)
+static bool allocate_shadow_array(GLuint texture, GLenum target, int size, int layers)
 {
-    glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT16,
-                 size, size, layers, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, NULL);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    int actualLayers = (target == GL_TEXTURE_CUBE_MAP_ARRAY) ? layers * 6 : layers;
+
+    glBindTexture(target, texture);
+    glTexImage3D(
+        target, 0, GL_DEPTH_COMPONENT16, size, size, actualLayers,
+        0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, NULL
+    );
+
+    glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+    if (target == GL_TEXTURE_CUBE_MAP_ARRAY) {
+        glTexParameteri(target, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    }
+
+    glBindTexture(target, 0);
     return true;
 }
 
-static bool allocate_shadow_cube_array(GLuint texture, int size, int layers)
-{
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, texture);
-    glTexImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, GL_DEPTH_COMPONENT16,
-                 size, size, layers * 6, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, NULL);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP_ARRAY, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
-    return true;
-}
-
-static bool resize_shadow_2d_array(GLuint* texture, int size, int oldLayers, int newLayers)
+static bool resize_shadow_array(GLuint* texture, GLenum target, int size, int oldLayers, int newLayers)
 {
     GLuint newTexture;
     glGenTextures(1, &newTexture);
 
-    if (!allocate_shadow_2d_array(newTexture, size, newLayers)) {
+    if (!allocate_shadow_array(newTexture, target, size, newLayers)) {
         glDeleteTextures(1, &newTexture);
         return false;
     }
@@ -120,37 +118,13 @@ static bool resize_shadow_2d_array(GLuint* texture, int size, int oldLayers, int
     // Copy existing data
     if (oldLayers > 0) {
         glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_LIGHT.workFramebuffer);
+        int facesPerLayer = (target == GL_TEXTURE_CUBE_MAP_ARRAY) ? 6 : 1;
         for (int layer = 0; layer < oldLayers; layer++) {
-            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *texture, 0, layer);
-            glBindTexture(GL_TEXTURE_2D_ARRAY, newTexture);
-            glCopyTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, 0, 0, size, size);
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    glDeleteTextures(1, texture);
-    *texture = newTexture;
-    return true;
-}
-
-static bool resize_shadow_cube_array(GLuint* texture, int size, int oldLayers, int newLayers)
-{
-    GLuint newTexture;
-    glGenTextures(1, &newTexture);
-
-    if (!allocate_shadow_cube_array(newTexture, size, newLayers)) {
-        glDeleteTextures(1, &newTexture);
-        return false;
-    }
-
-    // Copy existing data
-    if (oldLayers > 0) {
-        glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_LIGHT.workFramebuffer);
-        for (int layer = 0; layer < oldLayers; layer++) {
-            for (int face = 0; face < 6; face++) {
-                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *texture, 0, layer * 6 + face);
-                glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, newTexture);
-                glCopyTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, 0, 0, 0, layer * 6 + face, 0, 0, size, size);
+            for (int face = 0; face < facesPerLayer; face++) {
+                int layerIndex = layer * facesPerLayer + face;
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, *texture, 0, layerIndex);
+                glBindTexture(target, newTexture);
+                glCopyTexSubImage3D(target, 0, 0, 0, layerIndex, 0, 0, size, size);
             }
         }
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -161,39 +135,35 @@ static bool resize_shadow_cube_array(GLuint* texture, int size, int oldLayers, i
     return true;
 }
 
-static bool expand_shadow_dir_capacity(void)
+static bool expand_shadow_array_capacity(R3D_LightType type)
 {
-    r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.dirPool;
-    
-    if (!resize_shadow_2d_array(&R3D_MOD_LIGHT.shadowDirArray, R3D_LIGHT_SHADOW_DIR_SIZE,
-                                pool->totalLayers, pool->totalLayers + R3D_LIGHT_SHADOW_INITIAL_CAP)) {
-        return false;
-    }
-    
-    return shadow_pool_expand(pool, R3D_LIGHT_SHADOW_INITIAL_CAP);
-}
+    r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.shadowPools[type];
+    GLuint* shadowArray = &R3D_MOD_LIGHT.shadowArrays[type];
+    GLenum shadowTarget = GL_NONE;
+    int shadowSize = 0;
 
-static bool expand_shadow_spot_capacity(void)
-{
-    r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.spotPool;
-    
-    if (!resize_shadow_2d_array(&R3D_MOD_LIGHT.shadowSpotArray, R3D_LIGHT_SHADOW_SPOT_SIZE,
-                                pool->totalLayers, pool->totalLayers + R3D_LIGHT_SHADOW_INITIAL_CAP)) {
-        return false;
+    switch (type) {
+    case R3D_LIGHT_DIR:
+        shadowTarget = GL_TEXTURE_2D_ARRAY;
+        shadowSize = R3D_LIGHT_SHADOW_DIR_SIZE;
+        break;
+    case R3D_LIGHT_SPOT:
+        shadowTarget = GL_TEXTURE_2D_ARRAY;
+        shadowSize = R3D_LIGHT_SHADOW_SPOT_SIZE;
+        break;
+    case R3D_LIGHT_OMNI:
+        shadowTarget = GL_TEXTURE_CUBE_MAP_ARRAY;
+        shadowSize = R3D_LIGHT_SHADOW_OMNI_SIZE;
+        break;
+    default:
+        assert(false);
+        break;
     }
-    
-    return shadow_pool_expand(pool, R3D_LIGHT_SHADOW_INITIAL_CAP);
-}
 
-static bool expand_shadow_omni_capacity(void)
-{
-    r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.omniPool;
-    
-    if (!resize_shadow_cube_array(&R3D_MOD_LIGHT.shadowOmniArray, R3D_LIGHT_SHADOW_OMNI_SIZE,
-                                  pool->totalLayers, pool->totalLayers + R3D_LIGHT_SHADOW_INITIAL_CAP)) {
+    if (!resize_shadow_array(shadowArray, shadowTarget, shadowSize, pool->totalLayers, pool->totalLayers + R3D_LIGHT_SHADOW_INITIAL_CAP)) {
         return false;
     }
-    
+
     return shadow_pool_expand(pool, R3D_LIGHT_SHADOW_INITIAL_CAP);
 }
 
@@ -201,53 +171,22 @@ static bool expand_shadow_omni_capacity(void)
 // SHADOW LAYER RESERVATION
 // ========================================
 
-static int reserve_shadow_layer_dir(void)
+static int reserve_shadow_layer(R3D_LightType type)
 {
-    int layer = shadow_pool_reserve(&R3D_MOD_LIGHT.dirPool);
+    int layer = shadow_pool_reserve(&R3D_MOD_LIGHT.shadowPools[type]);
     if (layer < 0) {
-        if (!expand_shadow_dir_capacity()) return -1;
-        layer = shadow_pool_reserve(&R3D_MOD_LIGHT.dirPool);
-    }
-    return layer;
-}
-
-static int reserve_shadow_layer_spot(void)
-{
-    int layer = shadow_pool_reserve(&R3D_MOD_LIGHT.spotPool);
-    if (layer < 0) {
-        if (!expand_shadow_spot_capacity()) return -1;
-        layer = shadow_pool_reserve(&R3D_MOD_LIGHT.spotPool);
-    }
-    return layer;
-}
-
-static int reserve_shadow_layer_omni(void)
-{
-    int layer = shadow_pool_reserve(&R3D_MOD_LIGHT.omniPool);
-    if (layer < 0) {
-        if (!expand_shadow_omni_capacity()) return -1;
-        layer = shadow_pool_reserve(&R3D_MOD_LIGHT.omniPool);
+        if (!expand_shadow_array_capacity(type)) return -1;
+        layer = shadow_pool_reserve(&R3D_MOD_LIGHT.shadowPools[type]);
     }
     return layer;
 }
 
 static void release_shadow_layer(r3d_light_t* light)
 {
-    if (light->shadowLayer < 0) return;
-    
-    switch (light->type) {
-    case R3D_LIGHT_DIR:
-        shadow_pool_release(&R3D_MOD_LIGHT.dirPool, light->shadowLayer);
-        break;
-    case R3D_LIGHT_SPOT:
-        shadow_pool_release(&R3D_MOD_LIGHT.spotPool, light->shadowLayer);
-        break;
-    case R3D_LIGHT_OMNI:
-        shadow_pool_release(&R3D_MOD_LIGHT.omniPool, light->shadowLayer);
-        break;
+    if (light->shadowLayer >= 0) {
+        shadow_pool_release(&R3D_MOD_LIGHT.shadowPools[light->type], light->shadowLayer);
+        light->shadowLayer = -1;
     }
-    
-    light->shadowLayer = -1;
 }
 
 // ========================================
@@ -258,16 +197,14 @@ static bool growth_light_arrays(void)
 {
     int newCapacity = 2 * R3D_MOD_LIGHT.capacityLights;
 
-    r3d_light_t* newLights = RL_REALLOC(R3D_MOD_LIGHT.lights,
-                                        newCapacity * sizeof(*R3D_MOD_LIGHT.lights));
+    r3d_light_t* newLights = RL_REALLOC(R3D_MOD_LIGHT.lights, newCapacity * sizeof(*R3D_MOD_LIGHT.lights));
     if (!newLights) return false;
 
     R3D_MOD_LIGHT.capacityLights = newCapacity;
     R3D_MOD_LIGHT.lights = newLights;
 
     for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
-        R3D_Light* newPtr = RL_REALLOC(R3D_MOD_LIGHT.arrays[i].lights,
-                                       newCapacity * sizeof(R3D_Light));
+        R3D_Light* newPtr = RL_REALLOC(R3D_MOD_LIGHT.arrays[i].lights, newCapacity * sizeof(R3D_Light));
         if (!newPtr) return false;
         R3D_MOD_LIGHT.arrays[i].lights = newPtr;
     }
@@ -275,8 +212,12 @@ static bool growth_light_arrays(void)
     return true;
 }
 
-static void init_light(r3d_light_t* light, R3D_LightType type)
+static bool init_light(r3d_light_t* light, R3D_LightType type)
 {
+    if (type < 0 || type >= R3D_LIGHT_TYPE_COUNT) {
+        return false;
+    }
+
     memset(light, 0, sizeof(*light));
 
     light->type = type;
@@ -307,21 +248,27 @@ static void init_light(r3d_light_t* light, R3D_LightType type)
         .shadowTimerSec = 0.0f
     };
 
-    // Type-specific shadow bias
     switch (type) {
     case R3D_LIGHT_DIR:
+        light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_DIR_SIZE;
         light->shadowDepthBias = 0.0002f;
         light->shadowSlopeBias = 0.002f;
         break;
     case R3D_LIGHT_SPOT:
+        light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_SPOT_SIZE;
         light->shadowDepthBias = 0.00002f;
         light->shadowSlopeBias = 0.0002f;
         break;
     case R3D_LIGHT_OMNI:
+        light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_OMNI_SIZE;
         light->shadowDepthBias = 0.01f;
         light->shadowSlopeBias = 0.02f;
         break;
+    default:
+        break;
     }
+
+    return true;
 }
 
 static void update_light_shadow_state(r3d_light_t* light)
@@ -467,9 +414,7 @@ bool r3d_light_init(void)
     memset(&R3D_MOD_LIGHT, 0, sizeof(R3D_MOD_LIGHT));
 
     glGenFramebuffers(1, &R3D_MOD_LIGHT.workFramebuffer);
-    glGenTextures(1, &R3D_MOD_LIGHT.shadowDirArray);
-    glGenTextures(1, &R3D_MOD_LIGHT.shadowSpotArray);
-    glGenTextures(1, &R3D_MOD_LIGHT.shadowOmniArray);
+    glGenTextures(R3D_LIGHT_TYPE_COUNT, R3D_MOD_LIGHT.shadowArrays);
 
     // Configure the framebuffer to only consider the depth
     glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_LIGHT.workFramebuffer);
@@ -478,22 +423,12 @@ bool r3d_light_init(void)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // Initialize shadow pools
-    if (!shadow_pool_init(&R3D_MOD_LIGHT.dirPool, R3D_LIGHT_SHADOW_INITIAL_CAP)) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init directional shadow pool");
-        r3d_light_quit();
-        return false;
-    }
-
-    if (!shadow_pool_init(&R3D_MOD_LIGHT.spotPool, R3D_LIGHT_SHADOW_INITIAL_CAP)) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init spot shadow pool");
-        r3d_light_quit();
-        return false;
-    }
-
-    if (!shadow_pool_init(&R3D_MOD_LIGHT.omniPool, R3D_LIGHT_SHADOW_INITIAL_CAP)) {
-        TraceLog(LOG_FATAL, "R3D: Failed to init omni shadow pool");
-        r3d_light_quit();
-        return false;
+    for (int i = 0; i < R3D_LIGHT_TYPE_COUNT; i++) {
+        if (!shadow_pool_init(&R3D_MOD_LIGHT.shadowPools[i], R3D_LIGHT_SHADOW_INITIAL_CAP)) {
+            TraceLog(LOG_FATAL, "R3D: Failed to init shadow pool number %i", i);
+            r3d_light_quit();
+            return false;
+        }
     }
 
     // Allocate light arrays
@@ -520,14 +455,16 @@ bool r3d_light_init(void)
 
 void r3d_light_quit(void)
 {
-    if (R3D_MOD_LIGHT.shadowDirArray) glDeleteTextures(1, &R3D_MOD_LIGHT.shadowDirArray);
-    if (R3D_MOD_LIGHT.shadowSpotArray) glDeleteTextures(1, &R3D_MOD_LIGHT.shadowSpotArray);
-    if (R3D_MOD_LIGHT.shadowOmniArray) glDeleteTextures(1, &R3D_MOD_LIGHT.shadowOmniArray);
-    if (R3D_MOD_LIGHT.workFramebuffer) glDeleteFramebuffers(1, &R3D_MOD_LIGHT.workFramebuffer);
+    if (R3D_MOD_LIGHT.workFramebuffer) {
+        glDeleteFramebuffers(1, &R3D_MOD_LIGHT.workFramebuffer);
+    }
 
-    shadow_pool_quit(&R3D_MOD_LIGHT.dirPool);
-    shadow_pool_quit(&R3D_MOD_LIGHT.spotPool);
-    shadow_pool_quit(&R3D_MOD_LIGHT.omniPool);
+    for (int i = 0; i < R3D_LIGHT_TYPE_COUNT; i++) {
+        if (R3D_MOD_LIGHT.shadowArrays[i]) {
+            glDeleteTextures(1, &R3D_MOD_LIGHT.shadowArrays[i]);
+        }
+        shadow_pool_quit(&R3D_MOD_LIGHT.shadowPools[i]);
+    }
 
     for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
         RL_FREE(R3D_MOD_LIGHT.arrays[i].lights);
@@ -541,25 +478,33 @@ R3D_Light r3d_light_new(R3D_LightType type)
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
     r3d_light_array_t* freeLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_FREE];
 
-    R3D_Light index;
-    
-    if (freeLights->count > 0) {
-        index = freeLights->lights[--freeLights->count];
-    } else {
-        index = validLights->count;
+    // Get index (from free list or new)
+    R3D_Light index = (freeLights->count > 0) 
+        ? freeLights->lights[--freeLights->count]
+        : validLights->count;
+
+    // Grow if needed
+    if (index >= R3D_MOD_LIGHT.capacityLights && !growth_light_arrays()) {
+        TraceLog(LOG_ERROR, "R3D: Failed to grow light arrays");
+        goto error_restore_free;
     }
 
-    if (index >= R3D_MOD_LIGHT.capacityLights) {
-        if (!growth_light_arrays()) {
-            TraceLog(LOG_FATAL, "R3D: Failed to grow light arrays");
-            return -1;
-        }
+    // Initialize light
+    if (!init_light(&R3D_MOD_LIGHT.lights[index], type)) {
+        TraceLog(LOG_ERROR, "R3D: Failed to initialize light (type: %d)", type);
+        goto error_restore_free;
     }
 
-    init_light(&R3D_MOD_LIGHT.lights[index], type);
+    // Add to valid array
     validLights->lights[validLights->count++] = index;
-
     return index;
+
+error_restore_free:
+    // Restore free list if we took from it
+    if (index < validLights->count) {
+        freeLights->lights[freeLights->count++] = index;
+    }
+    return -1;
 }
 
 void r3d_light_delete(R3D_Light index)
@@ -567,20 +512,22 @@ void r3d_light_delete(R3D_Light index)
     if (index < 0) return;
 
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
-    
+
     for (int i = 0; i < validLights->count; i++) {
         if (index == validLights->lights[i]) {
             int numToMove = validLights->count - i - 1;
             if (numToMove > 0) {
-                memmove(&validLights->lights[i], &validLights->lights[i + 1],
-                       numToMove * sizeof(validLights->lights[0]));
+                memmove(
+                    &validLights->lights[i], &validLights->lights[i + 1],
+                    numToMove * sizeof(validLights->lights[0])
+                );
             }
             validLights->count--;
 
             // Release shadow layer and add to free list
             r3d_light_t* light = &R3D_MOD_LIGHT.lights[index];
             release_shadow_layer(light);
-            
+
             r3d_light_array_t* freeLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_FREE];
             freeLights->lights[freeLights->count++] = index;
             return;
@@ -660,22 +607,7 @@ void r3d_light_enable_shadows(r3d_light_t* light)
 {
     if (light->shadow) return;
 
-    int layer = -1;
-    switch (light->type) {
-    case R3D_LIGHT_DIR:
-        layer = reserve_shadow_layer_dir();
-        light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_DIR_SIZE;
-        break;
-    case R3D_LIGHT_SPOT:
-        layer = reserve_shadow_layer_spot();
-        light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_SPOT_SIZE;
-        break;
-    case R3D_LIGHT_OMNI:
-        layer = reserve_shadow_layer_omni();
-        light->shadowTexelSize = 1.0f / R3D_LIGHT_SHADOW_OMNI_SIZE;
-        break;
-    }
-
+    int layer = reserve_shadow_layer(light->type);
     if (layer < 0) {
         TraceLog(LOG_ERROR, "R3D: Failed to reserve shadow layer for light");
         return;
@@ -750,25 +682,24 @@ bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated)
 
 void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face)
 {
-    GLuint shadowArray = 0;
+    GLuint shadowArray = R3D_MOD_LIGHT.shadowArrays[type];
     int shadowSize = 0;
-    int stride = 1;
+    int stride = 0;
 
     switch (type) {
     case R3D_LIGHT_DIR:
-        shadowArray = R3D_MOD_LIGHT.shadowDirArray;
-        shadowSize = R3D_LIGHT_SHADOW_DIR_SIZE;
         assert(face == 0);
+        shadowSize = R3D_LIGHT_SHADOW_DIR_SIZE;
+        stride = 1;
         break;
     case R3D_LIGHT_SPOT:
-        shadowArray = R3D_MOD_LIGHT.shadowSpotArray;
-        shadowSize = R3D_LIGHT_SHADOW_SPOT_SIZE;
         assert(face == 0);
+        shadowSize = R3D_LIGHT_SHADOW_SPOT_SIZE;
+        stride = 1;
         break;
     case R3D_LIGHT_OMNI:
-        shadowArray = R3D_MOD_LIGHT.shadowOmniArray;
-        shadowSize = R3D_LIGHT_SHADOW_OMNI_SIZE;
         assert(face >= 0 && face < 6);
+        shadowSize = R3D_LIGHT_SHADOW_OMNI_SIZE;
         stride = 6;
         break;
     default:
@@ -783,22 +714,5 @@ void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face)
 
 GLuint r3d_light_shadow_get(R3D_LightType type)
 {
-    GLuint shadowArray = 0;
-
-    switch (type) {
-    case R3D_LIGHT_DIR:
-        shadowArray = R3D_MOD_LIGHT.shadowDirArray;
-        break;
-    case R3D_LIGHT_SPOT:
-        shadowArray = R3D_MOD_LIGHT.shadowSpotArray;
-        break;
-    case R3D_LIGHT_OMNI:
-        shadowArray = R3D_MOD_LIGHT.shadowOmniArray;
-        break;
-    default:
-        assert(false);
-        break;
-    }
-
-    return shadowArray;
+    return R3D_MOD_LIGHT.shadowArrays[type];
 }

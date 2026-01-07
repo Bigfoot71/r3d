@@ -104,22 +104,19 @@ typedef struct {
 // ========================================
 
 extern struct r3d_light {
+
+    // Common framebuffer for rendering or copy
     GLuint workFramebuffer;
-    
-    // Shadow map arrays
-    GLuint shadowDirArray;      // 2D array for directional lights
-    GLuint shadowSpotArray;     // 2D array for spot lights
-    GLuint shadowOmniArray;     // Cube array for omni lights
-    
-    // Shadow layer pools
-    r3d_light_shadow_pool_t dirPool;
-    r3d_light_shadow_pool_t spotPool;
-    r3d_light_shadow_pool_t omniPool;
-    
+
+    // Shadow map arrays and layer pools
+    GLuint shadowArrays[R3D_LIGHT_TYPE_COUNT];
+    r3d_light_shadow_pool_t shadowPools[R3D_LIGHT_TYPE_COUNT];
+
     // Light management
     r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
     r3d_light_t* lights;
     int capacityLights;
+
 } R3D_MOD_LIGHT;
 
 // ========================================
