@@ -293,12 +293,13 @@ static void update_light_shadow_state(r3d_light_t* light)
 
 static void update_light_dir_matrix(r3d_light_t* light, Vector3 viewPosition)
 {
+    assert(light->type == R3D_LIGHT_DIR);
+
     Vector3 lightDir = light->direction;
     float extent = light->range;
 
     // Create orthonormal basis
-    Vector3 up = (fabsf(Vector3DotProduct(lightDir, (Vector3) {0, 1, 0})) > 0.99f)
-        ? (Vector3) {0, 0, 1} : (Vector3) {0, 1, 0};
+    Vector3 up = (fabsf(Vector3DotProduct(lightDir, (Vector3) {0, 1, 0})) > 0.99f) ? (Vector3) {0, 0, 1} : (Vector3) {0, 1, 0};
     Vector3 lightRight = Vector3Normalize(Vector3CrossProduct(up, lightDir));
     Vector3 lightUp = Vector3CrossProduct(lightDir, lightRight);
 
@@ -308,8 +309,7 @@ static void update_light_dir_matrix(r3d_light_t* light, Vector3 viewPosition)
     float camZ = Vector3DotProduct(viewPosition, lightDir);
 
     // Snap to texel grid to reduce shadow shimmering
-    float shadowMapSize = (light->shadowLayer >= 0) ? R3D_LIGHT_SHADOW_DIR_SIZE : 1024.0f;
-    float worldUnitsPerTexel = (2.0f * extent) / shadowMapSize;
+    float worldUnitsPerTexel = (2.0f * extent) / R3D_LIGHT_SHADOW_DIR_SIZE;
     float snappedX = floorf(camX / worldUnitsPerTexel) * worldUnitsPerTexel;
     float snappedY = floorf(camY / worldUnitsPerTexel) * worldUnitsPerTexel;
 
@@ -330,17 +330,20 @@ static void update_light_dir_matrix(r3d_light_t* light, Vector3 viewPosition)
 
 static void update_light_spot_matrix(r3d_light_t* light)
 {
+    assert(light->type == R3D_LIGHT_SPOT);
+
     light->near = 0.05f;
     light->far = light->range;
 
-    Matrix view = MatrixLookAt(light->position, Vector3Add(light->position, light->direction),
-                              (Vector3) {0, 1, 0});
+    Matrix view = MatrixLookAt(light->position, Vector3Add(light->position, light->direction), (Vector3) {0, 1, 0});
     Matrix proj = MatrixPerspective(90 * DEG2RAD, 1.0, light->near, light->far);
     light->viewProj[0] = MatrixMultiply(view, proj);
 }
 
 static void update_light_omni_matrix(r3d_light_t* light)
 {
+    assert(light->type == R3D_LIGHT_OMNI);
+
     static const Vector3 dirs[6] = {
         {  1.0,  0.0,  0.0 }, { -1.0,  0.0,  0.0 },
         {  0.0,  1.0,  0.0 }, {  0.0, -1.0,  0.0 },
@@ -377,6 +380,8 @@ static void update_light_matrix(r3d_light_t* light, Vector3 viewPosition)
     case R3D_LIGHT_OMNI:
         update_light_omni_matrix(light);
         break;
+    default:
+        break;
     }
 }
 
@@ -401,6 +406,8 @@ static void update_light_bounding_box(r3d_light_t* light)
     case R3D_LIGHT_DIR:
         light->aabb.min = (Vector3) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
         light->aabb.max = (Vector3) {+FLT_MAX, +FLT_MAX, +FLT_MAX};
+        break;
+    default:
         break;
     }
 }
@@ -651,8 +658,10 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
 
         if (shouldUpdateMatrix) {
             update_light_matrix(light, viewPosition);
-            if (light->shadow) update_light_frustum(light);
-            if (!isDirectional) update_light_bounding_box(light);
+            update_light_frustum(light);
+            if (!isDirectional) {
+                update_light_bounding_box(light);
+            }
             light->state.matrixShouldBeUpdated = false;
         }
 
