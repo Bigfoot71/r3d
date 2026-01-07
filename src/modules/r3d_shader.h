@@ -884,9 +884,16 @@ bool r3d_shader_init();
  */
 void r3d_shader_quit();
 
-
+/*
+ * Binds the texture to the specified sampler.
+ * Called by `R3D_SHADER_BIND_SAMPLER`, no need to call it manually.
+ */
 void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture);
 
+/*
+ * Iterates through all samplers to unbind any textures that were bound.
+ * Must be called at the end of each frame to avoid leaving a dirty state to raylib.
+ */
 void r3d_shader_unbind_samplers(void);
 
 /*
