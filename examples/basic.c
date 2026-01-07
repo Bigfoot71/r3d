@@ -1,4 +1,3 @@
-#include "r3d/r3d_material.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -15,7 +14,6 @@ int main(void)
     R3D_Mesh plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
     R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 64, 64);
     R3D_Material material = R3D_GetDefaultMaterial();
-    material.transparencyMode = R3D_TRANSPARENCY_PREPASS;
 
     // Setup environment
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
