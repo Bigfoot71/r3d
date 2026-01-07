@@ -21,4 +21,7 @@ void r3d_opengl_quit(void);
 bool r3d_opengl_check_ext(const char* name);
 bool r3d_opengl_has_anisotropy(float* max);
 
+void r3d_opengl_clear_errors(void);
+bool r3d_opengl_check_error(const char* msg);
+
 #endif // R3D_MODULE_OPENGL_H

@@ -135,3 +135,18 @@ bool r3d_opengl_has_anisotropy(float* max)
 
     return hasAniso;
 }
+
+void r3d_opengl_clear_errors(void)
+{
+    while (glGetError() != GL_NO_ERROR);
+}
+
+bool r3d_opengl_check_error(const char* msg)
+{
+    int err = glGetError();
+    if (err != GL_NO_ERROR) {
+        TraceLog(LOG_ERROR, "R3D: OpenGL Error (%s): 0x%04x", msg, err);
+        return true;
+    }
+    return false;
+}
