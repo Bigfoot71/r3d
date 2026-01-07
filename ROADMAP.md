@@ -18,7 +18,7 @@
 * [x] **Skybox Generation Support**
   Add support for procedural skybox generation.
 
-* [ ] **Improve Shadow Map Management**
+* [x] **Improve Shadow Map Management**
   Instead of using one shadow map per light, implement an internal batching system with a 2D texture array and `Sample2DArray` in shaders.
   *Note: This would remove per-light independent shadow map resolutions.*
 
