@@ -25,7 +25,7 @@
 typedef enum {
     R3D_TARGET_INVALID = -1,
     R3D_TARGET_ALBEDO,          //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_NORMAL,          //< Full - Mip 1 - RG[16|16]
+    R3D_TARGET_NORMAL,          //< Full - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_ORM,             //< Full - Mip 1 - RGB[8|8|8]
     R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]

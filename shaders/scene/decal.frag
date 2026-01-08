@@ -43,7 +43,7 @@ uniform vec2 uTexCoordScale;
 
 layout(location = 0) out vec4 FragAlbedo;
 layout(location = 1) out vec4 FragEmission;
-layout(location = 2) out vec2 FragNormal; // Unused - normal output placeholder
+layout(location = 2) out vec4 FragNormal; // Unused - normal output placeholder
 layout(location = 3) out vec3 FragORM;
 
 /* === Main function === */

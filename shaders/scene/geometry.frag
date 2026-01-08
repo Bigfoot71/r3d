@@ -36,7 +36,7 @@ uniform float uMetalness;
 
 layout(location = 0) out vec3 FragAlbedo;
 layout(location = 1) out vec3 FragEmission;
-layout(location = 2) out vec2 FragNormal;
+layout(location = 2) out vec4 FragNormal;
 layout(location = 3) out vec3 FragORM;
 
 /* === Main function === */
@@ -47,11 +47,16 @@ void main()
     if (albedo.a < uAlphaCutoff) discard;
 
     vec3 N = normalize(vTBN * M_NormalScale(texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
-    if (!gl_FrontFacing) N = -N; // Flip for back facing triangles with double sided meshes
+    vec3 T = vTBN[0];
+    if (!gl_FrontFacing) { // Flip for back facing triangles with double sided meshes
+        N = -N;
+        T = -T;
+    }
 
     FragAlbedo = albedo.rgb;
     FragEmission = vEmission * texture(uEmissionMap, vTexCoord).rgb;
-    FragNormal = M_EncodeOctahedral(N);
+    FragNormal.rg = M_EncodeOctahedral(N);
+    FragNormal.ba = M_EncodeOctahedral(T);
 
     vec3 orm = texture(uOrmMap, vTexCoord).rgb;
 
