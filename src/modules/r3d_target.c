@@ -41,7 +41,7 @@ typedef struct {
 
 static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_ALBEDO]     = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_NORMAL]     = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_NORM_TAN]   = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
     [R3D_TARGET_ORM]        = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,               GL_NEAREST, false },
     [R3D_TARGET_DIFFUSE]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
     [R3D_TARGET_SPECULAR]   = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
