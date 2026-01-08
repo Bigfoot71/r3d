@@ -70,16 +70,22 @@ typedef uint32_t R3D_Layer;
 
 #define R3D_LAYER_ALL   0xFFFFFFFF
 
+/**
+ * @brief Aspect ratio handling modes for rendering.
+ */
 typedef enum R3D_AspectMode {
-    R3D_ASPECT_EXPAND,          ///< Etends le rendu effectué par R3D pour fit la cible (render texture ou fenetre)
-    R3D_ASPECT_KEEP             ///< Conserve l'aspect ratio de la cible sans distordre l'image, cela ajoute des gaps vides autour du rendu
+    R3D_ASPECT_EXPAND,      ///< Expands the rendered output to fully fill the target (render texture or window).
+    R3D_ASPECT_KEEP         ///< Preserves the target's aspect ratio without distortion, adding empty gaps if necessary.
 } R3D_AspectMode;
 
+/**
+ * @brief Upscaling/filtering methods for rendering output.
+ */
 typedef enum R3D_UpscaleMode {
-    R3D_UPSCALE_NEAREST,
-    R3D_UPSCALE_LINEAR,
-    R3D_UPSCALE_BICUBIC,
-    R3D_UPSCALE_LANCZOS,
+    R3D_UPSCALE_NEAREST,    ///< Nearest-neighbor upscaling: very fast but produces blocky pixels.
+    R3D_UPSCALE_LINEAR,     ///< Bilinear upscaling: very fast, smooth, but can appear blurry.
+    R3D_UPSCALE_BICUBIC,    ///< Bicubic (Catmull-Rom) upscaling: slower, smoother, less blurry than linear.
+    R3D_UPSCALE_LANCZOS,    ///< Lanczos 2 upscaling: preserves details closer to nearest, but without blockiness; the most expensive.
 } R3D_UpscaleMode;
 
 /**
@@ -181,7 +187,16 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
  */
 R3DAPI void R3D_UpdateResolution(int width, int height);
 
+/**
+ * @brief Sets the aspect ratio handling mode for rendering.
+ * @param mode The desired R3D_AspectMode.
+ */
 R3DAPI void R3D_SetAspectMode(R3D_AspectMode mode);
+
+/**
+ * @brief Sets the upscaling/filtering method for rendering output.
+ * @param mode The desired R3D_UpscaleMode.
+ */
 R3DAPI void R3D_SetUpscaleMode(R3D_UpscaleMode mode);
 
 /**
