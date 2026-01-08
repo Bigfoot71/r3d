@@ -35,21 +35,16 @@ vec3 GetDirection(vec2 uv, int face)
 
 void main()
 {
-    float offset = uSourceTexel * 0.5;
+    vec3 centerDir = GetDirection(vTexCoord, uSourceFace);
 
-    vec2 offsets[4] = vec2[4](
-        vec2(-offset, -offset),
-        vec2(+offset, -offset),
-        vec2(-offset, +offset),
-        vec2(+offset, +offset)
-    );
+    vec3 ddx = GetDirection(vTexCoord + vec2(uSourceTexel, 0.0), uSourceFace) - centerDir;
+    vec3 ddy = GetDirection(vTexCoord + vec2(0.0, uSourceTexel), uSourceFace) - centerDir;
 
     vec4 result = vec4(0.0);
-
-    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[0], uSourceFace), uSourceLod);
-    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[1], uSourceFace), uSourceLod);
-    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[2], uSourceFace), uSourceLod);
-    result += textureLod(uSourceTex, GetDirection(vTexCoord + offsets[3], uSourceFace), uSourceLod);
+    result += textureLod(uSourceTex, normalize(centerDir - ddx*0.5 - ddy*0.5), uSourceLod);
+    result += textureLod(uSourceTex, normalize(centerDir + ddx*0.5 - ddy*0.5), uSourceLod);
+    result += textureLod(uSourceTex, normalize(centerDir - ddx*0.5 + ddy*0.5), uSourceLod);
+    result += textureLod(uSourceTex, normalize(centerDir + ddx*0.5 + ddy*0.5), uSourceLod);
 
     FragColor = result * 0.25;
 }
