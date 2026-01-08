@@ -112,9 +112,29 @@ void R3D_UpdateResolution(int width, int height)
     r3d_target_resize(width, height);
 }
 
+R3D_AntiAliasing R3D_GetAntiAliasing(void)
+{
+    return R3D.antiAliasing;
+}
+
+void R3D_SetAntiAliasing(R3D_AntiAliasing mode)
+{
+    R3D.antiAliasing = mode;
+}
+
+R3D_AspectMode R3D_GetAspectMode(void)
+{
+    return R3D.aspectMode;
+}
+
 void R3D_SetAspectMode(R3D_AspectMode mode)
 {
     R3D.aspectMode = mode;
+}
+
+R3D_UpscaleMode R3D_GetUpscaleMode(void)
+{
+    return R3D.upscaleMode;
 }
 
 void R3D_SetUpscaleMode(R3D_UpscaleMode mode)

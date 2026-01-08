@@ -30,9 +30,8 @@
 typedef uint32_t R3D_Flags;
 
 #define R3D_FLAG_NONE                   0           ///< No special rendering flags
-#define R3D_FLAG_FXAA                   (1 << 0)    ///< Enables Fast Approximate Anti-Aliasing (FXAA)
-#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 1)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
-#define R3D_FLAG_OPAQUE_SORTING         (1 << 2)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
+#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 0)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
+#define R3D_FLAG_OPAQUE_SORTING         (1 << 1)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
 
 /**
  * @brief Bitfield type used to specify rendering layers for 3D objects.
@@ -69,6 +68,14 @@ typedef uint32_t R3D_Layer;
 #define R3D_LAYER_16    (1 << 15)
 
 #define R3D_LAYER_ALL   0xFFFFFFFF
+
+/**
+ * @brief Anti-aliasing modes for rendering.
+ */
+typedef enum R3D_AntiAliasing {
+    R3D_ANTI_ALIASING_DISABLED, ///< Anti-aliasing is disabled. Edges may appear jagged.
+    R3D_ANTI_ALIASING_FXAA,     ///< FXAA is applied. Smooths edges efficiently but may appear blurry.
+} R3D_AntiAliasing;
 
 /**
  * @brief Aspect ratio handling modes for rendering.
@@ -188,10 +195,34 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
 R3DAPI void R3D_UpdateResolution(int width, int height);
 
 /**
+ * @brief Retrieves the current anti-aliasing mode used for rendering.
+ * @return The currently active R3D_AntiAliasing mode.
+ */
+R3DAPI R3D_AntiAliasing R3D_GetAntiAliasing(void);
+
+/**
+ * @brief Sets the anti-aliasing mode for rendering.
+ * @param mode The desired R3D_AntiAliasing mode.
+ */
+R3DAPI void R3D_SetAntiAliasing(R3D_AntiAliasing mode);
+
+/**
+ * @brief Retrieves the current aspect ratio handling mode.
+ * @return The currently active R3D_AspectMode.
+ */
+R3DAPI R3D_AspectMode R3D_GetAspectMode(void);
+
+/**
  * @brief Sets the aspect ratio handling mode for rendering.
  * @param mode The desired R3D_AspectMode.
  */
 R3DAPI void R3D_SetAspectMode(R3D_AspectMode mode);
+
+/**
+ * @brief Retrieves the current upscaling/filtering method.
+ * @return The currently active R3D_UpscaleMode.
+ */
+R3DAPI R3D_UpscaleMode R3D_GetUpscaleMode(void);
 
 /**
  * @brief Sets the upscaling/filtering method for rendering output.

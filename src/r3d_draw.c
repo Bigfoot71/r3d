@@ -203,7 +203,7 @@ void R3D_End(void)
 
     sceneTarget = pass_post_output(sceneTarget);
 
-    if (R3D_CORE_FLAGS_HAS(state, R3D_FLAG_FXAA)) {
+    if (R3D.antiAliasing == R3D_ANTI_ALIASING_FXAA) {
         sceneTarget = pass_post_fxaa(sceneTarget);
     }
 

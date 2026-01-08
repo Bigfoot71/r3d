@@ -12,8 +12,8 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D with flags
-    R3D_Flags flags = R3D_FLAG_TRANSPARENT_SORTING | R3D_FLAG_FXAA;
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), flags);
+    R3D_Init(GetScreenWidth(), GetScreenHeight(), R3D_FLAG_TRANSPARENT_SORTING);
+    R3D_SetAntiAliasing(R3D_ANTI_ALIASING_FXAA);
 
     // Set environment
     R3D_ENVIRONMENT_SET(background.color, DARKGRAY);
