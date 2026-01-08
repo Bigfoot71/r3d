@@ -26,7 +26,6 @@ struct EnvProbe {
     float range;
     int irradiance;
     int prefilter;
-    bool enabled;
 };
 
 /* === Uniform Block === */
@@ -35,6 +34,7 @@ layout(std140) uniform EnvBlock {
     EnvProbe uProbes[NUM_PROBES];
     EnvAmbient uAmbient;
     int uNumPrefilterLevels;
+    int uNumProbes;
 };
 
 /* === IBL Functions === */
@@ -119,10 +119,8 @@ void E_ComputeAmbientAndProbes(inout vec3 irradiance, inout vec3 radiance, vec3 
     float wIrradiance = 0.0;
     float wRadiance = 0.0;
 
-    for (int i = 0; i < NUM_PROBES; ++i) {
-        if (uProbes[i].enabled) {
-            IBL_SampleProbe(irradiance, radiance, wIrradiance, wRadiance, i, roughness, P, N, V);
-        }
+    for (int i = 0; i < uNumProbes; ++i) {
+        IBL_SampleProbe(irradiance, radiance, wIrradiance, wRadiance, i, roughness, P, N, V);
     }
 
     if (wIrradiance > 1.0) {

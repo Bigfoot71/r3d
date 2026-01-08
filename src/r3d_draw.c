@@ -587,15 +587,14 @@ void upload_env_block(void)
 
     int iProbe = 0;
     R3D_ENV_PROBE_FOR_EACH_VISIBLE(probe) {
-        env.uProbes[iProbe++] = (struct r3d_shader_block_env_probe) {
+        env.uProbes[iProbe] = (struct r3d_shader_block_env_probe) {
             .position = probe->position,
             .falloff = probe->falloff,
             .range = probe->range,
             .irradiance = probe->irradiance,
-            .prefilter = probe->prefilter,
-            .enabled = true
+            .prefilter = probe->prefilter
         };
-        if (iProbe >= R3D_SHADER_NUM_PROBES) {
+        if (++iProbe >= R3D_SHADER_NUM_PROBES) {
             break;
         }
     }
@@ -607,6 +606,7 @@ void upload_env_block(void)
     env.uAmbient.prefilter = (int)ambient->map.prefilter - 1;
 
     env.uNumPrefilterLevels = R3D_ENV_PREFILTER_MIPS;
+    env.uNumProbes = iProbe;
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env);
 }

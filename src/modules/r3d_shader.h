@@ -22,7 +22,7 @@
 // ========================================
 
 #define R3D_SHADER_NUM_FORWARD_LIGHTS       8
-#define R3D_SHADER_NUM_PROBES               4
+#define R3D_SHADER_NUM_PROBES               8
 
 #define R3D_SHADER_BLOCK_VIEW_SLOT          0
 #define R3D_SHADER_BLOCK_ENV_SLOT           1
@@ -265,7 +265,6 @@ typedef struct {
         alignas(4) float range;
         alignas(4) int32_t irradiance;
         alignas(4) int32_t prefilter;
-        alignas(4) int32_t enabled;
     }
     uProbes[R3D_SHADER_NUM_PROBES];
 
@@ -280,6 +279,7 @@ typedef struct {
     uAmbient;
 
     alignas(4) int32_t uNumPrefilterLevels;
+    alignas(4) int32_t uNumProbes;
 
 } r3d_shader_block_env_t;
 
