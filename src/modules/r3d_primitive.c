@@ -111,6 +111,7 @@ static const primitive_loader_func LOADERS[] = {
 void load_dummy(primitive_buffer_t* buf)
 {
     glGenVertexArrays(1, &buf->vao);
+    glBindVertexArray(buf->vao);
     buf->indexCount = 0;
 }
 
