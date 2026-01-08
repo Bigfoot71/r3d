@@ -47,7 +47,7 @@
 // INTERNAL FUNCTIONS
 // ========================================
 
-static void update_view_state(Camera3D camera, double aspect, double near, double far);
+static void update_view_state(Camera3D camera, double near, double far);
 static void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow);
 static void upload_view_block(void);
 static void upload_env_block(void);
@@ -82,6 +82,8 @@ static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
 
+static void blit_to_screen(r3d_target_t source);
+
 static void reset_raylib_state(void);
 
 // ========================================
@@ -96,21 +98,8 @@ void R3D_Begin(Camera3D camera)
 void R3D_BeginEx(RenderTexture target, Camera3D camera)
 {
     rlDrawRenderBatchActive();
-
-    r3d_target_set_blit_screen(target);
-
-    r3d_target_set_blit_mode(
-        R3D_CORE_FLAGS_HAS(state, R3D_FLAG_ASPECT_KEEP),
-        R3D_CORE_FLAGS_HAS(state, R3D_FLAG_BLIT_LINEAR)
-    );
-
-    update_view_state(
-        camera,
-        r3d_target_get_render_aspect(),
-        rlGetCullDistanceNear(),
-        rlGetCullDistanceFar()
-    );
-
+    update_view_state(camera, rlGetCullDistanceNear(), rlGetCullDistanceFar());
+    R3D.screen = target;
     r3d_draw_clear();
 }
 
@@ -218,7 +207,7 @@ void R3D_End(void)
         sceneTarget = pass_post_fxaa(sceneTarget);
     }
 
-    r3d_target_blit(r3d_target_swap_scene(sceneTarget));
+    blit_to_screen(r3d_target_swap_scene(sceneTarget));
 
     /* --- Reset states changed by R3D --- */
 
@@ -488,8 +477,26 @@ void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int c
 // INTERNAL FUNCTIONS
 // ========================================
 
-void update_view_state(Camera3D camera, double aspect, double near, double far)
+void update_view_state(Camera3D camera, double near, double far)
 {
+    int resW = 1, resH = 1;
+    switch (R3D.aspectMode) {
+    case R3D_ASPECT_EXPAND:
+        if (R3D.screen.id != 0) {
+            resW = R3D.screen.texture.width;
+            resH = R3D.screen.texture.height;
+        }
+        else {
+            resW = GetRenderWidth();
+            resH = GetRenderHeight();
+        }
+    case R3D_ASPECT_KEEP:
+        r3d_target_get_resolution(&resW, &resH, R3D_TARGET_SCENE_0, 0);
+        break;
+    }
+
+    double aspect = (double)resW / resH;
+
     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
     Matrix proj = R3D_MATRIX_IDENTITY;
 
@@ -1774,9 +1781,84 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
     return sceneTarget;
 }
 
+void blit_to_screen(r3d_target_t source)
+{
+    unsigned int dstId = 0;
+    int dstX = 0, dstY = 0;
+    int dstW = 0, dstH = 0;
+    int srcW = 0, srcH = 0;
+
+    r3d_target_get_resolution(&srcW, &srcH, source, 0);
+
+    if (R3D.screen.id != 0) {
+        dstId = R3D.screen.id;
+        dstW = R3D.screen.texture.width;
+        dstH = R3D.screen.texture.height;
+    }
+    else {
+        dstW = GetRenderWidth();
+        dstH = GetRenderHeight();
+    }
+
+    if (R3D.aspectMode == R3D_ASPECT_KEEP) {
+        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+        float dstRatio = (float)dstW / dstH;
+        if (srcRatio > dstRatio) {
+            int prevH = dstH;
+            dstH = (int)(dstW / srcRatio + 0.5f);
+            dstY = (prevH - dstH) / 2;
+        }
+        else {
+            int prevW = dstW;
+            dstW = (int)(dstH * srcRatio + 0.5f);
+            dstX = (prevW - dstW) / 2;
+        }
+    }
+
+    /* --- Downscale or nearest/linear upscale --- */
+
+    if ((dstW <= srcW && dstH <= srcH) || R3D.upscaleMode == R3D_UPSCALE_NEAREST) {
+        r3d_target_blit((r3d_target_t[]) {source, R3D_TARGET_DEPTH}, 2, dstId, dstX, dstY, dstW, dstH, false);
+        return;
+    }
+
+    if (R3D.upscaleMode == R3D_UPSCALE_LINEAR) {
+        r3d_target_blit((r3d_target_t[]) {source, R3D_TARGET_DEPTH}, 2, dstId, dstX, dstY, dstW, dstH, true);
+        return;
+    }
+
+    /* --- Bicubic/Lanczos uspcale --- */
+
+    float txlW, txlH;
+    r3d_target_get_texel_size(&txlW, &txlH, source, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+    glViewport(dstX, dstY, dstW, dstH);
+
+    switch (R3D.upscaleMode) {
+    case R3D_UPSCALE_BICUBIC:
+        R3D_SHADER_USE(prepare.bicubicUp);
+        R3D_SHADER_BIND_SAMPLER(prepare.bicubicUp, uSourceTex, r3d_target_get(source));
+        R3D_SHADER_SET_VEC2(prepare.bicubicUp, uSourceTexel, (Vector2) {txlW, txlH});
+        break;
+    case R3D_UPSCALE_LANCZOS:
+        R3D_SHADER_USE(prepare.lanczosUp);
+        R3D_SHADER_BIND_SAMPLER(prepare.lanczosUp, uSourceTex, r3d_target_get(source));
+        R3D_SHADER_SET_VEC2(prepare.lanczosUp, uSourceTexel, (Vector2) {txlW, txlH});
+        break;
+    default:
+        return;
+    }
+
+    R3D_PRIMITIVE_DRAW_SCREEN();
+
+    r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
+}
+
 void reset_raylib_state(void)
 {
     r3d_shader_unbind_samplers();
+    r3d_target_reset();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);
@@ -1803,8 +1885,6 @@ void reset_raylib_state(void)
     // We do this at the end because calling rlSetBlendMode can trigger a draw call for
     // any content accumulated by rlgl, and we want that to be rendered into the main
     // framebuffer, not into one of R3D's internal framebuffers that will be discarded afterward.
-
-    // TODO: Ideally, we would retrieve rlgl’s current blend mode state and restore it exactly.
 
     rlSetBlendMode(RL_BLEND_ALPHA);
 }

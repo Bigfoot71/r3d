@@ -31,10 +31,8 @@ typedef uint32_t R3D_Flags;
 
 #define R3D_FLAG_NONE                   0           ///< No special rendering flags
 #define R3D_FLAG_FXAA                   (1 << 0)    ///< Enables Fast Approximate Anti-Aliasing (FXAA)
-#define R3D_FLAG_BLIT_LINEAR            (1 << 1)    ///< Uses linear filtering when blitting the final image
-#define R3D_FLAG_ASPECT_KEEP            (1 << 2)    ///< Maintains the aspect ratio of the internal resolution when blitting the final image
-#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 3)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
-#define R3D_FLAG_OPAQUE_SORTING         (1 << 4)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
+#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 1)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
+#define R3D_FLAG_OPAQUE_SORTING         (1 << 2)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
 
 /**
  * @brief Bitfield type used to specify rendering layers for 3D objects.
@@ -72,6 +70,18 @@ typedef uint32_t R3D_Layer;
 
 #define R3D_LAYER_ALL   0xFFFFFFFF
 
+typedef enum R3D_AspectMode {
+    R3D_ASPECT_EXPAND,          ///< Etends le rendu effectué par R3D pour fit la cible (render texture ou fenetre)
+    R3D_ASPECT_KEEP             ///< Conserve l'aspect ratio de la cible sans distordre l'image, cela ajoute des gaps vides autour du rendu
+} R3D_AspectMode;
+
+typedef enum R3D_UpscaleMode {
+    R3D_UPSCALE_NEAREST,
+    R3D_UPSCALE_LINEAR,
+    R3D_UPSCALE_BICUBIC,
+    R3D_UPSCALE_LANCZOS,
+} R3D_UpscaleMode;
+
 /**
  * @brief Specifies the color space for user-provided colors and color textures.
  *
@@ -85,7 +95,7 @@ typedef uint32_t R3D_Layer;
  * Used with `R3D_SetColorSpace()` to control whether input colors
  * should be treated as linear or sRGB.
  */
-typedef enum {
+typedef enum R3D_ColorSpace {
     R3D_COLORSPACE_LINEAR,  ///< Linear color space: values are used as-is.
     R3D_COLORSPACE_SRGB     ///< sRGB color space: values are converted to linear on load.
 } R3D_ColorSpace;
@@ -170,6 +180,9 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
  * @warning This function may be slow due to the destruction and recreation of framebuffers.
  */
 R3DAPI void R3D_UpdateResolution(int width, int height);
+
+R3DAPI void R3D_SetAspectMode(R3D_AspectMode mode);
+R3DAPI void R3D_SetUpscaleMode(R3D_UpscaleMode mode);
 
 /**
  * @brief Sets the default texture filtering mode.

@@ -325,6 +325,18 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uSourceTexel;
+} r3d_shader_prepare_bicubic_up_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uSourceTexel;
+} r3d_shader_prepare_lanczos_up_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uSourceLod;
 } r3d_shader_prepare_blur_down_t;
 
@@ -698,6 +710,8 @@ extern struct r3d_shader {
     // Prepare shaders
     struct {
         r3d_shader_prepare_atrous_wavelet_t atrousWavelet;
+        r3d_shader_prepare_bicubic_up_t bicubicUp;
+        r3d_shader_prepare_lanczos_up_t lanczosUp;
         r3d_shader_prepare_blur_down_t blurDown;
         r3d_shader_prepare_blur_up_t blurUp;
         r3d_shader_prepare_ssao_t ssao;
@@ -749,6 +763,8 @@ extern struct r3d_shader {
 typedef void (*r3d_shader_loader_func)(void);
 
 void r3d_shader_load_prepare_atrous_wavelet(void);
+void r3d_shader_load_prepare_bicubic_up(void);
+void r3d_shader_load_prepare_lanczos_up(void);
 void r3d_shader_load_prepare_blur_down(void);
 void r3d_shader_load_prepare_blur_up(void);
 void r3d_shader_load_prepare_ssao(void);
@@ -783,6 +799,8 @@ static const struct r3d_shader_loader {
     // Prepare shaders
     struct {
         r3d_shader_loader_func atrousWavelet;
+        r3d_shader_loader_func bicubicUp;
+        r3d_shader_loader_func lanczosUp;
         r3d_shader_loader_func blurDown;
         r3d_shader_loader_func blurUp;
         r3d_shader_loader_func ssao;
@@ -829,6 +847,8 @@ static const struct r3d_shader_loader {
 
     .prepare = {
         .atrousWavelet = r3d_shader_load_prepare_atrous_wavelet,
+        .bicubicUp = r3d_shader_load_prepare_bicubic_up,
+        .lanczosUp = r3d_shader_load_prepare_lanczos_up,
         .blurDown = r3d_shader_load_prepare_blur_down,
         .blurUp = r3d_shader_load_prepare_blur_up,
         .ssao = r3d_shader_load_prepare_ssao,

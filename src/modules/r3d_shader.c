@@ -23,6 +23,8 @@
 #include <shaders/screen.vert.h>
 #include <shaders/cubemap.vert.h>
 #include <shaders/atrous_wavelet.frag.h>
+#include <shaders/bicubic_up.frag.h>
+#include <shaders/lanczos_up.frag.h>
 #include <shaders/blur_down.frag.h>
 #include <shaders/blur_up.frag.h>
 #include <shaders/ssao.frag.h>
@@ -193,6 +195,22 @@ void r3d_shader_load_prepare_atrous_wavelet(void)
     SET_SAMPLER(prepare.atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
     SET_SAMPLER(prepare.atrousWavelet, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(prepare.atrousWavelet, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+}
+
+void r3d_shader_load_prepare_bicubic_up(void)
+{
+    LOAD_SHADER(prepare.bicubicUp, SCREEN_VERT, BICUBIC_UP_FRAG);
+    GET_LOCATION(prepare.bicubicUp, uSourceTexel);
+    USE_SHADER(prepare.bicubicUp);
+    SET_SAMPLER(prepare.bicubicUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+}
+
+void r3d_shader_load_prepare_lanczos_up(void)
+{
+    LOAD_SHADER(prepare.lanczosUp, SCREEN_VERT, LANCZOS_UP_FRAG);
+    GET_LOCATION(prepare.lanczosUp, uSourceTexel);
+    USE_SHADER(prepare.lanczosUp);
+    SET_SAMPLER(prepare.lanczosUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
 }
 
 void r3d_shader_load_prepare_blur_down(void)
@@ -786,6 +804,8 @@ void r3d_shader_quit()
     glDeleteBuffers(R3D_SHADER_BLOCK_COUNT, R3D_MOD_SHADER.uniformBuffers);
 
     UNLOAD_SHADER(prepare.atrousWavelet);
+    UNLOAD_SHADER(prepare.bicubicUp);
+    UNLOAD_SHADER(prepare.lanczosUp);
     UNLOAD_SHADER(prepare.blurDown);
     UNLOAD_SHADER(prepare.blurUp);
     UNLOAD_SHADER(prepare.ssao);

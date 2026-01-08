@@ -49,6 +49,9 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
     R3D.environment = R3D_ENVIRONMENT_BASE;
     R3D.material = R3D_MATERIAL_BASE;
 
+    R3D.aspectMode = R3D_ASPECT_EXPAND;
+    R3D.upscaleMode = R3D_UPSCALE_NEAREST;
+
     R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
     R3D.layers = R3D_LAYER_ALL;
@@ -107,6 +110,16 @@ void R3D_UpdateResolution(int width, int height)
     }
 
     r3d_target_resize(width, height);
+}
+
+void R3D_SetAspectMode(R3D_AspectMode mode)
+{
+    R3D.aspectMode = mode;
+}
+
+void R3D_SetUpscaleMode(R3D_UpscaleMode mode)
+{
+    R3D.upscaleMode = mode;
 }
 
 void R3D_SetTextureFilter(TextureFilter filter)

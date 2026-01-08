@@ -128,17 +128,14 @@ typedef struct {
 extern struct r3d_target {
 
     r3d_target_fbo_t fbo[R3D_TARGET_MAX_FRAMEBUFFERS];  //< FBO combination cache. FBOs are automatically generated as needed during bind.
-    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Don't call glBindFramebuffer manually until blit.
-    int fboCount;
+    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Reset via `r3d_target_reset()`.
+    int fboCount;                                       //< Number of FBOs created
 
-    bool targetLoaded[R3D_TARGET_COUNT];
-    GLuint targets[R3D_TARGET_COUNT];
+    bool targetLoaded[R3D_TARGET_COUNT];    //< Indicates whether the targets have been allocated.
+    GLuint targets[R3D_TARGET_COUNT];       //< Table of targets (textures)
 
-    RenderTexture screen;
-    uint32_t resW, resH;
-    float txlW, txlH;
-    bool keepAspect;
-    bool blitLinear;
+    uint32_t resW, resH;    //< Full internal resolution
+    float txlW, txlH;       //< Size of a texel for full resolution
 
 } R3D_MOD_TARGET;
 
@@ -164,24 +161,6 @@ void r3d_target_quit(void);
  * Ignore the operation if the new resolution is identical to the one already defined.
  */
 void r3d_target_resize(int resW, int resH);
-
-/*
- * Defines the target where the blit is performed.
- * Also uses the associated data to determine the aspect ratio.
- * If ID is zero, the destination will be the default framebuffer (0).
- */
-void r3d_target_set_blit_screen(RenderTexture screen);
-
-/*
- * Defines the blit configuration for the assigned screen.
- */
-void r3d_target_set_blit_mode(bool keepAspect, bool blitLinear);
-
-/*
- * Computes and returns the correct aspect ratio based on the screen target
- * and its configuration.
- */
-float r3d_target_get_render_aspect(void);
 
 /*
  * Returns the total number of mip levels of the internal buffers
@@ -252,9 +231,15 @@ GLuint r3d_target_get(r3d_target_t target);
 GLuint r3d_target_get_or_null(r3d_target_t target);
 
 /*
- * Blits mip 0 of the specified target to the screen or RenderTexture2D
- * set in the module state.
+ * Blit les cibles fournies vers le FBO indiqué.
+ * Supporte le blit de la cible de profondeur seulement.
+ * La cible de profondeur doit toujours être spécifiée en dernier.
  */
-void r3d_target_blit(r3d_target_t target);
+void r3d_target_blit(r3d_target_t* targets, int count, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear);
+
+/*
+ * Reset the internal state cache as the FBO target currently binds.
+ */
+void r3d_target_reset(void);
 
 #endif // R3D_MODULE_TARGET_H
