@@ -1783,76 +1783,84 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
 
 void blit_to_screen(r3d_target_t source)
 {
-    unsigned int dstId = 0;
+    GLuint dstId = R3D.screen.id;
+    int dstW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
+    int dstH = dstId ? R3D.screen.texture.height : GetRenderHeight();
+
     int dstX = 0, dstY = 0;
-    int dstW = 0, dstH = 0;
-    int srcW = 0, srcH = 0;
-
-    r3d_target_get_resolution(&srcW, &srcH, source, 0);
-
-    if (R3D.screen.id != 0) {
-        dstId = R3D.screen.id;
-        dstW = R3D.screen.texture.width;
-        dstH = R3D.screen.texture.height;
-    }
-    else {
-        dstW = GetRenderWidth();
-        dstH = GetRenderHeight();
-    }
-
     if (R3D.aspectMode == R3D_ASPECT_KEEP) {
         float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
         float dstRatio = (float)dstW / dstH;
         if (srcRatio > dstRatio) {
-            int prevH = dstH;
-            dstH = (int)(dstW / srcRatio + 0.5f);
-            dstY = (prevH - dstH) / 2;
+            int newH = (int)(dstW / srcRatio + 0.5f);
+            dstY = (dstH - newH) / 2;
+            dstH = newH;
         }
         else {
-            int prevW = dstW;
-            dstW = (int)(dstH * srcRatio + 0.5f);
-            dstX = (prevW - dstW) / 2;
+            int newW = (int)(dstH * srcRatio + 0.5f);
+            dstX = (dstW - newW) / 2;
+            dstW = newW;
         }
     }
 
-    /* --- Downscale or nearest/linear upscale --- */
+    int srcW = 0, srcH = 0;
+    r3d_target_get_resolution(&srcW, &srcH, source, 0);
 
-    if ((dstW <= srcW && dstH <= srcH) || R3D.upscaleMode == R3D_UPSCALE_NEAREST) {
+    bool sameDim = (dstW == srcW) & (dstH == srcH);
+    bool greater = (dstW >  srcW) | (dstH >  srcH);
+    bool smaller = (dstW <  srcW) | (dstH <  srcH);
+
+    if (sameDim || (greater && R3D.upscaleMode == R3D_UPSCALE_NEAREST) || (smaller && R3D.downscaleMode == R3D_DOWNSCALE_NEAREST)) {
         r3d_target_blit((r3d_target_t[]) {source, R3D_TARGET_DEPTH}, 2, dstId, dstX, dstY, dstW, dstH, false);
         return;
     }
 
-    if (R3D.upscaleMode == R3D_UPSCALE_LINEAR) {
+    if ((greater && R3D.upscaleMode == R3D_UPSCALE_LINEAR) || (smaller && R3D.downscaleMode == R3D_DOWNSCALE_LINEAR)) {
         r3d_target_blit((r3d_target_t[]) {source, R3D_TARGET_DEPTH}, 2, dstId, dstX, dstY, dstW, dstH, true);
         return;
     }
 
-    /* --- Bicubic/Lanczos uspcale --- */
+    if (greater) {
+        float txlW, txlH;
+        r3d_target_get_texel_size(&txlW, &txlH, source, 0);
 
-    float txlW, txlH;
-    r3d_target_get_texel_size(&txlW, &txlH, source, 0);
+        glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+        glViewport(dstX, dstY, dstW, dstH);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, dstId);
-    glViewport(dstX, dstY, dstW, dstH);
+        switch (R3D.upscaleMode) {
+        case R3D_UPSCALE_BICUBIC:
+            R3D_SHADER_USE(prepare.bicubicUp);
+            R3D_SHADER_SET_VEC2(prepare.bicubicUp, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_BIND_SAMPLER(prepare.bicubicUp, uSourceTex, r3d_target_get(source));
+            break;
+        case R3D_UPSCALE_LANCZOS:
+            R3D_SHADER_USE(prepare.lanczosUp);
+            R3D_SHADER_SET_VEC2(prepare.lanczosUp, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_BIND_SAMPLER(prepare.lanczosUp, uSourceTex, r3d_target_get(source));
+            break;
+        default:
+            break;
+        }
 
-    switch (R3D.upscaleMode) {
-    case R3D_UPSCALE_BICUBIC:
-        R3D_SHADER_USE(prepare.bicubicUp);
-        R3D_SHADER_BIND_SAMPLER(prepare.bicubicUp, uSourceTex, r3d_target_get(source));
-        R3D_SHADER_SET_VEC2(prepare.bicubicUp, uSourceTexel, (Vector2) {txlW, txlH});
-        break;
-    case R3D_UPSCALE_LANCZOS:
-        R3D_SHADER_USE(prepare.lanczosUp);
-        R3D_SHADER_BIND_SAMPLER(prepare.lanczosUp, uSourceTex, r3d_target_get(source));
-        R3D_SHADER_SET_VEC2(prepare.lanczosUp, uSourceTexel, (Vector2) {txlW, txlH});
-        break;
-    default:
+        R3D_PRIMITIVE_DRAW_SCREEN();
+
+        r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
         return;
     }
 
-    R3D_PRIMITIVE_DRAW_SCREEN();
+    if (smaller && R3D.downscaleMode == R3D_DOWNSCALE_BOX) {
+        glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+        glViewport(dstX, dstY, dstW, dstH);
 
-    r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
+        R3D_SHADER_USE(prepare.blurDown);
+        R3D_SHADER_SET_INT(prepare.blurDown, uSourceLod, 0);
+        R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(source));
+
+        R3D_PRIMITIVE_DRAW_SCREEN();
+
+        r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
+        return;
+    }
 }
 
 void reset_raylib_state(void)

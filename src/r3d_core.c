@@ -142,6 +142,16 @@ void R3D_SetUpscaleMode(R3D_UpscaleMode mode)
     R3D.upscaleMode = mode;
 }
 
+R3D_DownscaleMode R3D_GetDownscaleMode(void)
+{
+    return R3D.downscaleMode;
+}
+
+void R3D_SetDownscaleMode(R3D_DownscaleMode mode)
+{
+    R3D.downscaleMode = mode;
+}
+
 void R3D_SetTextureFilter(TextureFilter filter)
 {
     R3D.textureFilter = filter;

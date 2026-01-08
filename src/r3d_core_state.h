@@ -69,6 +69,7 @@ extern struct r3d_core_state {
     R3D_AntiAliasing antiAliasing;      //< Defines how the aspect ratio is calculated
     R3D_AspectMode aspectMode;          //< Defines how the aspect ratio is calculated
     R3D_UpscaleMode upscaleMode;        //< Upscaling mode used during the final blit
+    R3D_DownscaleMode downscaleMode;    //< Downscaling mode used during the final blit
     TextureFilter textureFilter;        //< Default texture filter for model loading
     R3D_ColorSpace colorSpace;          //< Color space that must be considered for supplied colors or surface colors
     Matrix matCubeViews[6];             //< Pre-computed view matrices for cubemap faces
