@@ -549,7 +549,6 @@ void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
         data->shadowDepthBias = light->shadowDepthBias;
         data->shadowSlopeBias = light->shadowSlopeBias;
         data->shadowLayer = light->shadowLayer;
-        data->enabled = light->enabled;
         data->shadow = shadow && light->shadow;
         data->type = light->type;
 
@@ -1459,7 +1458,6 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
             .shadowDepthBias = light->shadowDepthBias,
             .shadowSlopeBias = light->shadowSlopeBias,
             .shadowLayer = light->shadowLayer,
-            .enabled = light->enabled,
             .shadow = light->shadow,
             .type = light->type,
         };

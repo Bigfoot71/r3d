@@ -40,7 +40,6 @@ struct Light {
     float shadowDepthBias;
     float shadowSlopeBias;
     int shadowLayer;
-    bool enabled;
     bool shadow;
     int type;
 };

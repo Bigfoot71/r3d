@@ -301,7 +301,6 @@ typedef struct {
     alignas(4) float shadowDepthBias;
     alignas(4) float shadowSlopeBias;
     alignas(4) int32_t shadowLayer;
-    alignas(4) int32_t enabled;
     alignas(4) int32_t shadow;
     alignas(4) int32_t type;
 } r3d_shader_block_light_t;
