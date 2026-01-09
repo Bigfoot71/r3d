@@ -53,6 +53,7 @@
 #include <shaders/dof.frag.h>
 #include <shaders/output.frag.h>
 #include <shaders/fxaa.frag.h>
+#include <shaders/visualizer.frag.h>
 
 // ========================================
 // MODULE STATE
@@ -773,6 +774,14 @@ void r3d_shader_load_post_fxaa(void)
     SET_SAMPLER(post.fxaa, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
 }
 
+void r3d_shader_load_post_visualizer(void)
+{
+    LOAD_SHADER(post.visualizer, SCREEN_VERT, VISUALIZER_FRAG);
+    GET_LOCATION(post.visualizer, uOutputMode);
+    USE_SHADER(post.visualizer);
+    SET_SAMPLER(post.visualizer, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+}
+
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
@@ -837,6 +846,7 @@ void r3d_shader_quit()
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.output);
     UNLOAD_SHADER(post.fxaa);
+    UNLOAD_SHADER(post.visualizer);
 }
 
 void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture)

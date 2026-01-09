@@ -695,6 +695,12 @@ typedef struct {
     r3d_shader_uniform_vec2_t uSourceTexel;
 } r3d_shader_post_fxaa_t;
 
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_int_t uOutputMode;
+} r3d_shader_post_visualizer_t;
+
 // ========================================
 // MODULE STATE
 // ========================================
@@ -752,6 +758,7 @@ extern struct r3d_shader {
         r3d_shader_post_dof_t dof;
         r3d_shader_post_output_t output;
         r3d_shader_post_fxaa_t fxaa;
+        r3d_shader_post_visualizer_t visualizer;
     } post;
 
 } R3D_MOD_SHADER;
@@ -793,6 +800,7 @@ void r3d_shader_load_post_fog(void);
 void r3d_shader_load_post_dof(void);
 void r3d_shader_load_post_output(void);
 void r3d_shader_load_post_fxaa(void);
+void r3d_shader_load_post_visualizer(void);
 
 static const struct r3d_shader_loader {
 
@@ -841,6 +849,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func dof;
         r3d_shader_loader_func output;
         r3d_shader_loader_func fxaa;
+        r3d_shader_loader_func visualizer;
     } post;
 
 } R3D_MOD_SHADER_LOADER = {
@@ -883,9 +892,10 @@ static const struct r3d_shader_loader {
     .post = {
         .bloom = r3d_shader_load_post_bloom,
         .fog = r3d_shader_load_post_fog,
+        .dof = r3d_shader_load_post_dof,
         .output = r3d_shader_load_post_output,
         .fxaa = r3d_shader_load_post_fxaa,
-        .dof = r3d_shader_load_post_dof,
+        .visualizer = r3d_shader_load_post_visualizer,
     },
 
 };

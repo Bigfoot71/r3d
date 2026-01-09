@@ -49,8 +49,10 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
     R3D.environment = R3D_ENVIRONMENT_BASE;
     R3D.material = R3D_MATERIAL_BASE;
 
+    R3D.antiAliasing = R3D_ANTI_ALIASING_DISABLED;
     R3D.aspectMode = R3D_ASPECT_EXPAND;
     R3D.upscaleMode = R3D_UPSCALE_NEAREST;
+    R3D.outputMode = R3D_OUTPUT_SCENE;
 
     R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
@@ -150,6 +152,16 @@ R3D_DownscaleMode R3D_GetDownscaleMode(void)
 void R3D_SetDownscaleMode(R3D_DownscaleMode mode)
 {
     R3D.downscaleMode = mode;
+}
+
+R3D_OutputMode R3D_GetOutputMode(void)
+{
+    return R3D.outputMode;
+}
+
+void R3D_SetOutputMode(R3D_OutputMode mode)
+{
+    R3D.outputMode = mode;
 }
 
 void R3D_SetTextureFilter(TextureFilter filter)

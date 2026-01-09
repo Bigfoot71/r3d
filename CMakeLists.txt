@@ -259,6 +259,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/post/dof.frag"
     "${R3D_ROOT_PATH}/shaders/post/output.frag"
     "${R3D_ROOT_PATH}/shaders/post/fxaa.frag"
+    "${R3D_ROOT_PATH}/shaders/post/visualizer.frag"
 )
 
 embed_assets(${PROJECT_NAME}

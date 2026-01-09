@@ -109,6 +109,23 @@ typedef enum R3D_DownscaleMode {
 } R3D_DownscaleMode;
 
 /**
+ * @brief Defines the buffer to output (render texture or window).
+ * @note Nothing will be output if the requested target has not been created / used.
+ */
+typedef enum R3D_OutputMode {
+    R3D_OUTPUT_SCENE,
+    R3D_OUTPUT_ALBEDO,
+    R3D_OUTPUT_NORMAL,
+    R3D_OUTPUT_ORM,
+    R3D_OUTPUT_DIFFUSE,
+    R3D_OUTPUT_SPECULAR,
+    R3D_OUTPUT_SSAO,
+    R3D_OUTPUT_SSIL,
+    R3D_OUTPUT_SSR,
+    R3D_OUTPUT_BLOOM
+} R3D_OutputMode;
+
+/**
  * @brief Specifies the color space for user-provided colors and color textures.
  *
  * This enum defines how colors are interpreted for material inputs:
@@ -254,6 +271,19 @@ R3DAPI R3D_DownscaleMode R3D_GetDownscaleMode(void);
  * @param mode The desired R3D_DownscaleMode.
  */
 R3DAPI void R3D_SetDownscaleMode(R3D_DownscaleMode mode);
+
+/**
+ * @brief Gets the current output mode.
+ * @return The currently active R3D_OutputMode.
+ */
+R3DAPI R3D_OutputMode R3D_GetOutputMode(void);
+
+/**
+ * @brief Sets the output mode for rendering.
+ * @param mode The R3D_OutputMode to use.
+ * @note Nothing will be output if the requested target has not been created / used.
+ */
+R3DAPI void R3D_SetOutputMode(R3D_OutputMode mode);
 
 /**
  * @brief Sets the default texture filtering mode.

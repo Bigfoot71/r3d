@@ -83,6 +83,7 @@ static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
 
 static void blit_to_screen(r3d_target_t source);
+static void visualize_to_screen(r3d_target_t source);
 
 static void reset_raylib_state(void);
 
@@ -137,38 +138,23 @@ void R3D_End(void)
     /* --- Opaque and decal rendering with deferred lighting and composition --- */
 
     r3d_target_t sceneTarget = R3D_TARGET_SCENE_0;
+    r3d_target_t ssaoSource = R3D_TARGET_INVALID;
+    r3d_target_t ssilSource = R3D_TARGET_INVALID;
+    r3d_target_t ssrSource = R3D_TARGET_INVALID;
 
     if (r3d_draw_has_deferred() || r3d_draw_has_prepass()) {
         R3D_TARGET_CLEAR(R3D_TARGET_ALL_DEFERRED);
 
         pass_scene_geometry();
 
-        if (r3d_draw_has_prepass()) {
-            pass_scene_prepass();
-        }
+        if (r3d_draw_has_prepass()) pass_scene_prepass();
+        if (r3d_draw_has_decal()) pass_scene_decals();
 
-        if (r3d_draw_has_decal()) {
-            pass_scene_decals();
-        }
+        if (R3D.environment.ssao.enabled) ssaoSource = pass_prepare_ssao();
+        if (r3d_light_has_visible()) pass_deferred_lights(ssaoSource);
 
-        r3d_target_t ssaoSource = R3D_TARGET_INVALID;
-        if (R3D.environment.ssao.enabled) {
-            ssaoSource = pass_prepare_ssao();
-        }
-
-        if (r3d_light_has_visible()) {
-            pass_deferred_lights(ssaoSource);
-        }
-
-        r3d_target_t ssilSource = R3D_TARGET_INVALID;
-        if (R3D.environment.ssil.enabled) {
-            ssilSource = pass_prepare_ssil();
-        }
-
-        r3d_target_t ssrSource = R3D_TARGET_INVALID;
-        if (R3D.environment.ssr.enabled) {
-            ssrSource = pass_prepare_ssr();
-        }
+        if (R3D.environment.ssil.enabled) ssilSource = pass_prepare_ssil();
+        if (R3D.environment.ssr.enabled) ssrSource = pass_prepare_ssr();
 
         pass_deferred_ambient(ssaoSource, ssilSource, ssrSource);
         pass_deferred_compose(sceneTarget);
@@ -207,7 +193,18 @@ void R3D_End(void)
         sceneTarget = pass_post_fxaa(sceneTarget);
     }
 
-    blit_to_screen(r3d_target_swap_scene(sceneTarget));
+    switch (R3D.outputMode) {
+    case R3D_OUTPUT_SCENE: blit_to_screen(r3d_target_swap_scene(sceneTarget)); break;
+    case R3D_OUTPUT_ALBEDO: visualize_to_screen(R3D_TARGET_ALBEDO); break;
+    case R3D_OUTPUT_NORMAL: visualize_to_screen(R3D_TARGET_NORMAL); break;
+    case R3D_OUTPUT_ORM: visualize_to_screen(R3D_TARGET_ORM); break;
+    case R3D_OUTPUT_DIFFUSE: visualize_to_screen(R3D_TARGET_DIFFUSE); break;
+    case R3D_OUTPUT_SPECULAR: visualize_to_screen(R3D_TARGET_SPECULAR); break;
+    case R3D_OUTPUT_SSAO: visualize_to_screen(ssaoSource); break;
+    case R3D_OUTPUT_SSIL: visualize_to_screen(ssilSource); break;
+    case R3D_OUTPUT_SSR: visualize_to_screen(ssrSource); break;
+    case R3D_OUTPUT_BLOOM: visualize_to_screen(R3D_TARGET_BLOOM); break;
+    }
 
     /* --- Reset states changed by R3D --- */
 
@@ -1783,6 +1780,10 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
 
 void blit_to_screen(r3d_target_t source)
 {
+    if (r3d_target_get_or_null(source) == 0) {
+        return;
+    }
+
     GLuint dstId = R3D.screen.id;
     int dstW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
     int dstH = dstId ? R3D.screen.texture.height : GetRenderHeight();
@@ -1861,6 +1862,44 @@ void blit_to_screen(r3d_target_t source)
         r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
         return;
     }
+}
+
+void visualize_to_screen(r3d_target_t source)
+{
+    if (r3d_target_get_or_null(source) == 0) {
+        return;
+    }
+
+    GLuint dstId = R3D.screen.id;
+    int dstW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
+    int dstH = dstId ? R3D.screen.texture.height : GetRenderHeight();
+
+    int dstX = 0, dstY = 0;
+    if (R3D.aspectMode == R3D_ASPECT_KEEP) {
+        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+        float dstRatio = (float)dstW / dstH;
+        if (srcRatio > dstRatio) {
+            int newH = (int)(dstW / srcRatio + 0.5f);
+            dstY = (dstH - newH) / 2;
+            dstH = newH;
+        }
+        else {
+            int newW = (int)(dstH * srcRatio + 0.5f);
+            dstX = (dstW - newW) / 2;
+            dstW = newW;
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+    glViewport(dstX, dstY, dstW, dstH);
+
+    R3D_SHADER_USE(post.visualizer);
+    R3D_SHADER_SET_INT(post.visualizer, uOutputMode, R3D.outputMode);
+    R3D_SHADER_BIND_SAMPLER(post.visualizer, uSourceTex, r3d_target_get(source));
+
+    R3D_PRIMITIVE_DRAW_SCREEN();
+
+    r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
 }
 
 void reset_raylib_state(void)
