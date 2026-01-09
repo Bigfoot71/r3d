@@ -48,7 +48,7 @@ typedef enum {
 
 #define R3D_TARGET_ALL_DEFERRED \
     R3D_TARGET_ALBEDO,          \
-    R3D_TARGET_NORM_TAN,          \
+    R3D_TARGET_NORM_TAN,        \
     R3D_TARGET_ORM,             \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
@@ -57,7 +57,7 @@ typedef enum {
 #define R3D_TARGET_GBUFFER      \
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_DIFFUSE,         \
-    R3D_TARGET_NORM_TAN,          \
+    R3D_TARGET_NORM_TAN,        \
     R3D_TARGET_ORM,             \
     R3D_TARGET_DEPTH            \
 

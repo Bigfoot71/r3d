@@ -52,6 +52,7 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
     R3D.antiAliasing = R3D_ANTI_ALIASING_DISABLED;
     R3D.aspectMode = R3D_ASPECT_EXPAND;
     R3D.upscaleMode = R3D_UPSCALE_NEAREST;
+    R3D.downscaleMode = R3D_DOWNSCALE_NEAREST;
     R3D.outputMode = R3D_OUTPUT_SCENE;
 
     R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
