@@ -87,13 +87,26 @@ typedef enum R3D_AspectMode {
 
 /**
  * @brief Upscaling/filtering methods for rendering output.
+ *
+ * Upscale mode to apply when the output window is larger than the internal render resolution.
  */
 typedef enum R3D_UpscaleMode {
-    R3D_UPSCALE_NEAREST,    ///< Nearest-neighbor upscaling: very fast but produces blocky pixels.
-    R3D_UPSCALE_LINEAR,     ///< Bilinear upscaling: very fast, smooth, but can appear blurry.
-    R3D_UPSCALE_BICUBIC,    ///< Bicubic (Catmull-Rom) upscaling: slower, smoother, less blurry than linear.
-    R3D_UPSCALE_LANCZOS,    ///< Lanczos 2 upscaling: preserves details closer to nearest, but without blockiness; the most expensive.
+    R3D_UPSCALE_NEAREST,    ///< Nearest-neighbor upscaling: very fast, but produces blocky pixels.
+    R3D_UPSCALE_LINEAR,     ///< Bilinear upscaling: very fast, smoother than nearest, but can appear blurry.
+    R3D_UPSCALE_BICUBIC,    ///< Bicubic (Catmull-Rom) upscaling: slower, smoother, and less blurry than linear.
+    R3D_UPSCALE_LANCZOS     ///< Lanczos-2 upscaling: preserves more fine details, but is the most expensive.
 } R3D_UpscaleMode;
+
+/**
+ * @brief Downscaling/filtering methods for rendering output.
+ *
+ * Downscale mode to apply when the output window is smaller than the internal render resolution.
+ */
+typedef enum R3D_DownscaleMode {
+    R3D_DOWNSCALE_NEAREST,  ///< Nearest-neighbor downscaling: very fast, but produces aliasing.
+    R3D_DOWNSCALE_LINEAR,   ///< Bilinear downscaling: very fast, can serve as a basic form of anti-aliasing (SSAA).
+    R3D_DOWNSCALE_BOX       ///< Box-blur downscaling: uses a simple but effective box blur, slightly more expensive than linear, smooths moiré better.
+} R3D_DownscaleMode;
 
 /**
  * @brief Specifies the color space for user-provided colors and color textures.
@@ -229,6 +242,18 @@ R3DAPI R3D_UpscaleMode R3D_GetUpscaleMode(void);
  * @param mode The desired R3D_UpscaleMode.
  */
 R3DAPI void R3D_SetUpscaleMode(R3D_UpscaleMode mode);
+
+/**
+ * @brief Retrieves the current downscaling mode used for rendering.
+ * @return The currently active R3D_DownscaleMode.
+ */
+R3DAPI R3D_DownscaleMode R3D_GetDownscaleMode(void);
+
+/**
+ * @brief Sets the downscaling mode for rendering output.
+ * @param mode The desired R3D_DownscaleMode.
+ */
+R3DAPI void R3D_SetDownscaleMode(R3D_DownscaleMode mode);
 
 /**
  * @brief Sets the default texture filtering mode.
