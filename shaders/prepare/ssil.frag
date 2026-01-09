@@ -87,14 +87,15 @@ void main()
     vec3 camera = normalize(-position);
 
     float sliceRotation = M_TAU / (uSliceCount - 1.0);
+    float jitterRotation = M_HashIGN(gl_FragCoord.xy) * M_TAU;
+
     float sampleScale = (-uSampleRadius * uView.proj[0][0]) / position.z;  // World-space to screen-space conversion
     float sampleOffset = 0.01;
-    float jitter = M_HashIGN(gl_FragCoord.xy) - 0.5;
 
     // Iterate over angular slices around the hemisphere
-    for (float slice = 0.0; slice < uSliceCount + 0.5; slice += 1.0)
+    for (int slice = 0; slice < uSliceCount; slice++)
     {
-        float phi = sliceRotation * (slice + jitter) + M_PI;
+        float phi = sliceRotation * float(slice) + jitterRotation;
         vec2 omega = vec2(cos(phi), sin(phi));
 
         vec3 direction = vec3(omega.x, omega.y, 0.0);
@@ -111,9 +112,9 @@ void main()
         float n = signN * acos(cosN);
 
         // Trace radial samples outward along this slice
-        for (float currentSample = 0.0; currentSample < uSampleCount + 0.5; currentSample += 1.0)
+        for (int currentSample = 0; currentSample < uSampleCount; currentSample++)
         {
-            float sampleStep = (currentSample + jitter) / uSampleCount + sampleOffset;
+            float sampleStep = float(currentSample) / uSampleCount + sampleOffset;
             vec2 sampleUV = vTexCoord - sampleStep * sampleScale * omega * uView.aspect;
 
             vec3 samplePosition = V_GetViewPosition(uDepthTex, sampleUV);
