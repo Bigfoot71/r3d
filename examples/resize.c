@@ -1,6 +1,9 @@
 #include <r3d/r3d.h>
 #include <raymath.h>
 
+static const char* GetAspectModeName(R3D_AspectMode mode);
+static const char* GetUpscaleModeName(R3D_UpscaleMode mode);
+
 int main(void)
 {
     // Initialize window
@@ -33,6 +36,10 @@ int main(void)
         .fovy = 60
     };
 
+    // Current blit state
+    R3D_AspectMode aspect = R3D_ASPECT_EXPAND;
+    R3D_UpscaleMode upscale = R3D_UPSCALE_NEAREST;
+
     // Main loop
     while (!WindowShouldClose())
     {
@@ -40,14 +47,14 @@ int main(void)
 
         // Toggle aspect keep
         if (IsKeyPressed(KEY_R)) {
-            if (R3D_HasState(R3D_FLAG_ASPECT_KEEP)) R3D_ClearState(R3D_FLAG_ASPECT_KEEP);
-            else R3D_SetState(R3D_FLAG_ASPECT_KEEP);
+            aspect = (aspect + 1) % 2;
+            R3D_SetAspectMode(aspect);
         }
 
         // Toggle linear filtering
         if (IsKeyPressed(KEY_F)) {
-            if (R3D_HasState(R3D_FLAG_BLIT_LINEAR)) R3D_ClearState(R3D_FLAG_BLIT_LINEAR);
-            else R3D_SetState(R3D_FLAG_BLIT_LINEAR);
+            upscale = (upscale + 1) % 4;
+            R3D_SetUpscaleMode(upscale);
         }
 
         BeginDrawing();
@@ -61,10 +68,8 @@ int main(void)
             R3D_End();
 
             // Draw info
-            bool keep = R3D_HasState(R3D_FLAG_ASPECT_KEEP);
-            bool linear = R3D_HasState(R3D_FLAG_BLIT_LINEAR);
-            DrawText(TextFormat("Resize mode: %s", keep ? "KEEP" : "EXPAND"), 10, 10, 20, RAYWHITE);
-            DrawText(TextFormat("Filter mode: %s", linear ? "LINEAR" : "NEAREST"), 10, 40, 20, RAYWHITE);
+            DrawText(TextFormat("Resize mode: %s", GetAspectModeName(aspect)), 10, 10, 20, RAYWHITE);
+            DrawText(TextFormat("Filter mode: %s", GetUpscaleModeName(upscale)), 10, 40, 20, RAYWHITE);
 
         EndDrawing();
     }
@@ -76,4 +81,24 @@ int main(void)
     CloseWindow();
 
     return 0;
+}
+
+const char* GetAspectModeName(R3D_AspectMode mode)
+{
+    switch (mode) {
+    case R3D_ASPECT_EXPAND: return "EXPAND";
+    case R3D_ASPECT_KEEP: return "KEEP";
+    }
+    return "UNKNOWN";
+}
+
+const char* GetUpscaleModeName(R3D_UpscaleMode mode)
+{
+    switch (mode) {
+    case R3D_UPSCALE_NEAREST: return "NEAREST";
+    case R3D_UPSCALE_LINEAR: return "LINEAR";
+    case R3D_UPSCALE_BICUBIC: return "BICUBIC";
+    case R3D_UPSCALE_LANCZOS: return "LANCZOS";
+    }
+    return "UNKNOWN";
 }

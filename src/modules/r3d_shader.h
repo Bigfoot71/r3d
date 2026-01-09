@@ -154,7 +154,7 @@ typedef enum {
     // Buffers
     R3D_SHADER_SAMPLER_BUFFER_DEPTH     = 25,
     R3D_SHADER_SAMPLER_BUFFER_ALBEDO    = 26,
-    R3D_SHADER_SAMPLER_BUFFER_NORMAL    = 27,
+    R3D_SHADER_SAMPLER_BUFFER_NORM_TAN  = 27,
     R3D_SHADER_SAMPLER_BUFFER_ORM       = 28,
     R3D_SHADER_SAMPLER_BUFFER_DIFFUSE   = 29,
     R3D_SHADER_SAMPLER_BUFFER_SPECULAR  = 30,
@@ -192,7 +192,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BONE_MATRICES]    = GL_TEXTURE_1D,
     [R3D_SHADER_SAMPLER_BUFFER_DEPTH]     = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_ALBEDO]    = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_NORMAL]    = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_NORM_TAN]  = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_ORM]       = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_DIFFUSE]   = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]  = GL_TEXTURE_2D,
@@ -321,6 +321,18 @@ typedef struct {
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uStepSize;
 } r3d_shader_prepare_atrous_wavelet_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uSourceTexel;
+} r3d_shader_prepare_bicubic_up_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uSourceTexel;
+} r3d_shader_prepare_lanczos_up_t;
 
 typedef struct {
     unsigned int id;
@@ -683,6 +695,12 @@ typedef struct {
     r3d_shader_uniform_vec2_t uSourceTexel;
 } r3d_shader_post_fxaa_t;
 
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_int_t uOutputMode;
+} r3d_shader_post_visualizer_t;
+
 // ========================================
 // MODULE STATE
 // ========================================
@@ -698,6 +716,8 @@ extern struct r3d_shader {
     // Prepare shaders
     struct {
         r3d_shader_prepare_atrous_wavelet_t atrousWavelet;
+        r3d_shader_prepare_bicubic_up_t bicubicUp;
+        r3d_shader_prepare_lanczos_up_t lanczosUp;
         r3d_shader_prepare_blur_down_t blurDown;
         r3d_shader_prepare_blur_up_t blurUp;
         r3d_shader_prepare_ssao_t ssao;
@@ -738,6 +758,7 @@ extern struct r3d_shader {
         r3d_shader_post_dof_t dof;
         r3d_shader_post_output_t output;
         r3d_shader_post_fxaa_t fxaa;
+        r3d_shader_post_visualizer_t visualizer;
     } post;
 
 } R3D_MOD_SHADER;
@@ -749,6 +770,8 @@ extern struct r3d_shader {
 typedef void (*r3d_shader_loader_func)(void);
 
 void r3d_shader_load_prepare_atrous_wavelet(void);
+void r3d_shader_load_prepare_bicubic_up(void);
+void r3d_shader_load_prepare_lanczos_up(void);
 void r3d_shader_load_prepare_blur_down(void);
 void r3d_shader_load_prepare_blur_up(void);
 void r3d_shader_load_prepare_ssao(void);
@@ -777,12 +800,15 @@ void r3d_shader_load_post_fog(void);
 void r3d_shader_load_post_dof(void);
 void r3d_shader_load_post_output(void);
 void r3d_shader_load_post_fxaa(void);
+void r3d_shader_load_post_visualizer(void);
 
 static const struct r3d_shader_loader {
 
     // Prepare shaders
     struct {
         r3d_shader_loader_func atrousWavelet;
+        r3d_shader_loader_func bicubicUp;
+        r3d_shader_loader_func lanczosUp;
         r3d_shader_loader_func blurDown;
         r3d_shader_loader_func blurUp;
         r3d_shader_loader_func ssao;
@@ -823,12 +849,15 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func dof;
         r3d_shader_loader_func output;
         r3d_shader_loader_func fxaa;
+        r3d_shader_loader_func visualizer;
     } post;
 
 } R3D_MOD_SHADER_LOADER = {
 
     .prepare = {
         .atrousWavelet = r3d_shader_load_prepare_atrous_wavelet,
+        .bicubicUp = r3d_shader_load_prepare_bicubic_up,
+        .lanczosUp = r3d_shader_load_prepare_lanczos_up,
         .blurDown = r3d_shader_load_prepare_blur_down,
         .blurUp = r3d_shader_load_prepare_blur_up,
         .ssao = r3d_shader_load_prepare_ssao,
@@ -863,9 +892,10 @@ static const struct r3d_shader_loader {
     .post = {
         .bloom = r3d_shader_load_post_bloom,
         .fog = r3d_shader_load_post_fog,
+        .dof = r3d_shader_load_post_dof,
         .output = r3d_shader_load_post_output,
         .fxaa = r3d_shader_load_post_fxaa,
-        .dof = r3d_shader_load_post_dof,
+        .visualizer = r3d_shader_load_post_visualizer,
     },
 
 };

@@ -47,7 +47,7 @@
 // INTERNAL FUNCTIONS
 // ========================================
 
-static void update_view_state(Camera3D camera, double aspect, double near, double far);
+static void update_view_state(Camera3D camera, double near, double far);
 static void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow);
 static void upload_view_block(void);
 static void upload_env_block(void);
@@ -82,6 +82,9 @@ static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
 
+static void blit_to_screen(r3d_target_t source);
+static void visualize_to_screen(r3d_target_t source);
+
 static void reset_raylib_state(void);
 
 // ========================================
@@ -96,21 +99,8 @@ void R3D_Begin(Camera3D camera)
 void R3D_BeginEx(RenderTexture target, Camera3D camera)
 {
     rlDrawRenderBatchActive();
-
-    r3d_target_set_blit_screen(target);
-
-    r3d_target_set_blit_mode(
-        R3D_CORE_FLAGS_HAS(state, R3D_FLAG_ASPECT_KEEP),
-        R3D_CORE_FLAGS_HAS(state, R3D_FLAG_BLIT_LINEAR)
-    );
-
-    update_view_state(
-        camera,
-        r3d_target_get_render_aspect(),
-        rlGetCullDistanceNear(),
-        rlGetCullDistanceFar()
-    );
-
+    update_view_state(camera, rlGetCullDistanceNear(), rlGetCullDistanceFar());
+    R3D.screen = target;
     r3d_draw_clear();
 }
 
@@ -148,38 +138,23 @@ void R3D_End(void)
     /* --- Opaque and decal rendering with deferred lighting and composition --- */
 
     r3d_target_t sceneTarget = R3D_TARGET_SCENE_0;
+    r3d_target_t ssaoSource = R3D_TARGET_INVALID;
+    r3d_target_t ssilSource = R3D_TARGET_INVALID;
+    r3d_target_t ssrSource = R3D_TARGET_INVALID;
 
     if (r3d_draw_has_deferred() || r3d_draw_has_prepass()) {
         R3D_TARGET_CLEAR(R3D_TARGET_ALL_DEFERRED);
 
         pass_scene_geometry();
 
-        if (r3d_draw_has_prepass()) {
-            pass_scene_prepass();
-        }
+        if (r3d_draw_has_prepass()) pass_scene_prepass();
+        if (r3d_draw_has_decal()) pass_scene_decals();
 
-        if (r3d_draw_has_decal()) {
-            pass_scene_decals();
-        }
+        if (R3D.environment.ssao.enabled) ssaoSource = pass_prepare_ssao();
+        if (r3d_light_has_visible()) pass_deferred_lights(ssaoSource);
 
-        r3d_target_t ssaoSource = R3D_TARGET_INVALID;
-        if (R3D.environment.ssao.enabled) {
-            ssaoSource = pass_prepare_ssao();
-        }
-
-        if (r3d_light_has_visible()) {
-            pass_deferred_lights(ssaoSource);
-        }
-
-        r3d_target_t ssilSource = R3D_TARGET_INVALID;
-        if (R3D.environment.ssil.enabled) {
-            ssilSource = pass_prepare_ssil();
-        }
-
-        r3d_target_t ssrSource = R3D_TARGET_INVALID;
-        if (R3D.environment.ssr.enabled) {
-            ssrSource = pass_prepare_ssr();
-        }
+        if (R3D.environment.ssil.enabled) ssilSource = pass_prepare_ssil();
+        if (R3D.environment.ssr.enabled) ssrSource = pass_prepare_ssr();
 
         pass_deferred_ambient(ssaoSource, ssilSource, ssrSource);
         pass_deferred_compose(sceneTarget);
@@ -214,11 +189,23 @@ void R3D_End(void)
 
     sceneTarget = pass_post_output(sceneTarget);
 
-    if (R3D_CORE_FLAGS_HAS(state, R3D_FLAG_FXAA)) {
+    if (R3D.antiAliasing == R3D_ANTI_ALIASING_FXAA) {
         sceneTarget = pass_post_fxaa(sceneTarget);
     }
 
-    r3d_target_blit(r3d_target_swap_scene(sceneTarget));
+    switch (R3D.outputMode) {
+    case R3D_OUTPUT_SCENE: blit_to_screen(r3d_target_swap_scene(sceneTarget)); break;
+    case R3D_OUTPUT_ALBEDO: visualize_to_screen(R3D_TARGET_ALBEDO); break;
+    case R3D_OUTPUT_NORMAL: visualize_to_screen(R3D_TARGET_NORM_TAN); break;
+    case R3D_OUTPUT_TANGENT: visualize_to_screen(R3D_TARGET_NORM_TAN); break;
+    case R3D_OUTPUT_ORM: visualize_to_screen(R3D_TARGET_ORM); break;
+    case R3D_OUTPUT_DIFFUSE: visualize_to_screen(R3D_TARGET_DIFFUSE); break;
+    case R3D_OUTPUT_SPECULAR: visualize_to_screen(R3D_TARGET_SPECULAR); break;
+    case R3D_OUTPUT_SSAO: visualize_to_screen(ssaoSource); break;
+    case R3D_OUTPUT_SSIL: visualize_to_screen(ssilSource); break;
+    case R3D_OUTPUT_SSR: visualize_to_screen(ssrSource); break;
+    case R3D_OUTPUT_BLOOM: visualize_to_screen(R3D_TARGET_BLOOM); break;
+    }
 
     /* --- Reset states changed by R3D --- */
 
@@ -488,8 +475,26 @@ void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int c
 // INTERNAL FUNCTIONS
 // ========================================
 
-void update_view_state(Camera3D camera, double aspect, double near, double far)
+void update_view_state(Camera3D camera, double near, double far)
 {
+    int resW = 1, resH = 1;
+    switch (R3D.aspectMode) {
+    case R3D_ASPECT_EXPAND:
+        if (R3D.screen.id != 0) {
+            resW = R3D.screen.texture.width;
+            resH = R3D.screen.texture.height;
+        }
+        else {
+            resW = GetRenderWidth();
+            resH = GetRenderHeight();
+        }
+    case R3D_ASPECT_KEEP:
+        r3d_target_get_resolution(&resW, &resH, R3D_TARGET_SCENE_0, 0);
+        break;
+    }
+
+    double aspect = (double)resW / resH;
+
     Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
     Matrix proj = R3D_MATRIX_IDENTITY;
 
@@ -1774,9 +1779,134 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
     return sceneTarget;
 }
 
+void blit_to_screen(r3d_target_t source)
+{
+    if (r3d_target_get_or_null(source) == 0) {
+        return;
+    }
+
+    GLuint dstId = R3D.screen.id;
+    int dstW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
+    int dstH = dstId ? R3D.screen.texture.height : GetRenderHeight();
+
+    int dstX = 0, dstY = 0;
+    if (R3D.aspectMode == R3D_ASPECT_KEEP) {
+        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+        float dstRatio = (float)dstW / dstH;
+        if (srcRatio > dstRatio) {
+            int newH = (int)(dstW / srcRatio + 0.5f);
+            dstY = (dstH - newH) / 2;
+            dstH = newH;
+        }
+        else {
+            int newW = (int)(dstH * srcRatio + 0.5f);
+            dstX = (dstW - newW) / 2;
+            dstW = newW;
+        }
+    }
+
+    int srcW = 0, srcH = 0;
+    r3d_target_get_resolution(&srcW, &srcH, source, 0);
+
+    bool sameDim = (dstW == srcW) & (dstH == srcH);
+    bool greater = (dstW >  srcW) | (dstH >  srcH);
+    bool smaller = (dstW <  srcW) | (dstH <  srcH);
+
+    if (sameDim || (greater && R3D.upscaleMode == R3D_UPSCALE_NEAREST) || (smaller && R3D.downscaleMode == R3D_DOWNSCALE_NEAREST)) {
+        r3d_target_blit((r3d_target_t[]) {source, R3D_TARGET_DEPTH}, 2, dstId, dstX, dstY, dstW, dstH, false);
+        return;
+    }
+
+    if ((greater && R3D.upscaleMode == R3D_UPSCALE_LINEAR) || (smaller && R3D.downscaleMode == R3D_DOWNSCALE_LINEAR)) {
+        r3d_target_blit((r3d_target_t[]) {source, R3D_TARGET_DEPTH}, 2, dstId, dstX, dstY, dstW, dstH, true);
+        return;
+    }
+
+    if (greater) {
+        float txlW, txlH;
+        r3d_target_get_texel_size(&txlW, &txlH, source, 0);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+        glViewport(dstX, dstY, dstW, dstH);
+
+        switch (R3D.upscaleMode) {
+        case R3D_UPSCALE_BICUBIC:
+            R3D_SHADER_USE(prepare.bicubicUp);
+            R3D_SHADER_SET_VEC2(prepare.bicubicUp, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_BIND_SAMPLER(prepare.bicubicUp, uSourceTex, r3d_target_get(source));
+            break;
+        case R3D_UPSCALE_LANCZOS:
+            R3D_SHADER_USE(prepare.lanczosUp);
+            R3D_SHADER_SET_VEC2(prepare.lanczosUp, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_BIND_SAMPLER(prepare.lanczosUp, uSourceTex, r3d_target_get(source));
+            break;
+        default:
+            break;
+        }
+
+        R3D_PRIMITIVE_DRAW_SCREEN();
+
+        r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
+        return;
+    }
+
+    if (smaller && R3D.downscaleMode == R3D_DOWNSCALE_BOX) {
+        glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+        glViewport(dstX, dstY, dstW, dstH);
+
+        R3D_SHADER_USE(prepare.blurDown);
+        R3D_SHADER_SET_INT(prepare.blurDown, uSourceLod, 0);
+        R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(source));
+
+        R3D_PRIMITIVE_DRAW_SCREEN();
+
+        r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
+        return;
+    }
+}
+
+void visualize_to_screen(r3d_target_t source)
+{
+    if (r3d_target_get_or_null(source) == 0) {
+        return;
+    }
+
+    GLuint dstId = R3D.screen.id;
+    int dstW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
+    int dstH = dstId ? R3D.screen.texture.height : GetRenderHeight();
+
+    int dstX = 0, dstY = 0;
+    if (R3D.aspectMode == R3D_ASPECT_KEEP) {
+        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+        float dstRatio = (float)dstW / dstH;
+        if (srcRatio > dstRatio) {
+            int newH = (int)(dstW / srcRatio + 0.5f);
+            dstY = (dstH - newH) / 2;
+            dstH = newH;
+        }
+        else {
+            int newW = (int)(dstH * srcRatio + 0.5f);
+            dstX = (dstW - newW) / 2;
+            dstW = newW;
+        }
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+    glViewport(dstX, dstY, dstW, dstH);
+
+    R3D_SHADER_USE(post.visualizer);
+    R3D_SHADER_SET_INT(post.visualizer, uOutputMode, R3D.outputMode);
+    R3D_SHADER_BIND_SAMPLER(post.visualizer, uSourceTex, r3d_target_get(source));
+
+    R3D_PRIMITIVE_DRAW_SCREEN();
+
+    r3d_target_blit((r3d_target_t[]) {R3D_TARGET_DEPTH}, 1, dstId, dstX, dstY, dstW, dstH, false);
+}
+
 void reset_raylib_state(void)
 {
     r3d_shader_unbind_samplers();
+    r3d_target_reset();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);
@@ -1803,8 +1933,6 @@ void reset_raylib_state(void)
     // We do this at the end because calling rlSetBlendMode can trigger a draw call for
     // any content accumulated by rlgl, and we want that to be rendered into the main
     // framebuffer, not into one of R3D's internal framebuffers that will be discarded afterward.
-
-    // TODO: Ideally, we would retrieve rlgl’s current blend mode state and restore it exactly.
 
     rlSetBlendMode(RL_BLEND_ALPHA);
 }

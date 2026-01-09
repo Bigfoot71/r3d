@@ -52,8 +52,8 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_SSIL_MIP]   = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
     [R3D_TARGET_SSR]        = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
     [R3D_TARGET_BLOOM]      = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
-    [R3D_TARGET_SCENE_0]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_SCENE_1]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_SCENE_0]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR,                GL_LINEAR,  false },
+    [R3D_TARGET_SCENE_1]    = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR,                GL_LINEAR,  false },
     [R3D_TARGET_DEPTH]      = { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,   1.0f, GL_NEAREST,               GL_NEAREST, false },
 };
 
@@ -207,37 +207,6 @@ void r3d_target_resize(int resW, int resH)
     }
 }
 
-void r3d_target_set_blit_screen(RenderTexture screen)
-{
-    R3D_MOD_TARGET.screen = screen;
-}
-
-void r3d_target_set_blit_mode(bool keepAspect, bool blitLinear)
-{
-    R3D_MOD_TARGET.keepAspect = keepAspect;
-    R3D_MOD_TARGET.blitLinear = blitLinear;
-}
-
-float r3d_target_get_render_aspect(void)
-{
-    float aspect = 1.0f;
-
-    if (R3D_MOD_TARGET.keepAspect) {
-        aspect = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
-    }
-    else {
-        if (R3D_MOD_TARGET.screen.id != 0) {
-            const Texture2D* target = &R3D_MOD_TARGET.screen.texture;
-            aspect = (float)target->width / target->height;
-        }
-        else {
-            aspect = (float)GetRenderWidth() / GetRenderHeight();
-        }
-    }
-
-    return aspect;
-}
-
 int r3d_target_get_mip_count(r3d_target_t target)
 {
     const target_config_t* config = &TARGET_CONFIG[target];
@@ -373,65 +342,45 @@ GLuint r3d_target_get_or_null(r3d_target_t target)
     return R3D_MOD_TARGET.targets[target];
 }
 
-void r3d_target_blit(r3d_target_t target)
+void r3d_target_blit(r3d_target_t* targets, int count, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear)
 {
-    /*
-     * NOTE: At this point, the frame is considered finished,
-     *       so the cache of the current FBO is reset to -1 (invalid).
-     */
-    R3D_MOD_TARGET.currentFbo = -1;
+    bool hasDepth = (targets[count - 1] == R3D_TARGET_DEPTH);
+    bool depthOnly = (count == 1 && hasDepth);
 
-    unsigned int dstId = 0;
-    int dstX = 0, dstY = 0;
-    int dstW = 0, dstH = 0;
+    int fboIndex = get_or_create_fbo(targets, count);
 
-    if (R3D_MOD_TARGET.screen.id != 0) {
-        dstId = R3D_MOD_TARGET.screen.id;
-        dstW = R3D_MOD_TARGET.screen.texture.width;
-        dstH = R3D_MOD_TARGET.screen.texture.height;
-    }
-    else {
-        dstW = GetRenderWidth();
-        dstH = GetRenderHeight();
-    }
-
-    if (R3D_MOD_TARGET.keepAspect) {
-        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
-        float dstRatio = (float)dstW / dstH;
-        if (srcRatio > dstRatio) {
-            int prevH = dstH;
-            dstH = (int)(dstW / srcRatio + 0.5f);
-            dstY = (prevH - dstH) / 2;
-        }
-        else {
-            int prevW = dstW;
-            dstW = (int)(dstH * srcRatio + 0.5f);
-            dstX = (prevW - dstW) / 2;
-        }
-    }
-
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstId);
-    int fboIndex = get_or_create_fbo((r3d_target_t[]){target, R3D_TARGET_DEPTH}, 2);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFbo);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, R3D_MOD_TARGET.fbo[fboIndex].id);
 
-    if (R3D_MOD_TARGET.blitLinear) {
-        glBlitFramebuffer(
-            0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
-            dstX, dstY, dstX + dstW, dstY + dstH,
-            GL_COLOR_BUFFER_BIT, GL_LINEAR
-        );
-        glBlitFramebuffer(
-            0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
-            dstX, dstY, dstX + dstW, dstY + dstH,
-            GL_DEPTH_BUFFER_BIT, GL_NEAREST
-        );
+    if (linear) {
+        if (!depthOnly) {
+            glBlitFramebuffer(
+                0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
+                dstX, dstY, dstX + dstW, dstY + dstH, GL_COLOR_BUFFER_BIT,
+                GL_LINEAR
+            );
+        }
+        if (hasDepth) {
+            glBlitFramebuffer(
+                0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
+                dstX, dstY, dstX + dstW, dstY + dstH, GL_DEPTH_BUFFER_BIT,
+                GL_NEAREST
+            );
+        }
     }
     else {
+        GLbitfield mask = GL_NONE;
+        if (!depthOnly) mask |= GL_COLOR_BUFFER_BIT;
+        if (hasDepth) mask |= GL_DEPTH_BUFFER_BIT;
         glBlitFramebuffer(
             0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
-            dstX, dstY, dstX + dstW, dstY + dstH,
-            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
+            dstX, dstY, dstX + dstW, dstY + dstH, mask,
             GL_NEAREST
         );
     }
+}
+
+void r3d_target_reset(void)
+{
+    R3D_MOD_TARGET.currentFbo = -1;
 }

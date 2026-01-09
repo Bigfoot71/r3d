@@ -30,11 +30,8 @@
 typedef uint32_t R3D_Flags;
 
 #define R3D_FLAG_NONE                   0           ///< No special rendering flags
-#define R3D_FLAG_FXAA                   (1 << 0)    ///< Enables Fast Approximate Anti-Aliasing (FXAA)
-#define R3D_FLAG_BLIT_LINEAR            (1 << 1)    ///< Uses linear filtering when blitting the final image
-#define R3D_FLAG_ASPECT_KEEP            (1 << 2)    ///< Maintains the aspect ratio of the internal resolution when blitting the final image
-#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 3)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
-#define R3D_FLAG_OPAQUE_SORTING         (1 << 4)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
+#define R3D_FLAG_TRANSPARENT_SORTING    (1 << 0)    ///< Back-to-front sorting of transparent objects for correct blending of non-discarded fragments.
+#define R3D_FLAG_OPAQUE_SORTING         (1 << 1)    ///< Front-to-back sorting of opaque objects to optimize depth testing at the cost of additional sorting.
 
 /**
  * @brief Bitfield type used to specify rendering layers for 3D objects.
@@ -73,6 +70,63 @@ typedef uint32_t R3D_Layer;
 #define R3D_LAYER_ALL   0xFFFFFFFF
 
 /**
+ * @brief Anti-aliasing modes for rendering.
+ */
+typedef enum R3D_AntiAliasing {
+    R3D_ANTI_ALIASING_DISABLED, ///< Anti-aliasing is disabled. Edges may appear jagged.
+    R3D_ANTI_ALIASING_FXAA,     ///< FXAA is applied. Smooths edges efficiently but may appear blurry.
+} R3D_AntiAliasing;
+
+/**
+ * @brief Aspect ratio handling modes for rendering.
+ */
+typedef enum R3D_AspectMode {
+    R3D_ASPECT_EXPAND,      ///< Expands the rendered output to fully fill the target (render texture or window).
+    R3D_ASPECT_KEEP         ///< Preserves the target's aspect ratio without distortion, adding empty gaps if necessary.
+} R3D_AspectMode;
+
+/**
+ * @brief Upscaling/filtering methods for rendering output.
+ *
+ * Upscale mode to apply when the output window is larger than the internal render resolution.
+ */
+typedef enum R3D_UpscaleMode {
+    R3D_UPSCALE_NEAREST,    ///< Nearest-neighbor upscaling: very fast, but produces blocky pixels.
+    R3D_UPSCALE_LINEAR,     ///< Bilinear upscaling: very fast, smoother than nearest, but can appear blurry.
+    R3D_UPSCALE_BICUBIC,    ///< Bicubic (Catmull-Rom) upscaling: slower, smoother, and less blurry than linear.
+    R3D_UPSCALE_LANCZOS     ///< Lanczos-2 upscaling: preserves more fine details, but is the most expensive.
+} R3D_UpscaleMode;
+
+/**
+ * @brief Downscaling/filtering methods for rendering output.
+ *
+ * Downscale mode to apply when the output window is smaller than the internal render resolution.
+ */
+typedef enum R3D_DownscaleMode {
+    R3D_DOWNSCALE_NEAREST,  ///< Nearest-neighbor downscaling: very fast, but produces aliasing.
+    R3D_DOWNSCALE_LINEAR,   ///< Bilinear downscaling: very fast, can serve as a basic form of anti-aliasing (SSAA).
+    R3D_DOWNSCALE_BOX       ///< Box-blur downscaling: uses a simple but effective box blur, slightly more expensive than linear, smooths moiré better.
+} R3D_DownscaleMode;
+
+/**
+ * @brief Defines the buffer to output (render texture or window).
+ * @note Nothing will be output if the requested target has not been created / used.
+ */
+typedef enum R3D_OutputMode {
+    R3D_OUTPUT_SCENE,
+    R3D_OUTPUT_ALBEDO,
+    R3D_OUTPUT_NORMAL,
+    R3D_OUTPUT_TANGENT,
+    R3D_OUTPUT_ORM,
+    R3D_OUTPUT_DIFFUSE,
+    R3D_OUTPUT_SPECULAR,
+    R3D_OUTPUT_SSAO,
+    R3D_OUTPUT_SSIL,
+    R3D_OUTPUT_SSR,
+    R3D_OUTPUT_BLOOM
+} R3D_OutputMode;
+
+/**
  * @brief Specifies the color space for user-provided colors and color textures.
  *
  * This enum defines how colors are interpreted for material inputs:
@@ -85,7 +139,7 @@ typedef uint32_t R3D_Layer;
  * Used with `R3D_SetColorSpace()` to control whether input colors
  * should be treated as linear or sRGB.
  */
-typedef enum {
+typedef enum R3D_ColorSpace {
     R3D_COLORSPACE_LINEAR,  ///< Linear color space: values are used as-is.
     R3D_COLORSPACE_SRGB     ///< sRGB color space: values are converted to linear on load.
 } R3D_ColorSpace;
@@ -170,6 +224,67 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
  * @warning This function may be slow due to the destruction and recreation of framebuffers.
  */
 R3DAPI void R3D_UpdateResolution(int width, int height);
+
+/**
+ * @brief Retrieves the current anti-aliasing mode used for rendering.
+ * @return The currently active R3D_AntiAliasing mode.
+ */
+R3DAPI R3D_AntiAliasing R3D_GetAntiAliasing(void);
+
+/**
+ * @brief Sets the anti-aliasing mode for rendering.
+ * @param mode The desired R3D_AntiAliasing mode.
+ */
+R3DAPI void R3D_SetAntiAliasing(R3D_AntiAliasing mode);
+
+/**
+ * @brief Retrieves the current aspect ratio handling mode.
+ * @return The currently active R3D_AspectMode.
+ */
+R3DAPI R3D_AspectMode R3D_GetAspectMode(void);
+
+/**
+ * @brief Sets the aspect ratio handling mode for rendering.
+ * @param mode The desired R3D_AspectMode.
+ */
+R3DAPI void R3D_SetAspectMode(R3D_AspectMode mode);
+
+/**
+ * @brief Retrieves the current upscaling/filtering method.
+ * @return The currently active R3D_UpscaleMode.
+ */
+R3DAPI R3D_UpscaleMode R3D_GetUpscaleMode(void);
+
+/**
+ * @brief Sets the upscaling/filtering method for rendering output.
+ * @param mode The desired R3D_UpscaleMode.
+ */
+R3DAPI void R3D_SetUpscaleMode(R3D_UpscaleMode mode);
+
+/**
+ * @brief Retrieves the current downscaling mode used for rendering.
+ * @return The currently active R3D_DownscaleMode.
+ */
+R3DAPI R3D_DownscaleMode R3D_GetDownscaleMode(void);
+
+/**
+ * @brief Sets the downscaling mode for rendering output.
+ * @param mode The desired R3D_DownscaleMode.
+ */
+R3DAPI void R3D_SetDownscaleMode(R3D_DownscaleMode mode);
+
+/**
+ * @brief Gets the current output mode.
+ * @return The currently active R3D_OutputMode.
+ */
+R3DAPI R3D_OutputMode R3D_GetOutputMode(void);
+
+/**
+ * @brief Sets the output mode for rendering.
+ * @param mode The R3D_OutputMode to use.
+ * @note Nothing will be output if the requested target has not been created / used.
+ */
+R3DAPI void R3D_SetOutputMode(R3D_OutputMode mode);
 
 /**
  * @brief Sets the default texture filtering mode.

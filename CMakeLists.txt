@@ -229,6 +229,8 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/generic/screen.vert"
     "${R3D_ROOT_PATH}/shaders/generic/cubemap.vert"
     "${R3D_ROOT_PATH}/shaders/prepare/atrous_wavelet.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/bicubic_up.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/lanczos_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao.frag"
@@ -257,6 +259,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/post/dof.frag"
     "${R3D_ROOT_PATH}/shaders/post/output.frag"
     "${R3D_ROOT_PATH}/shaders/post/fxaa.frag"
+    "${R3D_ROOT_PATH}/shaders/post/visualizer.frag"
 )
 
 embed_assets(${PROJECT_NAME}

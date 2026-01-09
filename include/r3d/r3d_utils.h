@@ -125,53 +125,6 @@ R3DAPI Matrix R3D_GetMatrixProjection(void);
  */
 R3DAPI Matrix R3D_GetMatrixInvProjection(void);
 
-// ----------------------------------------
-// UTILS: Debug Buffer Rendering Functions
-// ----------------------------------------
-
-/**
- * @brief Renders the internal albedo buffer to the screen.
- *
- * This function displays the albedo (diffuse) buffer as a 2D texture.
- * It must be called outside of `R3D_Begin` and `R3D_End`.
- *
- * @param x X position to draw the buffer.
- * @param y Y position to draw the buffer.
- * @param w Width of the drawn buffer.
- * @param h Height of the drawn buffer.
- */
-R3DAPI void R3D_DrawBufferAlbedo(float x, float y, float w, float h);
-
-/**
- * @brief Renders the internal normal buffer to the screen.
- *
- * Displays the normal buffer, showing world-space normal data as colors.
- * Must be called outside of `R3D_Begin` and `R3D_End`.
- *
- * @param x X position to draw the buffer.
- * @param y Y position to draw the buffer.
- * @param w Width of the drawn buffer.
- * @param h Height of the drawn buffer.
- */
-R3DAPI void R3D_DrawBufferNormal(float x, float y, float w, float h);
-
-/**
- * @brief Renders the ORM (Occlusion, Roughness, Metalness) buffer to the screen.
- *
- * Displays the ORM buffer, where each channel stores different material properties:
- * - Red: Ambient occlusion
- * - Green: Roughness
- * - Blue: Metalness
- *
- * Must be called outside of `R3D_Begin` and `R3D_End`.
- *
- * @param x X position to draw the buffer.
- * @param y Y position to draw the buffer.
- * @param w Width of the drawn buffer.
- * @param h Height of the drawn buffer.
- */
-R3DAPI void R3D_DrawBufferORM(float x, float y, float w, float h);
-
 #ifdef __cplusplus
 } // extern "C"
 #endif

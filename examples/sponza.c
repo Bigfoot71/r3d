@@ -93,8 +93,7 @@ int main(void)
 
         // Toggle FXAA
         if (IsKeyPressed(KEY_FIVE)) {
-            if (R3D_HasState(R3D_FLAG_FXAA)) R3D_ClearState(R3D_FLAG_FXAA);
-            else R3D_SetState(R3D_FLAG_FXAA);
+            R3D_SetAntiAliasing(!R3D_GetAntiAliasing());
         }
 
         // Cycle tonemapping
