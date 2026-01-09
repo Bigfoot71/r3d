@@ -1257,7 +1257,7 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.environment.ssao.intensity);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uPower, R3D.environment.ssao.power);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
     R3D_SHADER_BIND_SAMPLER(prepare.ssao, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1266,7 +1266,7 @@ r3d_target_t pass_prepare_ssao(void)
 
     R3D_SHADER_USE(prepare.atrousWavelet);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     for (int i = 0; i < 3; i++) {
@@ -1308,7 +1308,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uHistoryTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(SSIL_HISTORY), BLACK));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleCount, (float)R3D.environment.ssil.sampleCount);
@@ -1385,7 +1385,7 @@ r3d_target_t pass_prepare_ssr(void)
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
@@ -1428,7 +1428,7 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
     R3D_SHADER_USE(deferred.lighting);
 
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
@@ -1498,7 +1498,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_USE(deferred.ambient);
 
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
