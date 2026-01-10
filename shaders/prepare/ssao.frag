@@ -79,6 +79,7 @@ void main()
         float rNorm;
         vec2 dir = TapLocation(i, spin, rNorm);
         vec2 offset = vTexCoord + dir * ssRadius * rNorm;
+        if (V_OffScreen(offset)) continue;
 
         // The "SAO" paper recommends using mipmaps of the linearized depth here, but hey
         vec3 samplePos = V_GetViewPosition(uDepthTex, offset);
@@ -89,13 +90,8 @@ void main()
         if (vv > radiusSq) continue; // Reject samples beyond the world space radius
 
         // AlchemyAO formula (original, then our own with adaptive bias)
-        //float ao = max(vn + position.z * uBias, 0.0) / (vv + 0.01);
-        float ao = max(vn - bias, 0.0) / (vv + 0.01);
-
-        // Apply a falloff after the calculation to limit terms that blow up
-        // This isn't stated explicitly in the paper, but it seems essential
-        // So we use a sigmoid to gently cap values before normalization
-        aoSum += ao / (1.0 + ao);
+        //aoSum += max(vn + position.z * uBias, 0.0) / (vv + 0.01);
+        aoSum += max(vn - bias, 0.0) / (vv + 0.01);
     }
 
     // Ignore the paper's factor of 2, it comes from
