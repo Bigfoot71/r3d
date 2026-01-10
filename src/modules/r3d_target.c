@@ -10,22 +10,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
-#include <math.h>
+
+#include "../common/r3d_helper.h"
 
 // ========================================
 // MODULE STATE
 // ========================================
 
 struct r3d_target R3D_MOD_TARGET;
-
-// ========================================
-// HELPER FUNCTIONS
-// ========================================
-
-static int get_mip_count(int w, int h)
-{
-    return 1 + (int)floorf(log2f(w > h ? w : h));
-}
 
 // ========================================
 // INTERNAL TARGET FUNCTIONS
@@ -214,7 +206,7 @@ int r3d_target_get_mip_count(r3d_target_t target)
 
     int w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
     int h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
-    return 1 + (int)floorf(log2f(w > h ? w : h));
+    return r3d_get_mip_levels_2d(w, h);
 }
 
 void r3d_target_get_resolution(int* w, int* h, r3d_target_t target, int level)

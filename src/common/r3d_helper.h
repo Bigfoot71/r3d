@@ -13,6 +13,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#if defined(_MSC_VER)
+#   include <intrin.h>
+#endif
+
 // ========================================
 // HELPER MACROS
 // ========================================
@@ -57,24 +61,49 @@ static inline void r3d_string_format(char *dst, size_t dstSize, const char *fmt,
     }
 }
 
-static inline int r3d_lsb_index(uint32_t value)
+static inline int32_t r3d_get_mip_levels_1d(int32_t s)
+{
+    if (s <= 0) return 0;
+
+#if defined(__GNUC__) || defined(__clang__)
+    return 32 - __builtin_clz((unsigned)s);
+#elif defined(_MSC_VER)
+    unsigned long index;
+    _BitScanReverse(&index, (unsigned long)s);
+    return (int32_t)index + 1;
+#else
+    int32_t levels = 0;
+    while (s > 0) {
+        levels++;
+        s >>= 1;
+    }
+    return levels;
+#endif
+}
+
+static inline int32_t r3d_get_mip_levels_2d(int32_t w, int32_t h)
+{
+    return r3d_get_mip_levels_1d((w > h) ? w : h);
+}
+
+static inline int32_t r3d_lsb_index(uint32_t value)
 {
     if (value == 0) return -1;
 
-#if defined(__clang__)
-#  if __has_builtin(__builtin_ctz)
+#if defined(__GNUC__) || defined(__clang__)
     return __builtin_ctz(value);
-#  endif
-#elif defined(__GNUC__)
-    return __builtin_ctz(value);
-#endif
-
-    int index = 0;
+#elif defined(_MSC_VER)
+    unsigned long index;
+    _BitScanForward(&index, (unsigned long)value);
+    return (int32_t)index;
+#else
+    int32_t index = 0;
     while ((value & 1) == 0) {
         value >>= 1;
         index++;
     }
     return index;
+#endif
 }
 
 #endif // R3D_COMMON_HELPER_H

@@ -32,7 +32,6 @@
 #include <shaders/ssr.frag.h>
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
-#include <shaders/cubeface_down.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap_irradiance.frag.h>
 #include <shaders/cubemap_prefilter.frag.h>
@@ -320,19 +319,6 @@ void r3d_shader_load_prepare_bloom_up(void)
     SET_SAMPLER(prepare.bloomUp, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
 }
 
-void r3d_shader_load_prepare_cubeface_down(void)
-{
-    LOAD_SHADER(prepare.cubefaceDown, SCREEN_VERT, CUBEFACE_DOWN_FRAG);
-
-    GET_LOCATION(prepare.cubefaceDown, uSourceTexel);
-    GET_LOCATION(prepare.cubefaceDown, uSourceLod);
-    GET_LOCATION(prepare.cubefaceDown, uSourceFace);
-
-    USE_SHADER(prepare.cubefaceDown);
-
-    SET_SAMPLER(prepare.cubefaceDown, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE);
-}
-
 void r3d_shader_load_prepare_cubemap_from_equirectangular(void)
 {
     LOAD_SHADER(prepare.cubemapFromEquirectangular, CUBEMAP_VERT, CUBEMAP_FROM_EQUIRECTANGULAR_FRAG);
@@ -495,6 +481,7 @@ void r3d_shader_load_scene_skybox(void)
     GET_LOCATION(scene.skybox, uMatView);
     GET_LOCATION(scene.skybox, uMatProj);
     GET_LOCATION(scene.skybox, uSkyEnergy);
+    GET_LOCATION(scene.skybox, uSkyLod);
 
     USE_SHADER(scene.skybox);
 
@@ -822,7 +809,6 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);
     UNLOAD_SHADER(prepare.bloomUp);
-    UNLOAD_SHADER(prepare.cubefaceDown);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);

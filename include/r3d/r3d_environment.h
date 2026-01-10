@@ -56,6 +56,7 @@
         .background = {                                 \
             .color = GRAY,                              \
             .energy = 1.0f,                             \
+            .skyBlur = 0.0f,                            \
             .sky = {0},                                 \
             .rotation = {0.0f, 0.0f, 0.0f, 1.0f},       \
         },                                              \
@@ -188,6 +189,7 @@ typedef enum R3D_Tonemap {
 typedef struct R3D_EnvBackground {
     Color color;            ///< Background color when there is no skybox
     float energy;           ///< Energy multiplier applied to background (skybox or color)
+    float skyBlur;          ///< Sky blur factor [0,1], based on mipmaps, very fast
     R3D_Cubemap sky;        ///< Skybox asset (used if ID is non-zero)
     Quaternion rotation;    ///< Skybox rotation (pitch, yaw, roll as quaternion)
 } R3D_EnvBackground;

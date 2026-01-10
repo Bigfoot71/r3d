@@ -35,7 +35,6 @@
 
 ## **Ideas (Not Planned Yet)**
 
-* [ ] Implement a system to save loaded skyboxes together with their generated irradiance and prefiltered textures for later reloading.
 * [ ] Improve support for shadow/transparency interaction (e.g., colored shadows).
 * [ ] Implement Cascaded Shadow Maps (or alternative) for directional lights.
 * [ ] Make wiki pages for the repo, consider it for the release.

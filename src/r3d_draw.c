@@ -1127,8 +1127,11 @@ void pass_scene_probes(void)
                 R3D_SHADER_USE(scene.skybox);
                 glDisable(GL_CULL_FACE);
 
+                float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
+
                 R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
                 R3D_SHADER_SET_FLOAT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
+                R3D_SHADER_SET_FLOAT(scene.skybox, uSkyLod, R3D.environment.background.skyBlur * lod);
                 R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatView, probe->view[iFace]);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatProj, probe->proj[iFace]);
@@ -1144,26 +1147,11 @@ void pass_scene_probes(void)
                 R3D_SHADER_SET_VEC4(scene.background, uColor, background);
                 R3D_PRIMITIVE_DRAW_SCREEN();
             }
-
-            /* --- Generates mipmaps of the rendered face by downsampling it --- */
-
-            R3D_SHADER_USE(prepare.cubefaceDown);
-
-            glDisable(GL_DEPTH_TEST);
-            glDisable(GL_BLEND);
-
-            R3D_SHADER_BIND_SAMPLER(prepare.cubefaceDown, uSourceTex, r3d_env_capture_get());
-            R3D_SHADER_SET_INT(prepare.cubefaceDown, uSourceFace, iFace);
-
-            for (int mipLevel = 1; mipLevel < R3D_ENV_CAPTURE_MIPS; mipLevel++) {
-                r3d_env_capture_bind_fbo(iFace, mipLevel);
-                R3D_SHADER_SET_FLOAT(prepare.cubefaceDown, uSourceTexel, 1.0 / (R3D_ENV_CAPTURE_SIZE >> (mipLevel - 1)));
-                R3D_SHADER_SET_FLOAT(prepare.cubefaceDown, uSourceLod, mipLevel - 1);
-                R3D_PRIMITIVE_DRAW_SCREEN();
-            }
         }
 
         /* --- Generate irradiance and prefilter maps --- */
+
+        r3d_env_capture_gen_mipmaps();
 
         if (probe->irradiance >= 0) {
             r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_ENV_CAPTURE_SIZE);
@@ -1546,8 +1534,11 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_USE(scene.skybox);
         glDisable(GL_CULL_FACE);
 
+        float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
+
         R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
         R3D_SHADER_SET_FLOAT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
+        R3D_SHADER_SET_FLOAT(scene.skybox, uSkyLod, R3D.environment.background.skyBlur * lod);
         R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatView, R3D.viewState.view);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatProj, R3D.viewState.proj);

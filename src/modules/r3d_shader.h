@@ -407,14 +407,6 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler_t uSourceTex;
-    r3d_shader_uniform_float_t uSourceTexel;
-    r3d_shader_uniform_float_t uSourceLod;
-    r3d_shader_uniform_int_t uSourceFace;
-} r3d_shader_prepare_cubeface_down_t;
-
-typedef struct {
-    unsigned int id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_sampler_t uPanoramaTex;
@@ -611,6 +603,7 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_sampler_t uSkyMap;
     r3d_shader_uniform_float_t uSkyEnergy;
+    r3d_shader_uniform_float_t uSkyLod;
 } r3d_shader_scene_skybox_t;
 
 typedef struct {
@@ -725,7 +718,6 @@ extern struct r3d_shader {
         r3d_shader_prepare_ssr_t ssr;
         r3d_shader_prepare_bloom_down_t bloomDown;
         r3d_shader_prepare_bloom_up_t bloomUp;
-        r3d_shader_prepare_cubeface_down_t cubefaceDown;
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
         r3d_shader_prepare_cubemap_irradiance_t cubemapIrradiance;
         r3d_shader_prepare_cubemap_prefilter_t cubemapPrefilter;
@@ -779,7 +771,6 @@ void r3d_shader_load_prepare_ssil(void);
 void r3d_shader_load_prepare_ssr(void);
 void r3d_shader_load_prepare_bloom_down(void);
 void r3d_shader_load_prepare_bloom_up(void);
-void r3d_shader_load_prepare_cubeface_down(void);
 void r3d_shader_load_prepare_cubemap_from_equirectangular(void);
 void r3d_shader_load_prepare_cubemap_irradiance(void);
 void r3d_shader_load_prepare_cubemap_prefilter(void);
@@ -816,7 +807,6 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func ssr;
         r3d_shader_loader_func bloomDown;
         r3d_shader_loader_func bloomUp;
-        r3d_shader_loader_func cubefaceDown;
         r3d_shader_loader_func cubemapFromEquirectangular;
         r3d_shader_loader_func cubemapIrradiance;
         r3d_shader_loader_func cubemapPrefilter;
@@ -865,7 +855,6 @@ static const struct r3d_shader_loader {
         .ssr = r3d_shader_load_prepare_ssr,
         .bloomDown = r3d_shader_load_prepare_bloom_down,
         .bloomUp = r3d_shader_load_prepare_bloom_up,
-        .cubefaceDown = r3d_shader_load_prepare_cubeface_down,
         .cubemapFromEquirectangular = r3d_shader_load_prepare_cubemap_from_equirectangular,
         .cubemapIrradiance = r3d_shader_load_prepare_cubemap_irradiance,
         .cubemapPrefilter = r3d_shader_load_prepare_cubemap_prefilter,
