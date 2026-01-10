@@ -238,7 +238,6 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/ssr.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/bloom_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/bloom_up.frag"
-    "${R3D_ROOT_PATH}/shaders/prepare/cubeface_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_from_equirectangular.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_irradiance.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_prefilter.frag"

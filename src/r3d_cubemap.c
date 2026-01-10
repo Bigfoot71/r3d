@@ -263,29 +263,9 @@ static R3D_Cubemap load_cubemap_from_cross_four_by_three(Image image, int size)
 
 static void generate_mipmap(const R3D_Cubemap* cubemap)
 {
-    R3D_SHADER_USE(prepare.cubefaceDown);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_BLEND);
-
-    R3D_SHADER_BIND_SAMPLER(prepare.cubefaceDown, uSourceTex, cubemap->texture);
-    int mipCount = r3d_get_mip_levels_1d(cubemap->size);
-
-    for (int i = 0; i < 6; i++)
-    {
-        R3D_SHADER_SET_INT(prepare.cubefaceDown, uSourceFace, i);
-
-        for (int level = 1; level < mipCount; level++)
-        {
-            int mipSize = cubemap->size >> level;
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap->texture, level);
-            glViewport(0, 0, mipSize, mipSize);
-
-            R3D_SHADER_SET_FLOAT(prepare.cubefaceDown, uSourceTexel, 1.0 / (cubemap->size >> (level - 1)));
-            R3D_SHADER_SET_FLOAT(prepare.cubefaceDown, uSourceLod, level - 1);
-            R3D_PRIMITIVE_DRAW_SCREEN();
-        }
-    }
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->texture);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 // ========================================
