@@ -1160,6 +1160,8 @@ void pass_scene_probes(void)
         if (probe->prefilter >= 0) {
             r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_ENV_CAPTURE_SIZE);
         }
+
+        r3d_target_reset(); //< The IBL gen functions bind framebuffers; resetting them prevents any problems
     }
 }
 
