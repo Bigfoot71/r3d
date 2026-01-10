@@ -22,17 +22,26 @@ R3D is a modern 3D rendering library for <a href="https://www.raylib.com/">rayli
 - **Model Loading**: Assimp integration with animations and mesh generation
 - **Performance**: Built-in frustum culling, instanced rendering, and more
 
+## Requirements
+
+To build R3D, you must have:
+- **raylib 5.5+** (optionally provided as a submodule)
+- **Assimp 6.0.2** (optionally provided as a submodule)
+- **Python 3.6+** (used to process shaders during compilation)
+
+To use R3D, the required specifications are:
+- **OpenGL 3.3+** (with support for `GL_ARB_texture_cube_map_array`)
+
 ## Installation
 
+If you don't know how to start and want to try it quickly:
 ```bash
-git clone --recurse-submodules https://github.com/Bigfoot71/r3d
+git clone --depth 1 --recurse-submodules https://github.com/Bigfoot71/r3d
 cd r3d
 mkdir build && cd build
-cmake ..
+cmake .. -DR3D_RAYLIB_VENDORED=ON -DR3D_ASSIMP_VENDORED=ON
 cmake --build .
 ```
-
-**Requirements**: raylib 5.5+, Assimp, Python 3.6+, OpenGL 3.3+
 
 ## Quick Start
 
