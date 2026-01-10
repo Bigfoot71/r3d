@@ -125,14 +125,18 @@ static bool allocate_cubemap(GLuint texture, cubemap_spec_t spec)
         if (mipSize < 1) mipSize = 1;
 
         if (spec.target == GL_TEXTURE_CUBE_MAP_ARRAY) {
-            glTexImage3D(spec.target, level, GL_RGB16F,
-                        mipSize, mipSize, spec.layers * 6,
-                        0, GL_RGB, GL_FLOAT, NULL);
+            glTexImage3D(
+                spec.target, level, GL_RGB16F,
+                mipSize, mipSize, spec.layers * 6,
+                0, GL_RGB, GL_FLOAT, NULL
+            );
         }
         else {
             for (int face = 0; face < 6; face++) {
-                glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, GL_RGB16F,
-                            mipSize, mipSize, 0, GL_RGB, GL_FLOAT, NULL);
+                glTexImage2D(
+                    GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, level, GL_RGB16F,
+                    mipSize, mipSize, 0, GL_RGB, GL_FLOAT, NULL
+                );
             }
         }
     }
@@ -160,30 +164,33 @@ static bool resize_cubemap_array(GLuint* texture, cubemap_spec_t oldSpec, cubema
         return false;
     }
 
-    // Copy existing data
-    if (oldSpec.layers > 0) {
+    if (oldSpec.layers > 0 && *texture != 0) {
         glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_ENV.workFramebuffer);
-
-        for (int layer = 0; layer < oldSpec.layers; layer++) {
-            for (int face = 0; face < 6; face++) {
-                for (int level = 0; level < oldSpec.mipLevels; level++) {
-                    int mipSize = oldSpec.size >> level;
-
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                            *texture, level, layer * 6 + face);
-
+        for (int level = 0; level < oldSpec.mipLevels; level++) {
+            int mipSize = oldSpec.size >> level;
+            if (mipSize < 1) mipSize = 1;
+            for (int layer = 0; layer < oldSpec.layers; layer++) {
+                for (int face = 0; face < 6; face++) {
+                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, *texture, level, layer * 6 + face);
                     glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, newTexture);
-                    glCopyTexSubImage3D(GL_TEXTURE_CUBE_MAP_ARRAY, level,
-                                       0, 0, layer * 6 + face, 0, 0, mipSize, mipSize);
+                    glCopyTexSubImage3D(
+                        GL_TEXTURE_CUBE_MAP_ARRAY, level,
+                        0, 0, layer * 6 + face,
+                        0, 0, mipSize, mipSize
+                    );
                 }
             }
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP_ARRAY, 0);
     }
 
-    glDeleteTextures(1, texture);
+    if (*texture != 0) {
+        glDeleteTextures(1, texture);
+    }
     *texture = newTexture;
+    
     return true;
 }
 
