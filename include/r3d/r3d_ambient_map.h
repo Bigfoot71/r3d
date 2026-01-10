@@ -78,7 +78,7 @@ R3DAPI R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout
 /**
  * @brief Builds a ambient map from an existing Image.
  *
- * Same behavior as R3D_LoadCubemap(), but without loading from disk.
+ * Same behavior as R3D_LoadAmbientMap(), but without loading from disk.
  */
 R3DAPI R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout, R3D_AmbientFlag flags);
 
