@@ -71,6 +71,7 @@ void main()
     // But I found that using a simple IGN produce a really more stable result
     float spin = M_TAU * M_HashIGN(gl_FragCoord.xy);
     float radiusSq = uRadius * uRadius;
+    float bias = uBias * ssRadius;
 
     float aoSum = 0.0;
     for (int i = 0; i < uSampleCount; ++i)
@@ -87,12 +88,9 @@ void main()
         float vn = dot(v, normal);
         if (vv > radiusSq) continue; // Reject samples beyond the world space radius
 
-        // AlchemyAO formula
+        // AlchemyAO formula (original, then our own with adaptive bias)
         //float ao = max(vn + position.z * uBias, 0.0) / (vv + 0.01);
-
-        // Same formula but with adaptative bias
-        float adaptiveBias = uBias * (uRadius + abs(position.z) * 0.02);
-        float ao = max(vn - adaptiveBias, 0.0) / (vv + 0.01);
+        float ao = max(vn - bias, 0.0) / (vv + 0.01);
 
         // Apply a falloff after the calculation to limit terms that blow up
         // This isn't stated explicitly in the paper, but it seems essential
