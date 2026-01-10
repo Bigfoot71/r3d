@@ -37,6 +37,10 @@
 #   define ARRAY_SIZE(arr) (sizeof((arr)) / sizeof((arr)[0]))
 #endif
 
+#ifndef SWAP
+#   define SWAP(type, a, b) do { type _tmp = (a); (a) = (b); (b) = _tmp; } while (0)
+#endif
+
 // ========================================
 // HELPER FUNCTIONS
 // ========================================

@@ -1286,25 +1286,23 @@ r3d_target_t pass_prepare_ssil(void)
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
 
-    // REVIEW: If we ever support multi viewports, managing the convergence history
-    //         via static variables will need to be revisited and stored per viewport.
-
-    static r3d_target_t SSIL_HISTORY = R3D_TARGET_SSIL_0;
-    static r3d_target_t SSIL_CURRENT = R3D_TARGET_SSIL_1;
+    static r3d_target_t SSIL_HISTORY  = R3D_TARGET_SSIL_0;
+    static r3d_target_t SSIL_RAW      = R3D_TARGET_SSIL_1;
+    static r3d_target_t SSIL_FILTERED = R3D_TARGET_SSIL_2;
 
     /* --- Check if we need history --- */
 
     bool needConvergence = (R3D.environment.ssil.convergence >= 0.1f);
-    bool needBounce = (R3D.environment.ssil.bounce >= 0.01f);
-    bool needHistory = (needConvergence || needBounce);
+    bool needBounce      = (R3D.environment.ssil.bounce >= 0.01f);
+    bool needHistory     = (needConvergence || needBounce);
 
     if (needHistory && r3d_target_get_or_null(SSIL_HISTORY) == 0) {
         R3D_TARGET_CLEAR(SSIL_HISTORY);
     }
 
-    /* --- Calculate SSIL --- */
+    /* --- Calculate SSIL (RAW) --- */
 
-    R3D_TARGET_BIND(SSIL_CURRENT);
+    R3D_TARGET_BIND(SSIL_RAW);
     R3D_SHADER_USE(prepare.ssil);
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
@@ -1319,60 +1317,36 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_SET_FLOAT(prepare.ssil, uConvergence, R3D.environment.ssil.convergence);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uAoPower, R3D.environment.ssil.aoPower);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uBounce, R3D.environment.ssil.bounce);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uEnergy, R3D.environment.ssil.energy);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 
-    /* --- Blur SSIL (Dual Filtering) --- */
+    /* --- Atrous denoise: RAW -> FILTERED --- */
 
-    r3d_target_t SSIL_MIP = R3D_TARGET_SSIL_MIP;
+    R3D_SHADER_USE(prepare.atrousWavelet);
 
-    int mipCount = r3d_target_get_mip_count(SSIL_MIP);
-    int mipMax = MIN(3, mipCount);
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
-    R3D_TARGET_BIND(SSIL_MIP);
+    r3d_target_t src = SSIL_RAW;
+    r3d_target_t dst = SSIL_FILTERED;
 
-    // Downsample
-    R3D_SHADER_USE(prepare.blurDown);
-    R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(SSIL_CURRENT));
-    for (int mipLevel = 1; mipLevel < mipMax; mipLevel++)
-    {
-        int dstW, dstH;
-        r3d_target_get_resolution(&dstW, &dstH, SSIL_MIP, mipLevel);
-        r3d_target_set_mip_level(0, mipLevel);
-        glViewport(0, 0, dstW, dstH);
-
-        R3D_SHADER_SET_INT(prepare.blurDown, uSourceLod, mipLevel - 1);
+    for (int i = 0; i < 3; i++) {
+        R3D_TARGET_BIND(dst);
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(src));
+        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepSize, 1 << i);
         R3D_PRIMITIVE_DRAW_SCREEN();
-
-        if (mipLevel == 1) {
-            R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(SSIL_MIP));
-        }
+        SWAP(r3d_target_t, src, dst);
     }
 
-    // Upsample
-    R3D_SHADER_USE(prepare.blurUp);
-    R3D_SHADER_BIND_SAMPLER(prepare.blurUp, uSourceTex, r3d_target_get(SSIL_MIP));
-    for (int mipLevel = mipMax - 2; mipLevel >= 0; mipLevel--)
-    {
-        int dstW, dstH;
-        r3d_target_get_resolution(&dstW, &dstH, SSIL_MIP, mipLevel);
-        r3d_target_set_mip_level(0, mipLevel);
-        glViewport(0, 0, dstW, dstH);
+    r3d_target_t SSIL_RESULT = src;
 
-        R3D_SHADER_SET_INT(prepare.blurUp, uSourceLod, mipLevel + 1);
-        R3D_PRIMITIVE_DRAW_SCREEN();
-    }
-
-    /* --- Swap history --- */
+    /* --- Store history --- */
 
     if (needHistory) {
-        r3d_target_t tmp = SSIL_HISTORY;
-        SSIL_HISTORY = SSIL_CURRENT;
-        SSIL_CURRENT = tmp;
+        SWAP(r3d_target_t, SSIL_HISTORY, SSIL_RESULT);
     }
 
-    return R3D_TARGET_SSIL_MIP;
+    return SSIL_RESULT;
 }
 
 r3d_target_t pass_prepare_ssr(void)
@@ -1508,7 +1482,9 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uIrradianceTex, r3d_env_irradiance_get());
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uPrefilterTex, r3d_env_prefilter_get());
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+
     R3D_SHADER_SET_FLOAT(deferred.ambient, uMipCountSSR, (float)r3d_target_get_mip_count(R3D_TARGET_SSR));
+    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilEnergy, R3D.environment.ssil.energy);
 
     R3D_PRIMITIVE_DRAW_SCREEN();
 }

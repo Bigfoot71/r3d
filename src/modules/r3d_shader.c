@@ -261,7 +261,6 @@ void r3d_shader_load_prepare_ssil(void)
     GET_LOCATION(prepare.ssil, uConvergence);
     GET_LOCATION(prepare.ssil, uAoPower);
     GET_LOCATION(prepare.ssil, uBounce);
-    GET_LOCATION(prepare.ssil, uEnergy);
 
     USE_SHADER(prepare.ssil);
 
@@ -653,6 +652,7 @@ void r3d_shader_load_deferred_ambient(void)
     SET_UNIFORM_BUFFER(deferred.ambient, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
     GET_LOCATION(deferred.ambient, uMipCountSSR);
+    GET_LOCATION(deferred.ambient, uSsilEnergy);
 
     USE_SHADER(deferred.ambient);
 

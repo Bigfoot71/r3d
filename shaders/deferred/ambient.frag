@@ -36,6 +36,7 @@ uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
 
 uniform float uMipCountSSR;
+uniform float uSsilEnergy;
 
 /* === Blocks === */
 
@@ -65,15 +66,16 @@ void main()
     vec3 N = V_GetWorldNormal(uNormalTex, vTexCoord);
     vec3 V = normalize(uView.position - P);
     float NdotV = max(dot(N, V), 0.0);
+
+    vec3 kS_approx = F0 * (1.0 - orm.y * 0.5);
     vec3 kD = albedo * (1.0 - orm.z);
 
     vec3 irradiance = vec3(0.0);
     vec3 radiance = vec3(0.0);
 
     E_ComputeAmbientAndProbes(irradiance, radiance, kD, orm, F0, P, N, V, NdotV);
-    irradiance += ssil.rgb * kD * ssil.rgb * orm.x;
 
-    vec3 kS_approx = F0 * (1.0 - orm.y * 0.5);
+    irradiance += ssil.rgb * kD * uSsilEnergy;
     radiance = mix(radiance, kS_approx * ssr.rgb, ssr.w);
 
     FragDiffuse = vec4(irradiance, 1.0);
