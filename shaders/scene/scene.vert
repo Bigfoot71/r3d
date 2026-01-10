@@ -161,17 +161,21 @@ void main()
 #endif // DECAL
 
     vec3 billboardCenter = vec3(uMatModel[3]);
-    vec3 finalPosition = vec3(uMatModel * vec4(aPosition, 1.0));
-    vec3 finalNormal = mat3(uMatNormal) * aNormal;
-    vec3 finalTangent = mat3(uMatNormal) * aTangent.xyz;
+    vec3 localPosition = aPosition;
+    vec3 localNormal = aNormal;
+    vec3 localTangent = aTangent.xyz;
 
     if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
         mat3 sMatNormal = mat3(transpose(inverse(sMatModel)));
-        finalPosition = vec3(sMatModel * vec4(finalPosition, 1.0));
-        finalNormal = sMatNormal * finalNormal;
-        finalTangent = sMatNormal * finalTangent;
+        localPosition = vec3(sMatModel * vec4(localPosition, 1.0));
+        localNormal = sMatNormal * localNormal;
+        localTangent = sMatNormal * localTangent;
     }
+
+    vec3 finalPosition = vec3(uMatModel * vec4(localPosition, 1.0));
+    vec3 finalNormal = mat3(uMatNormal) * localNormal;
+    vec3 finalTangent = mat3(uMatNormal) * localTangent;
 
     if (uInstancing) {
         billboardCenter += iPosition;
