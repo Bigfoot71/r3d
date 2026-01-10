@@ -139,15 +139,15 @@ void E_ComputeAmbientAndProbes(inout vec3 irradiance, inout vec3 radiance, vec3 
         vec3 ambientIrr = vec3(0.0);
         if (uAmbient.irradiance < 0) ambientIrr = uAmbient.color.rgb;
         else ambientIrr = IBL_SampleIrradiance(uIrradianceTex, uAmbient.irradiance, N, uAmbient.rotation);
-        irradiance += ambientIrr * (1.0 - wIrradiance) * uAmbient.energy;
+        irradiance += ambientIrr * (1.0 - wIrradiance);
     }
 
     if (wRadiance < 1.0 && uAmbient.prefilter >= 0) {
         vec3 ambientRad = IBL_SamplePrefilter(uPrefilterTex, uAmbient.prefilter, V, N, uAmbient.rotation, roughness);
-        radiance += ambientRad * (1.0 - wRadiance) * uAmbient.energy;
+        radiance += ambientRad * (1.0 - wRadiance);
     }
 
-    irradiance *= occlusion;
+    irradiance *= occlusion * uAmbient.energy;
     radiance *= IBL_GetSpecularOcclusion(NdotV, occlusion, roughness);
 
     vec2 brdf = texture(uBrdfLutTex, vec2(NdotV, roughness)).xy;
@@ -162,18 +162,18 @@ void E_ComputeAmbientOnly(inout vec3 irradiance, inout vec3 radiance, vec3 diffu
 
     if (uAmbient.irradiance >= 0) {
         vec3 ambientIrr = IBL_SampleIrradiance(uIrradianceTex, uAmbient.irradiance, N, uAmbient.rotation);
-        irradiance += ambientIrr.rgb * uAmbient.energy;
+        irradiance += ambientIrr.rgb;
     }
     else {
-        irradiance += uAmbient.color.rgb * uAmbient.energy;
+        irradiance += uAmbient.color.rgb;
     }
 
     if (uAmbient.prefilter >= 0) {
         vec3 ambientRad = IBL_SamplePrefilter(uPrefilterTex, uAmbient.prefilter, V, N, uAmbient.rotation, roughness);
-        radiance += ambientRad.rgb * uAmbient.energy;
+        radiance += ambientRad.rgb;
     }
 
-    irradiance *= occlusion;
+    irradiance *= occlusion * uAmbient.energy;
     radiance *= IBL_GetSpecularOcclusion(NdotV, occlusion, roughness);
 
     vec2 brdf = texture(uBrdfLutTex, vec2(NdotV, roughness)).xy;
