@@ -44,7 +44,7 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
 void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
 {
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
-    int srcNumLevels = 1 + (int)floor(log2(srcSize));
+    int srcNumLevels = r3d_get_mip_levels_1d(srcSize);
 
     R3D_SHADER_USE(prepare.cubemapPrefilter);
     glDisable(GL_DEPTH_TEST);

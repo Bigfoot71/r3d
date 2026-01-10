@@ -611,6 +611,7 @@ typedef struct {
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_sampler_t uSkyMap;
     r3d_shader_uniform_float_t uSkyEnergy;
+    r3d_shader_uniform_float_t uSkyLod;
 } r3d_shader_scene_skybox_t;
 
 typedef struct {

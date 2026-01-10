@@ -89,7 +89,7 @@ static R3D_Cubemap allocate_cubemap(int size)
     glGenTextures(1, &cubemap.texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
 
-    int mipCount = 1 + (int)floor(log2(size));
+    int mipCount = r3d_get_mip_levels_1d(size);
     for (int level = 0; level < mipCount; level++) {
         int mipSize = size >> level;
         for (int i = 0; i < 6; i++) {
@@ -269,7 +269,7 @@ static void generate_mipmap(const R3D_Cubemap* cubemap)
     glDisable(GL_BLEND);
 
     R3D_SHADER_BIND_SAMPLER(prepare.cubefaceDown, uSourceTex, cubemap->texture);
-    int mipCount = 1 + (int)floor(log2(cubemap->size));
+    int mipCount = r3d_get_mip_levels_1d(cubemap->size);
 
     for (int i = 0; i < 6; i++)
     {

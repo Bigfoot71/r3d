@@ -495,6 +495,7 @@ void r3d_shader_load_scene_skybox(void)
     GET_LOCATION(scene.skybox, uMatView);
     GET_LOCATION(scene.skybox, uMatProj);
     GET_LOCATION(scene.skybox, uSkyEnergy);
+    GET_LOCATION(scene.skybox, uSkyLod);
 
     USE_SHADER(scene.skybox);
 
