@@ -30,7 +30,7 @@ int main(void)
     meshBillboard.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     R3D_Material matBillboard = R3D_GetDefaultMaterial();
-    matBillboard.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "tree.png", WHITE);
+    matBillboard.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/tree.png", WHITE);
     matBillboard.billboardMode = R3D_BILLBOARD_Y_AXIS;
 
     // Create transforms for instanced billboards

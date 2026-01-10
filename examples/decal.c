@@ -26,7 +26,7 @@ int main(void)
     // Create decal material
     R3D_Decal decal;
     decal.material = R3D_GetDefaultMaterial();
-    decal.material.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "decal.png", WHITE);
+    decal.material.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
 
     // Create room mesh and transforms
     float roomSize = 32.0f;

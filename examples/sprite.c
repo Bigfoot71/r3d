@@ -32,7 +32,7 @@ int main(void)
     meshSprite.shadowCastMode = R3D_SHADOW_CAST_ON_DOUBLE_SIDED;
 
     R3D_Material matSprite = R3D_GetDefaultMaterial();
-    matSprite.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "spritesheet.png", WHITE);
+    matSprite.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/spritesheet.png", WHITE);
     matSprite.billboardMode = R3D_BILLBOARD_Y_AXIS;
 
     // Setup spotlight

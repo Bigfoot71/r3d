@@ -17,9 +17,15 @@ int main(void)
     // Create sphere mesh
     R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 32, 64);
 
+    // Define procedural skybox parameters
+    R3D_CubemapSky skyParams = R3D_CUBEMAP_SKY_BASE;
+    skyParams.groundEnergy = 2.0f;
+    skyParams.skyEnergy = 2.0f;
+    skyParams.sunEnergy = 2.0f;
+
     // Load and generate skyboxes
-    R3D_Cubemap skyProcedural = R3D_GenCubemapSky(512, R3D_CUBEMAP_SKY_BASE);
-    R3D_Cubemap skyPanorama = R3D_LoadCubemap(RESOURCES_PATH "sky/skybox1.png", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_Cubemap skyProcedural = R3D_GenCubemapSky(512, skyParams);
+    R3D_Cubemap skyPanorama = R3D_LoadCubemap(RESOURCES_PATH "panorama/sky.hdr", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
 
     // Generate ambient maps
     R3D_AmbientMap ambientProcedural = R3D_GenAmbientMap(skyProcedural, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
@@ -28,6 +34,9 @@ int main(void)
     // Set default sky/ambient maps
     R3D_ENVIRONMENT_SET(background.sky, skyPanorama);
     R3D_ENVIRONMENT_SET(ambient.map, ambientPanorama);
+
+    // Set tonemapping
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_AGX);
 
     // Setup camera
     Camera3D camera = {

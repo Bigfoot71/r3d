@@ -11,12 +11,24 @@ int main(void)
     InitWindow(800, 450, "[r3d] - Animation example");
     SetTargetFPS(60);
 
-    // Initialize R3D with FXAA and no frustum culling
+    // Initialize R3D with FXAA
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_SetAntiAliasing(R3D_ANTI_ALIASING_FXAA);
 
-    // Set background and ambient colors
-    R3D_ENVIRONMENT_SET(background.color, RAYWHITE);
-    R3D_ENVIRONMENT_SET(ambient.color, GRAY);
+    // Setup environment sky
+    R3D_Cubemap cubemap = R3D_LoadCubemap(RESOURCES_PATH "panorama/indoor.hdr", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
+    R3D_ENVIRONMENT_SET(background.skyBlur, 0.3f);
+    R3D_ENVIRONMENT_SET(background.energy, 0.6f);
+    R3D_ENVIRONMENT_SET(background.sky, cubemap);
+
+    // Setup environment ambient
+    R3D_AmbientMap ambientMap = R3D_GenAmbientMap(cubemap, R3D_AMBIENT_ILLUMINATION);
+    R3D_ENVIRONMENT_SET(ambient.map, ambientMap);
+    R3D_ENVIRONMENT_SET(ambient.energy, 0.25f);
+
+    // Setup tonemapping
+    R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
+    R3D_ENVIRONMENT_SET(tonemap.exposure, 0.75f);
 
     // Generate a ground plane and load the animated model
     R3D_Mesh plane = R3D_GenMeshPlane(10, 10, 1, 1);
@@ -47,7 +59,7 @@ int main(void)
 
     // Setup camera
     Camera3D camera = {
-        .position = {0, 2.0f, 3.5f},
+        .position = {0, 1.5f, 3.0f},
         .target = {0, 0.75f, 0.0f},
         .up = {0, 1, 0},
         .fovy = 60
@@ -65,7 +77,7 @@ int main(void)
             ClearBackground(RAYWHITE);
             R3D_Begin(camera);
                 R3D_DrawMesh(plane, R3D_MATERIAL_BASE, Vector3Zero(), 1.0f);
-                R3D_DrawAnimatedModel(model, modelPlayer, (Vector3){0, 0, 0.0f}, 1.0f);
+                R3D_DrawAnimatedModel(model, modelPlayer, Vector3Zero(), 1.25f);
                 R3D_DrawAnimatedModelInstanced(model, modelPlayer, instances, 4);
             R3D_End();
         EndDrawing();
