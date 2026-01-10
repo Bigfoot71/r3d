@@ -578,7 +578,6 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
     Vector2 minNDC = {+FLT_MAX, +FLT_MAX};
     Vector2 maxNDC = {-FLT_MAX, -FLT_MAX};
 
-    bool allInside = true;
     for (int i = 0; i < 8; i++) {
         Vector4 corner = {
             (i & 1) ? max.x : min.x,
@@ -587,9 +586,10 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
             1.0f
         };
         Vector4 clip = r3d_vector4_transform(corner, viewProj);
+
+        // If the AABB crosses the near plane: fullscreen
         if (clip.w <= 0.0f) {
-            allInside = false;
-            break;
+            return (r3d_rect_t){0, 0, w, h};
         }
 
         Vector2 ndc = Vector2Scale((Vector2){clip.x, clip.y}, 1.0f / clip.w);
@@ -597,16 +597,18 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
         maxNDC = Vector2Max(maxNDC, ndc);
     }
 
-    int x = 0, y = 0;
-    if (allInside) {
-        x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * w, 0.0f);
-        y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * h, 0.0f);
-        w = (int)fminf((maxNDC.x * 0.5f + 0.5f) * w, (float)w) - x;
-        h = (int)fminf((maxNDC.y * 0.5f + 0.5f) * h, (float)h) - y;
-        assert(w > 0 && h > 0); // should never happen if calculated for visible lights
+    // NDC to screen
+    int x = (int)fmaxf((minNDC.x * 0.5f + 0.5f) * w, 0.0f);
+    int y = (int)fmaxf((minNDC.y * 0.5f + 0.5f) * h, 0.0f);
+    int rectW = (int)fminf((maxNDC.x * 0.5f + 0.5f) * w, (float)w) - x;
+    int rectH = (int)fminf((maxNDC.y * 0.5f + 0.5f) * h, (float)h) - y;
+
+    // Security: Invalid dimensions = skip
+    if (rectW <= 0 || rectH <= 0) {
+        return (r3d_rect_t){0, 0, 0, 0};
     }
 
-    return (r3d_rect_t) {x, y, w, h};
+    return (r3d_rect_t){x, y, rectW, rectH};
 }
 
 bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array)

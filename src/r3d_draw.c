@@ -1408,6 +1408,14 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
+        // Set scissors rect
+        r3d_rect_t dst = {0, 0, R3D_TARGET_WIDTH, R3D_TARGET_HEIGHT};
+        if (light->type != R3D_LIGHT_DIR) {
+            dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, dst.w, dst.h);
+            if (memcmp(&dst, &(r3d_rect_t){0}, sizeof(r3d_rect_t)) == 0) continue;
+        }
+        glScissor(dst.x, dst.y, dst.w, dst.h);
+
         // Send light data to the GPU
         r3d_shader_block_light_t data = {
             .viewProj = r3d_matrix_transpose(&light->viewProj[0]),
@@ -1431,13 +1439,6 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
             .type = light->type,
         };
         r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data);
-
-        // Set scissors rect
-        r3d_rect_t dst = {0, 0, R3D_TARGET_WIDTH, R3D_TARGET_HEIGHT};
-        if (light->type != R3D_LIGHT_DIR) {
-            dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, dst.w, dst.h);
-        }
-        glScissor(dst.x, dst.y, dst.w, dst.h);
 
         // Accumulate this light!
         R3D_PRIMITIVE_DRAW_SCREEN();
