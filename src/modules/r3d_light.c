@@ -341,7 +341,11 @@ static void update_light_spot_matrix(r3d_light_t* light)
     light->near = 0.05f;
     light->far = light->range;
 
-    Matrix view = MatrixLookAt(light->position, Vector3Add(light->position, light->direction), (Vector3) {0, 1, 0});
+    Vector3 up = {0, 1, 0};
+    float upDot = fabsf(Vector3DotProduct(light->direction, up));
+    if (upDot > 0.99f) up = (Vector3){1, 0, 0};
+
+    Matrix view = MatrixLookAt(light->position, Vector3Add(light->position, light->direction), up);
     Matrix proj = MatrixPerspective(90 * DEG2RAD, 1.0, light->near, light->far);
     light->viewProj[0] = MatrixMultiply(view, proj);
 }
