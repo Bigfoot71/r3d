@@ -342,7 +342,7 @@ void r3d_shader_load_prepare_cubemap_from_equirectangular(void)
 
     USE_SHADER(prepare.cubemapFromEquirectangular);
 
-    SET_SAMPLER(prepare.cubemapFromEquirectangular, uPanoramaTex, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+    SET_SAMPLER(prepare.cubemapFromEquirectangular, uPanoramaTex, R3D_SHADER_SAMPLER_SOURCE_2D);
 }
 
 void r3d_shader_load_prepare_cubemap_irradiance(void)
