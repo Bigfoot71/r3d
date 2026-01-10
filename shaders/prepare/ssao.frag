@@ -61,8 +61,7 @@ void main()
     vec3 normal = V_GetViewNormal(uNormalTex, vTexCoord);
 
     // Compute the radius in screen space
-    float projScale = uView.proj[0][0];
-    float ssRadius = (uRadius * projScale) / abs(position.z) * 0.5;
+    float ssRadius = uRadius * uView.proj[1][1] / -position.z;
 
     // Clamping the screen space radius could avoid big cache misses
     // and possible artifacts when very close to an object. To test
