@@ -134,6 +134,8 @@ int main(void)
 
     // Cleanup
     R3D_UnloadMesh(meshPlane);
+    R3D_UnloadAlbedoMap(decal.albedo);
+    R3D_UnloadNormalMap(decal.normal);
     R3D_Close();
 
     CloseWindow();
