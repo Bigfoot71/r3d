@@ -155,8 +155,8 @@ void main()
 {
     /* Sample albedo and ORM texture and extract values */
     
-    vec3 albedo = texture(uAlbedoTex, vTexCoord).rgb;
-    vec3 orm = texture(uOrmTex, vTexCoord).rgb;
+    vec3 albedo = texelFetch(uAlbedoTex, ivec2(gl_FragCoord).xy, 0).rgb;
+    vec3 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0).rgb;
     float roughness = orm.g;
     float metalness = orm.b;
 
@@ -166,8 +166,8 @@ void main()
 
     /* Get position and normal in world space */
 
-    vec3 position = V_GetWorldPosition(uDepthTex, vTexCoord);
-    vec3 N = V_GetWorldNormal(uNormalTex, vTexCoord);
+    vec3 position = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
     /* Compute view direction and the dot product of the normal and view direction */
     

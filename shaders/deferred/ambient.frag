@@ -52,8 +52,8 @@ layout(location = 1) out vec4 FragSpecular;
 
 void main()
 {
-    vec3 albedo = texture(uAlbedoTex, vTexCoord).rgb;
-    vec3 orm = texture(uOrmTex, vTexCoord).rgb;
+    vec3 albedo = texelFetch(uAlbedoTex, ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0).rgb;
 
     vec4 ssr = textureLod(uSsrTex, vTexCoord, orm.g * uSsrNumLevels);
     float ssao = texture(uSsaoTex, vTexCoord).r;
@@ -62,8 +62,8 @@ void main()
     orm.x *= ssao * ssil.w;
 
     vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
-    vec3 P = V_GetWorldPosition(uDepthTex, vTexCoord);
-    vec3 N = V_GetWorldNormal(uNormalTex, vTexCoord);
+    vec3 P = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
     vec3 V = normalize(uView.position - P);
     float NdotV = max(dot(N, V), 0.0);
 

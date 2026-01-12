@@ -55,8 +55,8 @@ float GetBlurSize(float depth)
 
 void main()
 {
+    vec3 color = texelFetch(uSceneTex, ivec2(gl_FragCoord.xy), 0).rgb;
     vec2 texelSize = 1.0 / vec2(textureSize(uSceneTex, 0));
-    vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     // Center depth and CoC
     float centerDepth = texture(uDepthTex, vTexCoord).r;

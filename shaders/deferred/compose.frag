@@ -28,8 +28,8 @@ layout(location = 0) out vec3 FragColor;
 
 void main()
 {
-    vec3 diffuse = texture(uDiffuseTex, vTexCoord).rgb;
-    vec3 specular = texture(uSpecularTex, vTexCoord).rgb;
+    vec3 diffuse = texelFetch(uDiffuseTex, ivec2(gl_FragCoord.xy), 0).rgb;
+    vec3 specular = texelFetch(uSpecularTex, ivec2(gl_FragCoord.xy), 0).rgb;
 
     FragColor = diffuse + specular;
 }
