@@ -127,7 +127,7 @@ void main()
     FragColor = vec4(0.0);
 
     float linearDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    if (linearDepth < 1e-4) return; // Clear value (nothing rendered)
+    if (linearDepth >= uView.far) return;
 
     vec3 worldNormal = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
     vec3 worldPos = V_GetWorldPosition(vTexCoord, linearDepth);
