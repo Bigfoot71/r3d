@@ -125,8 +125,8 @@ static void alloc_depth_renderbuffer(int resW, int resH)
 static int get_or_create_fbo(const r3d_target_t* targets, int count, bool depth)
 {
     assert(targets || (!targets && count == 0));
+    assert(count <= R3D_TARGET_MAX_ATTACHMENTS);
     assert(count > 0 || (count == 0 && depth));
-    assert(count < R3D_TARGET_MAX_ATTACHMENTS);
 
     /* --- Search if the combination is already cached --- */
 
