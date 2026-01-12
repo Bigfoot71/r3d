@@ -28,13 +28,10 @@ int main(void)
 
     // Create decal
     R3D_SetTextureFilter(TEXTURE_FILTER_POINT);
-    R3D_Decal decal = {
-        .material = R3D_GetDefaultMaterial(),
-        .normalThreshold = 0.7f,
-        .fadeWidth = 0.2f
-    };
-    decal.material.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
-    decal.material.normal = R3D_LoadNormalMap(RESOURCES_PATH "images/decal_normal.png", 1.0f);
+    R3D_Decal decal = R3D_GetBaseDecal();
+    decal.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
+    decal.normal = R3D_LoadNormalMap(RESOURCES_PATH "images/decal_normal.png", 1.0f);
+    decal.normalThreshold = 89.0f;
 
     // Create room mesh, material and data
     float roomSize = 25.0f;
@@ -136,7 +133,6 @@ int main(void)
     }
 
     // Cleanup
-    R3D_UnloadMaterial(decal.material);
     R3D_UnloadMesh(meshPlane);
     R3D_Close();
 

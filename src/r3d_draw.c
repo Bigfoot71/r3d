@@ -43,6 +43,19 @@
 #define R3D_IS_SHADOW_CAST_ONLY(mode) \
     ((R3D_SHADOW_CAST_ONLY_MASK & (1 << (mode))) != 0)
 
+#define R3D_MATERIAL_FROM_DECAL(MATERIAL, DECAL) \
+    (MATERIAL).albedo = (DECAL).albedo; \
+    (MATERIAL).alphaCutoff = (DECAL).alphaCutoff; \
+    (MATERIAL).billboardMode = R3D_BILLBOARD_DISABLED; \
+    (MATERIAL).blendMode = R3D_BLEND_MIX; \
+    (MATERIAL).cullMode = R3D_CULL_FRONT; \
+    (MATERIAL).emission = (DECAL).emission; \
+    (MATERIAL).normal = (DECAL).normal; \
+    (MATERIAL).orm = (DECAL).orm; \
+    (MATERIAL).transparencyMode = R3D_TRANSPARENCY_DISABLED; \
+    (MATERIAL).uvOffset = (DECAL).uvOffset; \
+    (MATERIAL).uvScale = (DECAL).uvScale;
+
 // ========================================
 // INTERNAL FUNCTIONS
 // ========================================
@@ -443,13 +456,13 @@ void R3D_DrawDecal(R3D_Decal decal, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
     drawGroup.transform = transform;
-    drawGroup.decalNormalThreshold = decal.normalThreshold;
-    drawGroup.decalFadeWidth = decal.fadeWidth;
+    drawGroup.decalNormalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
+    drawGroup.decalFadeWidth = decal.fadeWidth * DEG2RAD;
 
     r3d_draw_group_push(&drawGroup);
 
     r3d_draw_call_t drawCall = {0};
-    drawCall.material = decal.material;
+    R3D_MATERIAL_FROM_DECAL(drawCall.material, decal);
     drawCall.mesh.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
     drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
     drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};
@@ -462,7 +475,7 @@ void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int c
     r3d_draw_group_t drawGroup = {0};
 
     drawGroup.transform = R3D_MATRIX_IDENTITY;
-    drawGroup.decalNormalThreshold = decal.normalThreshold;
+    drawGroup.decalNormalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
     drawGroup.decalFadeWidth = decal.fadeWidth;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
@@ -470,8 +483,7 @@ void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int c
     r3d_draw_group_push(&drawGroup);
 
     r3d_draw_call_t drawCall = {0};
-
-    drawCall.material = decal.material;
+    R3D_MATERIAL_FROM_DECAL(drawCall.material, decal);
     drawCall.mesh.shadowCastMode = R3D_SHADOW_CAST_DISABLED;
     drawCall.mesh.aabb.min = (Vector3) {-0.5f, -0.5f, -0.5f};
     drawCall.mesh.aabb.max = (Vector3) {+0.5f, +0.5f, +0.5f};

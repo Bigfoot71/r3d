@@ -211,6 +211,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"
     "${R3D_ROOT_PATH}/src/r3d_culling.c"
     "${R3D_ROOT_PATH}/src/r3d_draw.c"
+    "${R3D_ROOT_PATH}/src/r3d_decal.c"	
     "${R3D_ROOT_PATH}/src/r3d_ambient_map.c"
     "${R3D_ROOT_PATH}/src/r3d_environment.c"
     "${R3D_ROOT_PATH}/src/r3d_instance.c"
