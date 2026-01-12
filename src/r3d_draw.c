@@ -164,7 +164,7 @@ void R3D_End(void)
         pass_deferred_compose(sceneTarget);
     }
     else {
-        R3D_TARGET_CLEAR(true);
+        r3d_target_clear(NULL, 0, true);
     }
 
     /* --- Then background and transparent rendering --- */
@@ -521,9 +521,9 @@ void update_view_state(Camera3D camera, double near, double far)
     R3D.viewState.invProj = MatrixInvert(proj);
     R3D.viewState.viewProj = viewProj;
 
-    R3D.viewState.aspect = aspect;
-    R3D.viewState.near = near;
-    R3D.viewState.far = far;
+    R3D.viewState.aspect = (float)aspect;
+    R3D.viewState.near = (float)near;
+    R3D.viewState.far = (float)far;
 }
 
 void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
@@ -1189,7 +1189,7 @@ void pass_scene_prepass(void)
 {
     /* --- First render only depth --- */
 
-    R3D_TARGET_BIND(true);
+    r3d_target_bind(NULL, 0, true);
     R3D_SHADER_USE(scene.depth);
 
     glEnable(GL_DEPTH_TEST);
