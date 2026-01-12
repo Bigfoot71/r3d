@@ -73,7 +73,7 @@ typedef enum {
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_ORM,             \
-    R3D_TARGET_NORMAL          \
+    R3D_TARGET_NORMAL           \
 
 // ========================================
 // HELPER MACROS
