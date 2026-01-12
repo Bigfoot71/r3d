@@ -27,12 +27,15 @@ layout(std140) uniform ViewBlock {
 vec3 V_GetViewPosition(vec2 texCoord, float linearDepth)
 {
     vec2 ndc = texCoord * 2.0 - 1.0;
-
     float tanHalfFov = 1.0 / uView.proj[1][1];
-    float aspect = uView.proj[1][1] / uView.proj[0][0];
-    vec3 viewRay = vec3(ndc.x * tanHalfFov * aspect, ndc.y * tanHalfFov, -1.0);
 
-    return viewRay * (linearDepth / abs(viewRay.z));
+    vec3 viewRay = vec3(
+        ndc.x * tanHalfFov * uView.aspect,
+        ndc.y * tanHalfFov,
+        -1.0
+    );
+
+    return viewRay * linearDepth;
 }
 
 vec3 V_GetViewPosition(sampler2D texLinearDepth, vec2 texCoord)
