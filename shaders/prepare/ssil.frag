@@ -85,8 +85,8 @@ vec2 FastAcos(vec2 x)
 
 void main()
 {
-    vec3 position = V_GetViewPosition(uDepthTex, vTexCoord);
-    vec3 normal = V_GetViewNormal(uNormalTex, vTexCoord);
+    vec3 position = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 normal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
     vec3 camera = normalize(-position);
 
     float jitter = M_HashIGN(gl_FragCoord.xy);
@@ -161,7 +161,7 @@ void main()
     }
 
     indirect /= uSliceCount;
-    vec4 history = texture(uHistoryTex, vTexCoord);
+    vec4 history = texelFetch(uHistoryTex, ivec2(gl_FragCoord.xy), 0);
     indirect.rgb = mix(indirect.rgb, history.rgb, uConvergence);
 
     FragColor = vec4(indirect.rgb, pow(indirect.a, uAoPower));

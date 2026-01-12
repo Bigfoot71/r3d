@@ -29,14 +29,11 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uAlbedoTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-uniform sampler2D uSsaoTex;
 uniform sampler2D uOrmTex;
 
 uniform sampler2DArray uShadowDirTex;
 uniform sampler2DArray uShadowSpotTex;
 uniform samplerCubeArray uShadowOmniTex;
-
-uniform float uSSAOLightAffect;
 
 /* === Fragments === */
 
@@ -158,8 +155,8 @@ void main()
 {
     /* Sample albedo and ORM texture and extract values */
     
-    vec3 albedo = texture(uAlbedoTex, vTexCoord).rgb;
-    vec3 orm = texture(uOrmTex, vTexCoord).rgb;
+    vec3 albedo = texelFetch(uAlbedoTex, ivec2(gl_FragCoord).xy, 0).rgb;
+    vec3 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0).rgb;
     float roughness = orm.g;
     float metalness = orm.b;
 
@@ -169,8 +166,8 @@ void main()
 
     /* Get position and normal in world space */
 
-    vec3 position = V_GetWorldPosition(uDepthTex, vTexCoord);
-    vec3 N = V_GetWorldNormal(uNormalTex, vTexCoord);
+    vec3 position = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
     /* Compute view direction and the dot product of the normal and view direction */
     
@@ -246,10 +243,6 @@ void main()
         float epsilon = (uLight.innerCutOff - uLight.outerCutOff);
         shadow *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);
     }
-
-	/* Apply SSAO to diffuse lighting (accordingly to light affect) */
-
-    diffuse *= mix(1.0, texture(uSsaoTex, vTexCoord).r, uSSAOLightAffect);
 
     /* Compute final lighting contribution */
 

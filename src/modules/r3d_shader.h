@@ -316,6 +316,15 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_sampler_t uAlbedoTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
+    r3d_shader_uniform_sampler_t uOrmTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_sampler_t uDiffuseTex;
+} r3d_shader_prepare_buffer_down_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
@@ -618,7 +627,7 @@ typedef struct {
     r3d_shader_uniform_sampler_t uIrradianceTex;
     r3d_shader_uniform_sampler_t uPrefilterTex;
     r3d_shader_uniform_sampler_t uBrdfLutTex;
-    r3d_shader_uniform_float_t uMipCountSSR;
+    r3d_shader_uniform_float_t uSsrNumLevels;
     r3d_shader_uniform_float_t uSsilEnergy;
 } r3d_shader_deferred_ambient_t;
 
@@ -627,12 +636,10 @@ typedef struct {
     r3d_shader_uniform_sampler_t uAlbedoTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_sampler_t uSsaoTex;
     r3d_shader_uniform_sampler_t uOrmTex;
     r3d_shader_uniform_sampler_t uShadowDirTex;
     r3d_shader_uniform_sampler_t uShadowSpotTex;
     r3d_shader_uniform_sampler_t uShadowOmniTex;
-    r3d_shader_uniform_float_t uSSAOLightAffect;
 } r3d_shader_deferred_lighting_t;
 
 typedef struct {
@@ -708,6 +715,7 @@ extern struct r3d_shader {
 
     // Prepare shaders
     struct {
+        r3d_shader_prepare_buffer_down_t bufferDown;
         r3d_shader_prepare_atrous_wavelet_t atrousWavelet;
         r3d_shader_prepare_bicubic_up_t bicubicUp;
         r3d_shader_prepare_lanczos_up_t lanczosUp;
@@ -761,6 +769,7 @@ extern struct r3d_shader {
 
 typedef void (*r3d_shader_loader_func)(void);
 
+void r3d_shader_load_prepare_buffer_down(void);
 void r3d_shader_load_prepare_atrous_wavelet(void);
 void r3d_shader_load_prepare_bicubic_up(void);
 void r3d_shader_load_prepare_lanczos_up(void);
@@ -797,6 +806,7 @@ static const struct r3d_shader_loader {
 
     // Prepare shaders
     struct {
+        r3d_shader_loader_func bufferDown;
         r3d_shader_loader_func atrousWavelet;
         r3d_shader_loader_func bicubicUp;
         r3d_shader_loader_func lanczosUp;
@@ -845,6 +855,7 @@ static const struct r3d_shader_loader {
 } R3D_MOD_SHADER_LOADER = {
 
     .prepare = {
+        .bufferDown = r3d_shader_load_prepare_buffer_down,
         .atrousWavelet = r3d_shader_load_prepare_atrous_wavelet,
         .bicubicUp = r3d_shader_load_prepare_bicubic_up,
         .lanczosUp = r3d_shader_load_prepare_lanczos_up,
