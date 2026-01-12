@@ -207,7 +207,7 @@ r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao);
 r3d_target_t r3d_target_swap_scene(r3d_target_t scene);
 
 /*
- * Clears color targets to {0,0,0,1} and depth to 1.0.
+ * Clears color targets with the values ​​defined in their configuration; the HW depth is cleared to 1.0
  * Creates and binds the FBO with the requested combination.
  * Attachment locations correspond to the provided order.
  * NOTE: This function reassigns all attachments to level zero and automatically sets the viewport.
