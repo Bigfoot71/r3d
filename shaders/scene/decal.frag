@@ -19,11 +19,8 @@
 smooth in mat4 vMatDecal;
 smooth in vec3 vOrientation;
 smooth in vec4 vClipPos;
-smooth in vec3 vPosition;   // Unused
-smooth in vec2 vTexCoord;   // Unused
 flat   in vec3 vEmission;
 smooth in vec4 vColor;
-smooth in mat3 vTBN;        // Unused
 
 /* === Uniforms === */
 
