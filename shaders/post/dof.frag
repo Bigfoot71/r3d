@@ -59,7 +59,7 @@ void main()
     vec2 texelSize = 1.0 / vec2(textureSize(uSceneTex, 0));
 
     // Center depth and CoC
-    float centerDepth = texture(uDepthTex, vTexCoord).r;
+    float centerDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
     float centerSize  = GetBlurSize(centerDepth);
 
     //scatter as gather
