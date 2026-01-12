@@ -133,40 +133,41 @@
 typedef enum {
 
     // Material maps
-    R3D_SHADER_SAMPLER_MAP_ALBEDO       = 1,
-    R3D_SHADER_SAMPLER_MAP_EMISSION     = 2,
-    R3D_SHADER_SAMPLER_MAP_NORMAL       = 3,
-    R3D_SHADER_SAMPLER_MAP_ORM          = 4,
+    R3D_SHADER_SAMPLER_MAP_ALBEDO            = 1,
+    R3D_SHADER_SAMPLER_MAP_EMISSION          = 2,
+    R3D_SHADER_SAMPLER_MAP_NORMAL            = 3,
+    R3D_SHADER_SAMPLER_MAP_ORM               = 4,
 
     // Shadow maps
-    R3D_SHADER_SAMPLER_SHADOW_DIR       = 10,
-    R3D_SHADER_SAMPLER_SHADOW_SPOT      = 11,
-    R3D_SHADER_SAMPLER_SHADOW_OMNI      = 12,
+    R3D_SHADER_SAMPLER_SHADOW_DIR            = 10,
+    R3D_SHADER_SAMPLER_SHADOW_SPOT           = 11,
+    R3D_SHADER_SAMPLER_SHADOW_OMNI           = 12,
 
     // IBL maps
-    R3D_SHADER_SAMPLER_IBL_IRRADIANCE   = 15,
-    R3D_SHADER_SAMPLER_IBL_PREFILTER    = 16,
-    R3D_SHADER_SAMPLER_IBL_BRDF_LUT     = 17,
+    R3D_SHADER_SAMPLER_IBL_IRRADIANCE        = 15,
+    R3D_SHADER_SAMPLER_IBL_PREFILTER         = 16,
+    R3D_SHADER_SAMPLER_IBL_BRDF_LUT          = 17,
 
     // Scene miscs
-    R3D_SHADER_SAMPLER_BONE_MATRICES    = 20,
+    R3D_SHADER_SAMPLER_BONE_MATRICES         = 20,
 
     // Buffers
-    R3D_SHADER_SAMPLER_BUFFER_DEPTH     = 25,
-    R3D_SHADER_SAMPLER_BUFFER_ALBEDO    = 26,
-    R3D_SHADER_SAMPLER_BUFFER_NORM_TAN  = 27,
-    R3D_SHADER_SAMPLER_BUFFER_ORM       = 28,
-    R3D_SHADER_SAMPLER_BUFFER_DIFFUSE   = 29,
-    R3D_SHADER_SAMPLER_BUFFER_SPECULAR  = 30,
-    R3D_SHADER_SAMPLER_BUFFER_SSAO      = 31,
-    R3D_SHADER_SAMPLER_BUFFER_SSIL      = 32,
-    R3D_SHADER_SAMPLER_BUFFER_SSR       = 33,
-    R3D_SHADER_SAMPLER_BUFFER_BLOOM     = 34,
-    R3D_SHADER_SAMPLER_BUFFER_SCENE     = 35,
+    R3D_SHADER_SAMPLER_BUFFER_DEPTH          = 25,
+    R3D_SHADER_SAMPLER_BUFFER_GEOM_NORM_TAN  = 26,
+    R3D_SHADER_SAMPLER_BUFFER_ALBEDO         = 27,
+    R3D_SHADER_SAMPLER_BUFFER_NORMAL         = 28,
+    R3D_SHADER_SAMPLER_BUFFER_ORM            = 29,
+    R3D_SHADER_SAMPLER_BUFFER_DIFFUSE        = 30,
+    R3D_SHADER_SAMPLER_BUFFER_SPECULAR       = 31,
+    R3D_SHADER_SAMPLER_BUFFER_SSAO           = 32,
+    R3D_SHADER_SAMPLER_BUFFER_SSIL           = 33,
+    R3D_SHADER_SAMPLER_BUFFER_SSR            = 34,
+    R3D_SHADER_SAMPLER_BUFFER_BLOOM          = 35,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE          = 36,
 
     // Unamed for special passes
-    R3D_SHADER_SAMPLER_SOURCE_2D        = 50,
-    R3D_SHADER_SAMPLER_SOURCE_CUBE      = 55,
+    R3D_SHADER_SAMPLER_SOURCE_2D             = 50,
+    R3D_SHADER_SAMPLER_SOURCE_CUBE           = 55,
 
     // Sentinel
     R3D_SHADER_SAMPLER_COUNT
@@ -179,30 +180,31 @@ typedef enum {
 
 static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
 {
-    [R3D_SHADER_SAMPLER_MAP_ALBEDO]       = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_MAP_EMISSION]     = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_MAP_NORMAL]       = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_MAP_ORM]          = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_SHADOW_DIR]       = GL_TEXTURE_2D_ARRAY,
-    [R3D_SHADER_SAMPLER_SHADOW_SPOT]      = GL_TEXTURE_2D_ARRAY,
-    [R3D_SHADER_SAMPLER_SHADOW_OMNI]      = GL_TEXTURE_CUBE_MAP_ARRAY,
-    [R3D_SHADER_SAMPLER_IBL_IRRADIANCE]   = GL_TEXTURE_CUBE_MAP_ARRAY,
-    [R3D_SHADER_SAMPLER_IBL_PREFILTER]    = GL_TEXTURE_CUBE_MAP_ARRAY,
-    [R3D_SHADER_SAMPLER_IBL_BRDF_LUT]     = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BONE_MATRICES]    = GL_TEXTURE_1D,
-    [R3D_SHADER_SAMPLER_BUFFER_DEPTH]     = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_ALBEDO]    = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_NORM_TAN]  = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_ORM]       = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_DIFFUSE]   = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]  = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_SSAO]      = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_SSIL]      = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_SSR]       = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_BLOOM]     = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_SCENE]     = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_SOURCE_2D]        = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_SOURCE_CUBE]      = GL_TEXTURE_CUBE_MAP,
+    [R3D_SHADER_SAMPLER_MAP_ALBEDO]            = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_MAP_EMISSION]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_MAP_NORMAL]            = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_MAP_ORM]               = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SHADOW_DIR]            = GL_TEXTURE_2D_ARRAY,
+    [R3D_SHADER_SAMPLER_SHADOW_SPOT]           = GL_TEXTURE_2D_ARRAY,
+    [R3D_SHADER_SAMPLER_SHADOW_OMNI]           = GL_TEXTURE_CUBE_MAP_ARRAY,
+    [R3D_SHADER_SAMPLER_IBL_IRRADIANCE]        = GL_TEXTURE_CUBE_MAP_ARRAY,
+    [R3D_SHADER_SAMPLER_IBL_PREFILTER]         = GL_TEXTURE_CUBE_MAP_ARRAY,
+    [R3D_SHADER_SAMPLER_IBL_BRDF_LUT]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BONE_MATRICES]         = GL_TEXTURE_1D,
+    [R3D_SHADER_SAMPLER_BUFFER_DEPTH]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_ALBEDO]         = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_NORMAL]         = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_ORM]            = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_DIFFUSE]        = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]       = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_GEOM_NORM_TAN]  = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SSAO]           = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SSIL]           = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SSR]            = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_BLOOM]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SCENE]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SOURCE_2D]             = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SOURCE_CUBE]           = GL_TEXTURE_CUBE_MAP,
 };
 
 // ========================================
@@ -571,6 +573,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_col4_t uAlbedoColor;
@@ -579,16 +582,20 @@ typedef struct {
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_sampler_t uAlbedoMap;
     r3d_shader_uniform_sampler_t uNormalMap;
     r3d_shader_uniform_sampler_t uEmissionMap;
     r3d_shader_uniform_sampler_t uOrmMap;
     r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_sampler_t uNormTanTex;
     r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
+    r3d_shader_uniform_float_t uNormalThreshold;
+    r3d_shader_uniform_float_t uFadeWidth;
 } r3d_shader_scene_decal_t;
 
 typedef struct {
@@ -830,6 +837,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func ambient;
         r3d_shader_loader_func lighting;
         r3d_shader_loader_func compose;
+        r3d_shader_loader_func composeNormals;
     } deferred;
 
     // Post shaders
@@ -875,7 +883,7 @@ static const struct r3d_shader_loader {
     .deferred = {
         .ambient = r3d_shader_load_deferred_ambient,
         .lighting = r3d_shader_load_deferred_lighting,
-        .compose = r3d_shader_load_deferred_compose,
+        .compose = r3d_shader_load_deferred_compose
     },
 
     .post = {

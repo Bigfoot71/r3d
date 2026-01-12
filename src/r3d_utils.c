@@ -52,7 +52,7 @@ Texture2D R3D_GetNormalTexture(void)
 Texture2D R3D_GetBufferNormal(void)
 {
     Texture2D texture = { 0 };
-    texture.id = r3d_target_get(R3D_TARGET_NORM_TAN);
+    texture.id = r3d_target_get(R3D_TARGET_GEOM_NORM_TAN);
     texture.width = R3D_TARGET_WIDTH;
     texture.height = R3D_TARGET_HEIGHT;
     texture.mipmaps = 1;

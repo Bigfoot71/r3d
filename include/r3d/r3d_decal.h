@@ -9,7 +9,6 @@
 #ifndef R3D_DECAL_H
 #define R3D_DECAL_H
 
-#include "./r3d_platform.h"
 #include "./r3d_material.h"
 
 /**
@@ -30,7 +29,9 @@
  * forward rendered or non-opaque objects.
  */
 typedef struct R3D_Decal {
-    R3D_Material material;         /**< The material used for rendering the decal. */
+    R3D_Material material;         ///< The material used for rendering the decal
+    float normalThreshold;         ///< Maximum angle against the surface normal to draw decal
+    float fadeWidth;               ///< The width of fading along the normal threshold
 } R3D_Decal;
 
 /** @} */ // end of Decal

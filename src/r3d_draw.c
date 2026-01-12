@@ -196,8 +196,8 @@ void R3D_End(void)
     switch (R3D.outputMode) {
     case R3D_OUTPUT_SCENE: blit_to_screen(r3d_target_swap_scene(sceneTarget)); break;
     case R3D_OUTPUT_ALBEDO: visualize_to_screen(R3D_TARGET_ALBEDO); break;
-    case R3D_OUTPUT_NORMAL: visualize_to_screen(R3D_TARGET_NORM_TAN); break;
-    case R3D_OUTPUT_TANGENT: visualize_to_screen(R3D_TARGET_NORM_TAN); break;
+    case R3D_OUTPUT_NORMAL: visualize_to_screen(R3D_TARGET_NORMAL); break;
+    case R3D_OUTPUT_TANGENT: visualize_to_screen(R3D_TARGET_GEOM_NORM_TAN); break;
     case R3D_OUTPUT_ORM: visualize_to_screen(R3D_TARGET_ORM); break;
     case R3D_OUTPUT_DIFFUSE: visualize_to_screen(R3D_TARGET_DIFFUSE); break;
     case R3D_OUTPUT_SPECULAR: visualize_to_screen(R3D_TARGET_SPECULAR); break;
@@ -439,6 +439,8 @@ void R3D_DrawDecal(R3D_Decal decal, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
     drawGroup.transform = transform;
+    drawGroup.decalNormalThreshold = decal.normalThreshold;
+    drawGroup.decalFadeWidth = decal.fadeWidth;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -456,6 +458,8 @@ void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int c
     r3d_draw_group_t drawGroup = {0};
 
     drawGroup.transform = R3D_MATRIX_IDENTITY;
+    drawGroup.decalNormalThreshold = decal.normalThreshold;
+    drawGroup.decalFadeWidth = decal.fadeWidth;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
@@ -899,6 +903,10 @@ void raster_decal(const r3d_draw_call_t* call)
     R3D_SHADER_SET_MAT4(scene.decal, uMatModel, group->transform);
     R3D_SHADER_SET_MAT4(scene.decal, uMatNormal, matNormal);
 
+    /* --- Skinning is never used for decals --- */
+
+    R3D_SHADER_SET_INT(scene.decal, uSkinning, false);
+
     /* --- Set factor material maps --- */
 
     R3D_SHADER_SET_FLOAT(scene.decal, uEmissionEnergy, call->material.emission.energy);
@@ -921,21 +929,17 @@ void raster_decal(const r3d_draw_call_t* call)
     R3D_SHADER_SET_COL4(scene.decal, uAlbedoColor, R3D.colorSpace, call->material.albedo.color);
     R3D_SHADER_SET_COL3(scene.decal, uEmissionColor, R3D.colorSpace, call->material.emission.color);
 
+    /* --- Set decal specific values --- */
+
+    R3D_SHADER_SET_FLOAT(scene.decal, uNormalThreshold, group->decalNormalThreshold);
+    R3D_SHADER_SET_FLOAT(scene.decal, uFadeWidth, group->decalFadeWidth);
+
     /* --- Bind active texture maps --- */
 
     R3D_SHADER_BIND_SAMPLER(scene.decal, uAlbedoMap, R3D_TEXTURE_SELECT(call->material.albedo.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER(scene.decal, uNormalMap, R3D_TEXTURE_SELECT(call->material.normal.texture.id, NORMAL));
     R3D_SHADER_BIND_SAMPLER(scene.decal, uEmissionMap, R3D_TEXTURE_SELECT(call->material.emission.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER(scene.decal, uOrmMap, R3D_TEXTURE_SELECT(call->material.orm.texture.id, WHITE));
-
-    /* --- Applying material parameters that are independent of shaders --- */
-
-    r3d_draw_apply_blend_mode(call->material.blendMode, call->material.transparencyMode);
-
-    /* --- Disable face culling to avoid issues when camera is inside the decal bounding mesh --- */
-    // TODO: Implement check for if camera is inside the mesh and apply the appropriate face culling / depth testing
-
-    glDisable(GL_CULL_FACE);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -1213,20 +1217,24 @@ void pass_scene_prepass(void)
 
 void pass_scene_decals(void)
 {
-    R3D_TARGET_BIND(R3D_TARGET_GBUFFER);
+    R3D_TARGET_BIND(R3D_TARGET_DECAL);
     R3D_SHADER_USE(scene.decal);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glDepthMask(GL_FALSE);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_FRONT); // Only render back faces to avoid clipping issues
+
+    glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
     R3D_SHADER_BIND_SAMPLER(scene.decal, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uNormTanTex, r3d_target_get(R3D_TARGET_GEOM_NORM_TAN));
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_DECAL_INST, R3D_DRAW_DECAL) {
         raster_decal(call);
     }
+
+    glCullFace(GL_BACK);
 }
 
 r3d_target_t pass_prepare_ssao(void)
@@ -1248,7 +1256,7 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.environment.ssao.intensity);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uPower, R3D.environment.ssao.power);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(prepare.ssao, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_PRIMITIVE_DRAW_SCREEN();
@@ -1257,7 +1265,7 @@ r3d_target_t pass_prepare_ssao(void)
 
     R3D_SHADER_USE(prepare.atrousWavelet);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     for (int i = 0; i < 3; i++) {
@@ -1297,7 +1305,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uHistoryTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(SSIL_HISTORY), BLACK));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssil, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleCount, (float)R3D.environment.ssil.sampleCount);
@@ -1314,7 +1322,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     R3D_SHADER_USE(prepare.atrousWavelet);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
     r3d_target_t src = SSIL_RAW;
@@ -1350,7 +1358,7 @@ r3d_target_t pass_prepare_ssr(void)
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uLightingTex, r3d_target_get(R3D_TARGET_DIFFUSE));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssr, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
@@ -1393,7 +1401,7 @@ void pass_deferred_lights(r3d_target_t ssaoSource)
     R3D_SHADER_USE(deferred.lighting);
 
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(deferred.lighting, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER(deferred.lighting, uOrmTex, r3d_target_get(R3D_TARGET_ORM));
@@ -1464,7 +1472,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_USE(deferred.ambient);
 
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uAlbedoTex, r3d_target_get(R3D_TARGET_ALBEDO));
-    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uNormalTex, r3d_target_get(R3D_TARGET_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));

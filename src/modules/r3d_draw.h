@@ -109,6 +109,9 @@ typedef struct {
     uint32_t texPose;                   //< Texture that contains the bone matrices (can be 0 for non-skinned)
     R3D_InstanceBuffer instances;       //< Instance buffer to use
     int instanceCount;                  //< Number of instances
+
+    float decalNormalThreshold;         //< Angle cutoff threshold (decals only)
+    float decalFadeWidth;               //< Fade width at threshold (decals only)
 } r3d_draw_group_t;
 
 /*

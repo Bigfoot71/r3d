@@ -25,10 +25,11 @@
 typedef enum {
     R3D_TARGET_INVALID = -1,
     R3D_TARGET_ALBEDO,          //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_NORM_TAN,        //< Full - Mip 1 - RGBA[16|16|16|16]
+    R3D_TARGET_NORMAL,          //< Full - Mip 1 - RGBA[16|16]
     R3D_TARGET_ORM,             //< Full - Mip 1 - RGB[8|8|8]
     R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_GEOM_NORM_TAN,   //< Full - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
@@ -48,23 +49,31 @@ typedef enum {
 
 #define R3D_TARGET_ALL_DEFERRED \
     R3D_TARGET_ALBEDO,          \
-    R3D_TARGET_NORM_TAN,        \
+    R3D_TARGET_NORMAL,          \
     R3D_TARGET_ORM,             \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
+    R3D_TARGET_GEOM_NORM_TAN,   \
     R3D_TARGET_DEPTH            \
 
 #define R3D_TARGET_GBUFFER      \
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_DIFFUSE,         \
-    R3D_TARGET_NORM_TAN,        \
+    R3D_TARGET_NORMAL,          \
     R3D_TARGET_ORM,             \
+    R3D_TARGET_GEOM_NORM_TAN,   \
     R3D_TARGET_DEPTH            \
 
 #define R3D_TARGET_LIGHTING     \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
     R3D_TARGET_DEPTH            \
+
+#define R3D_TARGET_DECAL        \
+    R3D_TARGET_ALBEDO,          \
+    R3D_TARGET_DIFFUSE,         \
+    R3D_TARGET_ORM,             \
+    R3D_TARGET_NORMAL          \
 
 // ========================================
 // HELPER MACROS
