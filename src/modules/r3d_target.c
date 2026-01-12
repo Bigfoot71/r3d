@@ -17,80 +17,133 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_target R3D_MOD_TARGET;
+struct r3d_mod_target R3D_MOD_TARGET;
+
+// ========================================
+// INTERNAL OPENGL FORMAT TABLE
+// ========================================
+
+typedef struct {
+    GLenum internal;
+    GLenum format;
+    GLenum type;
+} target_format_t;
+
+typedef enum {
+    FORMAT_R8,   FORMAT_RG8,   FORMAT_RGB8,   FORMAT_RGBA8,
+    FORMAT_R16F, FORMAT_RG16F, FORMAT_RGB16F, FORMAT_RGBA16F,
+    FORMAT_R32F, FORMAT_RG32F, FORMAT_RGB32F, FORMAT_RGBA32F,
+} target_format_enum_t;
+
+static const target_format_t TARGET_FORMAT[] = {
+    [FORMAT_R8]      = { GL_R8,        GL_RED,  GL_UNSIGNED_BYTE },
+    [FORMAT_RG8]     = { GL_RG8,       GL_RG,   GL_UNSIGNED_BYTE },
+    [FORMAT_RGB8]    = { GL_RGB8,      GL_RGB,  GL_UNSIGNED_BYTE },
+    [FORMAT_RGBA8]   = { GL_RGBA8,     GL_RGBA, GL_UNSIGNED_BYTE },
+    [FORMAT_R16F]    = { GL_R16F,      GL_RED,  GL_HALF_FLOAT },
+    [FORMAT_RG16F]   = { GL_RG16F,     GL_RG,   GL_HALF_FLOAT },
+    [FORMAT_RGB16F]  = { GL_RGB16F,    GL_RGB,  GL_HALF_FLOAT },
+    [FORMAT_RGBA16F] = { GL_RGBA16F,   GL_RGBA, GL_HALF_FLOAT },
+    [FORMAT_R32F]    = { GL_R32F,      GL_RED,  GL_FLOAT },
+    [FORMAT_RG32F]   = { GL_RG32F,     GL_RG,   GL_FLOAT },
+    [FORMAT_RGB32F]  = { GL_RGB32F,    GL_RGB,  GL_FLOAT },
+    [FORMAT_RGBA32F] = { GL_RGBA32F,   GL_RGBA, GL_FLOAT },
+};
 
 // ========================================
 // INTERNAL TARGET FUNCTIONS
 // ========================================
 
 typedef struct {
-    GLenum internalFormat, format, type;
+    target_format_enum_t format;
     float resolutionFactor;
     GLenum minFilter;
     GLenum magFilter;
-    bool mipmaps;
+    int numLevels;
+    float clear[4];
 } target_config_t;
 
 static const target_config_t TARGET_CONFIG[] = {
-    [R3D_TARGET_ALBEDO]          = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_NORMAL]          = { GL_RG16F,             GL_RG,              GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_ORM]             = { GL_RGB8,              GL_RGB,             GL_UNSIGNED_BYTE,  1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_DIFFUSE]         = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_SPECULAR]        = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_GEOM_NORM_TAN]   = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     1.0f, GL_NEAREST,               GL_NEAREST, false },
-    [R3D_TARGET_SSAO_0]          = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_SSAO_1]          = { GL_R8,                GL_RED,             GL_UNSIGNED_BYTE,  0.5f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_0]          = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_1]          = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_SSIL_2]          = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_SSR]             = { GL_RGBA16F,           GL_RGBA,            GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
-    [R3D_TARGET_BLOOM]           = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     0.5f, GL_LINEAR_MIPMAP_LINEAR,  GL_LINEAR,  true  },
-    [R3D_TARGET_SCENE_0]         = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_SCENE_1]         = { GL_RGB16F,            GL_RGB,             GL_HALF_FLOAT,     1.0f, GL_LINEAR,                GL_LINEAR,  false },
-    [R3D_TARGET_DEPTH]           = { GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT,   1.0f, GL_NEAREST,               GL_NEAREST, false },
+    [R3D_TARGET_ALBEDO]        = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_NORMAL]        = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ORM]           = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_DEPTH]         = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
+    [R3D_TARGET_DIFFUSE]       = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_SPECULAR]      = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_GEOM_NORM_TAN] = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_SSAO_0]        = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSAO_1]        = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_0]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_1]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_2]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSR]           = { FORMAT_RGBA16F, 0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_BLOOM]         = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_SCENE_0]       = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SCENE_1]       = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
 };
 
-static void target_load(r3d_target_t target)
+static void alloc_target_texture(r3d_target_t target)
 {
-    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TARGET.targets[target]);
-    const target_config_t* config = &TARGET_CONFIG[target];
-    int mipCount = r3d_target_get_mip_count(target);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TARGET.targetTextures[target]);
 
-    for (int i = 0; i < mipCount; ++i) {
+    const target_config_t* config = &TARGET_CONFIG[target];
+    const target_format_t* format = &TARGET_FORMAT[config->format];
+
+    int numLevels = r3d_target_get_num_levels(target);
+
+    for (int i = 0; i < numLevels; ++i) {
         int wLevel = 0, hLevel = 0;
         r3d_target_get_resolution(&wLevel, &hLevel, target, i);
-        glTexImage2D(GL_TEXTURE_2D, i, config->internalFormat, wLevel, hLevel, 0, config->format, config->type, NULL);
+        glTexImage2D(GL_TEXTURE_2D, i, format->internal, wLevel, hLevel, 0, format->format, format->type, NULL);
     }
 
+    // NOTE: By default, sampling is blocked at the first level
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, config->minFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, config->magFilter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    R3D_MOD_TARGET.targetStates[target] = (r3d_target_state_t) {0};
     R3D_MOD_TARGET.targetLoaded[target] = true;
+}
+
+static void alloc_depth_renderbuffer(int resW, int resH)
+{
+    glBindRenderbuffer(GL_RENDERBUFFER, R3D_MOD_TARGET.depthRenderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, resW, resH);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
 }
 
 /*
  * Returns the index of the FBO in the cache.
  * If the combination doesn't exist, creates a new FBO and caches it.
  */
-static int get_or_create_fbo(const r3d_target_t* targets, int count)
+static int get_or_create_fbo(const r3d_target_t* targets, int count, bool depth)
 {
+    assert(targets || (!targets && count == 0));
+    assert(count > 0 || (count == 0 && depth));
     assert(count < R3D_TARGET_MAX_ATTACHMENTS);
 
     /* --- Search if the combination is already cached --- */
 
     for (int i = 0; i < R3D_MOD_TARGET.fboCount; i++) {
         const r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[i];
-        if (fbo->count == count && memcmp(fbo->targets, targets, count * sizeof(*targets)) == 0) {
-            return i;
+        if (fbo->targetCount == count && fbo->hasDepth == depth) {
+            if (count == 0 || memcmp(fbo->targets, targets, count * sizeof(*targets)) == 0) {
+                return i;
+            }
         }
     }
 
     /* --- Create the FBO and cache it --- */
 
     assert(R3D_MOD_TARGET.fboCount < R3D_TARGET_MAX_FRAMEBUFFERS);
+
     int newIndex = R3D_MOD_TARGET.fboCount++;
     r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[newIndex];
 
@@ -100,27 +153,29 @@ static int get_or_create_fbo(const r3d_target_t* targets, int count)
     GLenum glColor[R3D_TARGET_MAX_ATTACHMENTS];
     int locCount = 0;
 
-    for (int i = 0; i < count; ++i)
-    {
+    for (int i = 0; i < count; ++i) {
         if (!R3D_MOD_TARGET.targetLoaded[targets[i]]) {
-            target_load(targets[i]);
+            alloc_target_texture(targets[i]);
         }
 
-        GLuint texture = R3D_MOD_TARGET.targets[targets[i]];
+        GLuint texture = R3D_MOD_TARGET.targetTextures[targets[i]];
+        fbo->targetStates[i] = (r3d_target_attachment_state_t) {0};
         fbo->targets[i] = targets[i];
 
-        if (targets[i] != R3D_TARGET_DEPTH) {
-            GLenum attachment = GL_COLOR_ATTACHMENT0 + locCount;
-            glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture, 0);
-            glColor[locCount++] = attachment;
-        }
-        else {
-            assert(i == count - 1); // Always provide the depth target last
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
-        }
+        GLenum attachment = GL_COLOR_ATTACHMENT0 + locCount;
+        glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, texture, 0);
+        glColor[locCount++] = attachment;
     }
 
-    fbo->count = count;
+    if (depth) {
+        glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+            GL_RENDERBUFFER, R3D_MOD_TARGET.depthRenderbuffer
+        );
+    }
+
+    fbo->targetCount = count;
+    fbo->hasDepth = depth;
 
     if (locCount > 0) {
         glDrawBuffers(locCount, glColor);
@@ -138,14 +193,6 @@ static int get_or_create_fbo(const r3d_target_t* targets, int count)
     return newIndex;
 }
 
-static void set_viewport(r3d_target_t target)
-{
-    float viewportFactor = TARGET_CONFIG[target].resolutionFactor;
-    int vpW = (int)((float)R3D_MOD_TARGET.resW * viewportFactor);
-    int vpH = (int)((float)R3D_MOD_TARGET.resH * viewportFactor);
-    glViewport(0, 0, vpW, vpH);
-}
-
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
@@ -154,13 +201,14 @@ bool r3d_target_init(int resW, int resH)
 {
     memset(&R3D_MOD_TARGET, 0, sizeof(R3D_MOD_TARGET));
 
-    glGenTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
+    glGenTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targetTextures);
+    glGenRenderbuffers(1, &R3D_MOD_TARGET.depthRenderbuffer);
+    alloc_depth_renderbuffer(resW, resH);
 
     R3D_MOD_TARGET.currentFbo = -1;
 
     R3D_MOD_TARGET.resW = resW;
     R3D_MOD_TARGET.resH = resH;
-
     R3D_MOD_TARGET.txlW = 1.0f / resW;
     R3D_MOD_TARGET.txlH = 1.0f / resH;
 
@@ -169,10 +217,13 @@ bool r3d_target_init(int resW, int resH)
 
 void r3d_target_quit(void)
 {
-    glDeleteTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targets);
+    glDeleteTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targetTextures);
+    glDeleteRenderbuffers(1, &R3D_MOD_TARGET.depthRenderbuffer);
 
     for (int i = 0; i < R3D_MOD_TARGET.fboCount; i++) {
-        glDeleteFramebuffers(1, &R3D_MOD_TARGET.fbo[i].id);
+        if (R3D_MOD_TARGET.fbo[i].id != 0) {
+            glDeleteFramebuffers(1, &R3D_MOD_TARGET.fbo[i].id);
+        }
     }
 }
 
@@ -186,24 +237,25 @@ void r3d_target_resize(int resW, int resH)
 
     R3D_MOD_TARGET.resW = resW;
     R3D_MOD_TARGET.resH = resH;
-
     R3D_MOD_TARGET.txlW = 1.0f / resW;
     R3D_MOD_TARGET.txlH = 1.0f / resH;
 
     // TODO: Avoid reallocating targets if the new dimensions
     //       are smaller than the allocated dimensions?
 
+    alloc_depth_renderbuffer(resW, resH);
+
     for (int i = 0; i < R3D_TARGET_COUNT; i++) {
         if (R3D_MOD_TARGET.targetLoaded[i]) {
-            target_load(i);
+            alloc_target_texture(i);
         }
     }
 }
 
-int r3d_target_get_mip_count(r3d_target_t target)
+int r3d_target_get_num_levels(r3d_target_t target)
 {
     const target_config_t* config = &TARGET_CONFIG[target];
-    if (!config->mipmaps) return 1;
+    if (config->numLevels > 0) return config->numLevels;
 
     int w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
     int h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
@@ -253,69 +305,103 @@ r3d_target_t r3d_target_swap_scene(r3d_target_t scene)
     return R3D_TARGET_SCENE_0;
 }
 
-void r3d_target_clear(const r3d_target_t* targets, int count)
+void r3d_target_clear(const r3d_target_t* targets, int count, int level, bool depth)
 {
-    int fboIndex = get_or_create_fbo(targets, count);
+    assert((!depth || level == 0) && "If depth buffer bind, always bind at level zero");
+    assert(count > 0 || depth);
+
+    int fboIndex = get_or_create_fbo(targets, count, depth);
     if (fboIndex != R3D_MOD_TARGET.currentFbo) {
         glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_TARGET.fbo[fboIndex].id);
         R3D_MOD_TARGET.currentFbo = fboIndex;
-        set_viewport(targets[0]);
     }
 
-    bool hasDepth = false;
-    bool hasColor = false;
     for (int i = 0; i < count; i++) {
-        hasDepth |= (targets[i] == R3D_TARGET_DEPTH);
-        hasColor |= (targets[i] != R3D_TARGET_DEPTH);
+        r3d_target_set_write_level(i, level);
     }
 
-    assert(hasDepth || hasColor);
-    GLenum bitfield = GL_NONE;
+    if (count > 0) r3d_target_set_viewport(targets[0], level);
+    else glViewport(0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH);
 
-    if (hasColor) {
-        bitfield |= GL_COLOR_BUFFER_BIT;
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    for (int i = 0; i < count; i++) {
+        glClearBufferfv(GL_COLOR, i, TARGET_CONFIG[targets[i]].clear);
     }
 
-    if (hasDepth) {
-        bitfield |= GL_DEPTH_BUFFER_BIT;
-        glDepthMask(GL_TRUE);
-        glClearDepth(1.0f);
+    if (depth) {
+        glClearBufferfv(GL_DEPTH, 0, (float[1]){1.0f});
     }
-
-    glClear(bitfield);
 }
 
-void r3d_target_bind(const r3d_target_t* targets, int count)
+void r3d_target_bind(const r3d_target_t* targets, int count, int level, bool depth)
 {
-    int fboIndex = get_or_create_fbo(targets, count);
+    assert((!depth || level == 0) && "If depth buffer bind, always bind at level zero");
+    assert(count > 0 || depth);
+
+    int fboIndex = get_or_create_fbo(targets, count, depth);
     if (fboIndex != R3D_MOD_TARGET.currentFbo) {
         glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_TARGET.fbo[fboIndex].id);
         R3D_MOD_TARGET.currentFbo = fboIndex;
-        set_viewport(targets[0]);
     }
+
+    for (int i = 0; i < count; i++) {
+        r3d_target_set_write_level(i, level);
+    }
+
+    if (count > 0) r3d_target_set_viewport(targets[0], level);
+    else glViewport(0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH);
 }
 
-void r3d_target_set_mip_level(int attachment, int level)
+void r3d_target_set_viewport(r3d_target_t target, int level)
+{
+    int vpW = 0, vpH = 0;
+    r3d_target_get_resolution(&vpW, &vpH, target, level);
+    glViewport(0, 0, vpW, vpH);
+}
+
+void r3d_target_set_write_level(int attachment, int level)
 {
     assert(R3D_MOD_TARGET.currentFbo >= 0);
 
-    const r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[R3D_MOD_TARGET.currentFbo];
+    r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[R3D_MOD_TARGET.currentFbo];
+    assert(fbo->targetCount > 0 && attachment < fbo->targetCount);
+
     r3d_target_t target = fbo->targets[attachment];
+    assert(level < r3d_target_get_num_levels(target));
+    r3d_target_attachment_state_t* state = &fbo->targetStates[attachment];
 
-    assert(TARGET_CONFIG[target].mipmaps);
+    if (state->writeLevel != level) {
+        glFramebufferTexture2D(
+            GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment,
+            GL_TEXTURE_2D, R3D_MOD_TARGET.targetTextures[target], level
+        );
+        state->writeLevel = level;
+    }
+}
 
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + attachment,
-        GL_TEXTURE_2D, R3D_MOD_TARGET.targets[target], level
-    );
+void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel)
+{
+    assert(R3D_MOD_TARGET.targetLoaded[target]);
+    assert(baseLevel < r3d_target_get_num_levels(target));
+    assert(maxLevel < r3d_target_get_num_levels(target));
+
+    r3d_target_state_t* state = &R3D_MOD_TARGET.targetStates[target];
+
+    if (state->baseLevel != baseLevel || state->maxLevel != maxLevel) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, R3D_MOD_TARGET.targetTextures[target]);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, baseLevel);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  maxLevel);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        state->baseLevel = baseLevel;
+        state->maxLevel = maxLevel;
+    }
 }
 
 void r3d_target_gen_mipmap(r3d_target_t target)
 {
     GLuint id = r3d_target_get(target);
 
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -325,35 +411,39 @@ GLuint r3d_target_get(r3d_target_t target)
 {
     assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
     assert(R3D_MOD_TARGET.targetLoaded[target]);
-    return R3D_MOD_TARGET.targets[target];
+    return R3D_MOD_TARGET.targetTextures[target];
+}
+
+GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel)
+{
+    assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
+    r3d_target_set_read_levels(target, baseLevel, maxLevel);
+    return R3D_MOD_TARGET.targetTextures[target];
 }
 
 GLuint r3d_target_get_or_null(r3d_target_t target)
 {
     if (target <= R3D_TARGET_INVALID || target >= R3D_TARGET_COUNT) return 0;
     if (!R3D_MOD_TARGET.targetLoaded[target]) return 0;
-    return R3D_MOD_TARGET.targets[target];
+    return R3D_MOD_TARGET.targetTextures[target];
 }
 
-void r3d_target_blit(r3d_target_t* targets, int count, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear)
+void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear)
 {
-    bool hasDepth = (targets[count - 1] == R3D_TARGET_DEPTH);
-    bool depthOnly = (count == 1 && hasDepth);
-
-    int fboIndex = get_or_create_fbo(targets, count);
+    int fboIndex = get_or_create_fbo(&target, 1, depth);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFbo);
     glBindFramebuffer(GL_READ_FRAMEBUFFER, R3D_MOD_TARGET.fbo[fboIndex].id);
 
     if (linear) {
-        if (!depthOnly) {
+        if (target > 0) {
             glBlitFramebuffer(
                 0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
                 dstX, dstY, dstX + dstW, dstY + dstH, GL_COLOR_BUFFER_BIT,
                 GL_LINEAR
             );
         }
-        if (hasDepth) {
+        if (depth) {
             glBlitFramebuffer(
                 0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
                 dstX, dstY, dstX + dstW, dstY + dstH, GL_DEPTH_BUFFER_BIT,
@@ -363,8 +453,8 @@ void r3d_target_blit(r3d_target_t* targets, int count, GLuint dstFbo, int dstX, 
     }
     else {
         GLbitfield mask = GL_NONE;
-        if (!depthOnly) mask |= GL_COLOR_BUFFER_BIT;
-        if (hasDepth) mask |= GL_DEPTH_BUFFER_BIT;
+        if (target > 0) mask |= GL_COLOR_BUFFER_BIT;
+        if (depth) mask |= GL_DEPTH_BUFFER_BIT;
         glBlitFramebuffer(
             0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
             dstX, dstY, dstX + dstW, dstY + dstH, mask,

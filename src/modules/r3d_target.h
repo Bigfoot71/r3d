@@ -24,10 +24,11 @@
  */
 typedef enum {
     R3D_TARGET_INVALID = -1,
-    R3D_TARGET_ALBEDO,          //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_NORMAL,          //< Full - Mip 1 - RGBA[16|16]
-    R3D_TARGET_ORM,             //< Full - Mip 1 - RGB[8|8|8]
-    R3D_TARGET_DIFFUSE,         //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_ALBEDO,          //< Full - Mip 2 - RGB[8|8|8]
+    R3D_TARGET_NORMAL,          //< Full - Mip 2 - RGBA[16|16]
+    R3D_TARGET_ORM,             //< Full - Mip 2 - RGB[8|8|8]
+    R3D_TARGET_DEPTH,           //< Full - Mip 2 - R[16]
+    R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB[16|16|16]
     R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_GEOM_NORM_TAN,   //< Full - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
@@ -39,7 +40,6 @@ typedef enum {
     R3D_TARGET_BLOOM,           //< Half - Mip N - RGB[16|16|16]
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_DEPTH,           //< Full - Mip 1 - D[24]
     R3D_TARGET_COUNT
 } r3d_target_t;
 
@@ -51,6 +51,7 @@ typedef enum {
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_NORMAL,          \
     R3D_TARGET_ORM,             \
+    R3D_TARGET_DEPTH,           \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
     R3D_TARGET_GEOM_NORM_TAN,   \
@@ -67,13 +68,12 @@ typedef enum {
 #define R3D_TARGET_LIGHTING     \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
-    R3D_TARGET_DEPTH            \
 
 #define R3D_TARGET_DECAL        \
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_ORM,             \
-    R3D_TARGET_NORMAL          \
+    R3D_TARGET_NORMAL           \
 
 // ========================================
 // HELPER MACROS
@@ -87,16 +87,25 @@ typedef enum {
 #define R3D_TARGET_TEXEL_HEIGHT R3D_MOD_TARGET.txlH
 #define R3D_TARGET_TEXEL_SIZE   R3D_MOD_TARGET.txlW, R3D_MOD_TARGET.txlH
 
-#define R3D_TARGET_CLEAR(...)                                           \
+#define R3D_TARGET_CLEAR(depth, ...)                                    \
     r3d_target_clear(                                                   \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
-        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t)  \
+        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        0, (depth)                                                      \
     )
 
-#define R3D_TARGET_BIND(...)                                            \
+#define R3D_TARGET_BIND(depth, ...)                                     \
     r3d_target_bind(                                                    \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
-        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t)  \
+        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        0, (depth)                                                      \
+    )
+
+#define R3D_TARGET_BIND_LEVEL(level, ...)                               \
+    r3d_target_bind(                                                    \
+        (r3d_target_t[]){ __VA_ARGS__ },                                \
+        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        (level), false                                                  \
     )
 
 /*
@@ -104,7 +113,7 @@ typedef enum {
  * Modifies the target parameter to point to the other buffer.
  */
 #define R3D_TARGET_BIND_AND_SWAP_SSAO(target) do {                      \
-    R3D_TARGET_BIND(target);                                            \
+    R3D_TARGET_BIND(false, target);                                     \
     target = r3d_target_swap_ssao(target);                              \
 } while(0)
 
@@ -113,38 +122,55 @@ typedef enum {
  * Modifies the target parameter to point to the other buffer.
  */
 #define R3D_TARGET_BIND_AND_SWAP_SCENE(target) do {                     \
-    R3D_TARGET_BIND(target);                                            \
+    R3D_TARGET_BIND(false, target);                                     \
     target = r3d_target_swap_scene(target);                             \
 } while(0)
 
 // ========================================
-// FRAMEBUFFER STRUCTURE
+// TARGET FBO STRUCTURE
 // ========================================
 
 #define R3D_TARGET_MAX_FRAMEBUFFERS 32
 #define R3D_TARGET_MAX_ATTACHMENTS  8
 
 typedef struct {
-    GLuint id;
+    int writeLevel;         //< Indicates the level currently attached to the FBO
+} r3d_target_attachment_state_t;
+
+typedef struct {
+    r3d_target_attachment_state_t targetStates[R3D_TARGET_MAX_ATTACHMENTS];
     r3d_target_t targets[R3D_TARGET_MAX_ATTACHMENTS];
-    int count;
+    int targetCount;
+    bool hasDepth;
+    GLuint id;
 } r3d_target_fbo_t;
+
+// ========================================
+// TARGET BUFFER STRUCTURE
+// ========================================
+
+typedef struct {
+    int baseLevel;
+    int maxLevel;
+} r3d_target_state_t;
 
 // ========================================
 // MODULE STATE
 // ========================================
 
-extern struct r3d_target {
+extern struct r3d_mod_target {
 
-    r3d_target_fbo_t fbo[R3D_TARGET_MAX_FRAMEBUFFERS];  //< FBO combination cache. FBOs are automatically generated as needed during bind.
-    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Reset via `r3d_target_reset()`.
+    r3d_target_fbo_t fbo[R3D_TARGET_MAX_FRAMEBUFFERS];  //< FBO combination cache. FBOs are automatically generated as needed during bind
+    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Reset via `r3d_target_reset()`
     int fboCount;                                       //< Number of FBOs created
 
-    bool targetLoaded[R3D_TARGET_COUNT];    //< Indicates whether the targets have been allocated.
-    GLuint targets[R3D_TARGET_COUNT];       //< Table of targets (textures)
+    r3d_target_state_t targetStates[R3D_TARGET_COUNT];  //< Array of target states
+    GLuint targetTextures[R3D_TARGET_COUNT];            //< Array of target IDs (textures)
+    bool targetLoaded[R3D_TARGET_COUNT];                //< Indicates whether the targets have been allocated
 
-    uint32_t resW, resH;    //< Full internal resolution
-    float txlW, txlH;       //< Size of a texel for full resolution
+    GLuint depthRenderbuffer;   //< Internal depth buffer
+    uint32_t resW, resH;        //< Full internal resolution
+    float txlW, txlH;           //< Size of a texel for full resolution
 
 } R3D_MOD_TARGET;
 
@@ -175,7 +201,7 @@ void r3d_target_resize(int resW, int resH);
  * Returns the total number of mip levels of the internal buffers
  * based on their full resolution.
  */
-int r3d_target_get_mip_count(r3d_target_t target);
+int r3d_target_get_num_levels(r3d_target_t target);
 
 /*
  * Returns the internal resolution for the specified mip level.
@@ -198,27 +224,44 @@ r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao);
 r3d_target_t r3d_target_swap_scene(r3d_target_t scene);
 
 /*
- * Clears color targets with {0,0,0,1} and depth with 1.0.
- * Creates and binds the FBO with the requested combination.
- * Attachment locations correspond to the provided order.
- * Depth target must always be passed last in the list (verified by assert).
+ * Creates, binds and clear the FBO with the requested attachment combination.
+ * Attachment locations follow the order provided.
+ *
+ * This function attaches the targets at the specified level and sets the corresponding viewport.
+ * Ensure that the provided target combination is compatible with the specified level.
+ * The depth buffer can only be attached when the level is zero.
  */
-void r3d_target_clear(const r3d_target_t* targets, int count);
+void r3d_target_clear(const r3d_target_t* targets, int count, int level, bool depth);
 
 /*
- * Creates and binds the FBO with the requested combination.
- * Attachment locations correspond to the provided order.
- * Depth target must always be passed last in the list (verified by assert).
+ * Creates and binds an FBO with the requested attachment combination.
+ * Attachment locations follow the order provided.
+ *
+ * This function attaches the targets at the specified level and sets the corresponding viewport.
+ * Ensure that the provided target combination is compatible with the specified level.
+ * The depth buffer can only be attached when the level is zero.
  */
-void r3d_target_bind(const r3d_target_t* targets, int count);
+void r3d_target_bind(const r3d_target_t* targets, int count, int level, bool depth);
+
+/*
+ * Sets the viewport according to the target and specified level.
+ */
+void r3d_target_set_viewport(r3d_target_t target, int level);
 
 /*
  * Changes the mip level of the specified attachment.
  * Takes effect on the currently bound FBO.
  * The attachment index corresponds to the target's location in 'r3d_target_bind'.
- * Asserts that a valid FBO is currently bound.
+ * Asserts that a valid FBO is currently bound and that the level is valid.
  */
-void r3d_target_set_mip_level(int attachment, int level);
+void r3d_target_set_write_level(int attachment, int level);
+
+/*
+ * Defines the sampling levels of the target.
+ * baseLevel defines the first level and maxLevel the last.
+ * Asserts that the target has already been created/used and that the levels are valid.
+ */
+void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel);
 
 /*
  * Generates mipmaps for the specified target.
@@ -234,17 +277,23 @@ void r3d_target_gen_mipmap(r3d_target_t target);
 GLuint r3d_target_get(r3d_target_t target);
 
 /*
+ * Returns the texture ID corresponding to the requested target with base and max levels configured.
+ * Asserts that the requested target has been created and if the target enum is valid.
+ * If not created yet, it means we never bound this target, so it would be empty.
+ */
+GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel);
+
+/*
  * Returns the texture ID corresponding to the requested target.
  * Or returns 0 if the target has not been created or if the enum is invalid.
  */
 GLuint r3d_target_get_or_null(r3d_target_t target);
 
 /*
- * Blit les cibles fournies vers le FBO indiqué.
- * Supporte le blit de la cible de profondeur seulement.
- * La cible de profondeur doit toujours être spécifiée en dernier.
+ * Blits the provided targets to the specified FBO.
+ * Supports blitting with only a depth target.
  */
-void r3d_target_blit(r3d_target_t* targets, int count, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear);
+void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear);
 
 /*
  * Reset the internal state cache as the FBO target currently binds.

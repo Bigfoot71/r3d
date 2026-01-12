@@ -219,7 +219,7 @@ vec3 LinearToSRGB(vec3 color)
 
 void main()
 {
-    vec3 color = texture(uSceneTex, vTexCoord).rgb;
+    vec3 color = texelFetch(uSceneTex, ivec2(gl_FragCoord.xy), 0).rgb;
 
     color = Tonemapping(color, uTonemapExposure, uTonemapWhite);
     color = Adjustments(color, uBrightness, uContrast, uSaturation);

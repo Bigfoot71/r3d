@@ -57,8 +57,8 @@ vec2 TapLocation(int i, float spinAngle, out float rNorm)
 
 void main()
 {
-    vec3 position = V_GetViewPosition(uDepthTex, vTexCoord);
-    vec3 normal = V_GetViewNormal(uNormalTex, vTexCoord);
+    vec3 position = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 normal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
     // Compute the radius in screen space
     float ssRadius = uRadius * uView.proj[1][1] / -position.z;

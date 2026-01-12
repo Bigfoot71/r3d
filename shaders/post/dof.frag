@@ -55,11 +55,11 @@ float GetBlurSize(float depth)
 
 void main()
 {
+    vec3 color = texelFetch(uSceneTex, ivec2(gl_FragCoord.xy), 0).rgb;
     vec2 texelSize = 1.0 / vec2(textureSize(uSceneTex, 0));
-    vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     // Center depth and CoC
-    float centerDepth = V_GetLinearDepth(uDepthTex, vTexCoord);
+    float centerDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
     float centerSize  = GetBlurSize(centerDepth);
 
     //scatter as gather
@@ -71,7 +71,7 @@ void main()
         vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 
         vec3 sampleColor = texture(uSceneTex, tc).rgb;
-        float sampleDepth = V_GetLinearDepth(uDepthTex, tc);
+        float sampleDepth = texture(uDepthTex, tc).r;
         float sampleSize  = GetBlurSize(sampleDepth);
 
         if (sampleDepth > centerDepth) {

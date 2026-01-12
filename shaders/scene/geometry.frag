@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings === */
@@ -39,6 +40,7 @@ layout(location = 1) out vec3 FragEmission;
 layout(location = 2) out vec2 FragNormal;
 layout(location = 3) out vec3 FragORM;
 layout(location = 4) out vec4 FragGeomNormTan;
+layout(location = 5) out float FragDepth;
 
 /* === Main function === */
 
@@ -70,4 +72,6 @@ void main()
     FragORM.r = uOcclusion * orm.x;
     FragORM.g = uRoughness * orm.y;
     FragORM.b = uMetalness * orm.z;
+
+    FragDepth = V_LinearizeDepth(gl_FragCoord.z);
 }

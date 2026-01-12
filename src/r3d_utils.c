@@ -23,7 +23,7 @@ Texture2D R3D_GetWhiteTexture(void)
     texture.width = 1;
     texture.height = 1;
     texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE;
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
     return texture;
 }
 
@@ -34,7 +34,7 @@ Texture2D R3D_GetBlackTexture(void)
     texture.width = 1;
     texture.height = 1;
     texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_GRAYSCALE;
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
     return texture;
 }
 
@@ -45,7 +45,7 @@ Texture2D R3D_GetNormalTexture(void)
     texture.width = 1;
     texture.height = 1;
     texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_R32G32B32;
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8;
     return texture;
 }
 
@@ -56,7 +56,7 @@ Texture2D R3D_GetBufferNormal(void)
     texture.width = R3D_TARGET_WIDTH;
     texture.height = R3D_TARGET_HEIGHT;
     texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_R32;
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R16G16B16A16;
     return texture;
 }
 
@@ -67,7 +67,7 @@ Texture2D R3D_GetBufferDepth(void)
     texture.width = R3D_TARGET_WIDTH;
     texture.height = R3D_TARGET_HEIGHT;
     texture.mipmaps = 1;
-    texture.format = PIXELFORMAT_UNCOMPRESSED_R32;
+    texture.format = PIXELFORMAT_UNCOMPRESSED_R16;
     return texture;
 }
 
