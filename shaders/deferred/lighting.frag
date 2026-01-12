@@ -16,7 +16,6 @@
 
 #include "../include/blocks/light.glsl"
 #include "../include/blocks/view.glsl"
-#include "../include/light.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
 
@@ -31,9 +30,9 @@ uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 uniform sampler2D uOrmTex;
 
-uniform sampler2DArray uShadowDirTex;
-uniform sampler2DArray uShadowSpotTex;
-uniform samplerCubeArray uShadowOmniTex;
+uniform sampler2DArrayShadow uShadowDirTex;
+uniform sampler2DArrayShadow uShadowSpotTex;
+uniform samplerCubeArrayShadow uShadowOmniTex;
 
 /* === Fragments === */
 
@@ -59,92 +58,61 @@ const vec2 VOGEL_DISK[8] = vec2[8](
 
 float ShadowDir(vec3 position, float cNdotL, mat2 diskRot)
 {
-    /* --- Light Space Projection --- */
-
     vec4 projPos = uLight.viewProj * vec4(position, 1.0);
     vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
 
-    /* --- Shadow Bias and Depth Adjustment --- */
-
     float bias = uLight.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, uLight.shadowDepthBias * projCoords.z);
-    float currentDepth = projCoords.z - bias;
-
-    /* --- Poisson Disk PCF Sampling --- */
+    float compareDepth = projCoords.z - bias;
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 offset = diskRot * VOGEL_DISK[i] * uLight.shadowSoftness;
-        shadow += step(currentDepth, texture(uShadowDirTex, vec3(projCoords.xy + offset, uLight.shadowLayer)).r);
+        shadow += texture(uShadowDirTex, vec4(projCoords.xy + offset, uLight.shadowLayer, compareDepth));
     }
     shadow /= float(SHADOW_SAMPLES);
-
-    /* --- Apply a fade to the edges of the projection --- */
 
     vec3 distToBorder = min(projCoords, 1.0 - projCoords);
     float edgeFade = smoothstep(0.0, 0.15, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
     shadow = mix(1.0, shadow, edgeFade);
-
-    /* --- Final Shadow Value --- */
 
     return shadow;
 }
 
 float ShadowSpot(vec3 position, float cNdotL, mat2 diskRot)
 {
-    /* --- Light Space Projection --- */
-
     vec4 projPos = uLight.viewProj * vec4(position, 1.0);
     vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
 
-    /* --- Shadow Bias and Depth Adjustment --- */
-
     float bias = uLight.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, uLight.shadowDepthBias * projCoords.z);
-    float currentDepth = projCoords.z - bias;
-
-    /* --- Poisson Disk PCF Sampling --- */
+    float compareDepth = projCoords.z - bias;
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 offset = diskRot * VOGEL_DISK[i] * uLight.shadowSoftness;
-        shadow += step(currentDepth, texture(uShadowSpotTex, vec3(projCoords.xy + offset, uLight.shadowLayer)).r);
+        shadow += texture(uShadowSpotTex, vec4(projCoords.xy + offset, uLight.shadowLayer, compareDepth));
     }
-
-    /* --- Final Shadow Value --- */
 
     return shadow / float(SHADOW_SAMPLES);
 }
 
 float ShadowOmni(vec3 position, float cNdotL, mat2 diskRot)
 {
-    /* --- Light Vector and Distance Calculation --- */
-
     vec3 lightToFrag = position - uLight.position;
     float currentDepth = length(lightToFrag);
-    vec3 direction = normalize(lightToFrag);
-
-    /* --- Shadow Bias and Depth Adjustment --- */
 
     float bias = uLight.shadowSlopeBias * (1.0 - cNdotL * 0.5);
     bias = max(bias, uLight.shadowDepthBias * currentDepth);
-    currentDepth -= bias;
+    float compareDepth = (currentDepth - bias) / uLight.far;
 
-    /* --- Build orthonormal basis for perturbation --- */
-
-    mat3 OBN = M_OrthonormalBasis(direction);
-
-    /* --- Poisson Disk PCF Sampling --- */
+    mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 diskOffset = diskRot * VOGEL_DISK[i] * uLight.shadowSoftness;
-        vec3 sampleDir = normalize(OBN * vec3(diskOffset.xy, 1.0));
-        float sampleDepth = texture(uShadowOmniTex, vec4(sampleDir, float(uLight.shadowLayer))).r * uLight.far;
-        shadow += step(currentDepth, sampleDepth);
+        shadow += texture(uShadowOmniTex, vec4(OBN * vec3(diskOffset.xy, 1.0), uLight.shadowLayer), compareDepth);
     }
-
-    /* --- Final Shadow Value --- */
 
     return shadow / float(SHADOW_SAMPLES);
 }
