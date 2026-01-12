@@ -123,8 +123,9 @@ static void alloc_depth_renderbuffer(int resW, int resH)
  */
 static int get_or_create_fbo(const r3d_target_t* targets, int count, bool depth)
 {
-    assert(count < R3D_TARGET_MAX_ATTACHMENTS);
+    assert(targets || (!targets && count == 0));
     assert(count > 0 || (count == 0 && depth));
+    assert(count < R3D_TARGET_MAX_ATTACHMENTS);
 
     /* --- Search if the combination is already cached --- */
 
@@ -358,7 +359,7 @@ void r3d_target_set_write_level(int attachment, int level)
     assert(R3D_MOD_TARGET.currentFbo >= 0);
 
     r3d_target_fbo_t* fbo = &R3D_MOD_TARGET.fbo[R3D_MOD_TARGET.currentFbo];
-    assert(attachment < fbo->targetCount);
+    assert(fbo->targetCount > 0 && attachment < fbo->targetCount);
 
     r3d_target_t target = fbo->targets[attachment];
     assert(level < r3d_target_get_num_levels(target));
