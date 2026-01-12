@@ -29,14 +29,11 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uAlbedoTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-uniform sampler2D uSsaoTex;
 uniform sampler2D uOrmTex;
 
 uniform sampler2DArray uShadowDirTex;
 uniform sampler2DArray uShadowSpotTex;
 uniform samplerCubeArray uShadowOmniTex;
-
-uniform float uSSAOLightAffect;
 
 /* === Fragments === */
 
@@ -246,10 +243,6 @@ void main()
         float epsilon = (uLight.innerCutOff - uLight.outerCutOff);
         shadow *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);
     }
-
-	/* Apply SSAO to diffuse lighting (accordingly to light affect) */
-
-    diffuse *= mix(1.0, texture(uSsaoTex, vTexCoord).r, uSSAOLightAffect);
 
     /* Compute final lighting contribution */
 

@@ -59,7 +59,7 @@ void main()
     vec3 color = texture(uSceneTex, vTexCoord).rgb;
 
     // Center depth and CoC
-    float centerDepth = V_GetLinearDepth(uDepthTex, vTexCoord);
+    float centerDepth = texture(uDepthTex, vTexCoord).r;
     float centerSize  = GetBlurSize(centerDepth);
 
     //scatter as gather
@@ -71,7 +71,7 @@ void main()
         vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 
         vec3 sampleColor = texture(uSceneTex, tc).rgb;
-        float sampleDepth = V_GetLinearDepth(uDepthTex, tc);
+        float sampleDepth = texture(uDepthTex, tc).r;
         float sampleSize  = GetBlurSize(sampleDepth);
 
         if (sampleDepth > centerDepth) {

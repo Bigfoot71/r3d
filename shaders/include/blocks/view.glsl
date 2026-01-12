@@ -24,34 +24,28 @@ layout(std140) uniform ViewBlock {
     View uView;
 };
 
-vec2 V_GetNDC(vec2 texCoord)
+vec3 V_GetViewPosition(vec2 texCoord, float linearDepth)
 {
-    return vec2(texCoord * 2.0 - 1.0);
+    vec2 ndc = texCoord * 2.0 - 1.0;
+
+    float tanHalfFov = 1.0 / uView.proj[1][1];
+    float aspect = uView.proj[1][1] / uView.proj[0][0];
+    vec3 viewRay = vec3(ndc.x * tanHalfFov * aspect, ndc.y * tanHalfFov, -1.0);
+
+    return viewRay * (linearDepth / abs(viewRay.z));
 }
 
-vec4 V_GetNDC(vec2 texCoord, float depth)
+vec3 V_GetViewPosition(sampler2D texLinearDepth, vec2 texCoord)
 {
-    return vec4(texCoord * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    float linearDepth = texture(texLinearDepth, texCoord).r;
+    return V_GetViewPosition(texCoord, linearDepth);
 }
 
-vec4 V_GetNDC(sampler2D texDepth, vec2 texCoord)
+vec3 V_GetViewPosition(sampler2D texLinearDepth, ivec2 pixCoord)
 {
-    float depth = texture(texDepth, texCoord).r;
-    return V_GetNDC(texCoord, depth);
-}
-
-vec3 V_GetViewPosition(vec2 texCoord, float depth)
-{
-    vec4 ndcPos = V_GetNDC(texCoord, depth);
-    vec4 viewPos = uView.invProj * ndcPos;
-    return viewPos.xyz / viewPos.w;
-}
-
-vec3 V_GetViewPosition(sampler2D texDepth, vec2 texCoord)
-{
-    vec4 ndcPos = V_GetNDC(texDepth, texCoord);
-    vec4 viewPos = uView.invProj * ndcPos;
-    return viewPos.xyz / viewPos.w;
+    vec2 texCoord = (vec2(pixCoord) + 0.5) / vec2(textureSize(texLinearDepth, 0));
+    float linearDepth = texelFetch(texLinearDepth, pixCoord, 0).r;
+    return V_GetViewPosition(texCoord, linearDepth);
 }
 
 vec3 V_GetWorldPosition(vec3 viewPosition)
@@ -59,16 +53,23 @@ vec3 V_GetWorldPosition(vec3 viewPosition)
     return (uView.invView * vec4(viewPosition, 1.0)).xyz;
 }
 
-vec3 V_GetWorldPosition(vec2 texCoord, float depth)
+vec3 V_GetWorldPosition(vec2 texCoord, float linearDepth)
 {
-    vec3 viewPosition = V_GetViewPosition(texCoord, depth);
+    vec3 viewPosition = V_GetViewPosition(texCoord, linearDepth);
     return V_GetWorldPosition(viewPosition);
 }
 
-vec3 V_GetWorldPosition(sampler2D texDepth, vec2 texCoord)
+vec3 V_GetWorldPosition(sampler2D texLinearDepth, vec2 texCoord)
 {
-    float depth = texture(texDepth, texCoord).r;
-    return V_GetWorldPosition(texCoord, depth);
+    float linearDepth = texture(texLinearDepth, texCoord).r;
+    return V_GetWorldPosition(texCoord, linearDepth);
+}
+
+vec3 V_GetWorldPosition(sampler2D texLinearDepth, ivec2 pixCoord)
+{
+    vec2 texCoord = (vec2(pixCoord) + 0.5) / vec2(textureSize(texLinearDepth, 0));
+    float linearDepth = texelFetch(texLinearDepth, pixCoord, 0).r;
+    return V_GetWorldPosition(texCoord, linearDepth);
 }
 
 vec3 V_GetViewNormal(vec3 worldNormal)
@@ -88,9 +89,21 @@ vec3 V_GetViewNormal(sampler2D texNormal, vec2 texCoord)
     return V_GetViewNormal(encWorldNormal);
 }
 
+vec3 V_GetViewNormal(sampler2D texNormal, ivec2 pixCoord)
+{
+    vec2 encWorldNormal = texelFetch(texNormal, pixCoord, 0).rg;
+    return V_GetViewNormal(encWorldNormal);
+}
+
 vec3 V_GetWorldNormal(sampler2D texNormal, vec2 texCoord)
 {
     vec2 encWorldNormal = texture(texNormal, texCoord).rg;
+    return M_DecodeOctahedral(encWorldNormal);
+}
+
+vec3 V_GetWorldNormal(sampler2D texNormal, ivec2 pixCoord)
+{
+    vec2 encWorldNormal = texelFetch(texNormal, pixCoord, 0).rg;
     return M_DecodeOctahedral(encWorldNormal);
 }
 
@@ -127,16 +140,4 @@ float V_LinearizeDepth01(float depth)
 
     float z = (2.0 * near * far) / (far + near - (depth * 2.0 - 1.0) * (far - near));
     return (z - near) / (far - near);
-}
-
-float V_GetLinearDepth(sampler2D texDepth, vec2 texCoord)
-{
-    float depth = texture(texDepth, texCoord).r;
-    return V_LinearizeDepth(depth);
-}
-
-float V_GetLinearDepth01(sampler2D texDepth, vec2 texCoord)
-{
-    float depth = texture(texDepth, texCoord).r;
-    return V_LinearizeDepth01(depth);
 }

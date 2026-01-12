@@ -35,7 +35,7 @@ uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
 
-uniform float uMipCountSSR;
+uniform float uSsrNumLevels;
 uniform float uSsilEnergy;
 
 /* === Blocks === */
@@ -55,7 +55,7 @@ void main()
     vec3 albedo = texture(uAlbedoTex, vTexCoord).rgb;
     vec3 orm = texture(uOrmTex, vTexCoord).rgb;
 
-    vec4 ssr = textureLod(uSsrTex, vTexCoord, orm.g * uMipCountSSR);
+    vec4 ssr = textureLod(uSsrTex, vTexCoord, orm.g * uSsrNumLevels);
     float ssao = texture(uSsaoTex, vTexCoord).r;
     vec4 ssil = texture(uSsilTex, vTexCoord);
 
