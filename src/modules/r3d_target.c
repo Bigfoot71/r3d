@@ -304,8 +304,9 @@ r3d_target_t r3d_target_swap_scene(r3d_target_t scene)
     return R3D_TARGET_SCENE_0;
 }
 
-void r3d_target_clear(const r3d_target_t* targets, int count, bool depth)
+void r3d_target_clear(const r3d_target_t* targets, int count, int level, bool depth)
 {
+    assert((!depth || level == 0) && "If depth buffer bind, always bind at level zero");
     assert(count > 0 || depth);
 
     int fboIndex = get_or_create_fbo(targets, count, depth);
@@ -315,10 +316,10 @@ void r3d_target_clear(const r3d_target_t* targets, int count, bool depth)
     }
 
     for (int i = 0; i < count; i++) {
-        r3d_target_set_write_level(i, 0);
+        r3d_target_set_write_level(i, level);
     }
 
-    if (count > 0) r3d_target_set_viewport(targets[0], 0);
+    if (count > 0) r3d_target_set_viewport(targets[0], level);
     else glViewport(0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH);
 
     for (int i = 0; i < count; i++) {
@@ -330,8 +331,9 @@ void r3d_target_clear(const r3d_target_t* targets, int count, bool depth)
     }
 }
 
-void r3d_target_bind(const r3d_target_t* targets, int count, bool depth)
+void r3d_target_bind(const r3d_target_t* targets, int count, int level, bool depth)
 {
+    assert((!depth || level == 0) && "If depth buffer bind, always bind at level zero");
     assert(count > 0 || depth);
 
     int fboIndex = get_or_create_fbo(targets, count, depth);
@@ -341,10 +343,10 @@ void r3d_target_bind(const r3d_target_t* targets, int count, bool depth)
     }
 
     for (int i = 0; i < count; i++) {
-        r3d_target_set_write_level(i, 0);
+        r3d_target_set_write_level(i, level);
     }
 
-    if (count > 0) r3d_target_set_viewport(targets[0], 0);
+    if (count > 0) r3d_target_set_viewport(targets[0], level);
     else glViewport(0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH);
 }
 

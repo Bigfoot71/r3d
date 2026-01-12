@@ -164,7 +164,7 @@ void R3D_End(void)
         pass_deferred_compose(sceneTarget);
     }
     else {
-        r3d_target_clear(NULL, 0, true);
+        r3d_target_clear(NULL, 0, 0, true);
     }
 
     /* --- Then background and transparent rendering --- */
@@ -1189,7 +1189,7 @@ void pass_scene_prepass(void)
 {
     /* --- First render only depth --- */
 
-    r3d_target_bind(NULL, 0, true);
+    r3d_target_bind(NULL, 0, 0, true);
     R3D_SHADER_USE(scene.depth);
 
     glEnable(GL_DEPTH_TEST);
@@ -1235,18 +1235,12 @@ void pass_scene_decals(void)
 
 void pass_prepare_buffer_down(void)
 {
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_ALBEDO, R3D_TARGET_NORM_TAN, R3D_TARGET_ORM, R3D_TARGET_DEPTH, R3D_TARGET_DIFFUSE);
     R3D_SHADER_USE(prepare.bufferDown);
+
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
-
-    R3D_TARGET_BIND(false, R3D_TARGET_ALBEDO, R3D_TARGET_NORM_TAN, R3D_TARGET_ORM, R3D_TARGET_DEPTH, R3D_TARGET_DIFFUSE);
-    r3d_target_set_viewport(R3D_TARGET_ALBEDO, 1);
-    r3d_target_set_write_level(0, 1);
-    r3d_target_set_write_level(1, 1);
-    r3d_target_set_write_level(2, 1);
-    r3d_target_set_write_level(3, 1);
-    r3d_target_set_write_level(4, 1);
 
     R3D_SHADER_BIND_SAMPLER(prepare.bufferDown, uAlbedoTex, r3d_target_get_levels(R3D_TARGET_ALBEDO, 0, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.bufferDown, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORM_TAN, 0, 0));

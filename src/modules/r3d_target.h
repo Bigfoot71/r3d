@@ -81,14 +81,21 @@ typedef enum {
     r3d_target_clear(                                                   \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
         sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
-        (depth)                                                         \
+        0, (depth)                                                      \
     )
 
 #define R3D_TARGET_BIND(depth, ...)                                     \
     r3d_target_bind(                                                    \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
         sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
-        (depth)                                                         \
+        0, (depth)                                                      \
+    )
+
+#define R3D_TARGET_BIND_LEVEL(level, ...)                               \
+    r3d_target_bind(                                                    \
+        (r3d_target_t[]){ __VA_ARGS__ },                                \
+        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        (level), false                                                  \
     )
 
 /*
@@ -207,19 +214,24 @@ r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao);
 r3d_target_t r3d_target_swap_scene(r3d_target_t scene);
 
 /*
- * Clears color targets with the values ​​defined in their configuration; the HW depth is cleared to 1.0
- * Creates and binds the FBO with the requested combination.
- * Attachment locations correspond to the provided order.
- * NOTE: This function reassigns all attachments to level zero and automatically sets the viewport.
+ * Creates, binds and clear the FBO with the requested attachment combination.
+ * Attachment locations follow the order provided.
+ *
+ * This function attaches the targets at the specified level and sets the corresponding viewport.
+ * Ensure that the provided target combination is compatible with the specified level.
+ * The depth buffer can only be attached when the level is zero.
  */
-void r3d_target_clear(const r3d_target_t* targets, int count, bool depth);
+void r3d_target_clear(const r3d_target_t* targets, int count, int level, bool depth);
 
 /*
- * Creates and binds the FBO with the requested combination.
- * Attachment locations correspond to the provided order.
- * NOTE: This function reassigns all attachments to level zero and automatically sets the viewport.
+ * Creates and binds an FBO with the requested attachment combination.
+ * Attachment locations follow the order provided.
+ *
+ * This function attaches the targets at the specified level and sets the corresponding viewport.
+ * Ensure that the provided target combination is compatible with the specified level.
+ * The depth buffer can only be attached when the level is zero.
  */
-void r3d_target_bind(const r3d_target_t* targets, int count, bool depth);
+void r3d_target_bind(const r3d_target_t* targets, int count, int level, bool depth);
 
 /*
  * Sets the viewport according to the target and specified level.
