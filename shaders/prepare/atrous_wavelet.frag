@@ -91,18 +91,17 @@ void main()
     vec4 result = vec4(0.0);
     float totalWeight = 0.0;
 
-    vec2 texelSize = 1.0 / vec2(textureSize(uSourceTex, 0));
-    vec3 centerNormal = V_GetViewNormal(uNormalTex, vTexCoord);
-    float centerDepth = V_GetLinearDepth(uDepthTex, vTexCoord);
+    vec3 centerNormal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
+    float centerDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
 
     for (int i = 0; i < KERNEL_SIZE; ++i)
     {
-        vec2 offset = vec2(OFFSETS[i] * uStepSize) * texelSize;
-        vec2 uv = vTexCoord + offset;
+        ivec2 offset = OFFSETS[i] * uStepSize;
+        ivec2 pixCoord = ivec2(gl_FragCoord.xy) + offset;
 
-        vec4 sampleValue = texture(uSourceTex, uv);
-        vec3 sampleNormal = V_GetViewNormal(uNormalTex, uv);
-        float sampleDepth = V_GetLinearDepth(uDepthTex, uv);
+        vec4 sampleValue = texelFetch(uSourceTex, pixCoord, 0);
+        vec3 sampleNormal = V_GetViewNormal(uNormalTex, pixCoord);
+        float sampleDepth = texelFetch(uDepthTex, pixCoord, 0).r;
 
         float wNormal = NormalWeight(centerNormal, sampleNormal);
         float wDepth = DepthWeight(centerDepth, sampleDepth);

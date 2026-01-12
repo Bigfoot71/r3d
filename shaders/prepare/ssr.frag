@@ -126,11 +126,11 @@ void main()
 {
     FragColor = vec4(0.0);
 
-    float depth = texture(uDepthTex, vTexCoord).r;
-    if (depth > 1.0 - 1e-5) return;
+    float linearDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
+    if (linearDepth >= uView.far) return;
 
-    vec3 worldNormal = V_GetWorldNormal(uNormalTex, vTexCoord);
-    vec3 worldPos = V_GetWorldPosition(vTexCoord, depth);
+    vec3 worldNormal = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
+    vec3 worldPos = V_GetWorldPosition(vTexCoord, linearDepth);
 
     vec3 viewDir = normalize(worldPos - uView.position);
     vec3 reflectionDir = reflect(viewDir, worldNormal);

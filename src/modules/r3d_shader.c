@@ -22,6 +22,7 @@
 #include <shaders/color.frag.h>
 #include <shaders/screen.vert.h>
 #include <shaders/cubemap.vert.h>
+#include <shaders/buffer_down.frag.h>
 #include <shaders/atrous_wavelet.frag.h>
 #include <shaders/bicubic_up.frag.h>
 #include <shaders/lanczos_up.frag.h>
@@ -185,6 +186,17 @@ GLuint load_shader(const char* vsCode, const char* fsCode)
 // ========================================
 // SHADER LOADING FUNCTIONS
 // ========================================
+
+void r3d_shader_load_prepare_buffer_down(void)
+{
+    LOAD_SHADER(prepare.bufferDown, SCREEN_VERT, BUFFER_DOWN_FRAG);
+    USE_SHADER(prepare.bufferDown);
+    SET_SAMPLER(prepare.bufferDown, uAlbedoTex, R3D_SHADER_SAMPLER_BUFFER_ALBEDO);
+    SET_SAMPLER(prepare.bufferDown, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
+    SET_SAMPLER(prepare.bufferDown, uOrmTex, R3D_SHADER_SAMPLER_BUFFER_ORM);
+    SET_SAMPLER(prepare.bufferDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+    SET_SAMPLER(prepare.bufferDown, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
+}
 
 void r3d_shader_load_prepare_atrous_wavelet(void)
 {
@@ -643,7 +655,7 @@ void r3d_shader_load_deferred_ambient(void)
     SET_UNIFORM_BUFFER(deferred.ambient, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(deferred.ambient, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
-    GET_LOCATION(deferred.ambient, uMipCountSSR);
+    GET_LOCATION(deferred.ambient, uSsrNumLevels);
     GET_LOCATION(deferred.ambient, uSsilEnergy);
 
     USE_SHADER(deferred.ambient);
@@ -668,14 +680,11 @@ void r3d_shader_load_deferred_lighting(void)
     SET_UNIFORM_BUFFER(deferred.lighting, LightBlock, R3D_SHADER_BLOCK_LIGHT_SLOT);
     SET_UNIFORM_BUFFER(deferred.lighting, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
-    GET_LOCATION(deferred.lighting, uSSAOLightAffect);
-
     USE_SHADER(deferred.lighting);
 
     SET_SAMPLER(deferred.lighting, uAlbedoTex, R3D_SHADER_SAMPLER_BUFFER_ALBEDO);
     SET_SAMPLER(deferred.lighting, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(deferred.lighting, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
-    SET_SAMPLER(deferred.lighting, uSsaoTex, R3D_SHADER_SAMPLER_BUFFER_SSAO);
     SET_SAMPLER(deferred.lighting, uOrmTex, R3D_SHADER_SAMPLER_BUFFER_ORM);
 
     SET_SAMPLER(deferred.lighting, uShadowDirTex, R3D_SHADER_SAMPLER_SHADOW_DIR);
@@ -804,6 +813,7 @@ void r3d_shader_quit()
 {
     glDeleteBuffers(R3D_SHADER_BLOCK_COUNT, R3D_MOD_SHADER.uniformBuffers);
 
+    UNLOAD_SHADER(prepare.bufferDown);
     UNLOAD_SHADER(prepare.atrousWavelet);
     UNLOAD_SHADER(prepare.bicubicUp);
     UNLOAD_SHADER(prepare.lanczosUp);

@@ -70,11 +70,11 @@ float FogFactor(float dist, int mode, float density, float start, float end)
 
 void main()
 {
-    float depth = V_GetLinearDepth(uDepthTex, vTexCoord);
-    vec3 color = texture(uSceneTex, vTexCoord).rgb;
+    vec3 color = texelFetch(uSceneTex, ivec2(gl_FragCoord.xy), 0).rgb;
+    float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
 
     float fogFactor = FogFactor(depth, uFogMode, uFogDensity, uFogStart, uFogEnd);
-    fogFactor *= uSkyAffect * step(depth, uView.far);
+    fogFactor *= mix(1.0, uSkyAffect, step(uView.far, depth));
     color = mix(color, uFogColor, fogFactor);
 
     FragColor = vec4(color, 1.0);
