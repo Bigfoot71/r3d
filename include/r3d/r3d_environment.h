@@ -361,7 +361,7 @@ typedef struct R3D_Environment {
  *
  * Example: `R3D_ENVIRONMENT_SET(bloom.intensity, 0.05f);`
  */
-#define R3D_ENVIRONMENT_SET(member, ...) ((R3D_GetEnvironment()->member) = (__VA_ARGS__))
+#define R3D_ENVIRONMENT_SET(member, ...) (R3D_GetEnvironment()->member = (__VA_ARGS__))
 
 // ========================================
 // PUBLIC API
