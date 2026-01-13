@@ -678,41 +678,38 @@ static inline Matrix r3d_matrix_normal(const Matrix* transform)
 {
     Matrix result = {0};
 
-    float a00 = transform->m0, a01 = transform->m1, a02 = transform->m2;
-    float a10 = transform->m4, a11 = transform->m5, a12 = transform->m6;
-    float a20 = transform->m8, a21 = transform->m9, a22 = transform->m10;
+    float a00 = transform->m0,  a01 = transform->m1,  a02 = transform->m2,  a03 = transform->m3;
+    float a10 = transform->m4,  a11 = transform->m5,  a12 = transform->m6,  a13 = transform->m7;
+    float a20 = transform->m8,  a21 = transform->m9,  a22 = transform->m10, a23 = transform->m11;
+    float a30 = transform->m12, a31 = transform->m13, a32 = transform->m14, a33 = transform->m15;
 
-    float c00 = a11*a22 - a12*a21;
-    float c01 = a12*a20 - a10*a22;
-    float c02 = a10*a21 - a11*a20;
-    float c10 = a02*a21 - a01*a22;
-    float c11 = a00*a22 - a02*a20;
-    float c12 = a01*a20 - a00*a21;
-    float c20 = a01*a12 - a02*a11;
-    float c21 = a02*a10 - a00*a12;
-    float c22 = a00*a11 - a01*a10;
+    float b00 = a00*a11 - a01*a10;
+    float b01 = a00*a12 - a02*a10;
+    float b02 = a00*a13 - a03*a10;
+    float b03 = a01*a12 - a02*a11;
+    float b04 = a01*a13 - a03*a11;
+    float b05 = a02*a13 - a03*a12;
+    float b06 = a20*a31 - a21*a30;
+    float b07 = a20*a32 - a22*a30;
+    float b08 = a20*a33 - a23*a30;
+    float b09 = a21*a32 - a22*a31;
+    float b10 = a21*a33 - a23*a31;
+    float b11 = a22*a33 - a23*a32;
 
-    float det = a00*c00 + a01*c01 + a02*c02;
-    float invDet = 1.0f / det;
+    float invDet = 1.0f/(b00*b11 - b01*b10 + b02*b09 + b03*b08 - b04*b07 + b05*b06);
 
-    result.m0 = c00 * invDet;
-    result.m1 = c10 * invDet;
-    result.m2 = c20 * invDet;
-    result.m3 = 0.0f;
+    result.m0 = (a11*b11 - a12*b10 + a13*b09)*invDet;
+    result.m1 = (-a10*b11 + a12*b08 - a13*b07)*invDet;
+    result.m2 = (a10*b10 - a11*b08 + a13*b06)*invDet;
 
-    result.m4 = c01 * invDet;
-    result.m5 = c11 * invDet;
-    result.m6 = c21 * invDet;
-    result.m7 = 0.0f;
+    result.m4 = (-a01*b11 + a02*b10 - a03*b09)*invDet;
+    result.m5 = (a00*b11 - a02*b08 + a03*b07)*invDet;
+    result.m6 = (-a00*b10 + a01*b08 - a03*b06)*invDet;
 
-    result.m8 = c02 * invDet;
-    result.m9 = c12 * invDet;
-    result.m10 = c22 * invDet;
-    result.m11 = 0.0f;
+    result.m8 = (a31*b05 - a32*b04 + a33*b03)*invDet;
+    result.m9 = (-a30*b05 + a32*b02 - a33*b01)*invDet;
+    result.m10 = (a30*b04 - a31*b02 + a33*b00)*invDet;
 
-    result.m12 = 0.0f;
-    result.m13 = 0.0f;
-    result.m14 = 0.0f;
     result.m15 = 1.0f;
 
     return result;
