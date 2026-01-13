@@ -20,6 +20,7 @@
 #ifndef R3D_H
 #define R3D_H
 
+#include "r3d_animation_player.h"
 #include "r3d_animation.h"
 #include "r3d_core.h"
 #include "r3d_cubemap.h"

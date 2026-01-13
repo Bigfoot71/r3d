@@ -206,6 +206,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_light.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_draw.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_env.c"
+    "${R3D_ROOT_PATH}/src/r3d_animation_player.c"
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"
