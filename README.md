@@ -44,6 +44,8 @@ cmake .. -DR3D_RAYLIB_VENDORED=ON -DR3D_ASSIMP_VENDORED=ON
 cmake --build .
 ```
 
+Or you can use [r3dStarter](https://github.com/jensroth-git/r3dStarter) made by [Jens Roth](https://github.com/jensroth-git).
+
 ## Quick Start
 
 ```c
