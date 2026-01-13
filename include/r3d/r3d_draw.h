@@ -9,7 +9,7 @@
 #ifndef R3D_DRAW_H
 #define R3D_DRAW_H
 
-#include "./r3d_animation.h"
+#include "./r3d_animation_player.h"
 #include "./r3d_instance.h"
 #include "./r3d_platform.h"
 #include "./r3d_model.h"
