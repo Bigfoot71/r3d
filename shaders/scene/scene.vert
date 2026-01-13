@@ -73,7 +73,6 @@ smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 #if defined(DECAL)
 smooth out mat4 vMatDecal;
 smooth out vec3 vOrientation;
-smooth out vec4 vClipPos;
 #endif // DECAL
 
 /* === Helper Functions === */
@@ -236,6 +235,5 @@ void main()
         vOrientation = M_Rotate3D(vOrientation, iRotation);
     }
     vMatDecal = inverse(finalMatModel) * uView.invView;
-    vClipPos = gl_Position;
 #endif // DECAL
 }

@@ -18,7 +18,6 @@
 
 smooth in mat4 vMatDecal;
 smooth in vec3 vOrientation;
-smooth in vec4 vClipPos;
 flat   in vec3 vEmission;
 smooth in vec4 vColor;
 
@@ -55,12 +54,8 @@ layout(location = 3) out vec4 FragNormal;
 
 void main()
 {
-    /* Normalize screen position to [0, 1] */
-    vec2 screenPos = vClipPos.xy / vClipPos.w;
-    vec2 fragTexCoord = screenPos * 0.5 + 0.5;
-
     /* Get surface position in view space */
-    vec3 positionViewSpace = V_GetViewPosition(uDepthTex, fragTexCoord);
+    vec3 positionViewSpace = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
 
     /* Get position in projector's local space */
     vec4 positionObjectSpace = vMatDecal * vec4(positionViewSpace, 1.0);
@@ -78,7 +73,7 @@ void main()
     if (albedo.a < uAlphaCutoff) discard;
 
     /* Retrieve surface normal */
-    vec3 surfaceNormal = M_DecodeOctahedral(texture(uNormTanTex, fragTexCoord).rg);
+    vec3 surfaceNormal = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).rg);
 
     /* Compute angular difference between the decal and surface normal */
     float angle = acos(clamp(dot(vOrientation, surfaceNormal), -1.0, 1.0));
@@ -93,7 +88,7 @@ void main()
     albedo.a *= fadeAlpha;
 
     /* Retrieve surface tangent */
-    vec3 surfaceTangent = M_DecodeOctahedral(texture(uNormTanTex, fragTexCoord).ba);
+    vec3 surfaceTangent = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).ba);
 
     /* Compute bitangent and correct handedness if necessary */
     vec3 surfaceBitangent = normalize(cross(surfaceNormal, surfaceTangent));
