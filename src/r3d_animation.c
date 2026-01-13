@@ -1,4 +1,4 @@
-/* r3d_animation.h -- R3D Animation Module.
+/* r3d_animation.c -- R3D Animation Module.
  *
  * Copyright (c) 2025 Le Juez Victor
  *
