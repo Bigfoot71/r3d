@@ -846,8 +846,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func ambient;
         r3d_shader_loader_func lighting;
         r3d_shader_loader_func compose;
-        r3d_shader_loader_func composeNormals;
-    } deferred;
+     } deferred;
 
     // Post shaders
     struct {
