@@ -633,7 +633,6 @@ void r3d_shader_load_scene_decal(void)
 
     USE_SHADER(scene.decal);
 
-    SET_SAMPLER(scene.decal, uBoneMatricesTex, R3D_SHADER_SAMPLER_BONE_MATRICES);
     SET_SAMPLER(scene.decal, uAlbedoMap, R3D_SHADER_SAMPLER_MAP_ALBEDO);
     SET_SAMPLER(scene.decal, uNormalMap, R3D_SHADER_SAMPLER_MAP_NORMAL);
     SET_SAMPLER(scene.decal, uEmissionMap, R3D_SHADER_SAMPLER_MAP_EMISSION);
