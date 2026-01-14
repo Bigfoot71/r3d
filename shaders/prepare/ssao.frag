@@ -35,7 +35,7 @@ uniform float uPower;
 
 /* === Constants === */
 
-const float TURNS = 3.0;
+const float SAMPLES_PER_TURN = 5.0; //< todo: tweak
 
 /* === Fragments === */
 
@@ -43,10 +43,10 @@ out float FragOcclusion;
 
 /* === Helper functions === */
 
-vec2 TapLocation(int i, float spinAngle, out float rNorm)
+vec2 TapLocation(int i, float turns, float spin, out float rNorm)
 {
     float alpha = (float(i) + 0.5) / float(uSampleCount);
-    float angle = alpha * (M_TAU * TURNS) + spinAngle;
+    float angle = alpha * turns + spin;
 
     rNorm = alpha;
 
@@ -69,6 +69,7 @@ void main()
 
     // For the spin, the AlchemyAO method did this: float((3*px.x^px.y+px.x*px.y)*10)
     // But I found that using a simple IGN produce a really more stable result
+    float turns = M_TAU * max(1.0, float(uSampleCount) / SAMPLES_PER_TURN);
     float spin = M_TAU * M_HashIGN(gl_FragCoord.xy);
     float radiusSq = uRadius * uRadius;
     float bias = uBias * ssRadius;
@@ -77,7 +78,7 @@ void main()
     for (int i = 0; i < uSampleCount; ++i)
     {
         float rNorm;
-        vec2 dir = TapLocation(i, spin, rNorm);
+        vec2 dir = TapLocation(i, turns, spin, rNorm);
         vec2 offset = vTexCoord + dir * ssRadius * rNorm;
         if (V_OffScreen(offset)) continue;
 
