@@ -9,6 +9,7 @@
 #include "./r3d_draw.h"
 #include <raymath.h>
 #include <stdint.h>
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -29,12 +30,162 @@ struct r3d_draw R3D_MOD_DRAW;
 // HELPER MACROS
 // ========================================
 
-#define IS_CALL_PREPASS(call)                                           \
-    ((call)->material.transparencyMode == R3D_TRANSPARENCY_PREPASS)
+#define IS_CALL_DECAL(call) (                                               \
+    ((call)->type == R3D_DRAW_CALL_DECAL)                                   \
+)
 
-#define IS_CALL_FORWARD(call)                                           \
-    ((call)->material.transparencyMode == R3D_TRANSPARENCY_ALPHA ||     \
-     (call)->material.blendMode != R3D_BLEND_MIX)
+#define IS_CALL_PREPASS(call) (                                             \
+    ((call)->type == R3D_DRAW_CALL_MESH) &&                                 \
+    ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_PREPASS)    \
+)
+
+#define IS_CALL_FORWARD(call) (                                             \
+    ((call)->type == R3D_DRAW_CALL_MESH) &&                                 \
+    ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_ALPHA ||    \
+     (call)->mesh.material.blendMode != R3D_BLEND_MIX)                      \
+)
+
+// ========================================
+// INTERNAL SHAPE FUNCTIONS
+// ========================================
+
+static void setup_shape_vertex_attribs(void)
+{
+    // position (vec3)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
+
+    // texcoord (vec2)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
+
+    // normal (vec3)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
+
+    // color (vec4)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
+
+    // tangent (vec4)
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
+
+    // boneIds (ivec4) / weights (vec4) - (disabled)
+    glVertexAttrib4iv(5, (int[4]){0, 0, 0, 0});
+    glVertexAttrib4f(6, 0.0f, 0.0f, 0.0f, 0.0f);
+
+    // instance position (vec3) (disabled)
+    glVertexAttribDivisor(10, 1);
+    glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
+
+    // instance rotation (vec4) (disabled)
+    glVertexAttribDivisor(11, 1);
+    glVertexAttrib4f(11, 0.0f, 0.0f, 0.0f, 1.0f);
+
+    // instance scale (vec3) (disabled)
+    glVertexAttribDivisor(12, 1);
+    glVertexAttrib3f(12, 1.0f, 1.0f, 1.0f);
+
+    // instance color (vec4) (disabled)
+    glVertexAttribDivisor(13, 1);
+    glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
+}
+
+static void load_shape(r3d_draw_shape_t* shape, const R3D_Vertex* verts, int vertCount, const GLubyte* indices, int idxCount)
+{
+    glGenVertexArrays(1, &shape->vao);
+    glGenBuffers(1, &shape->vbo);
+    glGenBuffers(1, &shape->ebo);
+
+    glBindVertexArray(shape->vao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, shape->vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertCount * sizeof(R3D_Vertex), verts, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxCount * sizeof(GLubyte), indices, GL_STATIC_DRAW);
+
+    shape->vertexCount = vertCount;
+    shape->indexCount = idxCount;
+
+    setup_shape_vertex_attribs();
+}
+
+typedef void (*draw_shape_loader_func)(r3d_draw_shape_t*);
+
+static void load_shape_dummy(r3d_draw_shape_t* dummy);
+static void load_shape_quad(r3d_draw_shape_t* quad);
+static void load_shape_cube(r3d_draw_shape_t* cube);
+
+static const draw_shape_loader_func SHAPE_LOADERS[] = {
+    [R3D_DRAW_SHAPE_DUMMY] = load_shape_dummy,
+    [R3D_DRAW_SHAPE_QUAD] = load_shape_quad,
+    [R3D_DRAW_SHAPE_CUBE] = load_shape_cube,
+};
+
+void load_shape_dummy(r3d_draw_shape_t* shape)
+{
+    glGenVertexArrays(1, &shape->vao);
+    glBindVertexArray(shape->vao);
+    shape->vertexCount = 3;
+    shape->indexCount = 0;
+}
+
+void load_shape_quad(r3d_draw_shape_t* shape)
+{
+    static const R3D_Vertex VERTS[] = {
+        {{-0.5f, 0.5f, 0}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f, 0}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f, 0}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f, 0}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+    };
+    static const GLubyte INDICES[] = {0, 1, 2, 1, 3, 2};
+    
+    load_shape(shape, VERTS, 4, INDICES, 6);
+}
+
+void load_shape_cube(r3d_draw_shape_t* shape)
+{
+    static const R3D_Vertex VERTS[] = {
+        // Front (Z+)
+        {{-0.5f, 0.5f, 0.5f}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f, 0.5f}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f, 0.5f}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f, 0.5f}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        // Back (Z-)
+        {{-0.5f, 0.5f,-0.5f}, {1, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{-0.5f,-0.5f,-0.5f}, {1, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{ 0.5f, 0.5f,-0.5f}, {0, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        {{ 0.5f,-0.5f,-0.5f}, {0, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        // Left (X-)
+        {{-0.5f, 0.5f,-0.5f}, {0, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f,-0.5f,-0.5f}, {0, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f, 0.5f, 0.5f}, {1, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        {{-0.5f,-0.5f, 0.5f}, {1, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        // Right (X+)
+        {{ 0.5f, 0.5f, 0.5f}, {0, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f,-0.5f, 0.5f}, {0, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f, 0.5f,-0.5f}, {1, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        {{ 0.5f,-0.5f,-0.5f}, {1, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        // Top (Y+)
+        {{-0.5f, 0.5f,-0.5f}, {0, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f, 0.5f, 0.5f}, {0, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f,-0.5f}, {1, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f, 0.5f, 0.5f}, {1, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        // Bottom (Y-)
+        {{-0.5f,-0.5f, 0.5f}, {0, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{-0.5f,-0.5f,-0.5f}, {0, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f, 0.5f}, {1, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        {{ 0.5f,-0.5f,-0.5f}, {1, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+    };
+    static const GLubyte INDICES[] = {
+        0,1,2, 2,1,3,   6,5,4, 7,5,6,   8,9,10, 10,9,11,
+        12,13,14, 14,13,15,   16,17,18, 18,17,19,   20,21,22, 22,21,23
+    };
+    
+    load_shape(shape, VERTS, 24, INDICES, 36);
+}
 
 // ========================================
 // INTERNAL ARRAY FUNCTIONS
@@ -90,10 +241,69 @@ static bool growth_arrays(void)
 }
 
 // ========================================
+// INTERNAL BINDING FUNCTIONS
+// ========================================
+
+static inline GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
+{
+    switch (primitive) {
+    case R3D_PRIMITIVE_POINTS:          return GL_POINTS;
+    case R3D_PRIMITIVE_LINES:           return GL_LINES;
+    case R3D_PRIMITIVE_LINE_STRIP:      return GL_LINE_STRIP;
+    case R3D_PRIMITIVE_LINE_LOOP:       return GL_LINE_LOOP;
+    case R3D_PRIMITIVE_TRIANGLES:       return GL_TRIANGLES;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP:  return GL_TRIANGLE_STRIP;
+    case R3D_PRIMITIVE_TRIANGLE_FAN:    return GL_TRIANGLE_FAN;
+    default: break;
+    }
+
+    return GL_TRIANGLES; // consider an error...
+}
+
+static void bind_draw_call_vao(const r3d_draw_call_t* call, GLenum* primitive, GLenum* elemType, GLint* vertCount, GLint* elemCount)
+{
+    assert(primitive && elemType && vertCount && elemCount);
+
+    *primitive = GL_NONE;
+    *elemType = GL_NONE;
+    *vertCount = 0;
+    *elemCount = 0;
+
+    switch (call->type) {
+    case R3D_DRAW_CALL_MESH:
+        {
+            const R3D_Mesh* mesh = &call->mesh.instance;
+            glBindVertexArray(mesh->vao);
+
+            *primitive = get_opengl_primitive(mesh->primitiveType);
+            *vertCount = mesh->vertexCount;
+            *elemCount = mesh->indexCount;
+            *elemType = GL_UNSIGNED_INT;
+        }
+        break;
+    case R3D_DRAW_CALL_DECAL:
+        {
+            r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[R3D_DRAW_SHAPE_CUBE];
+            if (buffer->vao == 0) SHAPE_LOADERS[R3D_DRAW_SHAPE_CUBE](buffer);
+            else glBindVertexArray(buffer->vao);
+
+            *primitive = GL_TRIANGLES;
+            *vertCount = buffer->vertexCount;
+            *elemCount = buffer->indexCount;
+            *elemType = GL_UNSIGNED_BYTE;
+        }
+        break;
+    default:
+        assert(false);
+        break;
+    }
+}
+
+// ========================================
 // INTERNAL CULLING FUNCTIONS
 // ========================================
 
-static bool frustum_test(const r3d_frustum_t* frustum, const BoundingBox* aabb, const Matrix* transform)
+static inline bool frustum_test_aabb(const r3d_frustum_t* frustum, const BoundingBox* aabb, const Matrix* transform)
 {
     if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
         return true;
@@ -106,28 +316,42 @@ static bool frustum_test(const r3d_frustum_t* frustum, const BoundingBox* aabb, 
     return r3d_frustum_is_obb_in(frustum, aabb, transform);
 }
 
+static inline bool frustum_test_draw_call(const r3d_frustum_t* frustum, const r3d_draw_call_t* call, const Matrix* transform)
+{
+    switch (call->type) {
+    case R3D_DRAW_CALL_MESH:
+        return frustum_test_aabb(frustum, &call->mesh.instance.aabb, transform);
+    case R3D_DRAW_CALL_DECAL:
+        return frustum_test_aabb(frustum, &(BoundingBox) {
+            .min.x = -0.5f, .min.y = -0.5f, .min.z = -0.5f,
+            .max.x = +0.5f, .max.y = +0.5f, .max.z = +0.5f
+        }, transform);
+    default:
+        assert(false);
+        break;
+    }
+
+    return false;
+}
+
 // ========================================
 // INTERNAL SORTING FUNCTIONS
 // ========================================
 
 static Vector3 G_sortViewPosition = {0};
 
-static float calculate_max_distance_to_camera(const r3d_draw_call_t* call)
+static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, const Matrix* transform)
 {
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-    const Vector3* min = &call->mesh.aabb.min;
-    const Vector3* max = &call->mesh.aabb.max;
-
     float maxDistSq = 0.0f;
 
     for (int i = 0; i < 8; ++i) {
         Vector3 corner = {
-            (i & 1) ? max->x : min->x,
-            (i & 2) ? max->y : min->y,
-            (i & 4) ? max->z : min->z
+            (i & 1) ? aabb->max.x : aabb->min.x,
+            (i & 2) ? aabb->max.y : aabb->min.y,
+            (i & 4) ? aabb->max.z : aabb->min.z
         };
 
-        corner = Vector3Transform(corner, group->transform);
+        corner = Vector3Transform(corner, *transform);
         float distSq = Vector3DistanceSqr(G_sortViewPosition, corner);
         maxDistSq = (distSq > maxDistSq) ? distSq : maxDistSq;
     }
@@ -135,16 +359,14 @@ static float calculate_max_distance_to_camera(const r3d_draw_call_t* call)
     return maxDistSq;
 }
 
-static float calculate_center_distance_to_camera(const r3d_draw_call_t* call)
+static inline float calculate_center_distance_to_camera(const BoundingBox* aabb, const Matrix* transform)
 {
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-
     Vector3 center = {
-        (call->mesh.aabb.min.x + call->mesh.aabb.max.x) * 0.5f,
-        (call->mesh.aabb.min.y + call->mesh.aabb.max.y) * 0.5f,
-        (call->mesh.aabb.min.z + call->mesh.aabb.max.z) * 0.5f
+        (aabb->min.x + aabb->max.x) * 0.5f,
+        (aabb->min.y + aabb->max.y) * 0.5f,
+        (aabb->min.z + aabb->max.z) * 0.5f
     };
-    center = Vector3Transform(center, group->transform);
+    center = Vector3Transform(center, *transform);
 
     return Vector3DistanceSqr(G_sortViewPosition, center);
 }
@@ -169,26 +391,6 @@ static int compare_front_to_back(const void* a, const void* b)
     float distB = R3D_MOD_DRAW.cacheDists[indexB];
 
     return (distA > distB) - (distA < distB);
-}
-
-// ========================================
-// INTERNAL DRAW FUNCTIONS
-// ========================================
-
-static GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
-{
-    switch (primitive) {
-    case R3D_PRIMITIVE_POINTS:          return GL_POINTS;
-    case R3D_PRIMITIVE_LINES:           return GL_LINES;
-    case R3D_PRIMITIVE_LINE_STRIP:      return GL_LINE_STRIP;
-    case R3D_PRIMITIVE_LINE_LOOP:       return GL_LINE_LOOP;
-    case R3D_PRIMITIVE_TRIANGLES:       return GL_TRIANGLES;
-    case R3D_PRIMITIVE_TRIANGLE_STRIP:  return GL_TRIANGLE_STRIP;
-    case R3D_PRIMITIVE_TRIANGLE_FAN:    return GL_TRIANGLE_FAN;
-    default: break;
-    }
-
-    return GL_TRIANGLES; // consider an error...
 }
 
 // ========================================
@@ -237,9 +439,17 @@ fail:
 
 void r3d_draw_quit(void)
 {
+    for (int i = 0; i < R3D_DRAW_SHAPE_COUNT; i++) {
+        r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[i];
+        if (buffer->vao) glDeleteVertexArrays(1, &buffer->vao);
+        if (buffer->vbo) glDeleteBuffers(1, &buffer->vbo);
+        if (buffer->ebo) glDeleteBuffers(1, &buffer->ebo);
+    }
+
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         RL_FREE(R3D_MOD_DRAW.list[i].calls);
     }
+
     RL_FREE(R3D_MOD_DRAW.groupVisibility);
     RL_FREE(R3D_MOD_DRAW.groupIndices);
     RL_FREE(R3D_MOD_DRAW.callIndices);
@@ -282,12 +492,8 @@ bool r3d_draw_cluster_begin(BoundingBox aabb)
 
 bool r3d_draw_cluster_end(void)
 {
-    if (R3D_MOD_DRAW.activeCluster < 0) {
-        return false;
-    }
-
+    if (R3D_MOD_DRAW.activeCluster < 0) return false;
     R3D_MOD_DRAW.activeCluster = -1;
-
     return true;
 }
 
@@ -311,7 +517,7 @@ void r3d_draw_group_push(const r3d_draw_group_t* group)
     R3D_MOD_DRAW.groups[groupIndex] = *group;
 }
 
-void r3d_draw_call_push(const r3d_draw_call_t* call, bool decal)
+void r3d_draw_call_push(const r3d_draw_call_t* call)
 {
     if (R3D_MOD_DRAW.numCalls >= R3D_MOD_DRAW.capacity) {
         if (!growth_arrays()) {
@@ -336,11 +542,11 @@ void r3d_draw_call_push(const r3d_draw_call_t* call, bool decal)
     R3D_MOD_DRAW.groupIndices[callIndex] = groupIndex;
 
     // Determine the draw call list
-    r3d_draw_list_enum_t list = R3D_DRAW_DEFERRED;
-    if (decal) list = R3D_DRAW_DECAL;
-    else if (IS_CALL_PREPASS(call)) list = R3D_DRAW_PREPASS;
-    else if (IS_CALL_FORWARD(call)) list = R3D_DRAW_FORWARD;
-    if (r3d_draw_has_instances(group)) list += 4;
+    r3d_draw_list_enum_t list = R3D_DRAW_LIST_DEFERRED;
+    if (IS_CALL_DECAL(call)) list = R3D_DRAW_LIST_DECAL;
+    else if (IS_CALL_PREPASS(call)) list = R3D_DRAW_LIST_PREPASS;
+    else if (IS_CALL_FORWARD(call)) list = R3D_DRAW_LIST_FORWARD;
+    if (r3d_draw_has_instances(group)) list += R3D_DRAW_LIST_NON_INST_COUNT;
 
     // Push the draw call and its index to the list
     R3D_MOD_DRAW.calls[callIndex] = *call;
@@ -369,7 +575,7 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
             r3d_draw_cluster_t* cluster = &R3D_MOD_DRAW.clusters[visibility->clusterIndex];
 
             if (cluster->visible == R3D_DRAW_VISBILITY_UNKNOWN) {
-                cluster->visible = frustum_test(frustum, &cluster->aabb, NULL);
+                cluster->visible = frustum_test_aabb(frustum, &cluster->aabb, NULL);
             }
 
             if (cluster->visible == R3D_DRAW_VISBILITY_TRUE) {
@@ -377,7 +583,7 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
                 // TODO: It would be better to find an improved method for skinned models
                 visibility->visible =
                     r3d_draw_has_instances(group) || (group->texPose > 0) ||
-                    frustum_test(frustum, &group->aabb, &group->transform);
+                    frustum_test_aabb(frustum, &group->aabb, &group->transform);
             }
             else {
                 visibility->visible = R3D_DRAW_VISBILITY_FALSE;
@@ -388,7 +594,7 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
             // TODO: It would be better to find an improved method for skinned models
             visibility->visible =
                 r3d_draw_has_instances(group) || (group->texPose > 0) ||
-                frustum_test(frustum, &group->aabb, &group->transform);
+                frustum_test_aabb(frustum, &group->aabb, &group->transform);
         }
     }
 }
@@ -407,11 +613,14 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
     if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) return true;
     if (r3d_draw_has_instances(group) || group->texPose > 0) return true;
 
-    return frustum_test(frustum, &call->mesh.aabb, &group->transform);
+    return frustum_test_draw_call(frustum, call, &group->transform);
 }
 
 void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode)
 {
+    assert(list < R3D_DRAW_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
+    assert(list != R3D_DRAW_LIST_DECAL && "Decal render list should not be sorted by distance");
+
     G_sortViewPosition = viewPosition;
 
     r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
@@ -420,14 +629,20 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
         for (int i = 0; i < drawList->numCalls; i++) {
             int callIndex = drawList->calls[i];
             const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_max_distance_to_camera(call);
+            const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_max_distance_to_camera(
+                &call->mesh.instance.aabb, &group->transform
+            );
         }
     }
     else {
         for (int i = 0; i < drawList->numCalls; i++) {
             int callIndex = drawList->calls[i];
             const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_center_distance_to_camera(call);
+            const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_center_distance_to_camera(
+                &call->mesh.instance.aabb, &group->transform
+            );
         }
     }
 
@@ -522,33 +737,31 @@ void r3d_draw_apply_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode c
 
     case R3D_SHADOW_CAST_DISABLED:
     default:
-        assert("This shouldn't happen" && false);
+        assert(false && "This shouldn't happen");
         break;
     }
 }
 
 void r3d_draw(const r3d_draw_call_t* call)
 {
-    GLenum primitive = get_opengl_primitive(call->mesh.primitiveType);
+    GLenum primitive, elemType;
+    GLint vertCount, elemCount;
 
-    glBindVertexArray(call->mesh.vao);
+    bind_draw_call_vao(call, &primitive, &elemType, &vertCount, &elemCount);
 
-    if (call->mesh.ebo == 0) {
-        glDrawArrays(primitive, 0, call->mesh.vertexCount);
-    }
-    else {
-        glDrawElements(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL);
-    }
+    if (elemCount == 0) glDrawArrays(primitive, 0, vertCount);
+    else glDrawElements(primitive, elemCount, elemType, NULL);
 }
 
 void r3d_draw_instanced(const r3d_draw_call_t* call)
 {
-    GLenum primitive = get_opengl_primitive(call->mesh.primitiveType);
+    GLenum primitive, elemType;
+    GLint vertCount, elemCount;
+
+    bind_draw_call_vao(call, &primitive, &elemType, &vertCount, &elemCount);
 
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
     const R3D_InstanceBuffer* instances = &group->instances;
-
-    glBindVertexArray(call->mesh.vao);
 
     if (instances->flags & R3D_INSTANCE_POSITION) {
         glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[0]);
@@ -586,10 +799,26 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
         glDisableVertexAttribArray(13);
     }
 
-    if (call->mesh.ebo == 0) {
-        glDrawArraysInstanced(primitive, 0, call->mesh.vertexCount, group->instanceCount);
+    if (elemCount == 0) {
+        glDrawArraysInstanced(primitive, 0, vertCount, group->instanceCount);
     }
     else {
-        glDrawElementsInstanced(primitive, call->mesh.indexCount, GL_UNSIGNED_INT, NULL, group->instanceCount);
+        glDrawElementsInstanced(primitive, elemCount, elemType, NULL, group->instanceCount);
+    }
+}
+
+void r3d_draw_shape(r3d_draw_shape_enum_t shape)
+{
+    r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[shape];
+
+    // NOTE: The loader leaves the vao bound
+    if (buffer->vao == 0) SHAPE_LOADERS[shape](buffer);
+    else glBindVertexArray(buffer->vao);
+
+    if (buffer->indexCount > 0) {
+        glDrawElements(GL_TRIANGLES, buffer->indexCount, GL_UNSIGNED_BYTE, 0);
+    }
+    else {
+        glDrawArrays(GL_TRIANGLES, 0, buffer->vertexCount);
     }
 }

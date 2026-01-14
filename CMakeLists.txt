@@ -198,7 +198,6 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/common/r3d_frustum.c"
     "${R3D_ROOT_PATH}/src/common/r3d_image.c"
     "${R3D_ROOT_PATH}/src/common/r3d_pass.c"
-    "${R3D_ROOT_PATH}/src/modules/r3d_primitive.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_texture.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_target.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_shader.c"
