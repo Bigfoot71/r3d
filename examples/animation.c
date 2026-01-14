@@ -37,8 +37,11 @@ int main(void)
     // Load animations
     R3D_AnimationLib modelAnims = R3D_LoadAnimationLib(RESOURCES_PATH "models/CesiumMan.glb");
     R3D_AnimationPlayer modelPlayer = R3D_LoadAnimationPlayer(model.skeleton, modelAnims);
-    modelPlayer.states[0].weight = 1.0f;
-    modelPlayer.states[0].loop = true;
+
+    // Setup animation playing
+    R3D_SetAnimationWeight(&modelPlayer, 0, 1.0f);
+    R3D_SetAnimationLoop(&modelPlayer, 0, true);
+    R3D_PlayAnimation(&modelPlayer, 0);
 
     // Create model instances
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(4, R3D_INSTANCE_POSITION);
