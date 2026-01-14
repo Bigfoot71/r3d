@@ -22,9 +22,9 @@
 // ========================================
 
 /**
- * @brief Default environment configuration.
+ * @brief Default material configuration.
  *
- * Initializes an R3D_Environment structure with sensible default values for all
+ * Initializes an R3D_Material structure with sensible default values for all
  * rendering parameters. Use this as a starting point for custom configurations.
  */
 #define R3D_MATERIAL_BASE                               \
@@ -54,7 +54,7 @@
         .cullMode = R3D_CULL_BACK,                      \
         .uvOffset = {0.0f, 0.0f},                       \
         .uvScale = {1.0f, 1.0f},                        \
-        .alphaCutoff = 0.01f,                           \
+        .alphaCutoff = 0.01f                            \
     }
 
 // ========================================

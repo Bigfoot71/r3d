@@ -11,8 +11,8 @@
 #include <rlgl.h>
 #include <glad.h>
 
-#include "../modules/r3d_primitive.h"
 #include "../modules/r3d_shader.h"
+#include "../modules/r3d_draw.h"
 #include "../modules/r3d_env.h"
 #include "../r3d_core_state.h"
 
@@ -34,7 +34,7 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
     for (int i = 0; i < 6; i++) {
         r3d_env_irradiance_bind_fbo(layerMap, i);
         R3D_SHADER_SET_MAT4(prepare.cubemapIrradiance, uMatView, R3D.matCubeViews[i]);
-        R3D_PRIMITIVE_DRAW_CUBE();
+        R3D_DRAW_CUBE();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -64,7 +64,7 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
         for (int i = 0; i < 6; i++) {
             r3d_env_prefilter_bind_fbo(layerMap, i, mip);
             R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatView, R3D.matCubeViews[i]);
-            R3D_PRIMITIVE_DRAW_CUBE();
+            R3D_DRAW_CUBE();
         }
     }
 

@@ -1,4 +1,4 @@
-/* r3d_material.h -- R3D Material Module.
+/* r3d_material.c -- R3D Material Module.
  *
  * Copyright (c) 2025 Le Juez Victor
  *

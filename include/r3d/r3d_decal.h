@@ -18,6 +18,43 @@
  */
 
 // ========================================
+// CONSTANTS
+// ========================================
+
+/**
+ * @brief Default decal configuration.
+ *
+ * Contains a R3D_Decal structure with sensible default values for all rendering parameters.
+ */
+#define R3D_DECAL_BASE                                  \
+    R3D_LITERAL(R3D_Decal) {                            \
+        .albedo = {                                     \
+            .texture = {0},                             \
+            .color = {255, 255, 255, 255},              \
+        },                                              \
+        .emission = {                                   \
+            .texture = {0},                             \
+            .color = {255, 255, 255, 255},              \
+            .energy = 0.0f,                             \
+        },                                              \
+        .normal = {                                     \
+            .texture = {0},                             \
+            .scale = 1.0f,                              \
+        },                                              \
+        .orm = {                                        \
+            .texture = {0},                             \
+            .occlusion = 1.0f,                          \
+            .roughness = 1.0f,                          \
+            .metalness = 0.0f,                          \
+        },                                              \
+        .uvOffset = {0.0f, 0.0f},                       \
+        .uvScale = {1.0f, 1.0f},                        \
+        .alphaCutoff = 0.01f,                           \
+        .normalThreshold = 0,                           \
+        .fadeWidth = 0                                  \
+    }
+
+// ========================================
 // STRUCTS TYPES
 // ========================================
 
@@ -30,8 +67,40 @@
  * forward rendered or non-opaque objects.
  */
 typedef struct R3D_Decal {
-    R3D_Material material;         /**< The material used for rendering the decal. */
+    R3D_AlbedoMap albedo;       ///< Albedo map
+    R3D_EmissionMap emission;   ///< Emission map
+    R3D_NormalMap normal;       ///< Normal map
+    R3D_OrmMap orm;             ///< Occlusion-Roughness-Metalness map
+
+    Vector2 uvOffset;           ///< UV offset (default: {0.0f, 0.0f})
+    Vector2 uvScale;            ///< UV scale (default: {1.0f, 1.0f})
+
+    float alphaCutoff;          ///< Alpha cutoff threshold (default: 0.01f)
+
+    float normalThreshold;      ///< Maximum angle against the surface normal to draw decal. 0.0f disables threshold. (default 0.0f)
+    float fadeWidth;            ///< The width of fading along the normal threshold (default 0.0f)
 } R3D_Decal;
+
+// ========================================
+// PUBLIC API
+// ========================================
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Unload all map textures assigned to a R3D_Decal.
+ * 
+ * Frees all underlying textures in a R3D_Decal that are not a default texture.
+ *
+ * @param decal to unload maps from.
+ */
+R3DAPI void R3D_UnloadDecalMaps(R3D_Decal decal);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 /** @} */ // end of Decal
 

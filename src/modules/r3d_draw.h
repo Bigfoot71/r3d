@@ -13,7 +13,9 @@
 #include <r3d/r3d_instance.h>
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_skeleton.h>
+#include <r3d/r3d_decal.h>
 #include <r3d/r3d_mesh.h>
+#include <glad.h>
 
 #include "../common/r3d_frustum.h"
 
@@ -43,9 +45,49 @@
                  _keep && (cond) && (!frustum || r3d_draw_call_is_visible(call, frustum)); \
                  _keep = 0)
 
+
+/*
+ * glDrawArrays call on the 3-vertcies dummy VAO for screen-space rendering.
+ */
+#define R3D_DRAW_SCREEN() do {              \
+    r3d_draw_shape(R3D_DRAW_SHAPE_DUMMY);   \
+} while(0)
+
+/*
+ * Draw a centered quad of dimensions 1.0
+ */
+#define R3D_DRAW_QUAD() do {                \
+    r3d_draw_shape(R3D_DRAW_SHAPE_QUAD);    \
+} while(0)
+
+/*
+ * Draw a centered cube with dimensions 1.0
+ */
+#define R3D_DRAW_CUBE() do {                \
+    r3d_draw_shape(R3D_DRAW_SHAPE_CUBE);    \
+} while(0)
+
 // ========================================
-// DRAW CALL ENUMS
+// DRAW MODULE ENUMS
 // ========================================
+
+/*
+ * Enum listing all built-in shapes that can be rendered.
+ */
+typedef enum {
+    R3D_DRAW_SHAPE_DUMMY,   //< Calls glDrawArrays with 3 vertices without an attached VBO/EBO
+    R3D_DRAW_SHAPE_QUAD,    //< Draws a quad with dimensions 1.0 (-0.5 .. +0.5)
+    R3D_DRAW_SHAPE_CUBE,    //< Draws a cube with dimensions 1.0 (-0.5 .. +0.5)
+    R3D_DRAW_SHAPE_COUNT
+} r3d_draw_shape_enum_t;
+
+/*
+ * Defines the type of a draw call, used for tagged-union.
+ */
+typedef enum {
+    R3D_DRAW_CALL_MESH,
+    R3D_DRAW_CALL_DECAL
+} r3d_draw_call_enum_t;
 
 /*
  * Visibility state for a group or cluster.
@@ -66,9 +108,40 @@ typedef enum {
     R3D_DRAW_SORT_BACK_TO_FRONT,    //< Typically used for transparent geometry
 } r3d_draw_sort_enum_t;
 
+/*
+ * Enumeration of internal draw lists.
+ * Lists are separated by rendering path and instancing mode.
+ */
+typedef enum {
+
+    R3D_DRAW_LIST_DEFERRED,          //< Fully opaque
+    R3D_DRAW_LIST_PREPASS,           //< Forward but with depth prepass
+    R3D_DRAW_LIST_FORWARD,           //< Forward only, without prepass
+    R3D_DRAW_LIST_DECAL,           
+
+    R3D_DRAW_LIST_NON_INST_COUNT,
+
+    R3D_DRAW_LIST_DEFERRED_INST = R3D_DRAW_LIST_NON_INST_COUNT,
+    R3D_DRAW_LIST_PREPASS_INST,
+    R3D_DRAW_LIST_FORWARD_INST,
+    R3D_DRAW_LIST_DECAL_INST,
+
+    R3D_DRAW_LIST_COUNT
+
+} r3d_draw_list_enum_t;
+
 // ========================================
-// DRAW CALL STRUCTS
+// DRAW MODULE STRUCTS
 // ========================================
+
+/*
+ * Internal structure for storing built-in shapes.
+ */
+typedef struct {
+    GLuint vao, vbo, ebo;
+    int vertexCount;
+    int indexCount;
+} r3d_draw_shape_t;
 
 /*
  * Cluster that may contain multiple draw groups.
@@ -95,8 +168,8 @@ typedef struct {
  * One entry is stored per draw group.
  */
 typedef struct {
-    int firstCall;                      //< Index of the first draw call in this group
-    int numCall;                        //< Number of draw calls in this group
+    int firstCall;      //< Index of the first draw call in this group
+    int numCall;        //< Number of draw calls in this group
 } r3d_draw_indices_t;
 
 /*
@@ -104,46 +177,40 @@ typedef struct {
  * All draw calls pushed after a group inherit its transform, skeleton, and instancing data.
  */
 typedef struct {
-    BoundingBox aabb;                   //< AABB of the model
-    Matrix transform;                   //< World transform matrix
-    uint32_t texPose;                   //< Texture that contains the bone matrices (can be 0 for non-skinned)
-    R3D_InstanceBuffer instances;       //< Instance buffer to use
-    int instanceCount;                  //< Number of instances
+    BoundingBox aabb;               //< AABB of the model
+    Matrix transform;               //< World transform matrix
+    GLuint texPose;                 //< Texture that contains the bone matrices (can be 0 for non-skinned)
+    R3D_InstanceBuffer instances;   //< Instance buffer to use
+    int instanceCount;              //< Number of instances
 } r3d_draw_group_t;
 
 /*
+ * Represents a draw call for a mesh in `r3d_draw_call_t`
+ */
+typedef struct {
+    R3D_Material material;
+    R3D_Mesh instance;
+} r3d_draw_call_mesh_t;
+
+/*
+ * Represents a draw call for a decal in `r3d_draw_call_t`
+ */
+typedef struct {
+    R3D_Decal instance;
+} r3d_draw_call_decal_t;
+
+/*
  * Internal representation of a single draw call.
- * Contains all data required to issue a draw, including geometry and material.
+ * Contains all data required to issue a draw, like a mesh or decal.
  * Transform and animation data are stored in the parent draw group.
  */
 typedef struct {
-    R3D_Material material;              //< Material used for rendering
-    R3D_Mesh mesh;                      //< Mesh geometry and GPU buffers
+    r3d_draw_call_enum_t type;
+    union {
+        r3d_draw_call_mesh_t mesh;
+        r3d_draw_call_decal_t decal;
+    };
 } r3d_draw_call_t;
-
-// ========================================
-// MODULE STATE
-// ========================================
-
-/*
- * Enumeration of internal draw lists.
- * Lists are separated by rendering path and instancing mode.
- */
-typedef enum {
-
-    R3D_DRAW_DEFERRED,          //< Fully opaque
-    R3D_DRAW_PREPASS,           //< Forward but with depth prepass
-    R3D_DRAW_FORWARD,           //< Forward only, without prepass
-    R3D_DRAW_DECAL,
-
-    R3D_DRAW_DEFERRED_INST,
-    R3D_DRAW_PREPASS_INST,
-    R3D_DRAW_FORWARD_INST,
-    R3D_DRAW_DECAL_INST,
-
-    R3D_DRAW_LIST_COUNT
-
-} r3d_draw_list_enum_t;
 
 /*
  * A draw list stores indices into the global draw call array.
@@ -153,11 +220,17 @@ typedef struct {
     int numCalls;   //< Number of active entries
 } r3d_draw_list_t;
 
+// ========================================
+// MODULE STATE
+// ========================================
+
 /*
  * Global internal state of the draw module.
  * Owns the draw call storage and per-pass draw lists.
  */
 extern struct r3d_draw {
+
+    r3d_draw_shape_t shapes[R3D_DRAW_SHAPE_COUNT];  //< Array of built-in shapes buffers
 
     r3d_draw_cluster_t* clusters;                   //< Array of draw clusters
     int activeCluster;                              //< Index of the active cluster for new draw groups (-1 if no active clusters)
@@ -223,7 +296,7 @@ void r3d_draw_group_push(const r3d_draw_group_t* group);
  * The draw call data is copied internally.
  * Inherits the group previously pushed.
  */
-void r3d_draw_call_push(const r3d_draw_call_t* call, bool decal);
+void r3d_draw_call_push(const r3d_draw_call_t* call);
 
 /*
  * Retrieve the draw group associated with a given draw call.
@@ -273,9 +346,14 @@ void r3d_draw(const r3d_draw_call_t* call);
 
 /*
  * Issue an instanced draw call.
- * Instance data is uploaded and bound internally.
+ * Instance data is bound internally.
  */
 void r3d_draw_instanced(const r3d_draw_call_t* call);
+
+/*
+ * Bind, draws the shape, and unbind the VAO of the shape.
+ */
+void r3d_draw_shape(r3d_draw_shape_enum_t shape);
 
 // ----------------------------------------
 // INLINE QUERIES
@@ -298,8 +376,8 @@ static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
 static inline bool r3d_draw_has_deferred(void)
 {
     return
-        (R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_DEFERRED_INST].numCalls > 0);
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DEFERRED].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DEFERRED_INST].numCalls > 0);
 }
 
 /*
@@ -309,8 +387,8 @@ static inline bool r3d_draw_has_deferred(void)
 static inline bool r3d_draw_has_prepass(void)
 {
     return
-        (R3D_MOD_DRAW.list[R3D_DRAW_PREPASS].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_PREPASS_INST].numCalls > 0);
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_PREPASS].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_PREPASS_INST].numCalls > 0);
 }
 
 /*
@@ -320,8 +398,8 @@ static inline bool r3d_draw_has_prepass(void)
 static inline bool r3d_draw_has_forward(void)
 {
     return
-        (R3D_MOD_DRAW.list[R3D_DRAW_FORWARD].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_FORWARD_INST].numCalls > 0);
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_FORWARD].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_FORWARD_INST].numCalls > 0);
 }
 
 /*
@@ -331,8 +409,8 @@ static inline bool r3d_draw_has_forward(void)
 static inline bool r3d_draw_has_decal(void)
 {
     return
-        (R3D_MOD_DRAW.list[R3D_DRAW_DECAL].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_DECAL_INST].numCalls > 0);
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DECAL].numCalls > 0) ||
+        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DECAL_INST].numCalls > 0);
 }
 
 #endif // R3D_MODULE_DRAW_H

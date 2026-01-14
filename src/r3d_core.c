@@ -16,7 +16,6 @@
 
 #include "./r3d_core_state.h"
 
-#include "./modules/r3d_primitive.h"
 #include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
@@ -60,7 +59,6 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
     R3D.layers = R3D_LAYER_ALL;
     R3D.state = flags;
 
-    r3d_primitive_init();
     r3d_texture_init();
     r3d_target_init(resWidth, resHeight);
     r3d_shader_init();
@@ -75,7 +73,6 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
 
 void R3D_Close(void)
 {
-    r3d_primitive_quit();
     r3d_texture_quit();
     r3d_target_quit();
     r3d_shader_quit();

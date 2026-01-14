@@ -64,21 +64,22 @@ typedef struct {
 } target_config_t;
 
 static const target_config_t TARGET_CONFIG[] = {
-    [R3D_TARGET_ALBEDO]   = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_NORM_TAN] = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_ORM]      = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_DEPTH]    = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
-    [R3D_TARGET_DIFFUSE]  = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_SPECULAR] = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
-    [R3D_TARGET_SSAO_0]   = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSAO_1]   = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSIL_0]   = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSIL_1]   = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSIL_2]   = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSR]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
-    [R3D_TARGET_BLOOM]    = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
-    [R3D_TARGET_SCENE_0]  = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SCENE_1]  = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_ALBEDO]        = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_NORMAL]        = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ORM]           = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_DEPTH]         = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
+    [R3D_TARGET_DIFFUSE]       = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_SPECULAR]      = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_GEOM_NORM_TAN] = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_SSAO_0]        = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSAO_1]        = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_0]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_1]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_2]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSR]           = { FORMAT_RGBA16F, 0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_BLOOM]         = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_SCENE_0]       = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SCENE_1]       = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
 };
 
 static void alloc_target_texture(r3d_target_t target)
