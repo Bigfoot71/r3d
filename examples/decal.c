@@ -27,7 +27,7 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
     // Create decal
-    R3D_Decal decal = R3D_GetBaseDecal();
+    R3D_Decal decal = R3D_DECAL_BASE;
     decal.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
     decal.normal = R3D_LoadNormalMap(RESOURCES_PATH "images/decal_normal.png", 1.0f);
     decal.normalThreshold = 89.0f;
@@ -133,8 +133,7 @@ int main(void)
 
     // Cleanup
     R3D_UnloadMesh(meshPlane);
-    R3D_UnloadAlbedoMap(decal.albedo);
-    R3D_UnloadNormalMap(decal.normal);
+    R3D_UnloadDecalMaps(decal);
     R3D_Close();
 
     CloseWindow();

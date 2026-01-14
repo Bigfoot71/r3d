@@ -24,8 +24,7 @@
  /**
   * @brief Default decal configuration.
   *
-  * Initializes an R3D_Decal structure with sensible default values for all
-  * rendering parameters.
+  * Contains an R3D_Decal structure with sensible default values for all rendering parameters.
   */
 #define R3D_DECAL_BASE                                  \
     R3D_LITERAL(R3D_Decal) {                            \
@@ -91,13 +90,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Get a default initialized R3D_DECAL.
+ * @brief Unload all map textures assigned to an R3D_DECAL.
  * 
- * Provides a base R3D_DECAL that can be used for creating a custom decal.
+ * Frees all underlying textures in a R3D_Decal that are not a default texture.
  *
- * @return Decal structure with default properties.
+ * @param decal to unload maps from.
  */
-R3DAPI R3D_Decal R3D_GetBaseDecal(void);
+R3DAPI void R3D_UnloadDecalMaps(R3D_Decal decal);
 
 #ifdef __cplusplus
 } // extern "C"

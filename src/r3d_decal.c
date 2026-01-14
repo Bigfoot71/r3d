@@ -12,7 +12,10 @@
  // PUBLIC API
  // ========================================
 
-R3D_Decal R3D_GetBaseDecal(void)
+void R3D_UnloadDecalMaps(R3D_Decal decal)
 {
-    return R3D_DECAL_BASE;
+    R3D_UnloadAlbedoMap(decal.albedo);
+    R3D_UnloadEmissionMap(decal.emission);
+    R3D_UnloadOrmMap(decal.orm);
+    R3D_UnloadNormalMap(decal.normal);
 }
