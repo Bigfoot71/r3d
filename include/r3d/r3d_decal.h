@@ -17,15 +17,15 @@
  * @{
  */
 
- // ========================================
- // CONSTANTS
- // ========================================
+// ========================================
+// CONSTANTS
+// ========================================
 
- /**
-  * @brief Default decal configuration.
-  *
-  * Contains a R3D_Decal structure with sensible default values for all rendering parameters.
-  */
+/**
+ * @brief Default decal configuration.
+ *
+ * Contains a R3D_Decal structure with sensible default values for all rendering parameters.
+ */
 #define R3D_DECAL_BASE                                  \
     R3D_LITERAL(R3D_Decal) {                            \
         .albedo = {                                     \
