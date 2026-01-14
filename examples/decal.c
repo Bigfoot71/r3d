@@ -27,7 +27,6 @@ int main(void)
     R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
 
     // Create decal
-    R3D_SetTextureFilter(TEXTURE_FILTER_POINT);
     R3D_Decal decal = R3D_GetBaseDecal();
     decal.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
     decal.normal = R3D_LoadNormalMap(RESOURCES_PATH "images/decal_normal.png", 1.0f);

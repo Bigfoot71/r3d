@@ -43,18 +43,18 @@
 #define R3D_IS_SHADOW_CAST_ONLY(mode) \
     ((R3D_SHADOW_CAST_ONLY_MASK & (1 << (mode))) != 0)
 
-#define R3D_MATERIAL_FROM_DECAL(MATERIAL, DECAL) \
-    (MATERIAL).albedo = (DECAL).albedo; \
-    (MATERIAL).alphaCutoff = (DECAL).alphaCutoff; \
-    (MATERIAL).billboardMode = R3D_BILLBOARD_DISABLED; \
-    (MATERIAL).blendMode = R3D_BLEND_MIX; \
-    (MATERIAL).cullMode = R3D_CULL_FRONT; \
-    (MATERIAL).emission = (DECAL).emission; \
-    (MATERIAL).normal = (DECAL).normal; \
-    (MATERIAL).orm = (DECAL).orm; \
-    (MATERIAL).transparencyMode = R3D_TRANSPARENCY_DISABLED; \
-    (MATERIAL).uvOffset = (DECAL).uvOffset; \
-    (MATERIAL).uvScale = (DECAL).uvScale;
+#define R3D_MATERIAL_FROM_DECAL(material, decal) \
+    (material).albedo = (decal).albedo; \
+    (material).alphaCutoff = (decal).alphaCutoff; \
+    (material).billboardMode = R3D_BILLBOARD_DISABLED; \
+    (material).blendMode = R3D_BLEND_MIX; \
+    (material).cullMode = R3D_CULL_FRONT; \
+    (material).emission = (decal).emission; \
+    (material).normal = (decal).normal; \
+    (material).orm = (decal).orm; \
+    (material).transparencyMode = R3D_TRANSPARENCY_DISABLED; \
+    (material).uvOffset = (decal).uvOffset; \
+    (material).uvScale = (decal).uvScale;
 
 // ========================================
 // INTERNAL FUNCTIONS
