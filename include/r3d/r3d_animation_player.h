@@ -30,7 +30,7 @@
 typedef enum {
     R3D_ANIM_EVENT_FINISHED, ///< Animation has finished playing (non-looping).
     R3D_ANIM_EVENT_LOOPED,   ///< Animation has completed a loop.
-} R3D_AnimationEventType;
+} R3D_AnimationEvent;
 
 // ========================================
 // CALLBACKS TYPES
@@ -48,7 +48,7 @@ struct R3D_AnimationPlayer;
  */
 typedef void (*R3D_AnimationEventCallback)(
     struct R3D_AnimationPlayer* player,
-    R3D_AnimationEventType eventType,
+    R3D_AnimationEvent eventType,
     int animIndex, void* userData
 );
 

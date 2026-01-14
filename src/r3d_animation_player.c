@@ -17,7 +17,7 @@
 // ========================================
 
 static void compute_pose(R3D_AnimationPlayer* player, float totalWeight);
-static void emit_event(R3D_AnimationPlayer* player, R3D_AnimationEventType event, int animIndex);
+static void emit_event(R3D_AnimationPlayer* player, R3D_AnimationEvent event, int animIndex);
 
 // ========================================
 // PUBLIC API
@@ -391,7 +391,7 @@ void compute_pose(R3D_AnimationPlayer* player, float totalWeight)
     }
 }
 
-void emit_event(R3D_AnimationPlayer* player, R3D_AnimationEventType event, int animIndex)
+void emit_event(R3D_AnimationPlayer* player, R3D_AnimationEvent event, int animIndex)
 {
     if (player->eventCallback != NULL) {
         player->eventCallback(player, event, animIndex, player->eventUserData);
