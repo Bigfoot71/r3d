@@ -35,7 +35,7 @@ uniform float uPower;
 
 /* === Constants === */
 
-const float SAMPLES_PER_TURN = 5.0; //< todo: tweak
+const float SAMPLES_PER_TURN = 5.0;
 
 /* === Fragments === */
 
