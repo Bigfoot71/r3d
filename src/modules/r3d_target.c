@@ -30,16 +30,21 @@ typedef struct {
 } target_format_t;
 
 typedef enum {
-    FORMAT_R8,   FORMAT_RG8,   FORMAT_RGB8,   FORMAT_RGBA8,
+    FORMAT_R8U,  FORMAT_RG8U,  FORMAT_RGB8U,  FORMAT_RGBA8U,
+    FORMAT_R16U, FORMAT_RG16U, FORMAT_RGB16U, FORMAT_RGBA16U,
     FORMAT_R16F, FORMAT_RG16F, FORMAT_RGB16F, FORMAT_RGBA16F,
     FORMAT_R32F, FORMAT_RG32F, FORMAT_RGB32F, FORMAT_RGBA32F,
 } target_format_enum_t;
 
 static const target_format_t TARGET_FORMAT[] = {
-    [FORMAT_R8]      = { GL_R8,        GL_RED,  GL_UNSIGNED_BYTE },
-    [FORMAT_RG8]     = { GL_RG8,       GL_RG,   GL_UNSIGNED_BYTE },
-    [FORMAT_RGB8]    = { GL_RGB8,      GL_RGB,  GL_UNSIGNED_BYTE },
-    [FORMAT_RGBA8]   = { GL_RGBA8,     GL_RGBA, GL_UNSIGNED_BYTE },
+    [FORMAT_R8U]     = { GL_R8,        GL_RED,  GL_UNSIGNED_BYTE },
+    [FORMAT_RG8U]    = { GL_RG8,       GL_RG,   GL_UNSIGNED_BYTE },
+    [FORMAT_RGB8U]   = { GL_RGB8,      GL_RGB,  GL_UNSIGNED_BYTE },
+    [FORMAT_RGBA8U]  = { GL_RGBA8,     GL_RGBA, GL_UNSIGNED_BYTE },
+    [FORMAT_R16U]    = { GL_R16,       GL_RED,  GL_UNSIGNED_SHORT },
+    [FORMAT_RG16U]   = { GL_RG16,      GL_RG,   GL_UNSIGNED_SHORT },
+    [FORMAT_RGB16U]  = { GL_RGB16,     GL_RGB,  GL_UNSIGNED_SHORT },
+    [FORMAT_RGBA16U] = { GL_RGBA16,    GL_RGBA, GL_UNSIGNED_SHORT },
     [FORMAT_R16F]    = { GL_R16F,      GL_RED,  GL_HALF_FLOAT },
     [FORMAT_RG16F]   = { GL_RG16F,     GL_RG,   GL_HALF_FLOAT },
     [FORMAT_RGB16F]  = { GL_RGB16F,    GL_RGB,  GL_HALF_FLOAT },
@@ -64,15 +69,15 @@ typedef struct {
 } target_config_t;
 
 static const target_config_t TARGET_CONFIG[] = {
-    [R3D_TARGET_ALBEDO]        = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_NORMAL]        = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_ORM]           = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ALBEDO]        = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_NORMAL]        = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ORM]           = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
     [R3D_TARGET_DEPTH]         = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
     [R3D_TARGET_DIFFUSE]       = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
     [R3D_TARGET_SPECULAR]      = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
-    [R3D_TARGET_GEOM_NORM_TAN] = { FORMAT_RGBA16F, 1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
-    [R3D_TARGET_SSAO_0]        = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSAO_1]        = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_GEOM_NORM_TAN] = { FORMAT_RGBA8U,  1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_SSAO_0]        = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSAO_1]        = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SSIL_0]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SSIL_1]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SSIL_2]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },

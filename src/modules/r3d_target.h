@@ -24,22 +24,22 @@
  */
 typedef enum {
     R3D_TARGET_INVALID = -1,
-    R3D_TARGET_ALBEDO,          //< Full - Mip 2 - RGB[8|8|8]
-    R3D_TARGET_NORMAL,          //< Full - Mip 2 - RG[16|16]
-    R3D_TARGET_ORM,             //< Full - Mip 2 - RGB[8|8|8]
-    R3D_TARGET_DEPTH,           //< Full - Mip 2 - R[16]
-    R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB[16|16|16]
-    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_GEOM_NORM_TAN,   //< Full - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
-    R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
-    R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSR,             //< Half - Mip N - RGBA[16|16|16|16]
-    R3D_TARGET_BLOOM,           //< Half - Mip N - RGB[16|16|16]
-    R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_ALBEDO,          //< Full - Mip 2 - RGB8
+    R3D_TARGET_NORMAL,          //< Full - Mip 2 - RG16
+    R3D_TARGET_ORM,             //< Full - Mip 2 - RGB8
+    R3D_TARGET_DEPTH,           //< Full - Mip 2 - R16F
+    R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB16F
+    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB16F
+    R3D_TARGET_GEOM_NORM_TAN,   //< Full - Mip 1 - RGBA8
+    R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R8
+    R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R8
+    R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_SSR,             //< Half - Mip N - RGBA16F
+    R3D_TARGET_BLOOM,           //< Half - Mip N - RGB16F
+    R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB16F
+    R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB16F
     R3D_TARGET_COUNT
 } r3d_target_t;
 
