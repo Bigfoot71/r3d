@@ -10,7 +10,6 @@
 
 /* === Includes === */
 
-#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings === */
@@ -31,25 +30,6 @@ out vec4 FragColor;
 
 /* === À-Trous Kernel === */
 
-const int KERNEL_SIZE = 5;
-
-const ivec2 OFFSETS[5] = ivec2[5](
-    ivec2( 0,  0),  // Center
-    ivec2(-1,  0),  // Left
-    ivec2( 1,  0),  // Right
-    ivec2( 0, -1),  // Up
-    ivec2( 0,  1)   // Down
-);
-
-const float WEIGHTS[5] = float[5](
-    0.5,    // Center
-    0.125,  // Left
-    0.125,  // Right
-    0.125,  // Up
-    0.125   // Down
-);
-
-/*
 const int KERNEL_SIZE = 9;
 
 const ivec2 OFFSETS[9] = ivec2[9](
@@ -63,7 +43,6 @@ const float WEIGHTS[9] = float[9](
     0.125,  0.25,  0.125,
     0.0625, 0.125, 0.0625
 );
-*/
 
 /* === Parameters === */
 
@@ -91,7 +70,8 @@ void main()
     vec4 result = vec4(0.0);
     float totalWeight = 0.0;
 
-    vec3 centerNormal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
+    // NOTE: We don’t care about the space here, we just want a normal
+    vec3 centerNormal = M_DecodeOctahedral(texelFetch(uNormalTex, ivec2(gl_FragCoord.xy), 0).rg);
     float centerDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
 
     for (int i = 0; i < KERNEL_SIZE; ++i)
@@ -100,7 +80,7 @@ void main()
         ivec2 pixCoord = ivec2(gl_FragCoord.xy) + offset;
 
         vec4 sampleValue = texelFetch(uSourceTex, pixCoord, 0);
-        vec3 sampleNormal = V_GetViewNormal(uNormalTex, pixCoord);
+        vec3 sampleNormal = M_DecodeOctahedral(texelFetch(uNormalTex, pixCoord, 0).rg);
         float sampleDepth = texelFetch(uDepthTex, pixCoord, 0).r;
 
         float wNormal = NormalWeight(centerNormal, sampleNormal);
