@@ -63,6 +63,7 @@
         .ambient = {                                    \
             .color = BLACK,                             \
             .energy = 1.0f,                             \
+            .map = (R3D_AmbientMap) {0},                \
         },                                              \
         .ssao = {                                       \
             .sampleCount = 16,                          \
@@ -79,8 +80,8 @@
             .hitThickness = 0.5f,                       \
             .aoPower = 1.0f,                            \
             .energy = 1.0f,                             \
-            .convergence = 0.5f,                        \
             .bounce = 0.5f,                             \
+            .convergence = 0.5f,                        \
             .enabled = false,                           \
         },                                              \
         .bloom = {                                      \
