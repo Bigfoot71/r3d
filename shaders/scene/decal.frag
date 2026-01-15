@@ -11,8 +11,8 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
 #include "../include/blocks/view.glsl"
+#include "../include/math.glsl"
 
 /* === Varyings === */
 
@@ -73,7 +73,8 @@ void main()
     if (albedo.a < uAlphaCutoff) discard;
 
     /* Retrieve surface normal */
-    vec3 surfaceNormal = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).rg);
+    vec2 encNormal = texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).rg;
+    vec3 surfaceNormal = M_DecodeOctahedral(encNormal);
 
     /* Compute angular difference between the decal and surface normal */
     float angle = acos(clamp(dot(vOrientation, surfaceNormal), -1.0, 1.0));
@@ -88,7 +89,8 @@ void main()
     albedo.a *= fadeAlpha;
 
     /* Retrieve surface tangent */
-    vec3 surfaceTangent = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).ba);
+    float encTangentAngle = texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).b;
+    vec3 surfaceTangent = M_DecodeTangentAngle(surfaceNormal, encTangentAngle);
 
     /* Compute bitangent and correct handedness if necessary */
     vec3 surfaceBitangent = normalize(cross(surfaceNormal, surfaceTangent));

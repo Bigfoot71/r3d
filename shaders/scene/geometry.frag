@@ -61,7 +61,7 @@ void main()
     }
 
     FragGeomNormTan.rg = M_EncodeOctahedral(geomN);
-    FragGeomNormTan.ba = M_EncodeOctahedral(geomT);
+    FragGeomNormTan.b = M_EncodeTangentAngle(geomN, geomT);
 
     FragAlbedo = albedo.rgb;
     FragEmission = vEmission * texture(uEmissionMap, vTexCoord).rgb;
