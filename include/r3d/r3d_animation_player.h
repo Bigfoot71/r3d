@@ -84,8 +84,9 @@ typedef struct R3D_AnimationPlayer {
     R3D_Skeleton skeleton;      ///< Skeleton to animate.
 
     Matrix* localPose;          ///< Array of bone transforms representing the blended local pose.
-    Matrix* globalPose;         ///< Array of bone transforms multiplied by bone offsets for GPU skinning.
-    uint32_t texGlobalPose;     ///< GPU texture ID storing the global pose as a 1D RGBA32F texture.
+    Matrix* modelPose;          ///< Array of bone transforms in model space, obtained by hierarchical accumulation.
+    Matrix* skinBuffer;         ///< Array of final skinning matrices (boneOffsets * modelPose), sent to the GPU.
+    uint32_t skinTexture;       ///< GPU texture ID storing the skinning matrices as a 1D RGBA16F texture.
 
     R3D_AnimationEventCallback eventCallback;   ///< Callback function to receive animation events.
     void* eventUserData;                        ///< Optional user data pointer passed to the callback.

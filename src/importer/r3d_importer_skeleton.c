@@ -75,8 +75,8 @@ static void upload_skeleton_bind_pose(R3D_Skeleton* skeleton)
     Matrix* finalBindPose = RL_MALLOC(skeleton->boneCount * sizeof(Matrix));
     r3d_matrix_multiply_batch(finalBindPose, skeleton->boneOffsets, skeleton->bindPose, skeleton->boneCount);
 
-    glGenTextures(1, &skeleton->texBindPose);
-    glBindTexture(GL_TEXTURE_1D, skeleton->texBindPose);
+    glGenTextures(1, &skeleton->skinTexture);
+    glBindTexture(GL_TEXTURE_1D, skeleton->skinTexture);
     glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, finalBindPose);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
