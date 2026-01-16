@@ -54,9 +54,9 @@ void R3D_UnloadSkeleton(R3D_Skeleton skeleton)
     }
 
     RL_FREE(skeleton.bones);
-    RL_FREE(skeleton.boneOffsets);
-    RL_FREE(skeleton.bindLocal);
-    RL_FREE(skeleton.bindPose);
+    RL_FREE(skeleton.invBind);
+    RL_FREE(skeleton.modelBind);
+    RL_FREE(skeleton.localBind);
 }
 
 bool R3D_IsSkeletonValid(R3D_Skeleton skeleton)

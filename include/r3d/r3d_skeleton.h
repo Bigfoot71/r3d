@@ -44,9 +44,10 @@ typedef struct R3D_Skeleton {
     R3D_BoneInfo* bones;    ///< Array of bone descriptors defining the hierarchy and names.
     int boneCount;          ///< Total number of bones in the skeleton.
 
-    Matrix* boneOffsets;    ///< Inverse bind matrices, one per bone. Transform vertices from mesh space to bone space (used in skinning).
-    Matrix* bindLocal;      ///< Bind pose transforms in local bone space (relative to parent).
-    Matrix* bindPose;       ///< Bind pose transforms in model space. Used as the default pose when not animated.
+    Matrix* localBind;      ///< Bind pose matrices relative to parent
+    Matrix* modelBind;      ///< Bind pose matrices in model/global space
+    Matrix* invBind;        ///< Inverse bind matrices (model space) for skinning
+    Matrix rootBind;        ///< Root correction if local bind is not identity
 
     uint32_t skinTexture;   ///< Texture ID that contains the bind pose for GPU skinning. This is a 1D Texture RGBA16F 4*boneCount.
 
