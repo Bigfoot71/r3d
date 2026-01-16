@@ -69,7 +69,7 @@ struct r3d_shader R3D_MOD_SHADER;
 #define LOAD_SHADER(shader_name, vsCode, fsCode) do {                           \
     R3D_MOD_SHADER.shader_name.id = load_shader(vsCode, fsCode);                \
     if (R3D_MOD_SHADER.shader_name.id == 0) {                                   \
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to load shader '" #shader_name "'");   \
+        R3D_TRACELOG(LOG_ERROR, "Failed to load shader '" #shader_name "'");    \
         assert(false);                                                          \
         return;                                                                 \
     }                                                                           \
@@ -116,7 +116,7 @@ static GLuint compile_shader(const char* source, GLenum shaderType)
 {
     GLuint shader = glCreateShader(shaderType);
     if (shader == 0) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to create shader object");
+        R3D_TRACELOG(LOG_ERROR, "Failed to create shader object");
         return 0;
     }
 
@@ -129,7 +129,7 @@ static GLuint compile_shader(const char* source, GLenum shaderType)
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
         const char* type_str = (shaderType == GL_VERTEX_SHADER) ? "vertex" : "fragment";
-        R3D_TRACELOG(LOG_ERROR, "R3D: %s shader compilation failed: %s", type_str, infoLog);
+        R3D_TRACELOG(LOG_ERROR, "%s shader compilation failed: %s", type_str, infoLog);
         glDeleteShader(shader);
         return 0;
     }
@@ -141,7 +141,7 @@ static GLuint link_shader(GLuint vertShader, GLuint fragShader)
 {
     GLuint program = glCreateProgram();
     if (program == 0) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to create shader program");
+        R3D_TRACELOG(LOG_ERROR, "Failed to create shader program");
         return 0;
     }
 
@@ -154,7 +154,7 @@ static GLuint link_shader(GLuint vertShader, GLuint fragShader)
     if (!success) {
         char infoLog[512];
         glGetProgramInfoLog(program, 512, NULL, infoLog);
-        R3D_TRACELOG(LOG_ERROR, "R3D: Shader program linking failed: %s", infoLog);
+        R3D_TRACELOG(LOG_ERROR, "Shader program linking failed: %s", infoLog);
         glDeleteProgram(program);
         return 0;
     }

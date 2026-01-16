@@ -327,13 +327,13 @@ bool r3d_env_init(void)
 
     // Initialize layer pools
     if (!layer_pool_init(&R3D_MOD_ENV.irradiancePool, LAYER_INITIAL_CAPACITY)) {
-        R3D_TRACELOG(LOG_FATAL, "R3D: Failed to init irradiance layer pool");
+        R3D_TRACELOG(LOG_FATAL, "Failed to init irradiance layer pool");
         r3d_env_quit();
         return false;
     }
 
     if (!layer_pool_init(&R3D_MOD_ENV.prefilterPool, LAYER_INITIAL_CAPACITY)) {
-        R3D_TRACELOG(LOG_FATAL, "R3D: Failed to init prefilter layer pool");
+        R3D_TRACELOG(LOG_FATAL, "Failed to init prefilter layer pool");
         r3d_env_quit();
         return false;
     }
@@ -343,7 +343,7 @@ bool r3d_env_init(void)
     R3D_MOD_ENV.capacityProbes = PROBE_INITIAL_CAPACITY;
 
     if (!R3D_MOD_ENV.probes) {
-        R3D_TRACELOG(LOG_FATAL, "R3D: Failed to allocate probe array");
+        R3D_TRACELOG(LOG_FATAL, "Failed to allocate probe array");
         r3d_env_quit();
         return false;
     }
@@ -351,7 +351,7 @@ bool r3d_env_init(void)
     for (int i = 0; i < R3D_ENV_PROBE_ARRAY_COUNT; i++) {
         R3D_MOD_ENV.arrays[i].probes = RL_MALLOC(PROBE_INITIAL_CAPACITY * sizeof(R3D_Probe));
         if (!R3D_MOD_ENV.arrays[i].probes) {
-            R3D_TRACELOG(LOG_FATAL, "R3D: Failed to allocate probe list array %i", i);
+            R3D_TRACELOG(LOG_FATAL, "Failed to allocate probe list array %i", i);
             r3d_env_quit();
             return false;
         }
@@ -390,13 +390,13 @@ R3D_Probe r3d_env_probe_new(R3D_ProbeType type)
 
     if (index >= R3D_MOD_ENV.capacityProbes) {
         if (!growth_probe_arrays()) {
-            R3D_TRACELOG(LOG_FATAL, "R3D: Failed to grow probe arrays");
+            R3D_TRACELOG(LOG_FATAL, "Failed to grow probe arrays");
             return -1;
         }
     }
 
     if (!init_probe(&R3D_MOD_ENV.probes[index], type)) {
-        R3D_TRACELOG(LOG_FATAL, "R3D: Failed to initialize probe");
+        R3D_TRACELOG(LOG_FATAL, "Failed to initialize probe");
         return -1;
     }
 

@@ -188,7 +188,7 @@ static int get_or_create_fbo(const r3d_target_t* targets, int count, bool depth)
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Framebuffer incomplete (status: 0x%04x)", status);
+        R3D_TRACELOG(LOG_ERROR, "Framebuffer incomplete (status: 0x%04x)", status);
     }
 
     return newIndex;

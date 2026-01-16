@@ -48,7 +48,7 @@ static void build_bone_mapping(r3d_importer_t* importer)
     }
 
     if (importer->boneCount > 0) {
-        R3D_TRACELOG(LOG_DEBUG, "RENDER: Built bone mapping with %d bones", importer->boneCount);
+        R3D_TRACELOG(LOG_DEBUG, "Built bone mapping with %d bones", importer->boneCount);
     }
 }
 
@@ -68,7 +68,7 @@ bool r3d_importer_create_from_file(r3d_importer_t* importer, const char* filePat
 
     const struct aiScene* scene = aiImportFile(filePath, flags);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Assimp error; %s", aiGetErrorString());
+        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
         return false;
     }
 
@@ -93,7 +93,7 @@ bool r3d_importer_create_from_memory(r3d_importer_t* importer, const void* data,
 
     const struct aiScene* scene = aiImportFileFromMemory(data, size, flags, hint);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Assimp error; %s", aiGetErrorString());
+        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
         return false;
     }
 

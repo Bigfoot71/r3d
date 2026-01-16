@@ -454,7 +454,7 @@ bool r3d_light_init(void)
     // Initialize shadow pools
     for (int i = 0; i < R3D_LIGHT_TYPE_COUNT; i++) {
         if (!shadow_pool_init(&R3D_MOD_LIGHT.shadowPools[i], R3D_LIGHT_SHADOW_GROWTH[i])) {
-            R3D_TRACELOG(LOG_FATAL, "R3D: Failed to init shadow pool number %i", i);
+            R3D_TRACELOG(LOG_FATAL, "Failed to init shadow pool number %i", i);
             r3d_light_quit();
             return false;
         }
@@ -465,7 +465,7 @@ bool r3d_light_init(void)
     R3D_MOD_LIGHT.capacityLights = LIGHT_INITIAL_CAPACITY;
 
     if (!R3D_MOD_LIGHT.lights) {
-        R3D_TRACELOG(LOG_FATAL, "R3D: Failed to allocate light array");
+        R3D_TRACELOG(LOG_FATAL, "Failed to allocate light array");
         r3d_light_quit();
         return false;
     }
@@ -473,7 +473,7 @@ bool r3d_light_init(void)
     for (int i = 0; i < R3D_LIGHT_ARRAY_COUNT; i++) {
         R3D_MOD_LIGHT.arrays[i].lights = RL_MALLOC(LIGHT_INITIAL_CAPACITY * sizeof(R3D_Light));
         if (!R3D_MOD_LIGHT.arrays[i].lights) {
-            R3D_TRACELOG(LOG_FATAL, "R3D: Failed to allocate light list array %i", i);
+            R3D_TRACELOG(LOG_FATAL, "Failed to allocate light list array %i", i);
             r3d_light_quit();
             return false;
         }
@@ -514,13 +514,13 @@ R3D_Light r3d_light_new(R3D_LightType type)
 
     // Grow if needed
     if (index >= R3D_MOD_LIGHT.capacityLights && !growth_light_arrays()) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to grow light arrays");
+        R3D_TRACELOG(LOG_ERROR, "Failed to grow light arrays");
         goto error_restore_free;
     }
 
     // Initialize light
     if (!init_light(&R3D_MOD_LIGHT.lights[index], type)) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to initialize light (type: %d)", type);
+        R3D_TRACELOG(LOG_ERROR, "Failed to initialize light (type: %d)", type);
         goto error_restore_free;
     }
 
@@ -640,7 +640,7 @@ void r3d_light_enable_shadows(r3d_light_t* light)
 
     int layer = reserve_shadow_layer(light->type);
     if (layer < 0) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to reserve shadow layer for light");
+        R3D_TRACELOG(LOG_ERROR, "Failed to reserve shadow layer for light");
         return;
     }
 

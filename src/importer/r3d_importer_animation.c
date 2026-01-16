@@ -76,7 +76,7 @@ static bool load_quaternion_track(R3D_AnimationTrack* track, unsigned int count,
 static bool load_channel(R3D_AnimationChannel* channel, const r3d_importer_t* importer, const struct aiNodeAnim* aiChannel)
 {
     if (!aiChannel) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Invalid animation channel");
+        R3D_TRACELOG(LOG_ERROR, "Invalid animation channel");
         return false;
     }
 
@@ -85,7 +85,7 @@ static bool load_channel(R3D_AnimationChannel* channel, const r3d_importer_t* im
 
     if (channel->boneIndex < 0) {
         R3D_TRACELOG(LOG_WARNING,
-                 "RENDER: Bone '%s' from animation not found in skeleton",
+                 "Bone '%s' from animation not found in skeleton",
                  boneName);
         return false;
     }
@@ -123,14 +123,14 @@ static bool load_animation(R3D_Animation* animation, const r3d_importer_t* impor
 {
     // Basic validation
     if (!aiAnim || aiAnim->mNumChannels == 0) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Invalid animation or no channels");
+        R3D_TRACELOG(LOG_ERROR, "Invalid animation or no channels");
         return false;
     }
 
     // Check that we have bones in the skeleton
     const int boneCount = r3d_importer_get_bone_count(importer);
     if (boneCount == 0) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: No bones in skeleton");
+        R3D_TRACELOG(LOG_ERROR, "No bones in skeleton");
         return false;
     }
 
@@ -153,7 +153,7 @@ static bool load_animation(R3D_Animation* animation, const r3d_importer_t* impor
     animation->channelCount = aiAnim->mNumChannels;
     animation->channels = RL_CALLOC(animation->channelCount, sizeof(R3D_AnimationChannel));
     if (!animation->channels) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Failed to allocate animation channels");
+        R3D_TRACELOG(LOG_ERROR, "Failed to allocate animation channels");
         return false;
     }
 
@@ -163,12 +163,12 @@ static bool load_animation(R3D_Animation* animation, const r3d_importer_t* impor
         if (load_channel(&animation->channels[successChannels], importer, aiAnim->mChannels[i])) {
             successChannels++;
         } else {
-            R3D_TRACELOG(LOG_WARNING, "RENDER: Failed to load channel %u", i);
+            R3D_TRACELOG(LOG_WARNING, "Failed to load channel %u", i);
         }
     }
 
     if (successChannels == 0) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: No channels were successfully loaded");
+        R3D_TRACELOG(LOG_ERROR, "No channels were successfully loaded");
         RL_FREE(animation->channels);
         return false;
     }
@@ -185,7 +185,7 @@ static bool load_animation(R3D_Animation* animation, const r3d_importer_t* impor
         }
     }
 
-    R3D_TRACELOG(LOG_INFO, "RENDER: Animation '%s' loaded: %.2f duration, %.2f ticks/sec, %d channels",
+    R3D_TRACELOG(LOG_INFO, "Animation '%s' loaded: %.2f duration, %.2f ticks/sec, %d channels",
              animation->name, animation->duration, animation->ticksPerSecond, animation->channelCount);
 
     return true;
@@ -198,20 +198,20 @@ static bool load_animation(R3D_Animation* animation, const r3d_importer_t* impor
 bool r3d_importer_load_animations(const r3d_importer_t* importer, R3D_AnimationLib* animLib)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Invalid importer for animation loading");
+        R3D_TRACELOG(LOG_ERROR, "Invalid importer for animation loading");
         return false;
     }
 
     int animCount = r3d_importer_get_animation_count(importer);
     if (animCount == 0) {
-        R3D_TRACELOG(LOG_WARNING, "RENDER: No animations found in the imported scene");
+        R3D_TRACELOG(LOG_WARNING, "No animations found in the imported scene");
         return false;
     }
 
     // Allocate temporary animations array
     R3D_Animation* animations = RL_CALLOC(animCount, sizeof(R3D_Animation));
     if (!animations) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Unable to allocate memory for animations");
+        R3D_TRACELOG(LOG_ERROR, "Unable to allocate memory for animations");
         return false;
     }
 
@@ -222,19 +222,19 @@ bool r3d_importer_load_animations(const r3d_importer_t* importer, R3D_AnimationL
         if (load_animation(&animations[successCount], importer, aiAnim)) {
             successCount++;
         } else {
-            R3D_TRACELOG(LOG_ERROR, "RENDER: Failed to process animation %d", i);
+            R3D_TRACELOG(LOG_ERROR, "Failed to process animation %d", i);
         }
     }
 
     if (successCount == 0) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: No animations were successfully loaded");
+        R3D_TRACELOG(LOG_ERROR, "No animations were successfully loaded");
         RL_FREE(animations);
         return false;
     }
 
     // Resize if some animations failed
     if (successCount < animCount) {
-        R3D_TRACELOG(LOG_WARNING, "RENDER: Only %d out of %d animations were successfully loaded", successCount, animCount);
+        R3D_TRACELOG(LOG_WARNING, "Only %d out of %d animations were successfully loaded", successCount, animCount);
         R3D_Animation* resized = RL_REALLOC(animations, successCount * sizeof(R3D_Animation));
         if (resized) {
             animations = resized;
@@ -244,7 +244,7 @@ bool r3d_importer_load_animations(const r3d_importer_t* importer, R3D_AnimationL
     animLib->animations = animations;
     animLib->count = successCount;
 
-    R3D_TRACELOG(LOG_INFO, "RENDER: Loaded animation library with %d animations", successCount);
+    R3D_TRACELOG(LOG_INFO, "Loaded animation library with %d animations", successCount);
 
     return true;
 }

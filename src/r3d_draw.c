@@ -219,14 +219,14 @@ void R3D_End(void)
 void R3D_BeginCluster(BoundingBox aabb)
 {
     if (!r3d_draw_cluster_begin(aabb)) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: Failed to begin cluster");
+        R3D_TRACELOG(LOG_WARNING, "Failed to begin cluster");
     }
 }
 
 void R3D_EndCluster(void)
 {
     if (!r3d_draw_cluster_end()) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: Failed to end cluster");
+        R3D_TRACELOG(LOG_WARNING, "Failed to end cluster");
     }
 }
 

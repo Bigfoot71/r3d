@@ -93,7 +93,7 @@ static void upload_skeleton_bind_pose(R3D_Skeleton* skeleton)
 bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* skeleton)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Invalid importer for skeleton processing");
+        R3D_TRACELOG(LOG_ERROR, "Invalid importer for skeleton processing");
         return false;
     }
 
@@ -110,7 +110,7 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
     skeleton->boneCount = boneCount;
 
     if (!skeleton->bones || !skeleton->boneOffsets || !skeleton->bindLocal || !skeleton->bindPose) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Failed to allocate memory for skeleton bones");
+        R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for skeleton bones");
         RL_FREE(skeleton->bones);
         RL_FREE(skeleton->boneOffsets);
         RL_FREE(skeleton->bindLocal);
@@ -152,7 +152,7 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
     build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), -1, R3D_MATRIX_IDENTITY);
     upload_skeleton_bind_pose(skeleton);
 
-    R3D_TRACELOG(LOG_INFO, "RENDER: Loaded skeleton with %d bones", boneCount);
+    R3D_TRACELOG(LOG_INFO, "Loaded skeleton with %d bones", boneCount);
 
     return true;
 }

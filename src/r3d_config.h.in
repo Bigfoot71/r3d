@@ -65,10 +65,10 @@
 // Debug
 // ========================================
 
-#if R3D_TRACELOG_DISABLED == 0
-#   define R3D_TRACELOG(level, ...) TraceLog(level, __VA_ARGS__)
+#if @R3D_ENABLE_TRACELOG@
+#   define R3D_TRACELOG(level, msg, ...) TraceLog(level, "R3D: " msg, ##__VA_ARGS__)
 #else
-#   define R3D_TRACELOG(level, ...) (void)0
+#   define R3D_TRACELOG(level, msg, ...) (void)0
 #endif
 
 #endif // R3D_CONFIG_H

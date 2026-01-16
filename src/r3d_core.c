@@ -105,7 +105,7 @@ void R3D_GetResolution(int* width, int* height)
 void R3D_UpdateResolution(int width, int height)
 {
     if (width <= 0 || height <= 0) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Invalid resolution given to 'R3D_UpdateResolution'");
+        R3D_TRACELOG(LOG_ERROR, "Invalid resolution given to 'R3D_UpdateResolution'");
         return;
     }
 

@@ -141,7 +141,7 @@ static void load_material(R3D_Material* material, const r3d_importer_t* importer
 bool r3d_importer_load_materials(const r3d_importer_t* importer, R3D_Model* model, r3d_importer_texture_cache_t* textureCache)
 {
     if (!model || !importer || !textureCache || !r3d_importer_is_valid(importer)) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Invalid parameters for material loading");
+        R3D_TRACELOG(LOG_ERROR, "Invalid parameters for material loading");
         return false;
     }
 
@@ -149,7 +149,7 @@ bool r3d_importer_load_materials(const r3d_importer_t* importer, R3D_Model* mode
     model->materials = RL_CALLOC(model->materialCount, sizeof(R3D_Material));
 
     if (!model->materials) {
-        R3D_TRACELOG(LOG_ERROR, "RENDER: Unable to allocate memory for materials");
+        R3D_TRACELOG(LOG_ERROR, "Unable to allocate memory for materials");
         return false;
     }
 

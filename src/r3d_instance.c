@@ -59,17 +59,17 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag, int o
 {
     int index = r3d_lsb_index(flag);
     if (index < 0 || index >= R3D_INSTANCE_ATTRIBUTE_COUNT) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: UploadInstances -> invalid attribute flag (0x%X)", flag);
+        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> invalid attribute flag (0x%X)", flag);
         return;
     }
 
     if ((flag & buffer.flags) == 0) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: UploadInstances -> attribute not allocated for this buffer (flag=0x%X)", flag);
+        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> attribute not allocated for this buffer (flag=0x%X)", flag);
         return;
     }
 
     if (offset + count > buffer.capacity) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: UploadInstances -> range out of bounds (offset=%d, count=%d, capacity=%d)", offset, count, buffer.capacity);
+        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> range out of bounds (offset=%d, count=%d, capacity=%d)", offset, count, buffer.capacity);
         return;
     }
 
@@ -84,19 +84,19 @@ void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag)
 {
     int index = r3d_lsb_index(flag);
     if (index < 0 || index >= R3D_INSTANCE_ATTRIBUTE_COUNT) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: MapInstances -> invalid attribute flag (0x%X)", flag);
+        R3D_TRACELOG(LOG_WARNING, "MapInstances -> invalid attribute flag (0x%X)", flag);
         return NULL;
     }
 
     if ((flag & buffer.flags) == 0) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: MapInstances -> attribute not allocated for this buffer (flag=0x%X)", flag);
+        R3D_TRACELOG(LOG_WARNING, "MapInstances -> attribute not allocated for this buffer (flag=0x%X)", flag);
         return NULL;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.buffers[index]);
     void* ptrMap = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
     if (!ptrMap) {
-        R3D_TRACELOG(LOG_WARNING, "R3D: MapInstances -> failed to map GPU buffer (flag=0x%X)", flag);
+        R3D_TRACELOG(LOG_WARNING, "MapInstances -> failed to map GPU buffer (flag=0x%X)", flag);
     }
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 

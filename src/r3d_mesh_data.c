@@ -22,13 +22,13 @@ R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount)
     R3D_MeshData meshData = {0};
 
     if (vertexCount <= 0) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Invalid vertex count for mesh creation");
+        R3D_TRACELOG(LOG_ERROR, "Invalid vertex count for mesh creation");
         return meshData;
     }
 
     meshData.vertices = RL_CALLOC(vertexCount, sizeof(*meshData.vertices));
     if (meshData.vertices == NULL) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to allocate memory for mesh vertices");
+        R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for mesh vertices");
         return meshData;
     }
 
@@ -37,7 +37,7 @@ R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount)
     if (indexCount > 0) {
         meshData.indices = RL_CALLOC(indexCount, sizeof(*meshData.indices));
         if (meshData.indices == NULL) {
-            R3D_TRACELOG(LOG_ERROR, "R3D: Failed to allocate memory for mesh indices");
+            R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for mesh indices");
             RL_FREE(meshData.vertices);
             meshData.vertices = NULL;
             meshData.vertexCount = 0;
@@ -1674,7 +1674,7 @@ R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData)
     R3D_MeshData duplicate = {0};
 
     if (meshData.vertices == NULL) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Cannot duplicate null mesh data");
+        R3D_TRACELOG(LOG_ERROR, "Cannot duplicate null mesh data");
         return duplicate;
     }
 
@@ -1697,7 +1697,7 @@ R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b)
     R3D_MeshData merged = {0};
 
     if (a.vertices == NULL || b.vertices == NULL) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Cannot merge null mesh data");
+        R3D_TRACELOG(LOG_ERROR, "Cannot merge null mesh data");
         return merged;
     }
 
@@ -1874,7 +1874,7 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData)
 
     Vector3* bitangents = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
     if (bitangents == NULL) {
-        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to allocate memory for tangent calculation");
+        R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for tangent calculation");
         return;
     }
 
