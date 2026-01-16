@@ -63,3 +63,23 @@ bool R3D_IsSkeletonValid(R3D_Skeleton skeleton)
 {
     return (skeleton.skinTexture > 0);
 }
+
+int R3D_GetSkeletonBoneIndex(R3D_Skeleton skeleton, const char* boneName)
+{
+    for (int i = 0; i < skeleton.boneCount; i++) {
+        if (strcmp(skeleton.bones[i].name, boneName) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+R3D_BoneInfo* R3D_GetSkeletonBone(R3D_Skeleton skeleton, const char* boneName)
+{
+    for (int i = 0; i < skeleton.boneCount; i++) {
+        if (strcmp(skeleton.bones[i].name, boneName) == 0) {
+            return &skeleton.bones[i];
+        }
+    }
+    return NULL;
+}

@@ -102,6 +102,24 @@ R3DAPI void R3D_UnloadSkeleton(R3D_Skeleton skeleton);
  */
 R3DAPI bool R3D_IsSkeletonValid(R3D_Skeleton skeleton);
 
+/**
+ * @brief Returns the index of the bone with the given name.
+ * 
+ * @param skeleton Skeleton to search in.
+ * @param boneName Name of the bone to find.
+ * @return Index of the bone, or a negative value if not found.
+ */
+R3DAPI int R3D_GetSkeletonBoneIndex(R3D_Skeleton skeleton, const char* boneName);
+
+/**
+ * @brief Returns a pointer to the bone with the given name.
+ * 
+ * @param skeleton Skeleton to search in.
+ * @param boneName Name of the bone to find.
+ * @return Pointer to the bone, or NULL if not found.
+ */
+R3DAPI R3D_BoneInfo* R3D_GetSkeletonBone(R3D_Skeleton skeleton, const char* boneName);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
