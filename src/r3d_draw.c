@@ -304,7 +304,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     r3d_draw_group_t drawGroup = {0};
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.texPose = model.skeleton.texBindPose;
+    drawGroup.texPose = model.skeleton.skinTexture;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -336,7 +336,7 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.texPose = model.skeleton.texBindPose;
+    drawGroup.texPose = model.skeleton.skinTexture;
 
     drawGroup.transform = transform;
     drawGroup.instances = instances;
@@ -379,8 +379,8 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.texPose = (player.texGlobalPose > 0)
-        ? player.texGlobalPose : model.skeleton.texBindPose;
+    drawGroup.texPose = (player.skinTexture > 0)
+        ? player.skinTexture : model.skeleton.skinTexture;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -412,8 +412,8 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
 
     drawGroup.aabb = model.aabb;
     drawGroup.transform = transform;
-    drawGroup.texPose = (player.texGlobalPose > 0)
-        ? player.texGlobalPose : model.skeleton.texBindPose;
+    drawGroup.texPose = (player.skinTexture > 0)
+        ? player.skinTexture : model.skeleton.skinTexture;
 
     drawGroup.transform = transform;
     drawGroup.instances = instances;

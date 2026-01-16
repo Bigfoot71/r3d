@@ -49,17 +49,37 @@ R3D_Skeleton R3D_LoadSkeletonFromData(const void* data, unsigned int size, const
 
 void R3D_UnloadSkeleton(R3D_Skeleton skeleton)
 {
-    if (skeleton.texBindPose > 0) {
-        glDeleteTextures(1, &skeleton.texBindPose);
+    if (skeleton.skinTexture > 0) {
+        glDeleteTextures(1, &skeleton.skinTexture);
     }
 
     RL_FREE(skeleton.bones);
-    RL_FREE(skeleton.boneOffsets);
-    RL_FREE(skeleton.bindLocal);
-    RL_FREE(skeleton.bindPose);
+    RL_FREE(skeleton.invBind);
+    RL_FREE(skeleton.modelBind);
+    RL_FREE(skeleton.localBind);
 }
 
 bool R3D_IsSkeletonValid(R3D_Skeleton skeleton)
 {
-    return (skeleton.texBindPose > 0);
+    return (skeleton.skinTexture > 0);
+}
+
+int R3D_GetSkeletonBoneIndex(R3D_Skeleton skeleton, const char* boneName)
+{
+    for (int i = 0; i < skeleton.boneCount; i++) {
+        if (strcmp(skeleton.bones[i].name, boneName) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+R3D_BoneInfo* R3D_GetSkeletonBone(R3D_Skeleton skeleton, const char* boneName)
+{
+    for (int i = 0; i < skeleton.boneCount; i++) {
+        if (strcmp(skeleton.bones[i].name, boneName) == 0) {
+            return &skeleton.bones[i];
+        }
+    }
+    return NULL;
 }

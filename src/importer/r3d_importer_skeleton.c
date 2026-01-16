@@ -23,9 +23,10 @@
 typedef struct {
     const r3d_importer_t* importer;
     R3D_BoneInfo* bones;
-    Matrix* boneOffsets;
-    Matrix* bindLocal;
-    Matrix* bindPose;
+    Matrix* invBind;
+    Matrix* localBind;
+    Matrix* modelBind;
+    Matrix* rootBind;
     int boneCount;
 } skeleton_build_context_t;
 
@@ -36,22 +37,29 @@ typedef struct {
 static void build_skeleton_recursive(
     skeleton_build_context_t* ctx,
     const struct aiNode* node,
-    int parentIndex,
-    Matrix parentTransform)
+    Matrix parentTransform,
+    int parentIndex)
 {
     if (!node) return;
 
     Matrix localTransform = r3d_importer_cast(node->mTransformation);
-    Matrix globalTransform = r3d_matrix_multiply(&localTransform, &parentTransform);
+    Matrix modelTransform = r3d_matrix_multiply(&localTransform, &parentTransform);
 
     // Check if this node is a bone
     int currentIndex = r3d_importer_get_bone_index(ctx->importer, node->mName.data);
 
     if (currentIndex >= 0) {
-        // Store bone data
-        ctx->bindPose[currentIndex] = globalTransform;
-        ctx->bindLocal[currentIndex] = localTransform;
+        // Store bone matrices
+        ctx->localBind[currentIndex] = localTransform;
+        ctx->modelBind[currentIndex] = modelTransform;
 
+        // Store bind root matrix
+        if (parentIndex == -1) {
+            Matrix invLocalTransform = MatrixInvert(localTransform);
+            *ctx->rootBind = r3d_matrix_multiply(&invLocalTransform, &modelTransform);
+        }
+
+        // Store bone infos
         strncpy(ctx->bones[currentIndex].name, node->mName.data, sizeof(ctx->bones[currentIndex].name) - 1);
         ctx->bones[currentIndex].name[sizeof(ctx->bones[currentIndex].name) - 1] = '\0';
         ctx->bones[currentIndex].parent = parentIndex;
@@ -62,7 +70,7 @@ static void build_skeleton_recursive(
 
     // Recursively process children
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        build_skeleton_recursive(ctx, node->mChildren[i], parentIndex, globalTransform);
+        build_skeleton_recursive(ctx, node->mChildren[i], modelTransform, parentIndex);
     }
 }
 
@@ -73,10 +81,10 @@ static void build_skeleton_recursive(
 static void upload_skeleton_bind_pose(R3D_Skeleton* skeleton)
 {
     Matrix* finalBindPose = RL_MALLOC(skeleton->boneCount * sizeof(Matrix));
-    r3d_matrix_multiply_batch(finalBindPose, skeleton->boneOffsets, skeleton->bindPose, skeleton->boneCount);
+    r3d_matrix_multiply_batch(finalBindPose, skeleton->invBind, skeleton->modelBind, skeleton->boneCount);
 
-    glGenTextures(1, &skeleton->texBindPose);
-    glBindTexture(GL_TEXTURE_1D, skeleton->texBindPose);
+    glGenTextures(1, &skeleton->skinTexture);
+    glBindTexture(GL_TEXTURE_1D, skeleton->skinTexture);
     glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, finalBindPose);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -104,17 +112,17 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
 
     // Allocate bone arrays
     skeleton->bones = RL_MALLOC(boneCount * sizeof(R3D_BoneInfo));
-    skeleton->boneOffsets = RL_MALLOC(boneCount * sizeof(Matrix));
-    skeleton->bindLocal = RL_MALLOC(boneCount * sizeof(Matrix));
-    skeleton->bindPose = RL_MALLOC(boneCount * sizeof(Matrix));
+    skeleton->invBind = RL_MALLOC(boneCount * sizeof(Matrix));
+    skeleton->localBind = RL_MALLOC(boneCount * sizeof(Matrix));
+    skeleton->modelBind = RL_MALLOC(boneCount * sizeof(Matrix));
     skeleton->boneCount = boneCount;
 
-    if (!skeleton->bones || !skeleton->boneOffsets || !skeleton->bindLocal || !skeleton->bindPose) {
+    if (!skeleton->bones || !skeleton->invBind || !skeleton->localBind || !skeleton->modelBind) {
         R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for skeleton bones");
         RL_FREE(skeleton->bones);
-        RL_FREE(skeleton->boneOffsets);
-        RL_FREE(skeleton->bindLocal);
-        RL_FREE(skeleton->bindPose);
+        RL_FREE(skeleton->invBind);
+        RL_FREE(skeleton->localBind);
+        RL_FREE(skeleton->modelBind);
         RL_FREE(skeleton);
         return false;
     }
@@ -134,7 +142,7 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
             int boneIdx = r3d_importer_get_bone_index(importer, bone->mName.data);
 
             if (boneIdx >= 0) {
-                skeleton->boneOffsets[boneIdx] = r3d_importer_cast(bone->mOffsetMatrix);
+                skeleton->invBind[boneIdx] = r3d_importer_cast(bone->mOffsetMatrix);
             }
         }
     }
@@ -143,13 +151,14 @@ bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* sk
     skeleton_build_context_t ctx = {
         .importer = importer,
         .bones = skeleton->bones,
-        .boneOffsets = skeleton->boneOffsets,
-        .bindLocal = skeleton->bindLocal,
-        .bindPose = skeleton->bindPose,
+        .invBind = skeleton->invBind,
+        .localBind = skeleton->localBind,
+        .modelBind = skeleton->modelBind,
+        .rootBind = &skeleton->rootBind,
         .boneCount = boneCount
     };
 
-    build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), -1, R3D_MATRIX_IDENTITY);
+    build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), R3D_MATRIX_IDENTITY, -1);
     upload_skeleton_bind_pose(skeleton);
 
     R3D_TRACELOG(LOG_INFO, "Loaded skeleton with %d bones", boneCount);
