@@ -183,10 +183,6 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
     for (unsigned int boneIndex = 0; boneIndex < aiMesh->mNumBones; boneIndex++)
     {
         const struct aiBone* bone = aiMesh->mBones[boneIndex];
-        if (!bone) {
-            R3D_TRACELOG(LOG_WARNING, "nullptr bone at index %u", boneIndex);
-            continue;
-        }
 
         // Process all vertex weights for this bone
         for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; weightIndex++)
