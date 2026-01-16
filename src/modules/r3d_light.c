@@ -7,13 +7,12 @@
  */
 
 #include "./r3d_light.h"
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <float.h>
-
-#include "../r3d_config.h"
 
 // ========================================
 // CONSTANTS

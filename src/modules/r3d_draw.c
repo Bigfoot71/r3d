@@ -7,6 +7,7 @@
  */
 
 #include "./r3d_draw.h"
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -19,7 +20,6 @@
 
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
-#include "../r3d_config.h"
 
 // ========================================
 // MODULE STATE

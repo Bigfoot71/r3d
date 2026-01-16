@@ -7,6 +7,7 @@
  */
 
 #include "./r3d_importer.h"
+#include <r3d_config.h>
 
 #include <assimp/GltfMaterial.h>
 #include <assimp/material.h>
@@ -32,7 +33,6 @@
 #include <glad.h>
 
 #include "../common/r3d_image.h"
-#include "../r3d_config.h"
 
 // ========================================
 // INTERNAL STRUCTURES

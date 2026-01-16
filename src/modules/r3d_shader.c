@@ -7,6 +7,7 @@
  */
 
 #include "./r3d_shader.h"
+#include <r3d_config.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -14,7 +15,6 @@
 #include <rlgl.h>
 
 #include "../common/r3d_helper.h"
-#include "../r3d_config.h"
 
 // ========================================
 // SHADER CODE INCLUDES

@@ -7,12 +7,12 @@
  */
 
 #include <r3d/r3d_lighting.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 #include <rlgl.h>
 
 #include "./modules/r3d_light.h"
-#include "./r3d_config.h"
 
 // ========================================
 // HELPER MACROS

@@ -7,12 +7,12 @@
  */
 
 #include <r3d/r3d_instance.h>
+#include <r3d_config.h>
 #include <raylib.h>
 #include <stddef.h>
 #include <glad.h>
 
 #include "./common/r3d_helper.h"
-#include "./r3d_config.h"
 
 // ========================================
 // INTERNAL CONSTANTS

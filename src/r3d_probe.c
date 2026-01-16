@@ -1,9 +1,17 @@
+/* r3d_probe.c -- R3D Probe Module.
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
 #include <r3d/r3d_probe.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 
 #include "./modules/r3d_env.h"
-#include "./r3d_config.h"
 
 // ========================================
 // HELPER MACROS

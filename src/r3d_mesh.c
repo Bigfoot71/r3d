@@ -8,11 +8,10 @@
 
 #include <r3d/r3d_mesh_data.h>
 #include <r3d/r3d_mesh.h>
+#include <r3d_config.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <glad.h>
-
-#include "./r3d_config.h"
 
 // ========================================
 // PUBLIC API

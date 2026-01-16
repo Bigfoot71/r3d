@@ -8,7 +8,7 @@
 
 #include "./r3d_importer.h"
 #include <assimp/cimport.h>
-#include "../r3d_config.h"
+#include <r3d_config.h>
 
 // ========================================
 // PRIVATE FUNCTIONS

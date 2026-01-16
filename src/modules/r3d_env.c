@@ -15,7 +15,7 @@
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_helper.h"
 #include "../common/r3d_math.h"
-#include "../r3d_config.h"
+#include <r3d_config.h>
 
 // ========================================
 // CONSTANTS

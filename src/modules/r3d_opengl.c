@@ -7,12 +7,11 @@
  */
 
 #include "./r3d_opengl.h"
+#include <r3d_config.h>
 #include <string.h>
 #include <stdlib.h>
 #include <uthash.h>
 #include <glad.h>
-
-#include "../r3d_config.h"
 
 // ========================================
 // CONFIGURATION

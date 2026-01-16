@@ -7,12 +7,12 @@
  */
 
 #include "./r3d_target.h"
+#include <r3d_config.h>
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
 
 #include "../common/r3d_helper.h"
-#include "../r3d_config.h"
 
 // ========================================
 // MODULE STATE

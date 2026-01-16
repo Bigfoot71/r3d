@@ -9,10 +9,9 @@
 #include "./r3d_importer.h"
 
 #include <assimp/anim.h>
+#include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
-
-#include "../r3d_config.h"
 
 // ========================================
 // CHANNEL LOADING (INTERNAL)

@@ -9,12 +9,12 @@
 #include "./r3d_importer.h"
 
 #include <assimp/mesh.h>
+#include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
 #include <glad.h>
 
 #include "../common/r3d_math.h"
-#include "../r3d_config.h"
 
 // ========================================
 // INTERNAL CONTEXT

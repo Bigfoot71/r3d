@@ -10,10 +10,9 @@
 
 #include <assimp/GltfMaterial.h>
 #include <assimp/material.h>
+#include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
-
-#include "../r3d_config.h"
 
 // ========================================
 // MATERIAL LOADING (INTERNAL)

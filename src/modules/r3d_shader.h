@@ -10,13 +10,13 @@
 #define R3D_MODULE_SHADER_H
 
 #include <r3d/r3d_core.h>
+#include <r3d_config.h>
 #include <stdalign.h>
 #include <raylib.h>
 #include <stdint.h>
 #include <glad.h>
 
 #include "../common/r3d_math.h"
-#include "../r3d_config.h"
 
 // ========================================
 // MODULE CONSTANTS

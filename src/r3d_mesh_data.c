@@ -7,12 +7,11 @@
  */
 
 #include <r3d/r3d_mesh_data.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
-
-#include "./r3d_config.h"
 
 // ========================================
 // PUBLIC API

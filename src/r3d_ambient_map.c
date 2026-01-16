@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_ambient_map.h>
 #include <r3d/r3d_cubemap.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 #include <rlgl.h>
@@ -15,7 +16,6 @@
 
 #include "./common/r3d_pass.h"
 #include "./modules/r3d_env.h"
-#include "./r3d_config.h"
 
 // ========================================
 // PUBLIC API
