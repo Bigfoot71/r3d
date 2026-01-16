@@ -17,20 +17,6 @@
 #include "../common/r3d_math.h"
 
 // ========================================
-// CONSTANTS
-// ========================================
-
-#define R3D_LIGHT_SHADOW_DIR_SIZE       4096
-#define R3D_LIGHT_SHADOW_SPOT_SIZE      2048
-#define R3D_LIGHT_SHADOW_OMNI_SIZE      2048
-
-#define R3D_LIGHT_INITIAL_CAP           32
-
-#define R3D_LIGHT_SHADOW_DIR_GROWTH     2
-#define R3D_LIGHT_SHADOW_SPOT_GROWTH    4
-#define R3D_LIGHT_SHADOW_OMNI_GROWTH    4
-
-// ========================================
 // HELPER MACROS
 // ========================================
 

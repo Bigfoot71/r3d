@@ -16,21 +16,6 @@
 #include "../common/r3d_frustum.h"
 
 // ========================================
-// CONSTANTS
-// ========================================
-
-#define R3D_ENV_CAPTURE_SIZE        256
-#define R3D_ENV_CAPTURE_MIPS        9
-
-#define R3D_ENV_IRRADIANCE_SIZE     32
-
-#define R3D_ENV_PREFILTER_SIZE      128
-#define R3D_ENV_PREFILTER_MIPS      8
-
-#define R3D_ENV_PROBE_INITIAL_CAP   8
-#define R3D_ENV_MAP_INTIIAL_CAP     4
-
-// ========================================
 // HELPER MACROS
 // ========================================
 

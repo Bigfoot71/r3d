@@ -7,6 +7,7 @@
  */
 
 #include <r3d/r3d_draw.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 #include <assert.h>
@@ -218,14 +219,14 @@ void R3D_End(void)
 void R3D_BeginCluster(BoundingBox aabb)
 {
     if (!r3d_draw_cluster_begin(aabb)) {
-        TraceLog(LOG_WARNING, "R3D: Failed to begin cluster");
+        R3D_TRACELOG(LOG_WARNING, "Failed to begin cluster");
     }
 }
 
 void R3D_EndCluster(void)
 {
     if (!r3d_draw_cluster_end()) {
-        TraceLog(LOG_WARNING, "R3D: Failed to end cluster");
+        R3D_TRACELOG(LOG_WARNING, "Failed to end cluster");
     }
 }
 
@@ -561,7 +562,7 @@ void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
         data->shadow = shadow && light->shadow;
         data->type = light->type;
 
-        if (++lights.uNumLights == R3D_SHADER_NUM_FORWARD_LIGHTS) {
+        if (++lights.uNumLights == R3D_MAX_LIGHT_FORWARD_PER_MESH) {
             break;
         }
     }
@@ -602,7 +603,7 @@ void upload_env_block(void)
             .irradiance = probe->irradiance,
             .prefilter = probe->prefilter
         };
-        if (++iProbe >= R3D_SHADER_NUM_PROBES) {
+        if (++iProbe >= R3D_MAX_PROBE_ON_SCREEN) {
             break;
         }
     }
@@ -613,7 +614,7 @@ void upload_env_block(void)
     env.uAmbient.irradiance = (int)ambient->map.irradiance - 1;
     env.uAmbient.prefilter = (int)ambient->map.prefilter - 1;
 
-    env.uNumPrefilterLevels = R3D_ENV_PREFILTER_MIPS;
+    env.uNumPrefilterLevels = r3d_get_mip_levels_1d(R3D_CUBEMAP_PREFILTER_SIZE);
     env.uNumProbes = iProbe;
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env);
@@ -1181,11 +1182,11 @@ void pass_scene_probes(void)
         r3d_env_capture_gen_mipmaps();
 
         if (probe->irradiance >= 0) {
-            r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_ENV_CAPTURE_SIZE);
+            r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE);
         }
 
         if (probe->prefilter >= 0) {
-            r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_ENV_CAPTURE_SIZE);
+            r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE);
         }
 
         r3d_target_reset(); //< The IBL gen functions bind framebuffers; resetting them prevents any problems

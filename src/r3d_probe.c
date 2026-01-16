@@ -1,4 +1,13 @@
+/* r3d_probe.c -- R3D Probe Module.
+ *
+ * Copyright (c) 2025 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
 #include <r3d/r3d_probe.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 
@@ -13,7 +22,7 @@
     do {                                        \
         var_name = r3d_env_probe_get(id);       \
         if (var_name == NULL) {                 \
-            TraceLog(LOG_ERROR, "R3D: Invalid Probe [ID %i] given to '%s'", id, __func__);  \
+            R3D_TRACELOG(LOG_ERROR, "Invalid Probe [ID %i] given to '%s'", id, __func__);  \
             return __VA_ARGS__;                 \
         }                                       \
     } while(0)

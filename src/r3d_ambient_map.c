@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_ambient_map.h>
 #include <r3d/r3d_cubemap.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 #include <rlgl.h>
@@ -44,7 +45,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlag flags)
     if (flags & R3D_AMBIENT_ILLUMINATION) {
         irradiance = r3d_env_irradiance_reserve_layer();
         if (irradiance < 0) {
-            TraceLog(LOG_WARNING, "");
+            R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
             return ambientMap;
         }
         r3d_pass_prepare_irradiance(irradiance, cubemap.texture, cubemap.size);
@@ -55,7 +56,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlag flags)
         prefilter = r3d_env_prefilter_reserve_layer();
         if (prefilter < 0) {
             r3d_env_irradiance_release_layer(irradiance);
-            TraceLog(LOG_WARNING, "");
+            R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
             return ambientMap;
         }
         r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size);

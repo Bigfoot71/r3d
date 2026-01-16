@@ -7,14 +7,18 @@
  */
 
 #include "./r3d_pass.h"
+#include <r3d_config.h>
 #include <raymath.h>
 #include <rlgl.h>
 #include <glad.h>
 
+#include "../r3d_core_state.h"
+
+#include "../common/r3d_helper.h"
+
 #include "../modules/r3d_shader.h"
 #include "../modules/r3d_draw.h"
 #include "../modules/r3d_env.h"
-#include "../r3d_core_state.h"
 
 // ========================================
 // COMMON ENVIRONMENT GENERATION
@@ -57,8 +61,10 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
     R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceFaceSize, srcSize);
     R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatProj, matProj);
 
-    for (int mip = 0; mip < R3D_ENV_PREFILTER_MIPS; mip++) {
-        float roughness = (float)mip / (float)(R3D_ENV_PREFILTER_MIPS - 1);
+    int numLevels = r3d_get_mip_levels_1d(R3D_CUBEMAP_PREFILTER_SIZE);
+
+    for (int mip = 0; mip < numLevels; mip++) {
+        float roughness = (float)mip / (float)(numLevels - 1);
         R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uRoughness, roughness);
 
         for (int i = 0; i < 6; i++) {

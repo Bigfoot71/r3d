@@ -23,6 +23,10 @@ else()
     set(R3D_IS_MAIN OFF)
 endif()
 
+# Set the cmake module path
+
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${R3D_ROOT_PATH}/cmake")
+
 # Project configuration options
 
 option(R3D_BUILD_DOCS "Build the doxygen doc" OFF)
@@ -31,9 +35,19 @@ option(R3D_BUILD_EXAMPLES "Build the examples" ${R3D_IS_MAIN})
 option(R3D_RAYLIB_VENDORED "Use vendored raylib from submodule" OFF)
 option(R3D_ASSIMP_VENDORED "Use vendored assimp from submodule" OFF)
 
-# Set the cmake module path
+# R3D compile-time options
 
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(R3D_CONFIG_DEFAULTS
+    R3D_MAX_LIGHT_FORWARD_PER_MESH  8
+    R3D_MAX_PROBE_ON_SCREEN         8
+    R3D_PROBE_CAPTURE_SIZE          256
+    R3D_SHADOW_MAP_DIRECTIONAL_SIZE 4096
+    R3D_SHADOW_MAP_SPOT_SIZE        2048
+    R3D_SHADOW_MAP_OMNI_SIZE        2048
+    R3D_CUBEMAP_IRRADIANCE_SIZE     32
+    R3D_CUBEMAP_PREFILTER_SIZE      128
+    R3D_ENABLE_TRACELOG             1
+)
 
 # Include cmake scripts
 
@@ -180,6 +194,28 @@ else()
 Make sure raylib is installed and discoverable by CMake (e.g. via CMAKE_PREFIX_PATH or pkg-config).")
     endif()
 endif()
+
+# Create R3D configuration header
+
+list(LENGTH R3D_CONFIG_DEFAULTS _len)
+math(EXPR _count "${_len} / 2")
+math(EXPR _last "${_count} - 1")
+
+foreach(i RANGE 0 ${_last})
+    math(EXPR key_index "2 * ${i}")
+    math(EXPR val_index "2 * ${i} + 1")
+
+    list(GET R3D_CONFIG_DEFAULTS ${key_index} key)
+    list(GET R3D_CONFIG_DEFAULTS ${val_index} val)
+
+    set(${key} ${val} CACHE STRING "R3D compile-time configuration")
+endforeach()
+
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/r3d_config.h.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/include/r3d_config.h
+    @ONLY
+)
 
 # Create the r3d library by adding all the source files
 

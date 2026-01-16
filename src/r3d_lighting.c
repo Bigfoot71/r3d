@@ -7,6 +7,7 @@
  */
 
 #include <r3d/r3d_lighting.h>
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 #include <rlgl.h>
@@ -22,7 +23,7 @@
     do {                                        \
         var_name = r3d_light_get(id);           \
         if (var_name == NULL) {                 \
-            TraceLog(LOG_ERROR, "R3D: Invalid light [ID %i] given to '%s'", id, __func__);  \
+            R3D_TRACELOG(LOG_ERROR, "Invalid light [ID %i] given to '%s'", id, __func__);  \
             return __VA_ARGS__;                 \
         }                                       \
     } while(0)
@@ -125,7 +126,7 @@ void R3D_SetLightPosition(R3D_Light id, Vector3 position)
     GET_LIGHT_OR_RETURN(light, id);
 
     if (light->type == R3D_LIGHT_DIR) {
-        TraceLog(LOG_WARNING, "R3D: Can't set position for light [ID %i]; it's directional and position is set automatically", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set position for light [ID %i]; it's directional and position is set automatically", id);
         return;
     }
 
@@ -144,7 +145,7 @@ void R3D_SetLightDirection(R3D_Light id, Vector3 direction)
     GET_LIGHT_OR_RETURN(light, id);
 
     if (light->type == R3D_LIGHT_OMNI) {
-        TraceLog(LOG_WARNING, "R3D: Can't set direction for light [ID %i]; it's omni-directional and doesn't have a direction", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set direction for light [ID %i]; it's omni-directional and doesn't have a direction", id);
         return;
     }
 
@@ -215,7 +216,7 @@ void R3D_SetLightAttenuation(R3D_Light id, float attenuation)
 {
     GET_LIGHT_OR_RETURN(light, id);
     if (light->type == R3D_LIGHT_DIR) {
-        TraceLog(LOG_WARNING, "R3D: Can't set attenuation for light [ID %i]; it's directional and doesn't have attenuation", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set attenuation for light [ID %i]; it's directional and doesn't have attenuation", id);
         return;
     }
     light->attenuation = (attenuation > 1e-4f) ? 1.0f / attenuation : 10000.0f;
@@ -231,7 +232,7 @@ void R3D_SetLightInnerCutOff(R3D_Light id, float degrees)
 {
     GET_LIGHT_OR_RETURN(light, id);
     if (light->type == R3D_LIGHT_DIR || light->type == R3D_LIGHT_OMNI) {
-        TraceLog(LOG_WARNING, "R3D: Can't set inner cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set inner cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
         return;
     }
     light->innerCutOff = cosf(degrees * DEG2RAD);
@@ -248,7 +249,7 @@ void R3D_SetLightOuterCutOff(R3D_Light id, float degrees)
     GET_LIGHT_OR_RETURN(light, id);
 
     if (light->type == R3D_LIGHT_DIR || light->type == R3D_LIGHT_OMNI) {
-        TraceLog(LOG_WARNING, "R3D: Can't set outer cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set outer cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
         return;
     }
 

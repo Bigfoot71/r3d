@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_mesh_data.h>
 #include <r3d/r3d_mesh.h>
+#include <r3d_config.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <glad.h>
@@ -21,7 +22,7 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
     R3D_Mesh mesh = { 0 };
 
     if (data.vertexCount <= 0 || !data.vertices) {
-        TraceLog(LOG_WARNING, "R3D: Invalid mesh data passed to R3D_UpdateMesh");
+        R3D_TRACELOG(LOG_WARNING, "Invalid mesh data passed to R3D_UpdateMesh");
         return mesh;
     }
 
@@ -31,7 +32,7 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
     case R3D_DYNAMIC_MESH: glUsage = GL_DYNAMIC_DRAW; break;
     case R3D_STREAMED_MESH: glUsage = GL_STREAM_DRAW; break;
     default:
-        TraceLog(LOG_WARNING, "R3D: Invalid mesh usage; R3D_STATIC_MESH will be used");
+        R3D_TRACELOG(LOG_WARNING, "Invalid mesh usage; R3D_STATIC_MESH will be used");
         break;
     }
 
@@ -341,12 +342,12 @@ R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
 bool R3D_UpdateMesh(R3D_Mesh* mesh, R3D_MeshData data, const BoundingBox* aabb)
 {
     if (!mesh || mesh->vao == 0 || mesh->vbo == 0) {
-        TraceLog(LOG_WARNING, "R3D: Cannot update mesh; Invalid mesh instance");
+        R3D_TRACELOG(LOG_WARNING, "Cannot update mesh; Invalid mesh instance");
         return false;
     }
 
     if (data.vertexCount <= 0 || !data.vertices) {
-        TraceLog(LOG_WARNING, "R3D: Invalid mesh data given to R3D_UpdateMesh");
+        R3D_TRACELOG(LOG_WARNING, "Invalid mesh data given to R3D_UpdateMesh");
         return false;
     }
 
@@ -356,7 +357,7 @@ bool R3D_UpdateMesh(R3D_Mesh* mesh, R3D_MeshData data, const BoundingBox* aabb)
     case R3D_DYNAMIC_MESH: glUsage = GL_DYNAMIC_DRAW; break;
     case R3D_STREAMED_MESH: glUsage = GL_STREAM_DRAW; break;
     default:
-        TraceLog(LOG_WARNING, "R3D: Invalid mesh usage; R3D_STATIC_MESH will be used");
+        R3D_TRACELOG(LOG_WARNING, "Invalid mesh usage; R3D_STATIC_MESH will be used");
         break;
     }
 

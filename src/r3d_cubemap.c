@@ -287,14 +287,14 @@ R3D_Cubemap R3D_LoadCubemapFromImage(Image image, R3D_CubemapLayout layout)
     if (layout == R3D_CUBEMAP_LAYOUT_AUTO_DETECT) {
         layout = detect_cubemap_layout(image);
         if (layout == R3D_CUBEMAP_LAYOUT_AUTO_DETECT) {
-            TraceLog(LOG_WARNING, "R3D: Failed to detect cubemap image layout");
+            R3D_TRACELOG(LOG_WARNING, "Failed to detect cubemap image layout");
             return cubemap;
         }
     }
 
     int size = get_cubemap_size_from_layout(image, layout);
     if (size == 0) {
-        TraceLog(LOG_WARNING, "R3D: Cubemap layout not recognized (layout: %i)", layout);
+        R3D_TRACELOG(LOG_WARNING, "Cubemap layout not recognized (layout: %i)", layout);
         return cubemap;
     }
 
