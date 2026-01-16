@@ -16,6 +16,7 @@
 #include <float.h>
 
 #include "../common/r3d_math.h"
+#include "../r3d_config.h"
 
 // ========================================
 // CONSTANTS
@@ -183,7 +184,7 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
     {
         const struct aiBone* bone = aiMesh->mBones[boneIndex];
         if (!bone) {
-            TraceLog(LOG_WARNING, "R3D: nullptr bone at index %u", boneIndex);
+            R3D_TRACELOG(LOG_WARNING, "R3D: nullptr bone at index %u", boneIndex);
             continue;
         }
 
@@ -196,7 +197,7 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
 
             // Validate vertex ID
             if (vertexId >= (uint32_t)vertexCount) {
-                TraceLog(LOG_ERROR, "R3D: Invalid vertex ID %u in bone weights (max: %d)", vertexId, vertexCount);
+                R3D_TRACELOG(LOG_ERROR, "R3D: Invalid vertex ID %u in bone weights (max: %d)", vertexId, vertexCount);
                 continue;
             }
 
@@ -229,12 +230,12 @@ static bool load_mesh_internal(
 {
     // Validate input
     if (!aiMesh) {
-        TraceLog(LOG_ERROR, "R3D: Invalid parameters during assimp mesh processing");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Invalid parameters during assimp mesh processing");
         return false;
     }
 
     if (aiMesh->mNumVertices == 0 || aiMesh->mNumFaces == 0) {
-        TraceLog(LOG_ERROR, "R3D: Empty mesh detected during assimp mesh processing");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Empty mesh detected during assimp mesh processing");
         return false;
     }
 
@@ -244,7 +245,7 @@ static bool load_mesh_internal(
 
     R3D_MeshData data = R3D_CreateMeshData(vertexCount, indexCount);
     if (!data.vertices || !data.indices) {
-        TraceLog(LOG_ERROR, "R3D: Failed to load mesh; Unable to allocate mesh data");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to load mesh; Unable to allocate mesh data");
         return false;
     }
 
@@ -300,7 +301,7 @@ static bool load_recursive(const r3d_importer_t* importer, R3D_Model* model, con
         const struct aiMesh* mesh = r3d_importer_get_mesh(importer, meshIndex);
 
         if (!load_mesh_internal(&model->meshes[meshIndex], mesh, globalTransform, mesh->mNumBones > 0)) {
-            TraceLog(LOG_ERROR, "R3D: Unable to load mesh [%u]; The model will be invalid", meshIndex);
+            R3D_TRACELOG(LOG_ERROR, "R3D: Unable to load mesh [%u]; The model will be invalid", meshIndex);
             return false;
         }
 
@@ -324,7 +325,7 @@ static bool load_recursive(const r3d_importer_t* importer, R3D_Model* model, con
 bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model)
 {
     if (!model || !importer || !r3d_importer_is_valid(importer)) {
-        TraceLog(LOG_ERROR, "R3D: Invalid parameters for mesh loading");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Invalid parameters for mesh loading");
         return false;
     }
 
@@ -335,7 +336,7 @@ bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model)
     model->meshMaterials = RL_CALLOC(model->meshCount, sizeof(int));
 
     if (!model->meshes || !model->meshMaterials) {
-        TraceLog(LOG_ERROR, "R3D: Unable to allocate memory for meshes");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Unable to allocate memory for meshes");
         if (model->meshMaterials) RL_FREE(model->meshMaterials);
         if (model->meshes) RL_FREE(model->meshes);
         return false;

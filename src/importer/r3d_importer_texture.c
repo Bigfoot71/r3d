@@ -32,6 +32,7 @@
 #include <glad.h>
 
 #include "../common/r3d_image.h"
+#include "../r3d_config.h"
 
 // ========================================
 // INTERNAL STRUCTURES
@@ -87,7 +88,7 @@ static int get_cpu_count(void)
     #endif
 
     if (g_numCPUs < 1) {
-        TraceLog(LOG_WARNING, "R3D: Failed to detect CPU count, defaulting to 1 thread");
+        R3D_TRACELOG(LOG_WARNING, "R3D: Failed to detect CPU count, defaulting to 1 thread");
         g_numCPUs = 1;
     }
 
@@ -356,7 +357,7 @@ static int worker_thread(void* arg)
 r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
-        TraceLog(LOG_ERROR, "R3D: Invalid importer for texture loading");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Invalid importer for texture loading");
         return NULL;
     }
 
@@ -388,7 +389,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
         numThreads = ctx.totalJobs;
     }
 
-    TraceLog(LOG_INFO, "R3D: Loading textures with %d worker threads", numThreads);
+    R3D_TRACELOG(LOG_INFO, "R3D: Loading textures with %d worker threads", numThreads);
 
     // Launch worker threads
     thrd_t* threads = RL_MALLOC(numThreads * sizeof(thrd_t));
@@ -441,7 +442,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
     RL_FREE(ctx.readyJobs);
     RL_FREE(ctx.images);
 
-    TraceLog(LOG_INFO, "R3D: Loaded %d textures successfully", uploadedCount);
+    R3D_TRACELOG(LOG_INFO, "R3D: Loaded %d textures successfully", uploadedCount);
 
     return cache;
 }

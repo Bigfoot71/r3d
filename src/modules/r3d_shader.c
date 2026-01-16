@@ -14,6 +14,7 @@
 #include <rlgl.h>
 
 #include "../common/r3d_helper.h"
+#include "../r3d_config.h"
 
 // ========================================
 // SHADER CODE INCLUDES
@@ -68,7 +69,7 @@ struct r3d_shader R3D_MOD_SHADER;
 #define LOAD_SHADER(shader_name, vsCode, fsCode) do {                           \
     R3D_MOD_SHADER.shader_name.id = load_shader(vsCode, fsCode);                \
     if (R3D_MOD_SHADER.shader_name.id == 0) {                                   \
-        TraceLog(LOG_ERROR, "R3D: Failed to load shader '" #shader_name "'");   \
+        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to load shader '" #shader_name "'");   \
         assert(false);                                                          \
         return;                                                                 \
     }                                                                           \
@@ -115,7 +116,7 @@ static GLuint compile_shader(const char* source, GLenum shaderType)
 {
     GLuint shader = glCreateShader(shaderType);
     if (shader == 0) {
-        TraceLog(LOG_ERROR, "R3D: Failed to create shader object");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to create shader object");
         return 0;
     }
 
@@ -128,7 +129,7 @@ static GLuint compile_shader(const char* source, GLenum shaderType)
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, NULL, infoLog);
         const char* type_str = (shaderType == GL_VERTEX_SHADER) ? "vertex" : "fragment";
-        TraceLog(LOG_ERROR, "R3D: %s shader compilation failed: %s", type_str, infoLog);
+        R3D_TRACELOG(LOG_ERROR, "R3D: %s shader compilation failed: %s", type_str, infoLog);
         glDeleteShader(shader);
         return 0;
     }
@@ -140,7 +141,7 @@ static GLuint link_shader(GLuint vertShader, GLuint fragShader)
 {
     GLuint program = glCreateProgram();
     if (program == 0) {
-        TraceLog(LOG_ERROR, "R3D: Failed to create shader program");
+        R3D_TRACELOG(LOG_ERROR, "R3D: Failed to create shader program");
         return 0;
     }
 
@@ -153,7 +154,7 @@ static GLuint link_shader(GLuint vertShader, GLuint fragShader)
     if (!success) {
         char infoLog[512];
         glGetProgramInfoLog(program, 512, NULL, infoLog);
-        TraceLog(LOG_ERROR, "R3D: Shader program linking failed: %s", infoLog);
+        R3D_TRACELOG(LOG_ERROR, "R3D: Shader program linking failed: %s", infoLog);
         glDeleteProgram(program);
         return 0;
     }
@@ -430,8 +431,8 @@ void r3d_shader_load_scene_geometry(void)
 void r3d_shader_load_scene_forward(void)
 {
     char defNumForwardLights[32] = {0}, defNumProbes[32] = {0};
-    r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_SHADER_NUM_FORWARD_LIGHTS);
-    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_SHADER_NUM_PROBES);
+    r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_MAX_LIGHT_FORWARD_PER_MESH);
+    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
 
     const char* VS_DEFINES[] = {"FORWARD", defNumForwardLights};
     char* vsCode = inject_defines_to_shader_code(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
@@ -553,8 +554,8 @@ void r3d_shader_load_scene_depth_cube(void)
 void r3d_shader_load_scene_probe(void)
 {
     char defNumForwardLights[32] = {0}, defNumProbes[32] = {0};
-    r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_SHADER_NUM_FORWARD_LIGHTS);
-    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_SHADER_NUM_PROBES);
+    r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_MAX_LIGHT_FORWARD_PER_MESH);
+    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
 
     const char* VS_DEFINES[] = {"PROBE", defNumForwardLights};
     char* vsCode = inject_defines_to_shader_code(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
@@ -644,7 +645,7 @@ void r3d_shader_load_scene_decal(void)
 void r3d_shader_load_deferred_ambient(void)
 {
     char defNumProbes[32] = {0};
-    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_SHADER_NUM_PROBES);
+    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
 
     const char* FS_DEFINES[] = {defNumProbes};
     char* fsCode = inject_defines_to_shader_code(AMBIENT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));

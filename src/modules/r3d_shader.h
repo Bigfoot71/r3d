@@ -16,13 +16,11 @@
 #include <glad.h>
 
 #include "../common/r3d_math.h"
+#include "../r3d_config.h"
 
 // ========================================
 // MODULE CONSTANTS
 // ========================================
-
-#define R3D_SHADER_NUM_FORWARD_LIGHTS       8
-#define R3D_SHADER_NUM_PROBES               8
 
 #define R3D_SHADER_BLOCK_VIEW_SLOT          0
 #define R3D_SHADER_BLOCK_ENV_SLOT           1
@@ -268,7 +266,7 @@ typedef struct {
         alignas(4) int32_t irradiance;
         alignas(4) int32_t prefilter;
     }
-    uProbes[R3D_SHADER_NUM_PROBES];
+    uProbes[R3D_MAX_PROBE_ON_SCREEN];
 
     struct r3d_shader_block_env_ambient
     {
@@ -308,7 +306,7 @@ typedef struct {
 } r3d_shader_block_light_t;
 
 typedef struct {
-    alignas(16) r3d_shader_block_light_t uLights[R3D_SHADER_NUM_FORWARD_LIGHTS];
+    alignas(16) r3d_shader_block_light_t uLights[R3D_MAX_LIGHT_FORWARD_PER_MESH];
     alignas(4) int32_t uNumLights;
 } r3d_shader_block_light_array_t;
 

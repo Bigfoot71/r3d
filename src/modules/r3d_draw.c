@@ -19,6 +19,7 @@
 
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
+#include "../r3d_config.h"
 
 // ========================================
 // MODULE STATE
@@ -404,7 +405,7 @@ bool r3d_draw_init(void)
     #define ALLOC_AND_ASSIGN(field, logfmt, ...)  do { \
         void* _p = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.field)); \
         if (_p == NULL) { \
-            TraceLog(LOG_FATAL, "R3D: Failed to init draw module; " logfmt, ##__VA_ARGS__); \
+            R3D_TRACELOG(LOG_FATAL, "R3D: Failed to init draw module; " logfmt, ##__VA_ARGS__); \
             goto fail; \
         } \
         R3D_MOD_DRAW.field = _p; \
@@ -476,7 +477,7 @@ bool r3d_draw_cluster_begin(BoundingBox aabb)
 
     if (R3D_MOD_DRAW.numClusters >= R3D_MOD_DRAW.capacity) {
         if (!growth_arrays()) {
-            TraceLog(LOG_FATAL, "R3D: Bad alloc on draw cluster begin");
+            R3D_TRACELOG(LOG_FATAL, "R3D: Bad alloc on draw cluster begin");
             return false;
         }
     }
@@ -501,7 +502,7 @@ void r3d_draw_group_push(const r3d_draw_group_t* group)
 {
     if (R3D_MOD_DRAW.numGroups >= R3D_MOD_DRAW.capacity) {
         if (!growth_arrays()) {
-            TraceLog(LOG_FATAL, "R3D: Bad alloc on draw group push");
+            R3D_TRACELOG(LOG_FATAL, "R3D: Bad alloc on draw group push");
             return;
         }
     }
@@ -521,7 +522,7 @@ void r3d_draw_call_push(const r3d_draw_call_t* call)
 {
     if (R3D_MOD_DRAW.numCalls >= R3D_MOD_DRAW.capacity) {
         if (!growth_arrays()) {
-            TraceLog(LOG_FATAL, "R3D: Bad alloc on draw call push");
+            R3D_TRACELOG(LOG_FATAL, "R3D: Bad alloc on draw call push");
             return;
         }
     }

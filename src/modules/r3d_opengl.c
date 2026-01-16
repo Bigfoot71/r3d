@@ -12,6 +12,8 @@
 #include <uthash.h>
 #include <glad.h>
 
+#include "../r3d_config.h"
+
 // ========================================
 // CONFIGURATION
 // ========================================
@@ -145,7 +147,7 @@ bool r3d_opengl_check_error(const char* msg)
 {
     int err = glGetError();
     if (err != GL_NO_ERROR) {
-        TraceLog(LOG_ERROR, "R3D: OpenGL Error (%s): 0x%04x", msg, err);
+        R3D_TRACELOG(LOG_ERROR, "R3D: OpenGL Error (%s): 0x%04x", msg, err);
         return true;
     }
     return false;

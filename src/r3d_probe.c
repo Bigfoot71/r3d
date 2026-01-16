@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "./modules/r3d_env.h"
+#include "./r3d_config.h"
 
 // ========================================
 // HELPER MACROS
@@ -13,7 +14,7 @@
     do {                                        \
         var_name = r3d_env_probe_get(id);       \
         if (var_name == NULL) {                 \
-            TraceLog(LOG_ERROR, "R3D: Invalid Probe [ID %i] given to '%s'", id, __func__);  \
+            R3D_TRACELOG(LOG_ERROR, "R3D: Invalid Probe [ID %i] given to '%s'", id, __func__);  \
             return __VA_ARGS__;                 \
         }                                       \
     } while(0)
