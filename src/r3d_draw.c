@@ -1334,7 +1334,7 @@ r3d_target_t pass_prepare_ssil(void)
     bool needHistory     = (needConvergence || needBounce);
 
     if (needHistory && r3d_target_get_or_null(SSIL_HISTORY) == 0) {
-        R3D_TARGET_CLEAR(SSIL_HISTORY);
+        R3D_TARGET_CLEAR(false, SSIL_HISTORY);
     }
 
     /* --- Setup OpenGL pipeline --- */
