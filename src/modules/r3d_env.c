@@ -237,7 +237,7 @@ static bool growth_probe_arrays(void)
     return true;
 }
 
-static bool init_probe(r3d_env_probe_t* probe, R3D_ProbeFlag flags)
+static bool init_probe(r3d_env_probe_t* probe, R3D_ProbeFlags flags)
 {
     probe->flags = flags;
     probe->irradiance = -1;
@@ -379,7 +379,7 @@ void r3d_env_quit(void)
     RL_FREE(R3D_MOD_ENV.probes);
 }
 
-R3D_Probe r3d_env_probe_new(R3D_ProbeFlag flags)
+R3D_Probe r3d_env_probe_new(R3D_ProbeFlags flags)
 {
     r3d_env_probe_array_t* validProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VALID];
     r3d_env_probe_array_t* freeProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_FREE];

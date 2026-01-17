@@ -30,7 +30,7 @@
 /**
  * @brief Bitmask defining which instance attributes are present.
  */
-typedef int R3D_InstanceFlag;
+typedef int R3D_InstanceFlags;
 
 #define R3D_INSTANCE_POSITION   (1 << 0)    /*< Vector3     */
 #define R3D_INSTANCE_ROTATION   (1 << 1)    /*< Quaternion  */
@@ -68,7 +68,7 @@ extern "C" {
  * @param flags Attribute mask to allocate.
  * @return Initialized instance buffer.
  */
-R3DAPI R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlag flags);
+R3DAPI R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlags flags);
 
 /**
  * @brief Destroy all GPU buffers owned by this instance buffer.
@@ -82,7 +82,7 @@ R3DAPI void R3D_UnloadInstanceBuffer(R3D_InstanceBuffer buffer);
  * @param count Number of instances.
  * @param data Source pointer.
  */
-R3DAPI void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag,
+R3DAPI void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag,
                                 int offset, int count, void* data);
 
 /**
@@ -90,13 +90,13 @@ R3DAPI void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag
  * @param flag Attribute to map (single bit).
  * @return Writable pointer, or NULL on error.
  */
-R3DAPI void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag);
+R3DAPI void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag);
 
 /**
  * @brief Unmap one or more previously mapped attribute buffers.
  * @param flags Bitmask of attributes to unmap.
  */
-R3DAPI void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flags);
+R3DAPI void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flags);
 
 #ifdef __cplusplus
 } // extern "C"

@@ -21,7 +21,7 @@
 // PUBLIC API
 // ========================================
 
-R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout layout, R3D_AmbientFlag flags)
+R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout layout, R3D_AmbientFlags flags)
 {
     R3D_Cubemap cubemap = R3D_LoadCubemap(fileName, layout);
     R3D_AmbientMap ambientMap = R3D_GenAmbientMap(cubemap, flags);
@@ -29,7 +29,7 @@ R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout layout
     return ambientMap;
 }
 
-R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout, R3D_AmbientFlag flags)
+R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout, R3D_AmbientFlags flags)
 {
     R3D_Cubemap cubemap = R3D_LoadCubemapFromImage(image, layout);
     R3D_AmbientMap ambientMap = R3D_GenAmbientMap(cubemap, flags);
@@ -37,7 +37,7 @@ R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout
     return ambientMap;
 }
 
-R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlag flags)
+R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
 {
     R3D_AmbientMap ambientMap = {0};
 

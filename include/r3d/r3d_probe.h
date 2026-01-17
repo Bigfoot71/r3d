@@ -28,7 +28,7 @@
  * - R3D_PROBE_ILLUMINATION -> generate diffuse irradiance
  * - R3D_PROBE_REFLECTION   -> generate specular prefiltered map
  */
-typedef uint32_t R3D_ProbeFlag;
+typedef uint32_t R3D_ProbeFlags;
 
 #define R3D_PROBE_ILLUMINATION    (1 << 0)
 #define R3D_PROBE_REFLECTION      (1 << 1)
@@ -71,7 +71,7 @@ extern "C" {
  * @param flags IBL components that the probe must support.
  * @return A valid probe ID, or a negative value on failure.
  */
-R3DAPI R3D_Probe R3D_CreateProbe(R3D_ProbeFlag flags);
+R3DAPI R3D_Probe R3D_CreateProbe(R3D_ProbeFlags flags);
 
 /**
  * @brief Destroys a probe and frees its resources.
@@ -94,7 +94,7 @@ R3DAPI bool R3D_IsProbeExist(R3D_Probe id);
  * @param id Probe ID.
  * @return The flags assigned to the probe.
  */
-R3DAPI R3D_ProbeFlag R3D_GetProbeFlags(R3D_Probe id);
+R3DAPI R3D_ProbeFlags R3D_GetProbeFlags(R3D_Probe id);
 
 /**
  * @brief Returns whether a probe is currently active.
