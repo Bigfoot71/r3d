@@ -75,7 +75,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* file
 
 void R3D_UnloadAlbedoMap(R3D_AlbedoMap map)
 {
-    if (r3d_texture_is_default(map.texture.id)) {
+    if (map.texture.id == 0 || r3d_texture_is_default(map.texture.id)) {
         return;
     }
 
@@ -124,7 +124,7 @@ R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* 
 
 void R3D_UnloadEmissionMap(R3D_EmissionMap map)
 {
-    if (r3d_texture_is_default(map.texture.id)) {
+    if (map.texture.id == 0 || r3d_texture_is_default(map.texture.id)) {
         return;
     }
 
@@ -167,7 +167,7 @@ R3D_NormalMap R3D_LoadNormalMapFromMemory(const char* fileType, const void* file
 
 void R3D_UnloadNormalMap(R3D_NormalMap map)
 {
-    if (r3d_texture_is_default(map.texture.id)) {
+    if (map.texture.id == 0 || r3d_texture_is_default(map.texture.id)) {
         return;
     }
 
@@ -215,7 +215,7 @@ R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, 
 
 void R3D_UnloadOrmMap(R3D_OrmMap map)
 {
-    if (r3d_texture_is_default(map.texture.id)) {
+    if (map.texture.id == 0 || r3d_texture_is_default(map.texture.id)) {
         return;
     }
 
