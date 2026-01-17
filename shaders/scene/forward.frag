@@ -234,7 +234,7 @@ void main()
 
         float shadow = 1.0;
 
-        if (light.shadow) {
+        if (light.shadowLayer >= 0) {
             switch (light.type) {
             case LIGHT_DIR: shadow = ShadowDir(i, cNdotL, diskRot); break;
             case LIGHT_SPOT: shadow = ShadowSpot(i, cNdotL, diskRot); break;

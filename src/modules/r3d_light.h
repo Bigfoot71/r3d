@@ -10,11 +10,22 @@
 #define R3D_MODULE_LIGHT_H
 
 #include <r3d/r3d_lighting.h>
+#include <r3d_config.h>
 #include <raylib.h>
 #include <glad.h>
 
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
+
+// ========================================
+// MODULE CONSTANTS
+// ========================================
+
+static const int R3D_LIGHT_SHADOW_SIZE[] = {
+    [R3D_LIGHT_DIR]  = R3D_SHADOW_MAP_DIRECTIONAL_SIZE,
+    [R3D_LIGHT_SPOT] = R3D_SHADOW_MAP_SPOT_SIZE,
+    [R3D_LIGHT_OMNI] = R3D_SHADOW_MAP_OMNI_SIZE,
+};
 
 // ========================================
 // HELPER MACROS
@@ -44,11 +55,11 @@ typedef struct {
 
     r3d_light_state_t state;    // Contains the current state useful for the update
     int shadowLayer;            // Shadow map layer index, -1 if no shadow
-    
+
     Vector3 color;
     Vector3 position;           // Light position (spot/omni)
     Vector3 direction;          // Light direction (spot/dir)
-    
+
     float specular;
     float energy;
     float range;                // Maximum distance (spot/omni)
@@ -58,13 +69,11 @@ typedef struct {
     float innerCutOff;          // Spot light inner cutoff angle
     float outerCutOff;          // Spot light outer cutoff angle
     float shadowSoftness;       // Softness factor for penumbra
-    float shadowTexelSize;      // Size of a texel in shadow map
     float shadowDepthBias;      // Constant depth bias
     float shadowSlopeBias;      // Slope-scaled depth bias
-    
+
     R3D_LightType type;
     bool enabled;
-    bool shadow;
 
 } r3d_light_t;
 
@@ -137,7 +146,7 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
 bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array);
 
 /* Enable shadows for a light */
-void r3d_light_enable_shadows(r3d_light_t* light);
+bool r3d_light_enable_shadows(r3d_light_t* light);
 
 /* Disable shadows for a light */
 void r3d_light_disable_shadows(r3d_light_t* light);

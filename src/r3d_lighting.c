@@ -77,7 +77,7 @@ void R3D_SetLightActive(R3D_Light id, bool active)
         return;
     }
 
-    if (active && light->shadow) {
+    if (active && light->shadowLayer >= 0) {
         light->state.shadowShouldBeUpdated = true;
     }
 
@@ -260,19 +260,22 @@ void R3D_SetLightOuterCutOff(R3D_Light id, float degrees)
 void R3D_EnableShadow(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    r3d_light_enable_shadows(light);
+
+    if (!r3d_light_enable_shadows(light)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to enable shadows for light [ID %i]", id);
+    }
 }
 
 void R3D_DisableShadow(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    light->shadow = false;
+    r3d_light_disable_shadows(light);
 }
 
 bool R3D_IsShadowEnabled(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, false);
-    return light->shadow;
+    return light->shadowLayer >= 0;
 }
 
 R3D_ShadowUpdateMode R3D_GetShadowUpdateMode(R3D_Light id)
@@ -308,13 +311,13 @@ void R3D_UpdateShadowMap(R3D_Light id)
 float R3D_GetShadowSoftness(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, 0);
-    return light->shadowSoftness;
+    return light->shadowSoftness * R3D_LIGHT_SHADOW_SIZE[light->type];
 }
 
 void R3D_SetShadowSoftness(R3D_Light id, float softness)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    light->shadowSoftness = softness * light->shadowTexelSize;
+    light->shadowSoftness = softness / R3D_LIGHT_SHADOW_SIZE[light->type];
 }
 
 float R3D_GetShadowDepthBias(R3D_Light id)

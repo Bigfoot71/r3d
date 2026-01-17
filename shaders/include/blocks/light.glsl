@@ -36,11 +36,9 @@ struct Light {
     float innerCutOff;
     float outerCutOff;
     float shadowSoftness;
-    float shadowTexelSize;
     float shadowDepthBias;
     float shadowSlopeBias;
-    int shadowLayer;
-    bool shadow;
+    int shadowLayer;        //< less than zero if no shadows
     int type;
 };
 

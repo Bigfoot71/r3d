@@ -186,7 +186,7 @@ void main()
 
     float shadow = 1.0;
 
-    if (uLight.shadow) {
+    if (uLight.shadowLayer >= 0) {
         switch (uLight.type) {
         case LIGHT_DIR: shadow = ShadowDir(position, cNdotL, diskRot); break;
         case LIGHT_SPOT: shadow = ShadowSpot(position, cNdotL, diskRot); break;

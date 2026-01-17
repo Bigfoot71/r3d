@@ -555,11 +555,9 @@ void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
         data->innerCutOff = light->innerCutOff;
         data->outerCutOff = light->outerCutOff;
         data->shadowSoftness = light->shadowSoftness;
-        data->shadowTexelSize = light->shadowTexelSize;
         data->shadowDepthBias = light->shadowDepthBias;
         data->shadowSlopeBias = light->shadowSlopeBias;
-        data->shadowLayer = light->shadowLayer;
-        data->shadow = shadow && light->shadow;
+        data->shadowLayer = shadow ? light->shadowLayer : -1;
         data->type = light->type;
 
         if (++lights.uNumLights == R3D_MAX_LIGHT_FORWARD_PER_MESH) {
@@ -1486,11 +1484,9 @@ void pass_deferred_lights(void)
             .innerCutOff = light->innerCutOff,
             .outerCutOff = light->outerCutOff,
             .shadowSoftness = light->shadowSoftness,
-            .shadowTexelSize = light->shadowTexelSize,
             .shadowDepthBias = light->shadowDepthBias,
             .shadowSlopeBias = light->shadowSlopeBias,
             .shadowLayer = light->shadowLayer,
-            .shadow = light->shadow,
             .type = light->type,
         };
         r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data);
