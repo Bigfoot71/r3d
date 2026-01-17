@@ -23,16 +23,15 @@
 // ========================================
 
 /**
- * @brief Available probe types.
+ * @brief Bit-flags controlling what components are generated.
  *
- * Probes capture lighting information used for indirect illumination
- * and reflections in the scene.
+ * - R3D_PROBE_ILLUMINATION -> generate diffuse irradiance
+ * - R3D_PROBE_REFLECTION   -> generate specular prefiltered map
  */
-typedef enum R3D_ProbeType {
-    R3D_PROBE_ILLUMINATION,     ///< Captures diffuse indirect lighting only
-    R3D_PROBE_REFLECTION,       ///< Captures reflection data only
-    R3D_PROBE_COMBINED          ///< Captures both diffuse and reflection data
-} R3D_ProbeType;
+typedef uint32_t R3D_ProbeFlags;
+
+#define R3D_PROBE_ILLUMINATION    (1 << 0)
+#define R3D_PROBE_REFLECTION      (1 << 1)
 
 /**
  * @brief Modes for updating probes.
@@ -69,10 +68,10 @@ extern "C" {
  * The returned probe must be destroyed using ::R3D_DestroyProbe
  * when it is no longer needed.
  *
- * @param type Probe type to create.
+ * @param flags IBL components that the probe must support.
  * @return A valid probe ID, or a negative value on failure.
  */
-R3DAPI R3D_Probe R3D_CreateProbe(R3D_ProbeType type);
+R3DAPI R3D_Probe R3D_CreateProbe(R3D_ProbeFlags flags);
 
 /**
  * @brief Destroys a probe and frees its resources.
@@ -90,12 +89,12 @@ R3DAPI void R3D_DestroyProbe(R3D_Probe id);
 R3DAPI bool R3D_IsProbeExist(R3D_Probe id);
 
 /**
- * @brief Returns the probe type.
+ * @brief Returns the probe flags.
  *
  * @param id Probe ID.
- * @return The type assigned to the probe.
+ * @return The flags assigned to the probe.
  */
-R3DAPI R3D_ProbeType R3D_GetProbeType(R3D_Probe id);
+R3DAPI R3D_ProbeFlags R3D_GetProbeFlags(R3D_Probe id);
 
 /**
  * @brief Returns whether a probe is currently active.

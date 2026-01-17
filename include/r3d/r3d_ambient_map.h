@@ -28,7 +28,7 @@
  * - R3D_AMBIENT_ILLUMINATION -> generate diffuse irradiance
  * - R3D_AMBIENT_REFLECTION   -> generate specular prefiltered map
  */
-typedef uint32_t R3D_AmbientFlag;
+typedef uint32_t R3D_AmbientFlags;
 
 #define R3D_AMBIENT_ILLUMINATION    (1 << 0)
 #define R3D_AMBIENT_REFLECTION      (1 << 1)
@@ -55,7 +55,7 @@ typedef uint32_t R3D_AmbientFlag;
  * but serve different shading purposes.
  */
 typedef struct R3D_AmbientMap {
-    R3D_AmbientFlag flags;  ///< Components generated for this map
+    R3D_AmbientFlags flags;  ///< Components generated for this map
     uint32_t irradiance;    ///< Diffuse IBL cubemap (may be 0 if not generated)
     uint32_t prefilter;     ///< Specular prefiltered cubemap (may be 0 if not generated)
 } R3D_AmbientMap;
@@ -73,14 +73,14 @@ extern "C" {
  *
  * The layout parameter tells how faces are arranged inside the source image.
  */
-R3DAPI R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout layout, R3D_AmbientFlag flags);
+R3DAPI R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout layout, R3D_AmbientFlags flags);
 
 /**
  * @brief Builds a ambient map from an existing Image.
  *
  * Same behavior as R3D_LoadAmbientMap(), but without loading from disk.
  */
-R3DAPI R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout, R3D_AmbientFlag flags);
+R3DAPI R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout, R3D_AmbientFlags flags);
 
 /**
  * @brief Generates an ambient map from a cubemap.
@@ -95,7 +95,7 @@ R3DAPI R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout
  * @param flags   Which components to generate (irradiance, reflection, or both).
  * @return A fully initialized ambient map.
  */
-R3DAPI R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlag flags);
+R3DAPI R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags);
 
 /**
  * @brief Frees the textures used by an ambient map.

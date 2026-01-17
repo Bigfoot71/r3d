@@ -29,7 +29,7 @@ static const size_t INSTANCE_ATTRIBUTE_SIZE[R3D_INSTANCE_ATTRIBUTE_COUNT] = {
 // PUBLIC API
 // ========================================
 
-R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlag flags)
+R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlags flags)
 {
     R3D_InstanceBuffer buffer = {0};
 
@@ -55,7 +55,7 @@ void R3D_UnloadInstanceBuffer(R3D_InstanceBuffer buffer)
     glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer.buffers);
 }
 
-void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag, int offset, int count, void* data)
+void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int offset, int count, void* data)
 {
     int index = r3d_lsb_index(flag);
     if (index < 0 || index >= R3D_INSTANCE_ATTRIBUTE_COUNT) {
@@ -80,7 +80,7 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag, int o
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag)
+void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag)
 {
     int index = r3d_lsb_index(flag);
     if (index < 0 || index >= R3D_INSTANCE_ATTRIBUTE_COUNT) {
@@ -103,7 +103,7 @@ void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flag)
     return ptrMap;
 }
 
-void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlag flags)
+void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flags)
 {
     for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
         if (((1 << i) & flags) & buffer.flags) {

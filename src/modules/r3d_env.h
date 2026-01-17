@@ -43,7 +43,7 @@ typedef struct {
     Matrix view[6];
     Matrix proj[6];
 
-    R3D_ProbeType type;
+    R3D_ProbeFlags flags;
     int irradiance;     // Layer index, -1 if unused
     int prefilter;      // Layer index, -1 if unused
 
@@ -110,7 +110,7 @@ bool r3d_env_init(void);
 void r3d_env_quit(void);
 
 /* Create a new probe of the given type */
-R3D_Probe r3d_env_probe_new(R3D_ProbeType type);
+R3D_Probe r3d_env_probe_new(R3D_ProbeFlags type);
 
 /* Delete a probe and return it to the free list */
 void r3d_env_probe_delete(R3D_Probe index);
