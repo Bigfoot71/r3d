@@ -24,7 +24,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_Init(GetScreenWidth(), GetScreenHeight());
 
     // Create decal
     R3D_Decal decal = R3D_DECAL_BASE;

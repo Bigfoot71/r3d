@@ -104,8 +104,8 @@ typedef enum {
  * Used to control draw order for depth testing efficiency or visual correctness.
  */
 typedef enum {
-    R3D_DRAW_SORT_FRONT_TO_BACK,    //< Typically used for opaque geometry
-    R3D_DRAW_SORT_BACK_TO_FRONT,    //< Typically used for transparent geometry
+    R3D_DRAW_SORT_BACK_TO_FRONT,    //< Used for transparent geometry
+    R3D_DRAW_SORT_BY_MATERIALS      //< Used to reduce GL state changes
 } r3d_draw_sort_enum_t;
 
 /*
@@ -220,6 +220,23 @@ typedef struct {
     int numCalls;   //< Number of active entries
 } r3d_draw_list_t;
 
+/*
+ * Data stored by draw call in the sort cache.
+ */
+typedef union {
+    float distance;
+    struct {
+        uint32_t albedo;
+        uint32_t normal;
+        uint32_t orm;
+        uint32_t emission;
+        uint32_t blend;
+        uint32_t cull;
+        uint32_t transparency;
+        uint32_t billboard;
+    } material;
+} r3d_draw_sort_t;
+
 // ========================================
 // MODULE STATE
 // ========================================
@@ -240,9 +257,9 @@ extern struct r3d_draw {
     r3d_draw_group_t* groups;                       //< Array of draw groups (shared data across draw calls)
 
     r3d_draw_list_t list[R3D_DRAW_LIST_COUNT];      //< Lists of draw call indices organized by rendering category
+    r3d_draw_sort_t* sortCache;                     //< Draw call sorting data cache array
     r3d_draw_call_t* calls;                         //< Array of draw calls
     int* groupIndices;                              //< Array of group indices for each draw call (automatically managed)
-    float* cacheDists;                              //< Array of distances between draw calls and the camera for sorting
 
     int numClusters;                                //< Number of active draw clusters
     int numGroups;                                  //< Number of active draw groups

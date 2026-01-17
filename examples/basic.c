@@ -1,3 +1,5 @@
+#include "r3d/r3d_material.h"
+#include "raylib.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -8,7 +10,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_Init(GetScreenWidth(), GetScreenHeight());
 
     // Create meshes
     R3D_Mesh plane = R3D_GenMeshPlane(1000, 1000, 1, 1);

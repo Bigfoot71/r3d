@@ -57,7 +57,7 @@ int main(void)
     InitWindow(800, 600, "R3D Example");
     SetTargetFPS(60);
 
-    R3D_Init(800, 600, 0);
+    R3D_Init(800, 600);
 
     // Create scene objects
     R3D_Mesh mesh = R3D_GenMeshSphere(1.0f, 16, 32);

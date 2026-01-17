@@ -75,7 +75,6 @@ extern struct r3d_core_state {
     R3D_ColorSpace colorSpace;          //< Color space that must be considered for supplied colors or surface colors
     Matrix matCubeViews[6];             //< Pre-computed view matrices for cubemap faces
     R3D_Layer layers;                   //< Active rendering layers
-    R3D_Flags state;                    //< Renderer state flags
 } R3D;
 
 #endif // R3D_CORE_STATE_H

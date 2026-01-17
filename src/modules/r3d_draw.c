@@ -232,7 +232,7 @@ static bool growth_arrays(void)
 
     GROW_AND_ASSIGN(calls);
     GROW_AND_ASSIGN(groupIndices);
-    GROW_AND_ASSIGN(cacheDists);
+    GROW_AND_ASSIGN(sortCache);
 
     #undef GROW_AND_ASSIGN
 
@@ -360,38 +360,78 @@ static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, co
     return maxDistSq;
 }
 
-static inline float calculate_center_distance_to_camera(const BoundingBox* aabb, const Matrix* transform)
+static void sort_fill_distance_cache(r3d_draw_list_enum_t list)
 {
-    Vector3 center = {
-        (aabb->min.x + aabb->max.x) * 0.5f,
-        (aabb->min.y + aabb->max.y) * 0.5f,
-        (aabb->min.z + aabb->max.z) * 0.5f
-    };
-    center = Vector3Transform(center, *transform);
+    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
 
-    return Vector3DistanceSqr(G_sortViewPosition, center);
+    for (int i = 0; i < drawList->numCalls; i++) {
+        int callIndex = drawList->calls[i];
+        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
+        const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+        R3D_MOD_DRAW.sortCache[callIndex].distance = calculate_max_distance_to_camera(
+            &call->mesh.instance.aabb, &group->transform
+        );
+    }
+}
+
+static void sort_fill_material_cache(r3d_draw_list_enum_t list)
+{
+    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+
+    for (int i = 0; i < drawList->numCalls; i++) {
+        int callIndex = drawList->calls[i];
+        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
+        const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+        switch (call->type) {
+        case R3D_DRAW_CALL_MESH:
+            R3D_MOD_DRAW.sortCache[callIndex] = (r3d_draw_sort_t) {
+                .material.albedo = call->mesh.material.albedo.texture.id,
+                .material.normal = call->mesh.material.normal.texture.id,
+                .material.orm = call->mesh.material.orm.texture.id,
+                .material.emission = call->mesh.material.emission.texture.id,
+                .material.blend = call->mesh.material.blendMode,
+                .material.cull = call->mesh.material.cullMode,
+                .material.transparency = call->mesh.material.transparencyMode,
+                .material.billboard = call->mesh.material.billboardMode
+            };
+            break;
+        case R3D_DRAW_CALL_DECAL:
+            R3D_MOD_DRAW.sortCache[callIndex] = (r3d_draw_sort_t) {
+                .material.albedo = call->decal.instance.albedo.texture.id,
+                .material.normal = call->decal.instance.normal.texture.id,
+                .material.orm = call->decal.instance.orm.texture.id,
+                .material.emission = call->decal.instance.emission.texture.id,
+                .material.blend = R3D_BLEND_MIX,
+                .material.cull = R3D_CULL_NONE,
+                .material.transparency = R3D_TRANSPARENCY_ALPHA,
+                .material.billboard = R3D_BILLBOARD_DISABLED
+            };
+            break;
+        }
+    }
 }
 
 static int compare_back_to_front(const void* a, const void* b)
 {
     int indexA = *(int*)a;
     int indexB = *(int*)b;
-    
-    float distA = R3D_MOD_DRAW.cacheDists[indexA];
-    float distB = R3D_MOD_DRAW.cacheDists[indexB];
+
+    float distA = R3D_MOD_DRAW.sortCache[indexA].distance;
+    float distB = R3D_MOD_DRAW.sortCache[indexB].distance;
 
     return (distA < distB) - (distA > distB);
 }
 
-static int compare_front_to_back(const void* a, const void* b)
+static int compare_materials(const void* a, const void* b)
 {
     int indexA = *(int*)a;
     int indexB = *(int*)b;
-    
-    float distA = R3D_MOD_DRAW.cacheDists[indexA];
-    float distB = R3D_MOD_DRAW.cacheDists[indexB];
 
-    return (distA > distB) - (distA < distB);
+    return memcmp(
+        &R3D_MOD_DRAW.sortCache[indexA].material,
+        &R3D_MOD_DRAW.sortCache[indexB].material,
+        sizeof(R3D_MOD_DRAW.sortCache[0].material)
+    );
 }
 
 // ========================================
@@ -424,7 +464,7 @@ bool r3d_draw_init(void)
 
     ALLOC_AND_ASSIGN(calls, "Draw call array allocation failed");
     ALLOC_AND_ASSIGN(groupIndices, "Draw group indices array allocation failed");
-    ALLOC_AND_ASSIGN(cacheDists, "Distance cache array allocation failed");
+    ALLOC_AND_ASSIGN(sortCache, "Sorting cache array allocation failed");
 
     #undef ALLOC_AND_ASSIGN
 
@@ -454,7 +494,7 @@ void r3d_draw_quit(void)
     RL_FREE(R3D_MOD_DRAW.groupVisibility);
     RL_FREE(R3D_MOD_DRAW.groupIndices);
     RL_FREE(R3D_MOD_DRAW.callIndices);
-    RL_FREE(R3D_MOD_DRAW.cacheDists);
+    RL_FREE(R3D_MOD_DRAW.sortCache);
     RL_FREE(R3D_MOD_DRAW.groups);
     RL_FREE(R3D_MOD_DRAW.calls);
 }
@@ -619,46 +659,20 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
 
 void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode)
 {
-    assert(list < R3D_DRAW_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
-    assert(list != R3D_DRAW_LIST_DECAL && "Decal render list should not be sorted by distance");
-
     G_sortViewPosition = viewPosition;
 
+    int (*compare_func)(const void *a, const void *b) = NULL;
     r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
 
-    if (mode == R3D_DRAW_SORT_BACK_TO_FRONT) {
-        for (int i = 0; i < drawList->numCalls; i++) {
-            int callIndex = drawList->calls[i];
-            const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-            const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_max_distance_to_camera(
-                &call->mesh.instance.aabb, &group->transform
-            );
-        }
-    }
-    else {
-        for (int i = 0; i < drawList->numCalls; i++) {
-            int callIndex = drawList->calls[i];
-            const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-            const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-            R3D_MOD_DRAW.cacheDists[callIndex] = calculate_center_distance_to_camera(
-                &call->mesh.instance.aabb, &group->transform
-            );
-        }
-    }
-
-    int (*compare_func)(const void *a, const void *b) = NULL;
-
     switch (mode) {
-    case R3D_DRAW_SORT_FRONT_TO_BACK:
-        compare_func = compare_front_to_back;
-        break;
     case R3D_DRAW_SORT_BACK_TO_FRONT:
         compare_func = compare_back_to_front;
+        sort_fill_distance_cache(list);
         break;
-    default:
-        assert(false);
-        return;
+    case R3D_DRAW_SORT_BY_MATERIALS:
+        compare_func = compare_materials;
+        sort_fill_material_cache(list);
+        break;
     }
 
     qsort(

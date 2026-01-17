@@ -127,14 +127,11 @@ void R3D_End(void)
 
     r3d_draw_compute_visible_groups(&R3D.viewState.frustum);
 
-    if (R3D_CORE_FLAGS_HAS(state, R3D_FLAG_OPAQUE_SORTING)) {
-        r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED, R3D.viewState.viewPosition, R3D_DRAW_SORT_FRONT_TO_BACK);
-    }
+    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED, R3D.viewState.viewPosition, R3D_DRAW_SORT_BY_MATERIALS);
+    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.viewPosition, R3D_DRAW_SORT_BY_MATERIALS);
 
-    if (R3D_CORE_FLAGS_HAS(state, R3D_FLAG_TRANSPARENT_SORTING)) {
-        r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS, R3D.viewState.viewPosition, R3D_DRAW_SORT_BACK_TO_FRONT);
-        r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD, R3D.viewState.viewPosition, R3D_DRAW_SORT_BACK_TO_FRONT);
-    }
+    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS, R3D.viewState.viewPosition, R3D_DRAW_SORT_BACK_TO_FRONT);
+    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD, R3D.viewState.viewPosition, R3D_DRAW_SORT_BACK_TO_FRONT);
 
     /* --- Deferred path for opaques and decals --- */
 
