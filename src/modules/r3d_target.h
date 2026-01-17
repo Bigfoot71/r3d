@@ -30,7 +30,7 @@ typedef enum {
     R3D_TARGET_DEPTH,           //< Full - Mip 2 - R16F
     R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB16F
     R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB16F
-    R3D_TARGET_GEOM_NORM_TAN,   //< Full - Mip 1 - RGBA8
+    R3D_TARGET_GEOM_NORMAL,     //< Full - Mip 1 - RG16
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R8
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R8
     R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA16F
@@ -54,14 +54,14 @@ typedef enum {
     R3D_TARGET_DEPTH,           \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
-    R3D_TARGET_GEOM_NORM_TAN    \
+    R3D_TARGET_GEOM_NORMAL    \
 
 #define R3D_TARGET_GBUFFER      \
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_NORMAL,          \
     R3D_TARGET_ORM,             \
-    R3D_TARGET_GEOM_NORM_TAN,   \
+    R3D_TARGET_GEOM_NORMAL,   \
     R3D_TARGET_DEPTH            \
 
 #define R3D_TARGET_LIGHTING     \

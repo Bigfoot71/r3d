@@ -29,7 +29,7 @@ uniform sampler2D uEmissionMap;
 uniform sampler2D uOrmMap;
 
 uniform sampler2D uDepthTex;
-uniform sampler2D uNormTanTex;
+uniform sampler2D uGeomNormal;
 
 uniform float uAlphaCutoff;
 uniform float uNormalScale;
@@ -89,7 +89,7 @@ void main()
     if (albedo.a < uAlphaCutoff) discard;
 
     /* Retrieve surface normal */
-    vec3 surfaceNormal = V_GetWorldNormal(uNormTanTex, ivec2(gl_FragCoord.xy));
+    vec3 surfaceNormal = V_GetWorldNormal(uGeomNormal, ivec2(gl_FragCoord.xy));
 
     /* Compute angular difference between the decal and surface normal */
     float angle = acos(clamp(dot(vOrientation, surfaceNormal), -1.0, 1.0));

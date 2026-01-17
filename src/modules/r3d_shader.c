@@ -638,7 +638,7 @@ void r3d_shader_load_scene_decal(void)
     SET_SAMPLER(scene.decal, uEmissionMap, R3D_SHADER_SAMPLER_MAP_EMISSION);
     SET_SAMPLER(scene.decal, uOrmMap, R3D_SHADER_SAMPLER_MAP_ORM);
     SET_SAMPLER(scene.decal, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
-    SET_SAMPLER(scene.decal, uNormTanTex, R3D_SHADER_SAMPLER_BUFFER_GEOM_NORM_TAN);
+    SET_SAMPLER(scene.decal, uGeomNormal, R3D_SHADER_SAMPLER_BUFFER_GEOM_NORMAL);
 }
 
 void r3d_shader_load_deferred_ambient(void)
