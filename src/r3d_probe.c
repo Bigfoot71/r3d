@@ -31,9 +31,9 @@
 // PUBLIC API
 // ========================================
 
-R3D_Probe R3D_CreateProbe(R3D_ProbeType type)
+R3D_Probe R3D_CreateProbe(R3D_ProbeFlag flags)
 {
-    return r3d_env_probe_new(type);
+    return r3d_env_probe_new(flags);
 }
 
 void R3D_DestroyProbe(R3D_Probe id)
@@ -46,10 +46,10 @@ bool R3D_IsProbeExist(R3D_Probe id)
     return r3d_env_probe_is_valid(id);
 }
 
-R3D_ProbeType R3D_GetProbeType(R3D_Probe id)
+R3D_ProbeFlag R3D_GetProbeType(R3D_Probe id)
 {
     GET_PROBE_OR_RETURN(probe, id, 0);
-    return probe->type;
+    return probe->flags;
 }
 
 bool R3D_IsProbeActive(R3D_Probe id)

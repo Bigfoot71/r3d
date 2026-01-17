@@ -237,18 +237,18 @@ static bool growth_probe_arrays(void)
     return true;
 }
 
-static bool init_probe(r3d_env_probe_t* probe, R3D_ProbeType type)
+static bool init_probe(r3d_env_probe_t* probe, R3D_ProbeFlag flags)
 {
-    probe->type = type;
+    probe->flags = flags;
     probe->irradiance = -1;
     probe->prefilter = -1;
 
-    if (type == R3D_PROBE_ILLUMINATION || type == R3D_PROBE_COMBINED) {
+    if (flags & R3D_PROBE_ILLUMINATION) {
         probe->irradiance = r3d_env_irradiance_reserve_layer();
         if (probe->irradiance == -1) return false;
     }
 
-    if (type == R3D_PROBE_REFLECTION || type == R3D_PROBE_COMBINED) {
+    if (flags & R3D_PROBE_REFLECTION) {
         probe->prefilter = r3d_env_prefilter_reserve_layer();
         if (probe->prefilter == -1) {
             if (probe->irradiance >= 0) {
@@ -379,7 +379,7 @@ void r3d_env_quit(void)
     RL_FREE(R3D_MOD_ENV.probes);
 }
 
-R3D_Probe r3d_env_probe_new(R3D_ProbeType type)
+R3D_Probe r3d_env_probe_new(R3D_ProbeFlag flags)
 {
     r3d_env_probe_array_t* validProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VALID];
     r3d_env_probe_array_t* freeProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_FREE];
@@ -395,7 +395,7 @@ R3D_Probe r3d_env_probe_new(R3D_ProbeType type)
         }
     }
 
-    if (!init_probe(&R3D_MOD_ENV.probes[index], type)) {
+    if (!init_probe(&R3D_MOD_ENV.probes[index], flags)) {
         R3D_TRACELOG(LOG_FATAL, "Failed to initialize probe");
         return -1;
     }

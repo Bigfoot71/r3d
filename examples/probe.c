@@ -1,3 +1,4 @@
+#include "r3d/r3d_probe.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -40,7 +41,7 @@ int main(void)
     R3D_EnableShadow(light);
 
     // Create probe
-    R3D_Probe probe = R3D_CreateProbe(R3D_PROBE_COMBINED);
+    R3D_Probe probe = R3D_CreateProbe(R3D_PROBE_ILLUMINATION | R3D_PROBE_REFLECTION);
     R3D_SetProbePosition(probe, (Vector3) {0, 1, 0});
     R3D_SetProbeShadows(probe, true);
     R3D_SetProbeFalloff(probe, 0.5f);
