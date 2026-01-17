@@ -39,7 +39,7 @@ layout(location = 0) out vec3 FragAlbedo;
 layout(location = 1) out vec3 FragEmission;
 layout(location = 2) out vec2 FragNormal;
 layout(location = 3) out vec3 FragORM;
-layout(location = 4) out vec4 FragGeomNormTan;
+layout(location = 4) out vec2 FragGeomNormal;
 layout(location = 5) out float FragDepth;
 
 /* === Main function === */
@@ -49,22 +49,19 @@ void main()
     vec4 albedo = vColor * texture(uAlbedoMap, vTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
-    vec3 geomN = vTBN[2];
-    vec3 geomT = vTBN[0];
-
     vec3 N = normalize(vTBN * M_NormalScale(texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    vec3 gN = vTBN[2];
 
     if (!gl_FrontFacing) { // Flip for back facing triangles with double sided meshes
-        geomN = -geomN;
-        geomT = -geomT;
         N = -N;
+        gN = -gN;
     }
-
-    FragGeomNormTan.rg = M_EncodeOctahedral(geomN);;
 
     FragAlbedo = albedo.rgb;
     FragEmission = vEmission * texture(uEmissionMap, vTexCoord).rgb;
+
     FragNormal = M_EncodeOctahedral(N);
+    FragGeomNormal = M_EncodeOctahedral(gN);
 
     vec3 orm = texture(uOrmMap, vTexCoord).rgb;
 
