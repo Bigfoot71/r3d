@@ -22,7 +22,7 @@
 // ========================================
 
 #define PROBE_INITIAL_CAPACITY  16
-#define LAYER_INITIAL_CAPACITY  4
+#define LAYER_GROWTH            4
 
 // ========================================
 // MODULE STATE
@@ -205,13 +205,13 @@ static bool resize_cubemap_array(GLuint* texture, cubemap_spec_t oldSpec, cubema
 static bool expand_cubemap_capacity(GLuint* texture, r3d_env_layer_pool_t* pool, int size, bool mipmapped)
 {
     cubemap_spec_t oldSpec = cubemap_spec(size, pool->totalLayers, mipmapped);
-    cubemap_spec_t newSpec = cubemap_spec(size, pool->totalLayers + LAYER_INITIAL_CAPACITY, mipmapped);
+    cubemap_spec_t newSpec = cubemap_spec(size, pool->totalLayers + LAYER_GROWTH, mipmapped);
 
     if (!resize_cubemap_array(texture, oldSpec, newSpec)) {
         return false;
     }
 
-    return layer_pool_expand(pool, LAYER_INITIAL_CAPACITY);
+    return layer_pool_expand(pool, LAYER_GROWTH);
 }
 
 // ========================================
@@ -326,13 +326,13 @@ bool r3d_env_init(void)
     glGenTextures(1, &R3D_MOD_ENV.captureCube);
 
     // Initialize layer pools
-    if (!layer_pool_init(&R3D_MOD_ENV.irradiancePool, LAYER_INITIAL_CAPACITY)) {
+    if (!layer_pool_init(&R3D_MOD_ENV.irradiancePool, LAYER_GROWTH)) {
         R3D_TRACELOG(LOG_FATAL, "Failed to init irradiance layer pool");
         r3d_env_quit();
         return false;
     }
 
-    if (!layer_pool_init(&R3D_MOD_ENV.prefilterPool, LAYER_INITIAL_CAPACITY)) {
+    if (!layer_pool_init(&R3D_MOD_ENV.prefilterPool, LAYER_GROWTH)) {
         R3D_TRACELOG(LOG_FATAL, "Failed to init prefilter layer pool");
         r3d_env_quit();
         return false;
