@@ -67,25 +67,6 @@ vec2 M_EncodeOctahedral(vec3 normal)
     return normal.xy;
 }
 
-float M_EncodeTangentAngle(vec3 normal, vec3 tangent)
-{
-    vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-    vec3 refT = normalize(cross(up, normal));
-    vec3 refB = cross(normal, refT);
-
-    return (atan(dot(tangent, refB), dot(tangent, refT)) + M_PI) / M_TAU;
-}
-
-vec3 M_DecodeTangentAngle(vec3 normal, float encodedAngle)
-{
-    vec3 up = abs(normal.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
-    vec3 refT = normalize(cross(up, normal));
-    vec3 refB = cross(normal, refT);
-
-    float angle = encodedAngle * M_TAU - M_PI;
-    return refT * cos(angle) + refB * sin(angle);
-}
-
 vec3 M_NormalScale(vec3 normal, float scale)
 {
     normal.xy *= scale;
