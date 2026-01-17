@@ -50,6 +50,24 @@ layout(location = 1) out vec4 FragEmission;
 layout(location = 2) out vec3 FragORM;
 layout(location = 3) out vec4 FragNormal;
 
+/* === Helper functions === */
+
+void GetTangent(vec2 decalTexCoord, vec3 viewPosition, vec3 surfaceNormal,
+                out vec3 surfaceTangent, out vec3 surfaceBitangent)
+{
+    vec2 dUVdx = dFdx(decalTexCoord);
+    vec2 dUVdy = dFdy(decalTexCoord);
+    vec3 dPdx = dFdx(viewPosition);
+    vec3 dPdy = dFdy(viewPosition);
+
+    float uvDet = dUVdx.x * dUVdy.y - dUVdx.y * dUVdy.x;
+    vec3 T = dPdx * dUVdy.y - dPdy * dUVdx.y;
+    vec3 B = dPdy * dUVdx.x - dPdx * dUVdx.y;
+
+    surfaceTangent = normalize(T - surfaceNormal * dot(surfaceNormal, T));
+    surfaceBitangent = cross(surfaceNormal, surfaceTangent) * sign(uvDet);
+}
+
 /* === Main function === */
 
 void main()
@@ -61,9 +79,7 @@ void main()
     vec4 positionObjectSpace = vMatDecal * vec4(positionViewSpace, 1.0);
 
     /* Discard fragments that are outside the bounds of the projector */
-    if (abs(positionObjectSpace.x) > 0.5 || 
-        abs(positionObjectSpace.y) > 0.5 || 
-        abs(positionObjectSpace.z) > 0.5) discard;
+    if (any(greaterThan(abs(positionObjectSpace.xyz), vec3(0.5)))) discard;
 
 	/* Offset coordinates to [0, 1] range for decal texture UV */
     vec2 decalTexCoord = uTexCoordOffset + (positionObjectSpace.xz + 0.5) * uTexCoordScale;
@@ -73,8 +89,7 @@ void main()
     if (albedo.a < uAlphaCutoff) discard;
 
     /* Retrieve surface normal */
-    vec2 encNormal = texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).rg;
-    vec3 surfaceNormal = M_DecodeOctahedral(encNormal);
+    vec3 surfaceNormal = V_GetWorldNormal(uNormTanTex, ivec2(gl_FragCoord.xy));
 
     /* Compute angular difference between the decal and surface normal */
     float angle = acos(clamp(dot(vOrientation, surfaceNormal), -1.0, 1.0));
@@ -88,16 +103,9 @@ void main()
     float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0);
     albedo.a *= fadeAlpha;
 
-    /* Retrieve surface tangent */
-    float encTangentAngle = texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).b;
-    vec3 surfaceTangent = M_DecodeTangentAngle(surfaceNormal, encTangentAngle);
-
-    /* Compute bitangent and correct handedness if necessary */
-    vec3 surfaceBitangent = normalize(cross(surfaceNormal, surfaceTangent));
-
-    if (dot(cross(surfaceTangent, surfaceBitangent), normalize(surfaceNormal)) <= 0.0) {
-        surfaceBitangent = -surfaceBitangent;
-    }
+    /* Retrieve surface tangent and bitangent */
+    vec3 surfaceTangent, surfaceBitangent;
+    GetTangent(decalTexCoord, positionViewSpace, surfaceNormal, surfaceTangent, surfaceBitangent);
 
     /* Apply normal */
     mat3 TBN = mat3(surfaceTangent, surfaceBitangent, surfaceNormal);
