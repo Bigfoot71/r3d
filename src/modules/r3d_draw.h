@@ -104,8 +104,9 @@ typedef enum {
  * Used to control draw order for depth testing efficiency or visual correctness.
  */
 typedef enum {
-    R3D_DRAW_SORT_BACK_TO_FRONT,    //< Used for transparent geometry
-    R3D_DRAW_SORT_BY_MATERIALS      //< Used to reduce GL state changes
+    R3D_DRAW_SORT_FRONT_TO_BACK,    //< Sort first by materials, then front to back, used for simple opaque geometry
+    R3D_DRAW_SORT_BACK_TO_FRONT,    //< Sort back to front only, used for simple transparent geometry
+    R3D_DRAW_SORT_MATERIAL_ONLY     //< Sort only by materials, used for instanced and decals
 } r3d_draw_sort_enum_t;
 
 /*
@@ -117,7 +118,7 @@ typedef enum {
     R3D_DRAW_LIST_DEFERRED,          //< Fully opaque
     R3D_DRAW_LIST_PREPASS,           //< Forward but with depth prepass
     R3D_DRAW_LIST_FORWARD,           //< Forward only, without prepass
-    R3D_DRAW_LIST_DECAL,           
+    R3D_DRAW_LIST_DECAL,
 
     R3D_DRAW_LIST_NON_INST_COUNT,
 
@@ -223,7 +224,7 @@ typedef struct {
 /*
  * Data stored by draw call in the sort cache.
  */
-typedef union {
+typedef struct {
     float distance;
     struct {
         uint32_t albedo;

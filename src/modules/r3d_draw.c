@@ -341,6 +341,18 @@ static inline bool frustum_test_draw_call(const r3d_frustum_t* frustum, const r3
 
 static Vector3 G_sortViewPosition = {0};
 
+static inline float calculate_center_distance_to_camera(const BoundingBox* aabb, const Matrix* transform)
+{
+    Vector3 center = {
+        (aabb->min.x + aabb->max.x) * 0.5f,
+        (aabb->min.y + aabb->max.y) * 0.5f,
+        (aabb->min.z + aabb->max.z) * 0.5f
+    };
+    center = Vector3Transform(center, *transform);
+
+    return Vector3DistanceSqr(G_sortViewPosition, center);
+}
+
 static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, const Matrix* transform)
 {
     float maxDistSq = 0.0f;
@@ -360,55 +372,113 @@ static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, co
     return maxDistSq;
 }
 
-static void sort_fill_distance_cache(r3d_draw_list_enum_t list)
+static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_draw_call_t* call)
 {
-    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
-
-    for (int i = 0; i < drawList->numCalls; i++) {
-        int callIndex = drawList->calls[i];
-        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-        const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-        R3D_MOD_DRAW.sortCache[callIndex].distance = calculate_max_distance_to_camera(
-            &call->mesh.instance.aabb, &group->transform
-        );
+    switch (call->type) {
+    case R3D_DRAW_CALL_MESH:
+        sortData->material.albedo = call->mesh.material.albedo.texture.id;
+        sortData->material.normal = call->mesh.material.normal.texture.id;
+        sortData->material.orm = call->mesh.material.orm.texture.id;
+        sortData->material.emission = call->mesh.material.emission.texture.id;
+        sortData->material.blend = call->mesh.material.blendMode;
+        sortData->material.cull = call->mesh.material.cullMode;
+        sortData->material.transparency = call->mesh.material.transparencyMode;
+        sortData->material.billboard = call->mesh.material.billboardMode;
+        break;
+    
+    case R3D_DRAW_CALL_DECAL:
+        sortData->material.albedo = call->decal.instance.albedo.texture.id;
+        sortData->material.normal = call->decal.instance.normal.texture.id;
+        sortData->material.orm = call->decal.instance.orm.texture.id;
+        sortData->material.emission = call->decal.instance.emission.texture.id;
+        sortData->material.blend = R3D_BLEND_MIX;
+        sortData->material.cull = R3D_CULL_NONE;
+        sortData->material.transparency = R3D_TRANSPARENCY_ALPHA;
+        sortData->material.billboard = R3D_BILLBOARD_DISABLED;
+        break;
     }
 }
 
-static void sort_fill_material_cache(r3d_draw_list_enum_t list)
+static void sort_fill_cache_front_to_back(r3d_draw_list_enum_t list)
 {
+    assert(list < R3D_DRAW_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
+    assert(list != R3D_DRAW_LIST_DECAL && "Decal render list should not be sorted by distance");
+
     r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
 
-    for (int i = 0; i < drawList->numCalls; i++) {
+    for (int i = 0; i < drawList->numCalls; i++)
+    {
         int callIndex = drawList->calls[i];
         const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
         const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-        switch (call->type) {
-        case R3D_DRAW_CALL_MESH:
-            R3D_MOD_DRAW.sortCache[callIndex] = (r3d_draw_sort_t) {
-                .material.albedo = call->mesh.material.albedo.texture.id,
-                .material.normal = call->mesh.material.normal.texture.id,
-                .material.orm = call->mesh.material.orm.texture.id,
-                .material.emission = call->mesh.material.emission.texture.id,
-                .material.blend = call->mesh.material.blendMode,
-                .material.cull = call->mesh.material.cullMode,
-                .material.transparency = call->mesh.material.transparencyMode,
-                .material.billboard = call->mesh.material.billboardMode
-            };
-            break;
-        case R3D_DRAW_CALL_DECAL:
-            R3D_MOD_DRAW.sortCache[callIndex] = (r3d_draw_sort_t) {
-                .material.albedo = call->decal.instance.albedo.texture.id,
-                .material.normal = call->decal.instance.normal.texture.id,
-                .material.orm = call->decal.instance.orm.texture.id,
-                .material.emission = call->decal.instance.emission.texture.id,
-                .material.blend = R3D_BLEND_MIX,
-                .material.cull = R3D_CULL_NONE,
-                .material.transparency = R3D_TRANSPARENCY_ALPHA,
-                .material.billboard = R3D_BILLBOARD_DISABLED
-            };
-            break;
-        }
+        r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
+
+        sortData->distance = calculate_center_distance_to_camera(
+            &call->mesh.instance.aabb, &group->transform
+        );
+        
+        sort_fill_material_data(sortData, call);
     }
+}
+
+static void sort_fill_cache_back_to_front(r3d_draw_list_enum_t list)
+{
+    assert(list < R3D_DRAW_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
+    assert(list != R3D_DRAW_LIST_DECAL && "Decal render list should not be sorted by distance");
+
+    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+
+    for (int i = 0; i < drawList->numCalls; i++)
+    {
+        int callIndex = drawList->calls[i];
+        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
+        const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+        r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
+
+        sortData->distance = calculate_max_distance_to_camera(
+            &call->mesh.instance.aabb, &group->transform
+        );
+
+        // For back-to-front (transparency), we don't sort by material.
+        //sort_fill_material_data(sortData, call);
+    }
+}
+
+static void sort_fill_cache_by_material(r3d_draw_list_enum_t list)
+{
+    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+
+    for (int i = 0; i < drawList->numCalls; i++)
+    {
+        int callIndex = drawList->calls[i];
+        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
+        r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
+
+        sortData->distance = 0.0f;
+        
+        sort_fill_material_data(sortData, call);
+    }
+}
+
+static int compare_front_to_back(const void* a, const void* b)
+{
+    int indexA = *(int*)a;
+    int indexB = *(int*)b;
+
+    int materialCmp = memcmp(
+        &R3D_MOD_DRAW.sortCache[indexA].material,
+        &R3D_MOD_DRAW.sortCache[indexB].material,
+        sizeof(R3D_MOD_DRAW.sortCache[0].material)
+    );
+
+    if (materialCmp != 0) {
+        return materialCmp;
+    }
+
+    float distA = R3D_MOD_DRAW.sortCache[indexA].distance;
+    float distB = R3D_MOD_DRAW.sortCache[indexB].distance;
+
+    return (distA > distB) - (distA < distB);
 }
 
 static int compare_back_to_front(const void* a, const void* b)
@@ -422,7 +492,7 @@ static int compare_back_to_front(const void* a, const void* b)
     return (distA < distB) - (distA > distB);
 }
 
-static int compare_materials(const void* a, const void* b)
+static int compare_materials_only(const void* a, const void* b)
 {
     int indexA = *(int*)a;
     int indexB = *(int*)b;
@@ -665,14 +735,17 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
 
     switch (mode) {
+    case R3D_DRAW_SORT_FRONT_TO_BACK:
+        compare_func = compare_front_to_back;
+        sort_fill_cache_front_to_back(list);
+        break;
     case R3D_DRAW_SORT_BACK_TO_FRONT:
         compare_func = compare_back_to_front;
-        sort_fill_distance_cache(list);
+        sort_fill_cache_back_to_front(list);
         break;
-    case R3D_DRAW_SORT_BY_MATERIALS:
-        compare_func = compare_materials;
-        sort_fill_material_cache(list);
-        break;
+    case R3D_DRAW_SORT_MATERIAL_ONLY:
+        compare_func = compare_materials_only;
+        sort_fill_cache_by_material(list);
     }
 
     qsort(
