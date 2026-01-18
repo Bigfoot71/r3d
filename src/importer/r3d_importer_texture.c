@@ -259,12 +259,15 @@ static bool load_image_orm(
     // Free allocated data
     if (imOcclusion.owned) {
         UnloadImage(imOcclusion.image);
+        imOcclusion.image.data = NULL;
     }
     if (imRoughness.owned) {
         UnloadImage(imRoughness.image);
+        imRoughness.image.data = NULL;
     }
-    if (imMetalness.owned && imMetalness.image.data != imRoughness.image.data) {
+    if (imMetalness.owned) {
         UnloadImage(imMetalness.image);
+        imMetalness.image.data = NULL;
     }
 
     return true;
@@ -341,9 +344,7 @@ static int worker_thread(void* arg)
 
         // Load the image
         const struct aiMaterial* material = r3d_importer_get_material(ctx->importer, materialIdx);
-        loaded_image_t* image = &ctx->images[jobIndex];
-
-        load_image_for_map(image, ctx->importer, material, (r3d_importer_texture_map_t)mapIdx);
+        load_image_for_map(&ctx->images[jobIndex], ctx->importer, material, (r3d_importer_texture_map_t)mapIdx);
 
         // Push to ready queue
         ring_push(ctx, jobIndex);
@@ -359,7 +360,10 @@ static int worker_thread(void* arg)
 // PUBLIC FUNCTIONS
 // ========================================
 
-r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter)
+r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
+    const r3d_importer_t* importer, 
+    R3D_ColorSpace colorSpace, 
+    TextureFilter filter)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
         R3D_TRACELOG(LOG_ERROR, "Invalid importer for texture loading");
@@ -394,7 +398,10 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
         numThreads = ctx.totalJobs;
     }
 
-    R3D_TRACELOG(LOG_INFO, "Loading textures with %d worker threads", numThreads);
+    R3D_TRACELOG(
+        LOG_INFO, "Loading textures with %d worker threads (%d materials * %d maps = %d jobs)", 
+        numThreads, cache->materialCount, R3D_MAP_COUNT, ctx.totalJobs
+    );
 
     // Launch worker threads
     thrd_t* threads = RL_MALLOC(numThreads * sizeof(thrd_t));
@@ -402,9 +409,12 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
         thrd_create(&threads[i], worker_thread, &ctx);
     }
 
-    // Progressive upload loop on main thread
+    // Track statistics
+    int processedCount = 0;
     int uploadedCount = 0;
-    while (uploadedCount < ctx.totalJobs)
+
+    // Progressive upload loop on main thread
+    while (processedCount < ctx.totalJobs)
     {
         int jobIndex;
 
@@ -415,8 +425,8 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
 
             loaded_image_t* img = &ctx.images[jobIndex];
 
-            // Upload texture to GPU
-            if (img->image.data) {
+            // Only upload if the image was successfully loaded
+            if (img->image.data != NULL) {
                 Texture2D* texture = &cache->materials[materialIdx].textures[mapIdx];
                 *texture = r3d_image_upload(
                     &img->image, get_wrap_mode(img->wrap[0]),
@@ -428,16 +438,18 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
                     UnloadImage(img->image);
                     img->image.data = NULL;
                 }
-            }
 
-            uploadedCount++;
+                uploadedCount++;
+            }
+            // If not valid, texture remains zero-initialized (id == 0)
+
+            processedCount++;
         }
         else {
             // Check if all jobs are completed before yielding
             int completed = atomic_load_explicit(&ctx.completedJobs, memory_order_acquire);
 
             // All jobs done, but some might still be in the ring buffer
-            // This handles the race condition where jobs were pushed after our last pop attempt
             if (completed >= ctx.totalJobs) continue;
 
             // No job ready yet and workers still running, yield CPU
@@ -455,7 +467,10 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
     RL_FREE(ctx.readyJobs);
     RL_FREE(ctx.images);
 
-    R3D_TRACELOG(LOG_INFO, "Loaded %d textures successfully", uploadedCount);
+    R3D_TRACELOG(
+        LOG_INFO, "Texture loading complete: %d uploaded successfully (%d jobs processed, %d materials)", 
+        uploadedCount, processedCount, cache->materialCount
+    );
 
     return cache;
 }
@@ -467,7 +482,9 @@ void r3d_importer_unload_texture_cache(r3d_importer_texture_cache_t* cache)
     for (int i = 0; i < cache->materialCount; i++) {
         if (!cache->materials[i].used) {
             for (int j = 0; j < R3D_MAP_COUNT; j++) {
-                UnloadTexture(cache->materials[i].textures[j]);
+                if (cache->materials[i].textures[j].id != 0) {
+                    UnloadTexture(cache->materials[i].textures[j]);
+                }
             }
         }
     }
