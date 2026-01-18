@@ -42,6 +42,7 @@ uniform vec2 uTexCoordScale;
 
 uniform float uNormalThreshold;
 uniform float uFadeWidth;
+uniform bool uAlbedoEnabled;
 
 /* === Fragments === */
 
@@ -103,7 +104,7 @@ void main()
     FragNormal = vec4(M_EncodeOctahedral(N), 0.0, 1.0);
 
 	/* Apply material */
-    FragAlbedo = albedo;
+    if (uAlbedoEnabled) FragAlbedo = albedo;
     FragEmission = vec4(vEmission * texture(uEmissionMap, decalTexCoord).rgb, fadeAlpha);
 
     vec3 orm = texture(uOrmMap, decalTexCoord).rgb;
