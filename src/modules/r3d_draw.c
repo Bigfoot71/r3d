@@ -746,6 +746,7 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     case R3D_DRAW_SORT_MATERIAL_ONLY:
         compare_func = compare_materials_only;
         sort_fill_cache_by_material(list);
+        break;
     }
 
     qsort(
