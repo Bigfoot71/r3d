@@ -66,7 +66,7 @@ typedef struct {
     int readyCapacity;
     atomic_int readyHead;               // Write position
     atomic_int readyTail;               // Read position
-    atomic_bool allJobsSubmitted;
+    atomic_int completedJobs;           // Track completed jobs
 } loader_context_t;
 
 // ========================================
@@ -101,22 +101,24 @@ static int get_cpu_count(void)
 
 static void ring_push(loader_context_t* ctx, int jobIndex)
 {
-    int head = atomic_load(&ctx->readyHead);
+    int head = atomic_load_explicit(&ctx->readyHead, memory_order_relaxed);
     ctx->readyJobs[head % ctx->readyCapacity] = jobIndex;
-    atomic_store(&ctx->readyHead, head + 1);
+
+    atomic_store_explicit(&ctx->readyHead, head + 1, memory_order_release);
 }
 
 static bool ring_pop(loader_context_t* ctx, int* jobIndex)
 {
-    int tail = atomic_load(&ctx->readyTail);
-    int head = atomic_load(&ctx->readyHead);
+    int tail = atomic_load_explicit(&ctx->readyTail, memory_order_relaxed);
+    int head = atomic_load_explicit(&ctx->readyHead, memory_order_acquire);
     
     if (tail >= head) {
         return false;
     }
     
     *jobIndex = ctx->readyJobs[tail % ctx->readyCapacity];
-    atomic_store(&ctx->readyTail, tail + 1);
+    atomic_store_explicit(&ctx->readyTail, tail + 1, memory_order_relaxed);
+
     return true;
 }
 
@@ -329,7 +331,7 @@ static int worker_thread(void* arg)
 
     while (true) {
         // Get next job
-        int jobIndex = atomic_fetch_add(&ctx->nextJob, 1);
+        int jobIndex = atomic_fetch_add_explicit(&ctx->nextJob, 1, memory_order_relaxed);
         if (jobIndex >= ctx->totalJobs) {
             break;
         }
@@ -345,6 +347,9 @@ static int worker_thread(void* arg)
 
         // Push to ready queue
         ring_push(ctx, jobIndex);
+
+        // Increment completed jobs counter
+        atomic_fetch_add_explicit(&ctx->completedJobs, 1, memory_order_release);
     }
     
     return 0;
@@ -372,7 +377,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
     ctx.materialCount = cache->materialCount;
     ctx.totalJobs = cache->materialCount * R3D_MAP_COUNT;
     atomic_init(&ctx.nextJob, 0);
-    atomic_init(&ctx.allJobsSubmitted, false);
+    atomic_init(&ctx.completedJobs, 0);
 
     // Allocate image storage (single flat array)
     ctx.images = RL_CALLOC(ctx.totalJobs, sizeof(loaded_image_t));
@@ -399,7 +404,8 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
 
     // Progressive upload loop on main thread
     int uploadedCount = 0;
-    while (uploadedCount < ctx.totalJobs) {
+    while (uploadedCount < ctx.totalJobs)
+    {
         int jobIndex;
 
         // Try to get a ready job from ring buffer
@@ -417,7 +423,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
                     filter, is_srgb(mapIdx, colorSpace)
                 );
 
-                // Free image data
+                // Free image data immediately after upload
                 if (img->owned) {
                     UnloadImage(img->image);
                     img->image.data = NULL;
@@ -427,7 +433,14 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer
             uploadedCount++;
         }
         else {
-            // No job ready yet, yield CPU
+            // Check if all jobs are completed before yielding
+            int completed = atomic_load_explicit(&ctx.completedJobs, memory_order_acquire);
+
+            // All jobs done, but some might still be in the ring buffer
+            // This handles the race condition where jobs were pushed after our last pop attempt
+            if (completed >= ctx.totalJobs) continue;
+
+            // No job ready yet and workers still running, yield CPU
             thrd_yield();
         }
     }
