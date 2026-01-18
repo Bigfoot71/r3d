@@ -16,7 +16,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_Init(GetScreenWidth(), GetScreenHeight());
 
     // Set environment
     R3D_ENVIRONMENT_SET(background.color, (Color){4, 4, 4});

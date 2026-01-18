@@ -14,7 +14,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_Init(GetScreenWidth(), GetScreenHeight());
     R3D_SetTextureFilter(TEXTURE_FILTER_POINT);
 
     // Set background/ambient color

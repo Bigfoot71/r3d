@@ -12,7 +12,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_Init(GetScreenWidth(), GetScreenHeight());
 
     // Create sphere mesh and materials
     R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 64, 64);

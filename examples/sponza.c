@@ -12,7 +12,7 @@ int main(void)
     SetTargetFPS(60);
 
     // Initialize R3D
-    R3D_Init(GetScreenWidth(), GetScreenHeight(), 0);
+    R3D_Init(GetScreenWidth(), GetScreenHeight());
 
     // Post-processing setup
     R3D_ENVIRONMENT_SET(bloom.mode, R3D_BLOOM_MIX);

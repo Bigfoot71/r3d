@@ -34,7 +34,7 @@ struct r3d_core_state R3D;
 // PUBLIC API
 // ========================================
 
-void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
+void R3D_Init(int resWidth, int resHeight)
 {
     memset(&R3D, 0, sizeof(R3D));
 
@@ -57,7 +57,6 @@ void R3D_Init(int resWidth, int resHeight, R3D_Flags flags)
     R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
     R3D.layers = R3D_LAYER_ALL;
-    R3D.state = flags;
 
     r3d_texture_init();
     r3d_target_init(resWidth, resHeight);
@@ -80,21 +79,6 @@ void R3D_Close(void)
     r3d_light_quit();
     r3d_draw_quit();
     r3d_env_quit();
-}
-
-bool R3D_HasState(R3D_Flags flags)
-{
-    return R3D_CORE_FLAGS_HAS(state, flags);
-}
-
-void R3D_SetState(R3D_Flags flags)
-{
-    R3D_CORE_FLAGS_ASSIGN(state, flags);
-}
-
-void R3D_ClearState(R3D_Flags flags)
-{
-    R3D_CORE_FLAGS_CLEAR(state, flags);
 }
 
 void R3D_GetResolution(int* width, int* height)
