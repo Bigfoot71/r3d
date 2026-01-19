@@ -952,11 +952,14 @@ void raster_decal(const r3d_draw_call_t* call)
 
     R3D_SHADER_SET_FLOAT(scene.decal, uNormalThreshold, decal->normalThreshold);
     R3D_SHADER_SET_FLOAT(scene.decal, uFadeWidth, decal->fadeWidth);
-    R3D_SHADER_SET_INT(scene.decal, uAlbedoEnabled, (decal->albedo.texture.id == 0) ? 0 : 1);
+    R3D_SHADER_SET_INT(scene.decal, uAlbedoEnabled, (decal->albedo.texture.id != 0));
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER(scene.decal, uAlbedoMap, R3D_TEXTURE_SELECT(decal->albedo.texture.id, WHITE));
+    if (decal->albedo.texture.id != 0) /* uAlbedoEnabled must be false here */ {
+        R3D_SHADER_BIND_SAMPLER(scene.decal, uAlbedoMap, decal->albedo.texture.id);
+    }
+
     R3D_SHADER_BIND_SAMPLER(scene.decal, uNormalMap, R3D_TEXTURE_SELECT(decal->normal.texture.id, NORMAL));
     R3D_SHADER_BIND_SAMPLER(scene.decal, uEmissionMap, R3D_TEXTURE_SELECT(decal->emission.texture.id, WHITE));
     R3D_SHADER_BIND_SAMPLER(scene.decal, uOrmMap, R3D_TEXTURE_SELECT(decal->orm.texture.id, WHITE));

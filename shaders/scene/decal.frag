@@ -62,9 +62,7 @@ void main()
     vec4 positionObjectSpace = vMatDecal * vec4(positionViewSpace, 1.0);
 
     /* Discard fragments that are outside the bounds of the projector */
-    if (abs(positionObjectSpace.x) > 0.5 || 
-        abs(positionObjectSpace.y) > 0.5 || 
-        abs(positionObjectSpace.z) > 0.5) discard;
+    if (any(greaterThan(abs(positionObjectSpace.xyz), vec3(0.5)))) discard;
 
 	/* Offset coordinates to [0, 1] range for decal texture UV */
     vec2 decalTexCoord = uTexCoordOffset + (positionObjectSpace.xz + 0.5) * uTexCoordScale;
