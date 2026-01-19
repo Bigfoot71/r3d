@@ -28,7 +28,7 @@ int main(void)
 
     // Create decal
     R3D_Decal decal = R3D_DECAL_BASE;
-    decal.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
+    //decal.albedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/decal.png", WHITE);
     decal.normal = R3D_LoadNormalMap(RESOURCES_PATH "images/decal_normal.png", 1.0f);
     decal.normalThreshold = 89.0f;
 

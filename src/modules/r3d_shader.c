@@ -631,6 +631,7 @@ void r3d_shader_load_scene_decal(void)
     GET_LOCATION(scene.decal, uMetalness);
     GET_LOCATION(scene.decal, uNormalThreshold);
     GET_LOCATION(scene.decal, uFadeWidth);
+    GET_LOCATION(scene.decal, uAlbedoEnabled);
 
     USE_SHADER(scene.decal);
 

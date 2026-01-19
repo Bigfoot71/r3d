@@ -42,6 +42,7 @@ uniform vec2 uTexCoordScale;
 
 uniform float uNormalThreshold;
 uniform float uFadeWidth;
+uniform bool uAlbedoEnabled;
 
 /* === Fragments === */
 
@@ -82,11 +83,9 @@ void main()
     /* Discard if the angle exceeds the threshold */
     if (difference < 0.0) discard;
 
-    /* Fade on edge of threshold */
-    // note: could do another (or the main) uAlphaCutoff check here for discard
+    /* Compute fade on edge of threshold */
     float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0);
-    albedo.a *= fadeAlpha;
-
+ 
     /* Retrieve surface tangent */
     vec3 surfaceTangent = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).ba);
 
@@ -103,7 +102,13 @@ void main()
     FragNormal = vec4(M_EncodeOctahedral(N), 0.0, 1.0);
 
 	/* Apply material */
-    FragAlbedo = albedo;
+    if (uAlbedoEnabled) {
+        FragAlbedo = vec4(albedo.rgb, albedo.a * fadeAlpha);
+    }
+    else {
+        FragAlbedo = vec4(0);
+    }
+    
     FragEmission = vec4(vEmission * texture(uEmissionMap, decalTexCoord).rgb, fadeAlpha);
 
     vec3 orm = texture(uOrmMap, decalTexCoord).rgb;
