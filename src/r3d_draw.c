@@ -956,7 +956,7 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Bind active texture maps --- */
 
-    if (decal->albedo.texture.id != 0) /* uAlbedoEnabled must be false here */ {
+    if (decal->albedo.texture.id != 0) /* uAlbedoEnabled must be false otherwise */ {
         R3D_SHADER_BIND_SAMPLER(scene.decal, uAlbedoMap, decal->albedo.texture.id);
     }
 
