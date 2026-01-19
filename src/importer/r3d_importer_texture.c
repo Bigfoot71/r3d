@@ -23,6 +23,15 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#ifdef _WIN32
+#   define NOGDI
+#   define NOUSER
+#   define WIN32_LEAN_AND_MEAN
+#   include <windows.h>
+#   undef near
+#   undef far
+#endif
+
 #include "../common/r3d_helper.h"
 #include "../common/r3d_image.h"
 #include "../common/r3d_hash.h"
