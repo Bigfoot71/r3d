@@ -13,6 +13,15 @@
 #include <assimp/material.h>
 #include <assimp/texture.h>
 
+#ifdef _WIN32
+#   define NOGDI
+#   define NOUSER
+#   define WIN32_LEAN_AND_MEAN
+#   include <windows.h>
+#   undef near
+#   undef far
+#endif
+
 #include <tinycthread.h>
 #include <stdatomic.h>
 #include <stdlib.h>
@@ -22,15 +31,6 @@
 #include <stdio.h>
 #include <rlgl.h>
 #include <glad.h>
-
-#ifdef _WIN32
-#   define NOGDI
-#   define NOUSER
-#   define WIN32_LEAN_AND_MEAN
-#   include <windows.h>
-#   undef near
-#   undef far
-#endif
 
 #include "../common/r3d_helper.h"
 #include "../common/r3d_image.h"
