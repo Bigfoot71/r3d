@@ -138,7 +138,7 @@ static texture_key_t make_key_texture_job(const texture_job_t* job)
 {
     uint64_t hash = R3D_HASH_FNV_OFFSET_BASIS_64;
 
-    for (int i = 0; i < (job->isORM ? 3 : 1); i++) {
+    for (int i = 0; i < ARRAY_SIZE(job->paths); i++) {
         if (job->paths[i][0] != '\0') {
             hash ^= r3d_hash_fnv1a_64_str(job->paths[i]);
             hash *= R3D_HASH_FNV_PRIME_64;
