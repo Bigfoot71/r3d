@@ -232,6 +232,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
     "${R3D_ROOT_PATH}/src/common/r3d_frustum.c"
+    "${R3D_ROOT_PATH}/src/common/r3d_helper.c"
     "${R3D_ROOT_PATH}/src/common/r3d_image.c"
     "${R3D_ROOT_PATH}/src/common/r3d_pass.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_texture.c"

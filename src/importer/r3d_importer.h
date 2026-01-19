@@ -107,9 +107,11 @@ int r3d_importer_get_bone_index(const r3d_importer_t* importer, const char* name
 r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter);
 
 /**
- * Destroy the texture cache and free all unused resources
+ * Frees the memory space allocated to store textures.
+ * The 'unloadTextures' parameter should only be set to true in case of an error, in order to free the loaded textures.
+ * If everything goes well, all textures loaded into the cache should be used.
  */
-void r3d_importer_unload_texture_cache(r3d_importer_texture_cache_t* cache);
+void r3d_importer_unload_texture_cache(r3d_importer_texture_cache_t* cache, bool unloadTextures);
 
 /**
  * Get a texture for a specific material and map type

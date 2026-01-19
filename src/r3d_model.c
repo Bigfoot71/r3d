@@ -20,31 +20,21 @@
 
 static bool import_model(r3d_importer_t* importer, R3D_Model* model)
 {
+    if (!r3d_importer_load_meshes(importer, model)) goto fail;
+    if (!r3d_importer_load_skeleton(importer, &model->skeleton)) goto fail;
+
     r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
-        importer, R3D.colorSpace, R3D.textureFilter
-    );
+        importer, R3D.colorSpace, R3D.textureFilter);
+    if (textureCache == NULL) goto fail;
 
-    if (textureCache == NULL) {
-        r3d_importer_destroy(importer);
-        return false;
-    }
+    if (!r3d_importer_load_materials(importer, model, textureCache)) goto fail;
 
-    if (!r3d_importer_load_meshes(importer, model)) {
-        r3d_importer_destroy(importer);
-        return false;
-    }
-
-    if (!r3d_importer_load_skeleton(importer, &model->skeleton)) {
-        r3d_importer_destroy(importer);
-        return false;
-    }
-
-    if (!r3d_importer_load_materials(importer, model, textureCache)) {
-        r3d_importer_destroy(importer);
-        return false;
-    }
-
+    r3d_importer_unload_texture_cache(textureCache, false);
     return true;
+
+fail:
+    r3d_importer_unload_texture_cache(textureCache, true);
+    return false;
 }
 
 // ========================================

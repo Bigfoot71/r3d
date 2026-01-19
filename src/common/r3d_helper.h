@@ -49,6 +49,16 @@
 // HELPER FUNCTIONS
 // ========================================
 
+/*
+ * Returns the number of logical CPUs available to the system.
+ * The value is detected once and cached.
+ */
+int r3d_get_cpu_count(void);
+
+// ========================================
+// INLINED FUNCTIONS
+// ========================================
+
 static inline void r3d_string_format(char *dst, size_t dstSize, const char *fmt, ...)
 {
     va_list args;
