@@ -105,6 +105,9 @@ void main()
     if (uAlbedoEnabled) {
         FragAlbedo = vec4(albedo.rgb, albedo.a * fadeAlpha);
     }
+    else {
+        FragAlbedo = vec4(0);
+    }
     
     FragEmission = vec4(vEmission * texture(uEmissionMap, decalTexCoord).rgb, fadeAlpha);
 
