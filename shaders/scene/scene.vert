@@ -71,8 +71,8 @@ smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 #endif // FORWARD
 
 #if defined(DECAL)
-smooth out mat4 vMatDecal;
-smooth out vec3 vOrientation;
+smooth out mat4 vDecalProjection;
+smooth out mat3 vDecalAxes;
 #endif // DECAL
 
 /* === Helper Functions === */
@@ -230,10 +230,7 @@ void main()
 #endif
 
 #if defined(DECAL)
-    vOrientation = normalize(uMatModel[1].xyz);
-    if (uInstancing) {
-        vOrientation = M_Rotate3D(vOrientation, iRotation);
-    }
-    vMatDecal = inverse(finalMatModel) * uView.invView;
+    vDecalProjection = inverse(finalMatModel) * uView.invView;
+    vDecalAxes = mat3(finalMatModel);
 #endif // DECAL
 }
