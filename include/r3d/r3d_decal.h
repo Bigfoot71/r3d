@@ -51,7 +51,8 @@
         .uvScale = {1.0f, 1.0f},                        \
         .alphaCutoff = 0.01f,                           \
         .normalThreshold = 0,                           \
-        .fadeWidth = 0                                  \
+        .fadeWidth = 0,                                 \
+        .applyColor = true                              \
     }
 
 // ========================================
@@ -71,14 +72,12 @@ typedef struct R3D_Decal {
     R3D_EmissionMap emission;   ///< Emission map
     R3D_NormalMap normal;       ///< Normal map
     R3D_OrmMap orm;             ///< Occlusion-Roughness-Metalness map
-
     Vector2 uvOffset;           ///< UV offset (default: {0.0f, 0.0f})
     Vector2 uvScale;            ///< UV scale (default: {1.0f, 1.0f})
-
     float alphaCutoff;          ///< Alpha cutoff threshold (default: 0.01f)
-
-    float normalThreshold;      ///< Maximum angle against the surface normal to draw decal. 0.0f disables threshold. (default 0.0f)
-    float fadeWidth;            ///< The width of fading along the normal threshold (default 0.0f)
+    float normalThreshold;      ///< Maximum angle against the surface normal to draw decal. 0.0f disables threshold. (default: 0.0f)
+    float fadeWidth;            ///< The width of fading along the normal threshold (default: 0.0f)
+    bool applyColor;            ///< Indicates that the albedo color will not be rendered, only the alpha component of the albedo will be used as a mask. (default: true)
 } R3D_Decal;
 
 // ========================================
