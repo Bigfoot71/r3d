@@ -54,14 +54,14 @@ typedef enum {
     R3D_TARGET_DEPTH,           \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_SPECULAR,        \
-    R3D_TARGET_GEOM_NORMAL    \
+    R3D_TARGET_GEOM_NORMAL      \
 
 #define R3D_TARGET_GBUFFER      \
     R3D_TARGET_ALBEDO,          \
     R3D_TARGET_DIFFUSE,         \
     R3D_TARGET_NORMAL,          \
     R3D_TARGET_ORM,             \
-    R3D_TARGET_GEOM_NORMAL,   \
+    R3D_TARGET_GEOM_NORMAL,     \
     R3D_TARGET_DEPTH            \
 
 #define R3D_TARGET_LIGHTING     \
