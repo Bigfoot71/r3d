@@ -202,7 +202,6 @@ void R3D_End(void)
     case R3D_OUTPUT_SCENE: blit_to_screen(r3d_target_swap_scene(sceneTarget)); break;
     case R3D_OUTPUT_ALBEDO: visualize_to_screen(R3D_TARGET_ALBEDO); break;
     case R3D_OUTPUT_NORMAL: visualize_to_screen(R3D_TARGET_NORMAL); break;
-    case R3D_OUTPUT_TANGENT: visualize_to_screen(R3D_TARGET_GEOM_NORMAL); break;
     case R3D_OUTPUT_ORM: visualize_to_screen(R3D_TARGET_ORM); break;
     case R3D_OUTPUT_DIFFUSE: visualize_to_screen(R3D_TARGET_DIFFUSE); break;
     case R3D_OUTPUT_SPECULAR: visualize_to_screen(R3D_TARGET_SPECULAR); break;

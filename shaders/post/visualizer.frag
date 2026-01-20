@@ -16,14 +16,13 @@
 
 #define OUTPUT_ALBEDO       1
 #define OUTPUT_NORMAL       2
-#define OUTPUT_TANGENT      3
-#define OUTPUT_ORM          4
-#define OUTPUT_DIFFUSE      5
-#define OUTPUT_SPECULAR     6
-#define OUTPUT_SSAO         7
-#define OUTPUT_SSIL         8
-#define OUTPUT_SSR          9
-#define OUTPUT_BLOOM        10
+#define OUTPUT_ORM          3
+#define OUTPUT_DIFFUSE      4
+#define OUTPUT_SPECULAR     5
+#define OUTPUT_SSAO         6
+#define OUTPUT_SSIL         7
+#define OUTPUT_SSR          8
+#define OUTPUT_BLOOM        9
 
 /* === Varyings === */
 
@@ -50,9 +49,6 @@ void main()
         break;
     case OUTPUT_NORMAL:
         FragColor = vec4(0.5 * M_DecodeOctahedral(FragColor.rg) + 0.5, 1.0);
-        break;
-    case OUTPUT_TANGENT:
-        FragColor = vec4(0.5 * M_DecodeOctahedral(FragColor.ba) + 0.5, 1.0);
         break;
     case OUTPUT_ORM:
         FragColor = vec4(FragColor.rgb, 1.0);
