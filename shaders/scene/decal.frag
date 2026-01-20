@@ -62,7 +62,7 @@ void main()
     /* Discard fragments outside projector bounds */
     if (any(greaterThan(abs(positionObjectSpace.xyz), vec3(0.5)))) discard;
 
-    /* Compute decal UVs */
+    /* Compute decal UVs in [0, 1] range */
     vec2 decalTexCoord = uTexCoordOffset + (positionObjectSpace.xz + 0.5) * uTexCoordScale;
 
     /* Sample albedo and apply alpha cutoff */
@@ -82,7 +82,7 @@ void main()
     /* Compute fade factor */
     float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0) * albedo.a;
 
-    /* Build TBN matrix */
+    /* Build TBN matrix (and correct handedness if necessary) */
     vec3 surfaceTangent = M_DecodeOctahedral(normTanData.ba);
     vec3 surfaceBitangent = normalize(cross(surfaceNormal, surfaceTangent));
     surfaceBitangent *= sign(dot(cross(surfaceTangent, surfaceBitangent), surfaceNormal));
