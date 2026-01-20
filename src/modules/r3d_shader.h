@@ -600,7 +600,7 @@ typedef struct {
     r3d_shader_uniform_float_t uMetalness;
     r3d_shader_uniform_float_t uNormalThreshold;
     r3d_shader_uniform_float_t uFadeWidth;
-    r3d_shader_uniform_int_t uAlbedoEnabled;
+    r3d_shader_uniform_int_t uApplyColor;
 } r3d_shader_scene_decal_t;
 
 typedef struct {

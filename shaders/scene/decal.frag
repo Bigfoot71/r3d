@@ -42,76 +42,63 @@ uniform vec2 uTexCoordScale;
 
 uniform float uNormalThreshold;
 uniform float uFadeWidth;
-uniform bool uAlbedoEnabled;
+uniform bool uApplyColor;
 
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragAlbedo;
 layout(location = 1) out vec4 FragEmission;
-layout(location = 2) out vec3 FragORM;
+layout(location = 2) out vec4 FragORM;
 layout(location = 3) out vec4 FragNormal;
 
 /* === Main function === */
 
 void main()
 {
-    /* Get surface position in view space */
+    /* Transform view-space position to decal local space */
     vec3 positionViewSpace = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
-
-    /* Get position in projector's local space */
     vec4 positionObjectSpace = vMatDecal * vec4(positionViewSpace, 1.0);
 
-    /* Discard fragments that are outside the bounds of the projector */
+    /* Discard fragments outside projector bounds */
     if (any(greaterThan(abs(positionObjectSpace.xyz), vec3(0.5)))) discard;
 
-	/* Offset coordinates to [0, 1] range for decal texture UV */
+    /* Compute decal UVs */
     vec2 decalTexCoord = uTexCoordOffset + (positionObjectSpace.xz + 0.5) * uTexCoordScale;
 
-    /* Compute albedo and discard if below alpha cutoff */
+    /* Sample albedo and apply alpha cutoff */
     vec4 albedo = vColor * texture(uAlbedoMap, decalTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
-    /* Retrieve surface normal */
-    vec3 surfaceNormal = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).rg);
+    /* Fetch surface normal and tangent */
+    ivec2 screenCoord = ivec2(gl_FragCoord.xy);
+    vec4 normTanData = texelFetch(uNormTanTex, screenCoord, 0);
+    vec3 surfaceNormal = M_DecodeOctahedral(normTanData.rg);
 
-    /* Compute angular difference between the decal and surface normal */
+    /* Normal threshold culling */
     float angle = acos(clamp(dot(vOrientation, surfaceNormal), -1.0, 1.0));
     float difference = uNormalThreshold - angle;
-
-    /* Discard if the angle exceeds the threshold */
     if (difference < 0.0) discard;
 
-    /* Compute fade on edge of threshold */
-    float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0);
- 
-    /* Retrieve surface tangent */
-    vec3 surfaceTangent = M_DecodeOctahedral(texelFetch(uNormTanTex, ivec2(gl_FragCoord.xy), 0).ba);
+    /* Compute fade factor */
+    float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0) * albedo.a;
 
-    /* Compute bitangent and correct handedness if necessary */
+    /* Build TBN matrix */
+    vec3 surfaceTangent = M_DecodeOctahedral(normTanData.ba);
     vec3 surfaceBitangent = normalize(cross(surfaceNormal, surfaceTangent));
-
-    if (dot(cross(surfaceTangent, surfaceBitangent), normalize(surfaceNormal)) <= 0.0) {
-        surfaceBitangent = -surfaceBitangent;
-    }
-
-    /* Apply normal */
+    surfaceBitangent *= sign(dot(cross(surfaceTangent, surfaceBitangent), surfaceNormal));
     mat3 TBN = mat3(surfaceTangent, surfaceBitangent, surfaceNormal);
-    vec3 N = normalize(TBN * M_NormalScale(texture(uNormalMap, decalTexCoord).rgb * 2.0 - 1.0, uNormalScale * fadeAlpha));
-    FragNormal = vec4(M_EncodeOctahedral(N), 0.0, 1.0);
 
-	/* Apply material */
-    if (uAlbedoEnabled) {
-        FragAlbedo = vec4(albedo.rgb, albedo.a * fadeAlpha);
-    }
-    else {
-        FragAlbedo = vec4(0);
-    }
-    
-    FragEmission = vec4(vEmission * texture(uEmissionMap, decalTexCoord).rgb, fadeAlpha);
-
+    /* Sample all other material textures together */
+    vec3 normalSample = texture(uNormalMap, decalTexCoord).rgb * 2.0 - 1.0;
+    vec3 emission = texture(uEmissionMap, decalTexCoord).rgb;
     vec3 orm = texture(uOrmMap, decalTexCoord).rgb;
 
-    FragORM.x = uOcclusion * orm.x;
-    FragORM.y = uRoughness * orm.y;
-    FragORM.z = uMetalness * orm.z;
+    /* Transform and scale decal normal */
+    vec3 N = normalize(TBN * M_NormalScale(normalSample, uNormalScale * fadeAlpha));
+
+    /* Output */
+    FragAlbedo   = vec4(albedo.rgb, fadeAlpha * float(uApplyColor));
+    FragNormal   = vec4(M_EncodeOctahedral(N), 0.0, 1.0);
+    FragEmission = vec4(vEmission * emission, fadeAlpha);
+    FragORM      = vec4(orm * vec3(uOcclusion, uRoughness, uMetalness), fadeAlpha);
 }
