@@ -151,7 +151,7 @@ typedef enum {
 
     // Buffers
     R3D_SHADER_SAMPLER_BUFFER_DEPTH          = 25,
-    R3D_SHADER_SAMPLER_BUFFER_GEOM_NORM_TAN  = 26,
+    R3D_SHADER_SAMPLER_BUFFER_GEOM_NORMAL  = 26,
     R3D_SHADER_SAMPLER_BUFFER_ALBEDO         = 27,
     R3D_SHADER_SAMPLER_BUFFER_NORMAL         = 28,
     R3D_SHADER_SAMPLER_BUFFER_ORM            = 29,
@@ -195,7 +195,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_ORM]            = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_DIFFUSE]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]       = GL_TEXTURE_2D,
-    [R3D_SHADER_SAMPLER_BUFFER_GEOM_NORM_TAN]  = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_GEOM_NORMAL]    = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSAO]           = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSIL]           = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSR]            = GL_TEXTURE_2D,
@@ -592,7 +592,7 @@ typedef struct {
     r3d_shader_uniform_sampler_t uEmissionMap;
     r3d_shader_uniform_sampler_t uOrmMap;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_sampler_t uNormTanTex;
+    r3d_shader_uniform_sampler_t uGeomNormalTex;
     r3d_shader_uniform_float_t uAlphaCutoff;
     r3d_shader_uniform_float_t uNormalScale;
     r3d_shader_uniform_float_t uOcclusion;

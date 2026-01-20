@@ -202,7 +202,7 @@ void R3D_End(void)
     case R3D_OUTPUT_SCENE: blit_to_screen(r3d_target_swap_scene(sceneTarget)); break;
     case R3D_OUTPUT_ALBEDO: visualize_to_screen(R3D_TARGET_ALBEDO); break;
     case R3D_OUTPUT_NORMAL: visualize_to_screen(R3D_TARGET_NORMAL); break;
-    case R3D_OUTPUT_TANGENT: visualize_to_screen(R3D_TARGET_GEOM_NORM_TAN); break;
+    case R3D_OUTPUT_TANGENT: visualize_to_screen(R3D_TARGET_GEOM_NORMAL); break;
     case R3D_OUTPUT_ORM: visualize_to_screen(R3D_TARGET_ORM); break;
     case R3D_OUTPUT_DIFFUSE: visualize_to_screen(R3D_TARGET_DIFFUSE); break;
     case R3D_OUTPUT_SPECULAR: visualize_to_screen(R3D_TARGET_SPECULAR); break;
@@ -1251,7 +1251,7 @@ void pass_scene_decals(void)
     glEnable(GL_BLEND);
 
     R3D_SHADER_BIND_SAMPLER(scene.decal, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 0));
-    R3D_SHADER_BIND_SAMPLER(scene.decal, uNormTanTex, r3d_target_get(R3D_TARGET_GEOM_NORM_TAN));
+    R3D_SHADER_BIND_SAMPLER(scene.decal, uGeomNormalTex, r3d_target_get(R3D_TARGET_GEOM_NORMAL));
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_DECAL_INST, R3D_DRAW_LIST_DECAL) {

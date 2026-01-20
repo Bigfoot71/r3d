@@ -29,7 +29,7 @@ uniform sampler2D uEmissionMap;
 uniform sampler2D uOrmMap;
 
 uniform sampler2D uDepthTex;
-uniform sampler2D uNormTanTex;
+uniform sampler2D uGeomNormalTex;
 
 uniform float uAlphaCutoff;
 uniform float uNormalScale;
@@ -86,8 +86,8 @@ void main()
 
     /* Fetch surface normal */
     ivec2 screenCoord = ivec2(gl_FragCoord.xy);
-    vec4 normTanData = texelFetch(uNormTanTex, screenCoord, 0);
-    vec3 worldNormal = M_DecodeOctahedral(normTanData.rg);
+    vec2 encGeomNormal = texelFetch(uGeomNormalTex, screenCoord, 0).rg;
+    vec3 worldNormal = M_DecodeOctahedral(encGeomNormal);
 
     /* Normal threshold culling */
     float angle = acos(clamp(dot(vDecalAxes[1], worldNormal), -1.0, 1.0));
