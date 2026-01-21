@@ -6,12 +6,34 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
+#include "raylib.h"
 #include <r3d/r3d_mesh_data.h>
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+
+// ========================================
+// INTERNAL FUNCTIONS
+// ========================================
+
+static bool alloc_mesh(R3D_MeshData* meshData, int vertexCount, int indexCount);
+
+static void gen_cube_face(
+    R3D_Vertex **vertexPtr,
+    uint32_t **indexPtr,
+    uint32_t *vertexOffset,
+    Vector3 origin,
+    Vector3 uAxis,
+    Vector3 vAxis,
+    float uSize,
+    float vSize,
+    int uRes,
+    int vRes,
+    Vector3 normal,
+    Vector3 tangent
+);
 
 // ========================================
 // PUBLIC API
@@ -65,62 +87,58 @@ R3D_MeshData R3D_GenMeshDataQuad(float width, float length, int resX, int resZ, 
     R3D_MeshData meshData = {0};
 
     Vector3 normal = Vector3Normalize(frontDir);
-
     Vector3 reference = (fabsf(normal.y) < 0.9f) ? (Vector3){0.0f, 1.0f, 0.0f} : (Vector3){1.0f, 0.0f, 0.0f};
-    Vector3 tangent = Vector3CrossProduct(normal, reference);
-    tangent = Vector3Normalize(tangent);
-
+    Vector3 tangent = Vector3Normalize(Vector3CrossProduct(normal, reference));
     Vector3 bitangent = Vector3CrossProduct(normal, tangent);
 
+    Vector4 tangent4 = {tangent.x, tangent.y, tangent.z, 1.0f};
+    float invResX = 1.0f / resX;
+    float invResZ = 1.0f / resZ;
     int vertCountX = resX + 1;
     int vertCountZ = resZ + 1;
-    meshData.vertexCount = vertCountX * vertCountZ;
-    meshData.indexCount = resX * resZ * 6;
 
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
+    if (!alloc_mesh(&meshData, vertCountX * vertCountZ, resX * resZ * 6)) {
+        return meshData;
+    }
 
-    int vertexIndex = 0;
-    for (int z = 0; z <= resZ; z++) {
-        for (int x = 0; x <= resX; x++) {
-            float u = ((float)x / resX) - 0.5f;
-            float v = ((float)z / resZ) - 0.5f;
-            float localX = u * width;
-            float localY = v * length;
+    R3D_Vertex* vertex = meshData.vertices;
+    for (int z = 0; z <= resZ; z++)
+    {
+        float v = z * invResZ;
+        float localY = (v - 0.5f) * length;
+        
+        for (int x = 0; x <= resX; x++, vertex++)
+        {
+            float u = x * invResX;
+            float localX = (u - 0.5f) * width;
 
-            meshData.vertices[vertexIndex].position.x = localX * tangent.x + localY * bitangent.x;
-            meshData.vertices[vertexIndex].position.y = localX * tangent.y + localY * bitangent.y;
-            meshData.vertices[vertexIndex].position.z = localX * tangent.z + localY * bitangent.z;
-
-            meshData.vertices[vertexIndex].texcoord = (Vector2){(float)x / resX, (float)z / resZ};
-            meshData.vertices[vertexIndex].normal = normal;
-            meshData.vertices[vertexIndex].color = WHITE;
-            meshData.vertices[vertexIndex].tangent = (Vector4){tangent.x, tangent.y, tangent.z, 1.0f};
-
-            for (int i = 0; i < 4; i++) {
-                meshData.vertices[vertexIndex].boneIds[i] = 0;
-                meshData.vertices[vertexIndex].weights[i] = 0.0f;
-            }
-
-            vertexIndex++;
+            vertex->position = (Vector3){
+                localX * tangent.x + localY * bitangent.x,
+                localX * tangent.y + localY * bitangent.y,
+                localX * tangent.z + localY * bitangent.z
+            };
+            vertex->texcoord = (Vector2){u, v};
+            vertex->normal = normal;
+            vertex->color = WHITE;
+            vertex->tangent = tangent4;
         }
     }
 
-    int indexOffset = 0;
-    for (int z = 0; z < resZ; z++) {
-        for (int x = 0; x < resX; x++) {
-            uint32_t i0 = z * (resX + 1) + x;
-            uint32_t i1 = z * (resX + 1) + (x + 1);
-            uint32_t i2 = (z + 1) * (resX + 1) + (x + 1);
-            uint32_t i3 = (z + 1) * (resX + 1) + x;
+    uint32_t* index = meshData.indices;
+    for (int z = 0; z < resZ; z++)
+    {
+        uint32_t rowStart = z * vertCountX;
+        uint32_t nextRowStart = rowStart + vertCountX;
 
-            meshData.indices[indexOffset++] = i0;
-            meshData.indices[indexOffset++] = i1;
-            meshData.indices[indexOffset++] = i2;
+        for (int x = 0; x < resX; x++)
+        {
+            uint32_t i0 = rowStart + x;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRowStart + x + 1;
+            uint32_t i3 = nextRowStart + x;
 
-            meshData.indices[indexOffset++] = i0;
-            meshData.indices[indexOffset++] = i2;
-            meshData.indices[indexOffset++] = i3;
+            *index++ = i0; *index++ = i1; *index++ = i2;
+            *index++ = i0; *index++ = i2; *index++ = i3;
         }
     }
 
@@ -129,143 +147,125 @@ R3D_MeshData R3D_GenMeshDataQuad(float width, float length, int resX, int resZ, 
 
 R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, int resZ)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    // Validation of parameters
-    if (width <= 0.0f || length <= 0.0f || resX < 1 || resZ < 1) return meshData;
-
-    // Calculating grid dimensions
-    const int verticesPerRow = resX + 1;
-    const int verticesPerCol = resZ + 1;
-    meshData.vertexCount = verticesPerRow * verticesPerCol;
-    meshData.indexCount = resX * resZ * 6; // 2 triangles per quad, 3 indices per triangle
-
-    // Memory allocation
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (width <= 0.0f || length <= 0.0f || resX < 1 || resZ < 1) {
         return meshData;
     }
 
-    // Pre-compute some values
-    const float halfWidth = width * 0.5f;
-    const float halfLength = length * 0.5f;
-    const float stepX = width / resX;
-    const float stepZ = length / resZ;
-    const float uvStepX = 1.0f / resX;
-    const float uvStepZ = 1.0f / resZ;
+    int vertCountX = resX + 1;
+    int vertCountZ = resZ + 1;
 
-    // Vertex generation
-    int vertexIndex = 0;
-    for (int z = 0; z <= resZ; z++) {
-        const float posZ = -halfLength + z * stepZ;
-        const float uvZ = (float)z * uvStepZ;
-    
-        for (int x = 0; x <= resX; x++) {
-            const float posX = -halfWidth + x * stepX;
-            const float uvX = (float)x * uvStepX;
-        
-            meshData.vertices[vertexIndex] = (R3D_Vertex){
+    if (!alloc_mesh(&meshData, vertCountX * vertCountZ, resX * resZ * 6)) {
+        return meshData;
+    }
+
+    float halfWidth = width * 0.5f;
+    float halfLength = length * 0.5f;
+    float stepX = width / resX;
+    float stepZ = length / resZ;
+    float invResX = 1.0f / resX;
+    float invResZ = 1.0f / resZ;
+
+    R3D_Vertex* vertex = meshData.vertices;
+    for (int z = 0; z <= resZ; z++)
+    {
+        float posZ = -halfLength + z * stepZ;
+        float uvZ = z * invResZ;
+
+        for (int x = 0; x <= resX; x++, vertex++)
+        {
+            float posX = -halfWidth + x * stepX;
+            float uvX = x * invResX;
+
+            *vertex = (R3D_Vertex){
                 .position = {posX, 0.0f, posZ},
                 .texcoord = {uvX, uvZ},
                 .normal = {0.0f, 1.0f, 0.0f},
-                .color = {255, 255, 255, 255},
+                .color = WHITE,
                 .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
             };
-            vertexIndex++;
         }
     }
 
-    // Generation of indices (counter-clockwise order)
-    int indexOffset = 0;
-    for (int z = 0; z < resZ; z++) {
-        const int rowStart = z * verticesPerRow;
-        const int nextRowStart = (z + 1) * verticesPerRow;
-    
-        for (int x = 0; x < resX; x++) {
-            // Clues from the 4 corners of the quad
-            const uint32_t topLeft = rowStart + x;
-            const uint32_t topRight = rowStart + x + 1;
-            const uint32_t bottomLeft = nextRowStart + x;
-            const uint32_t bottomRight = nextRowStart + x + 1;
-        
-            // First triangle (topLeft, bottomLeft, topRight)
-            meshData.indices[indexOffset++] = topLeft;
-            meshData.indices[indexOffset++] = bottomLeft;
-            meshData.indices[indexOffset++] = topRight;
-        
-            // Second triangle (topRight, bottomLeft, bottomRight)
-            meshData.indices[indexOffset++] = topRight;
-            meshData.indices[indexOffset++] = bottomLeft;
-            meshData.indices[indexOffset++] = bottomRight;
+    uint32_t* index = meshData.indices;
+    for (int z = 0; z < resZ; z++)
+    {
+        uint32_t rowStart = z * vertCountX;
+        uint32_t nextRowStart = rowStart + vertCountX;
+
+        for (int x = 0; x < resX; x++)
+        {
+            uint32_t i0 = rowStart + x;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRowStart + x;
+            uint32_t i3 = i2 + 1;
+
+            *index++ = i0; *index++ = i2; *index++ = i1;
+            *index++ = i1; *index++ = i2; *index++ = i3;
         }
     }
 
     return meshData;
 }
 
-R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
+R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius, Vector3 frontDir)
 {
     R3D_MeshData meshData = {0};
 
-    // Validation of parameters
-    if (sides < 3 || radius <= 0.0f) return meshData;
-
-    // Memory allocation
-    // For a polygon: 1 central vertex + peripheral vertices
-    meshData.vertexCount = sides + 1;
-    meshData.indexCount = sides * 3; // sides triangles, 3 indices per triangle
-
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (sides < 3 || radius <= 0.0f) {
         return meshData;
     }
 
-    // Pre-compute some values
-    const float angleStep = 2.0f * PI / sides;
+    if (!alloc_mesh(&meshData, sides + 1, sides * 3)) {
+        return meshData;
+    }
 
-    // Central vertex (index 0)
+    Vector3 normal = Vector3Normalize(frontDir);
+    Vector3 reference = (fabsf(normal.y) < 0.9f) ? (Vector3){0.0f, 1.0f, 0.0f} : (Vector3){1.0f, 0.0f, 0.0f};
+    Vector3 tangent = Vector3Normalize(Vector3CrossProduct(normal, reference));
+    Vector3 bitangent = Vector3CrossProduct(normal, tangent);
+
+    Vector4 tangent4 = {tangent.x, tangent.y, tangent.z, 1.0f};
+    float angleStep = 2.0f * PI / sides;
+
     meshData.vertices[0] = (R3D_Vertex){
         .position = {0.0f, 0.0f, 0.0f},
         .texcoord = {0.5f, 0.5f},
-        .normal = {0.0f, 1.0f, 0.0f},
-        .color = {255, 255, 255, 255},
-        .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
+        .normal = normal,
+        .color = WHITE,
+        .tangent = tangent4
     };
 
-    for (int i = 0; i < sides; i++) {
-        const float angle = i * angleStep;
-        const float cosAngle = cosf(angle);
-        const float sinAngle = sinf(angle);
+    R3D_Vertex* vertex = &meshData.vertices[1];
+    uint32_t* index = meshData.indices;
 
-        // Position on the circle
-        const float x = radius * cosAngle;
-        const float y = radius * sinAngle;
+    for (int i = 0; i < sides; i++, vertex++)
+    {
+        float angle = i * angleStep;
+        float cosAngle = cosf(angle);
+        float sinAngle = sinf(angle);
 
-        // Peripheral vertex
-        meshData.vertices[i + 1] = (R3D_Vertex){
-            .position = {x, y, 0.0f},
-            .texcoord = {
-                0.5f + 0.5f * cosAngle, // Circular UV mapping
-                0.5f + 0.5f * sinAngle
-            },
-            .normal = {0.0f, 1.0f, 0.0f},
-            .color = {255, 255, 255, 255},
-            .tangent = {-sinAngle, cosAngle, 0.0f, 1.0f} // Tangent perpendicular to the radius
+        float localX = radius * cosAngle;
+        float localY = radius * sinAngle;
+
+        vertex->position = (Vector3){
+            localX * tangent.x + localY * bitangent.x,
+            localX * tangent.y + localY * bitangent.y,
+            localX * tangent.z + localY * bitangent.z
         };
 
-        // Indices for the triangle (center, current vertex, next vertex)
-        const int baseIdx = i * 3;
-        meshData.indices[baseIdx] = 0; // Center
-        meshData.indices[baseIdx + 1] = i + 1; // Current vertex
-        meshData.indices[baseIdx + 2] = (i + 1) % sides + 1; // Next vertex (with wrap)
+        vertex->texcoord = (Vector2){
+            0.5f + 0.5f * cosAngle,
+            0.5f + 0.5f * sinAngle
+        };
+        vertex->normal = normal;
+        vertex->color = WHITE;
+        vertex->tangent = tangent4;
+
+        *index++ = 0;
+        *index++ = i + 1;
+        *index++ = (i + 1) % sides + 1;
     }
 
     return meshData;
@@ -273,704 +273,474 @@ R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius)
 
 R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    // Validation of parameters
-    if (width <= 0.0f || height <= 0.0f || length <= 0.0f) return meshData;
-
-    // Cube dimensions
-    meshData.vertexCount = 24; // 4 vertices per face, 6 faces
-    meshData.indexCount = 36;  // 2 triangles per face, 3 indices per triangle, 6 faces
-
-    // Memory allocation
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (width <= 0.0f || height <= 0.0f || length <= 0.0f) {
         return meshData;
     }
 
-    // Pre-compute some values
-    const float halfW = width * 0.5f;
-    const float halfH = height * 0.5f;
-    const float halfL = length * 0.5f;
+    if (!alloc_mesh(&meshData, 24, 36)) {
+        return meshData;
+    }
 
-    // Standard UV coordinates for each face
-    const Vector2 uvs[4] = {
+    float halfW = width * 0.5f;
+    float halfH = height * 0.5f;
+    float halfL = length * 0.5f;
+
+    Vector2 uvs[4] = {
         {0.0f, 0.0f}, {1.0f, 0.0f},
         {1.0f, 1.0f}, {0.0f, 1.0f}
     };
 
-    // Generation of the 6 faces of the cube
-    int vertexOffset = 0;
-    int indexOffset = 0;
+    R3D_Vertex* v = meshData.vertices;
 
     // Back face (+Z)
-    const Vector3 frontNormal = {0.0f, 0.0f, 1.0f};
-    const Vector4 frontTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[0], frontNormal, {255, 255, 255, 255}, frontTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[1], frontNormal, {255, 255, 255, 255}, frontTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[2], frontNormal, {255, 255, 255, 255}, frontTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[3], frontNormal, {255, 255, 255, 255}, frontTangent};
-    vertexOffset += 4;
+    *v++ = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[0], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[1], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, halfH, halfL}, uvs[2], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[3], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
 
     // Front face (-Z)
-    const Vector3 backNormal = {0.0f, 0.0f, -1.0f};
-    const Vector4 backTangent = {-1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[0], backNormal, {255, 255, 255, 255}, backTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[1], backNormal, {255, 255, 255, 255}, backTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[2], backNormal, {255, 255, 255, 255}, backTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[3], backNormal, {255, 255, 255, 255}, backTangent};
-    vertexOffset += 4;
+    *v++ = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[0], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[1], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[2], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[3], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
 
     // Right face (+X)
-    const Vector3 rightNormal = {1.0f, 0.0f, 0.0f};
-    const Vector4 rightTangent = {0.0f, 0.0f, -1.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[0], rightNormal, {255, 255, 255, 255}, rightTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], rightNormal, {255, 255, 255, 255}, rightTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], rightNormal, {255, 255, 255, 255}, rightTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[3], rightNormal, {255, 255, 255, 255}, rightTangent};
-    vertexOffset += 4;
+    *v++ = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[0], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, halfH, halfL}, uvs[3], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
 
     // Left face (-X)
-    const Vector3 leftNormal = {-1.0f, 0.0f, 0.0f};
-    const Vector4 leftTangent = {0.0f, 0.0f, 1.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], leftNormal, {255, 255, 255, 255}, leftTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[1], leftNormal, {255, 255, 255, 255}, leftTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[2], leftNormal, {255, 255, 255, 255}, leftTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], leftNormal, {255, 255, 255, 255}, leftTangent};
-    vertexOffset += 4;
+    *v++ = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[1], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[2], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
 
-    // Face up (+Y)
-    const Vector3 topNormal = {0.0f, 1.0f, 0.0f};
-    const Vector4 topTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[0], topNormal, {255, 255, 255, 255}, topTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, halfH, halfL}, uvs[1], topNormal, {255, 255, 255, 255}, topTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], topNormal, {255, 255, 255, 255}, topTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], topNormal, {255, 255, 255, 255}, topTangent};
-    vertexOffset += 4;
+    // Top face (+Y)
+    *v++ = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[0], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, halfH, halfL}, uvs[1], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
 
-    // Face down (-Y)
-    const Vector3 bottomNormal = {0.0f, -1.0f, 0.0f};
-    const Vector4 bottomTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-    meshData.vertices[vertexOffset + 0] = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], bottomNormal, {255, 255, 255, 255}, bottomTangent};
-    meshData.vertices[vertexOffset + 1] = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], bottomNormal, {255, 255, 255, 255}, bottomTangent};
-    meshData.vertices[vertexOffset + 2] = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[2], bottomNormal, {255, 255, 255, 255}, bottomTangent};
-    meshData.vertices[vertexOffset + 3] = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[3], bottomNormal, {255, 255, 255, 255}, bottomTangent};
+    // Bottom face (-Y)
+    *v++ = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[2], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[3], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
 
-    // Generation of indices (same pattern for each face)
+    // Indices
+    uint32_t* index = meshData.indices;
     for (int face = 0; face < 6; face++) {
-        const uint32_t baseVertex = face * 4;
-        const int baseIndex = face * 6;
-    
-        // First triangle (0, 1, 2)
-        meshData.indices[baseIndex + 0] = baseVertex + 0;
-        meshData.indices[baseIndex + 1] = baseVertex + 1;
-        meshData.indices[baseIndex + 2] = baseVertex + 2;
-    
-        // Second triangle (2, 3, 0)
-        meshData.indices[baseIndex + 3] = baseVertex + 2;
-        meshData.indices[baseIndex + 4] = baseVertex + 3;
-        meshData.indices[baseIndex + 5] = baseVertex + 0;
+        uint32_t base = face * 4;
+        *index++ = base; *index++ = base + 1; *index++ = base + 2;
+        *index++ = base + 2; *index++ = base + 3; *index++ = base;
     }
+
+    return meshData;
+}
+
+R3D_MeshData R3D_GenMeshDataCubeEx(float width, float height, float length, int resX, int resY, int resZ)
+{
+    R3D_MeshData meshData = {0};
+
+    if (width <= 0 || height <= 0 || length <= 0 || resX < 1 || resY < 1 || resZ < 1) {
+        return meshData;
+    }
+
+    int vertXY = (resX + 1) * (resY + 1);
+    int vertXZ = (resX + 1) * (resZ + 1);
+    int vertYZ = (resY + 1) * (resZ + 1);
+
+    int idxXY = resX * resY * 6;
+    int idxXZ = resX * resZ * 6;
+    int idxYZ = resY * resZ * 6;
+
+    int totalVertices = 2 * (vertXY + vertXZ + vertYZ);
+    int totalIndices  = 2 * (idxXY + idxXZ + idxYZ);
+
+    if (!alloc_mesh(&meshData, totalVertices, totalIndices)) {
+        return meshData;
+    }
+
+    float hw = width  * 0.5f;
+    float hh = height * 0.5f;
+    float hl = length * 0.5f;
+
+    R3D_Vertex *vertex = meshData.vertices;
+    uint32_t *index = meshData.indices;
+    uint32_t vertexOffset = 0;
+
+    // +Z
+    gen_cube_face(&vertex, &index, &vertexOffset,
+        (Vector3){0, 0,  hl}, (Vector3){ 1, 0, 0}, (Vector3){0, 1, 0},
+        width, height, resX, resY,
+        (Vector3){0, 0,  1}, (Vector3){ 1, 0, 0});
+
+    // -Z
+    gen_cube_face(&vertex, &index, &vertexOffset,
+        (Vector3){0, 0, -hl}, (Vector3){-1, 0, 0}, (Vector3){0, 1, 0},
+        width, height, resX, resY,
+        (Vector3){0, 0, -1}, (Vector3){-1, 0, 0});
+
+    // +X
+    gen_cube_face(&vertex, &index, &vertexOffset,
+        (Vector3){ hw, 0, 0}, (Vector3){0, 0,-1}, (Vector3){0, 1, 0},
+        length, height, resZ, resY,
+        (Vector3){ 1, 0, 0}, (Vector3){0, 0,-1});
+
+    // -X
+    gen_cube_face(&vertex, &index, &vertexOffset,
+        (Vector3){-hw, 0, 0}, (Vector3){0, 0, 1}, (Vector3){0, 1, 0},
+        length, height, resZ, resY,
+        (Vector3){-1, 0, 0}, (Vector3){0, 0, 1});
+
+    // +Y
+    gen_cube_face(&vertex, &index, &vertexOffset,
+        (Vector3){0,  hh, 0}, (Vector3){1, 0, 0}, (Vector3){0, 0,-1},
+        width, length, resX, resZ,
+        (Vector3){0, 1, 0}, (Vector3){1, 0, 0});
+
+    // -Y
+    gen_cube_face(&vertex, &index, &vertexOffset,
+        (Vector3){0, -hh, 0}, (Vector3){1, 0, 0}, (Vector3){0, 0, 1},
+        width, length, resX, resZ,
+        (Vector3){0,-1, 0}, (Vector3){1, 0, 0});
 
     return meshData;
 }
 
 R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    // Parameter validation
-    if (radius <= 0.0f || rings < 2 || slices < 3) return meshData;
-
-    // Calculate meshData dimensions
-    meshData.vertexCount = (rings + 1) * (slices + 1);
-    meshData.indexCount = rings * slices * 6; // 2 triangles per quad
-
-    // Allocate memory for vertices and indices
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (radius <= 0.0f || rings < 2 || slices < 3) {
         return meshData;
     }
 
-    // Pre-calculate angular steps and default color
-    const float ringStep = PI / rings;        // Vertical angle increment (phi: 0 to PI)
-    const float sliceStep = 2.0f * PI / slices; // Horizontal angle increment (theta: 0 to 2PI)
+    int vertCountPerRing = slices + 1;
+    if (!alloc_mesh(&meshData, (rings + 1) * vertCountPerRing, rings * slices * 6)) {
+        return meshData;
+    }
 
-    // Generate vertices
-    int vertexIndex = 0;
-    for (int ring = 0; ring <= rings; ring++) {
-        const float phi = ring * ringStep;          // Vertical angle from +Y (North Pole)
-        const float sinPhi = sinf(phi);
-        const float cosPhi = cosf(phi);
+    float ringStep = PI / rings;
+    float sliceStep = 2.0f * PI / slices;
+    float invRings = 1.0f / rings;
+    float invSlices = 1.0f / slices;
+    float invRadius = 1.0f / radius;
 
-        const float y = radius * cosPhi;            // Y-coordinate (up/down)
-        const float ringRadius = radius * sinPhi;   // Radius of the current ring
+    R3D_Vertex* vertex = meshData.vertices;
+    for (int ring = 0; ring <= rings; ring++)
+    {
+        float phi = ring * ringStep;
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+        float y = radius * cosPhi;
+        float ringRadius = radius * sinPhi;
+        float v = ring * invRings;
 
-        const float v = (float)ring / rings;        // V texture coordinate (0 at North Pole, 1 at South Pole)
-    
-        for (int slice = 0; slice <= slices; slice++) {
-            const float theta = slice * sliceStep;   // Horizontal angle (around Y-axis)
-            const float sinTheta = sinf(theta);
-            const float cosTheta = cosf(theta);
-        
-            // Calculate vertex position for right-handed, -Z forward, +Y up system
-            const float x = ringRadius * cosTheta;
-            const float z = ringRadius * -sinTheta; // Invert Z for -Z forward
-            
-            // Normals point outwards from the sphere center
-            const Vector3 normal = {x / radius, y / radius, z / radius};
-        
-            // UV coordinates
-            const float u = (float)slice / slices;
-        
-            // Calculate tangent vector (points in the direction of increasing U)
-            // Adjusted for -Z forward system: tangent = d(position)/d(theta) normalized
-            const Vector3 tangentDir = {-sinTheta, 0.0f, -cosTheta};
-            const Vector4 tangent = {tangentDir.x, tangentDir.y, tangentDir.z, 1.0f}; // W for bitangent handedness
-        
-            meshData.vertices[vertexIndex++] = (R3D_Vertex){
-                .position = {x, y, z},
-                .texcoord = {u, v},
-                .normal = normal,
-                .color = {255, 255, 255, 255},
-                .tangent = tangent
-            };
+        for (int slice = 0; slice <= slices; slice++, vertex++)
+        {
+            float theta = slice * sliceStep;
+            float sinTheta = sinf(theta);
+            float cosTheta = cosf(theta);
+
+            float x = ringRadius * cosTheta;
+            float z = ringRadius * -sinTheta;
+
+            vertex->position = (Vector3){x, y, z};
+            vertex->texcoord = (Vector2){slice * invSlices, v};
+            vertex->normal = (Vector3){x * invRadius, y * invRadius, z * invRadius};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
         }
     }
 
-    // Generate indices
-    int indexOffset = 0;
-    const int verticesPerRing = slices + 1;
+    uint32_t* index = meshData.indices;
+    for (int ring = 0; ring < rings; ring++)
+    {
+        uint32_t currentRow = ring * vertCountPerRing;
+        uint32_t nextRow = currentRow + vertCountPerRing;
 
-    for (int ring = 0; ring < rings; ring++) {
-        const int currentRingStartIdx = ring * verticesPerRing;
-        const int nextRingStartIdx = (ring + 1) * verticesPerRing;
-    
-        for (int slice = 0; slice < slices; slice++) {
-            // Get indices of the 4 corners of the quad
-            const uint32_t current = currentRingStartIdx + slice;
-            const uint32_t next = currentRingStartIdx + slice + 1;
-            const uint32_t currentNext = nextRingStartIdx + slice;
-            const uint32_t nextNext = nextRingStartIdx + slice + 1;
-        
-            // Define triangles with clockwise winding for back-face culling (right-handed system)
-            // First triangle of the quad
-            meshData.indices[indexOffset++] = current;
-            meshData.indices[indexOffset++] = currentNext;
-            meshData.indices[indexOffset++] = nextNext;
+        for (int slice = 0; slice < slices; slice++)
+        {
+            uint32_t i0 = currentRow + slice;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRow + slice;
+            uint32_t i3 = i2 + 1;
 
-            // Second triangle of the quad
-            meshData.indices[indexOffset++] = current;
-            meshData.indices[indexOffset++] = nextNext;
-            meshData.indices[indexOffset++] = next;
+            *index++ = i0; *index++ = i2; *index++ = i3;
+            *index++ = i0; *index++ = i3; *index++ = i1;
         }
     }
-
-    // Set final index count
-    meshData.indexCount = indexOffset;
 
     return meshData;
 }
 
 R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    // Parameter validation
-    if (radius <= 0.0f || rings < 1 || slices < 3) return meshData;
-
-    // Calculate vertex counts for hemisphere and base
-    const int hemisphereVertexCount = (rings + 1) * (slices + 1);
-    const int baseVertexCount = slices + 1; // Circular base includes center + points on edge
-    meshData.vertexCount = hemisphereVertexCount + baseVertexCount;
-
-    // Calculate index counts for hemisphere and base
-    const int hemisphereIndexCount = rings * slices * 6; // 2 triangles per quad
-    const int baseIndexCount = slices * 3;               // 1 triangle per slice for the base
-    meshData.indexCount = hemisphereIndexCount + baseIndexCount;
-
-    // Allocate memory
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (radius <= 0.0f || rings < 1 || slices < 3) {
         return meshData;
     }
 
-    // Pre-compute angles and default color
-    const float ringStep = (PI * 0.5f) / rings;   // Vertical angle increment (phi: 0 to PI/2 for hemisphere)
-    const float sliceStep = 2.0f * PI / slices;   // Horizontal angle increment (theta: 0 to 2PI)
+    int vertCountPerRing = slices + 1;
+    int hemisphereVertCount = (rings + 1) * vertCountPerRing;
+    int totalVertCount = hemisphereVertCount + 1 + vertCountPerRing;
+    int totalIndexCount = rings * slices * 6 + slices * 3;
 
-    // Generate hemisphere vertices
-    int vertexIndex = 0;
-    for (int ring = 0; ring <= rings; ring++) {
-        const float phi = ring * ringStep;          // Vertical angle (0 at +Y, PI/2 at Y=0)
-        const float sinPhi = sinf(phi);
-        const float cosPhi = cosf(phi);
-        const float y = radius * cosPhi;            // Y-position (radius down to 0)
-        const float ringRadius = radius * sinPhi;   // Radius of the current ring
+    if (!alloc_mesh(&meshData, totalVertCount, totalIndexCount)) {
+        return meshData;
+    }
 
-        const float v = (float)ring / rings;        // V texture coordinate
-    
-        for (int slice = 0; slice <= slices; slice++) {
-            const float theta = slice * sliceStep;   // Horizontal angle
-            const float sinTheta = sinf(theta);
-            const float cosTheta = cosf(theta);
-        
-            // Position for right-handed, -Z forward, +Y up
-            const float x = ringRadius * cosTheta;
-            const float z = ringRadius * -sinTheta; // Invert Z for -Z forward
-        
-            // Normal (points outwards from the sphere center)
-            const Vector3 normal = {x / radius, y / radius, z / radius};
-        
-            // UV coordinates
-            const float u = (float)slice / slices;
-        
-            // Tangent: adjusted for -Z forward (derivative of position wrt theta)
-            const Vector3 tangentDir = {-sinTheta, 0.0f, -cosTheta};
-            const Vector4 tangent = {tangentDir.x, tangentDir.y, tangentDir.z, 1.0f};
-        
-            meshData.vertices[vertexIndex++] = (R3D_Vertex){
-                .position = {x, y, z},
-                .texcoord = {u, v},
-                .normal = normal,
-                .color = {255, 255, 255, 255},
-                .tangent = tangent
-            };
+    float ringStep = (PI * 0.5f) / rings;
+    float sliceStep = 2.0f * PI / slices;
+    float invRings = 1.0f / rings;
+    float invSlices = 1.0f / slices;
+    float invRadius = 1.0f / radius;
+
+    R3D_Vertex* vertex = meshData.vertices;
+    for (int ring = 0; ring <= rings; ring++)
+    {
+        float phi = ring * ringStep;
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+        float y = radius * cosPhi;
+        float ringRadius = radius * sinPhi;
+        float v = ring * invRings;
+
+        for (int slice = 0; slice <= slices; slice++, vertex++)
+        {
+            float theta = slice * sliceStep;
+            float sinTheta = sinf(theta);
+            float cosTheta = cosf(theta);
+
+            float x = ringRadius * cosTheta;
+            float z = ringRadius * -sinTheta;
+
+            vertex->position = (Vector3){x, y, z};
+            vertex->texcoord = (Vector2){slice * invSlices, v};
+            vertex->normal = (Vector3){x * invRadius, y * invRadius, z * invRadius};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
         }
     }
 
-    // Generate base vertices (at y = 0)
-    // The base needs a central vertex and vertices around the edge.
-    // Let's make the first vertex of the base ring the center.
-    const int baseCenterVertexIndex = vertexIndex;
-    meshData.vertices[vertexIndex++] = (R3D_Vertex){
+    uint32_t baseCenterIdx = hemisphereVertCount;
+    *vertex++ = (R3D_Vertex){
         .position = {0.0f, 0.0f, 0.0f},
-        .texcoord = {0.5f, 0.5f}, // Center of UV map
-        .normal = {0.0f, -1.0f, 0.0f}, // Normal pointing downwards
-        .color = {255, 255, 255, 255},
-        .tangent = {1.0f, 0.0f, 0.0f, 1.0f} // Arbitrary tangent for a flat surface
-    };
-
-    // Then, the perimeter vertices for the base
-    for (int slice = 0; slice <= slices; slice++) {
-        const float theta = slice * sliceStep;
-        const float sinTheta = sinf(theta);
-        const float cosTheta = cosf(theta);
-    
-        const float x = radius * cosTheta;
-        const float z = radius * -sinTheta; // Invert Z for consistency
-    
-        // Circular UV mapping for the base
-        const float u = 0.5f + 0.5f * cosTheta;
-        const float v = 0.5f + 0.5f * -sinTheta; // Invert V based on Z inversion if desired
-                                                 // Or keep it standard for circular mapping: 0.5f + 0.5f * sinTheta;
-                                                 // Let's assume standard circular mapping (no direct link to -Z)
-    
-        meshData.vertices[vertexIndex++] = (R3D_Vertex) {
-            .position = {x, 0.0f, z},
-            .texcoord = {u, v},
-            .normal = {0.0f, -1.0f, 0.0f}, // Normal pointing downwards
-            .color = {255, 255, 255, 255},
-            .tangent = {1.0f, 0.0f, 0.0f, 1.0f} // Tangent for flat base
-        };
-    }
-
-    // Generate indices for the hemisphere
-    int indexOffset = 0;
-    const int verticesPerRing = slices + 1;
-
-    for (int ring = 0; ring < rings; ring++) {
-        const int currentRingStartIdx = ring * verticesPerRing;
-        const int nextRingStartIdx = (ring + 1) * verticesPerRing;
-    
-        for (int slice = 0; slice < slices; slice++) {
-            const uint32_t current = currentRingStartIdx + slice;
-            const uint32_t next = currentRingStartIdx + slice + 1;
-            const uint32_t currentNext = nextRingStartIdx + slice;
-            const uint32_t nextNext = nextRingStartIdx + slice + 1;
-        
-            // Triangles with clockwise winding for back-face culling (right-handed system)
-            // First triangle of the quad
-            meshData.indices[indexOffset++] = current;
-            meshData.indices[indexOffset++] = currentNext;
-            meshData.indices[indexOffset++] = nextNext;
-
-            // Second triangle of the quad
-            meshData.indices[indexOffset++] = current;
-            meshData.indices[indexOffset++] = nextNext;
-            meshData.indices[indexOffset++] = next;
-        }
-    }
-
-    // Generate indices for the base
-    // The first vertex of the base section (baseCenterVertexIndex) is the center point.
-    // The subsequent vertices form the perimeter.
-    for (int slice = 0; slice < slices; slice++) {
-        // Base vertices start after hemisphere vertices and the center vertex
-        const uint32_t currentPerimeter = hemisphereVertexCount + 1 + slice; // +1 to skip center vertex
-        const uint32_t nextPerimeter = hemisphereVertexCount + 1 + slice + 1;
-    
-        // Triangle for the base (clockwise winding when viewed from below, i.e., normal direction)
-        meshData.indices[indexOffset++] = currentPerimeter;
-        meshData.indices[indexOffset++] = baseCenterVertexIndex; // Center vertex
-        meshData.indices[indexOffset++] = nextPerimeter;
-    }
-
-    // Set final total index count
-    meshData.indexCount = indexOffset;
-
-    return meshData;
-}
-
-R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
-{
-    R3D_MeshData meshData = { 0 };
-
-    // Validate parameters
-    if (radius <= 0.0f || height <= 0.0f || slices < 3) return meshData;
-
-    // Calculate vertex and index counts
-    // Body vertices: 2 rows * (slices+1) vertices (top and bottom per slice)
-    // Cap vertices: 2 * (1 center + slices perimeter vertices)
-    const int bodyVertexCount = 2 * (slices + 1);
-    const int capVertexCount = 2 * (1 + slices);
-    meshData.vertexCount = bodyVertexCount + capVertexCount;
-
-    // Indices: body + 2 caps
-    const int bodyIndexCount = slices * 6;      // 2 triangles per slice
-    const int capIndexCount = 2 * slices * 3;   // slices triangles per cap
-    meshData.indexCount = bodyIndexCount + capIndexCount;
-
-    // Allocate memory
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
-        return meshData;
-    }
-
-    // Pre-compute values
-    const float halfHeight = height * 0.5f;
-    // For -Z forward, +Y up: theta starts at +X and increases toward -Z (clockwise when viewed from above)
-    const float sliceStep = 2.0f * PI / slices;
-
-    // Generate body vertices
-    int vertexIndex = 0;
-
-    // Bottom row (y = -halfHeight)
-    for (int slice = 0; slice <= slices; slice++) {
-        const float theta = slice * sliceStep;
-        // For -Z forward: x = cos(theta), z = -sin(theta)
-        // This makes theta=0 point toward +X, theta=PI/2 toward -Z
-        const float x = radius * cosf(theta);
-        const float z = -radius * sinf(theta);
-
-        // Normal: points radially outward
-        const Vector3 normal = {cosf(theta), 0.0f, -sinf(theta)};
-
-        // UV mapping: u = angular position, v = height
-        const float u = (float)slice / slices;
-        const float v = 0.0f; // Bottom of cylinder
-
-        // Tangent: perpendicular to the normal and along the circumference
-        // To be consistent with -Z forward, tangent is in the direction of increasing theta
-        // If normal is (cos(θ), 0, -sin(θ)), then tangent is (-sin(θ), 0, -cos(θ))
-        const Vector4 tangent = {-sinf(theta), 0.0f, -cosf(theta), 1.0f};
-
-        meshData.vertices[vertexIndex] = (R3D_Vertex){
-            .position = {x, -halfHeight, z},
-            .texcoord = {u, v},
-            .normal = normal,
-            .color = {255, 255, 255, 255},
-            .tangent = tangent
-        };
-        vertexIndex++;
-    }
-
-    // Top row (y = halfHeight)
-    for (int slice = 0; slice <= slices; slice++) {
-        const float theta = slice * sliceStep;
-        const float x = radius * cosf(theta);
-        const float z = -radius * sinf(theta);
-
-        // Normal: points outwards
-        const Vector3 normal = {cosf(theta), 0.0f, -sinf(theta)};
-
-        const float u = (float)slice / slices;
-        const float v = 1.0f; // Top of cylinder
-
-        // Tangent: consistent with bottom row
-        const Vector4 tangent = {-sinf(theta), 0.0f, -cosf(theta), 1.0f};
-
-        meshData.vertices[vertexIndex] = (R3D_Vertex){
-            .position = {x, halfHeight, z},
-            .texcoord = {u, v},
-            .normal = normal,
-            .color = {255, 255, 255, 255},
-            .tangent = tangent
-        };
-        vertexIndex++;
-    }
-
-    // Generate bottom cap vertices
-    // Normal points downwards
-    const Vector3 bottomNormal = {0.0f, -1.0f, 0.0f};
-    // Tangent for a flat surface facing down, +X is a valid tangent
-    const Vector4 bottomTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-
-    // Center of bottom cap
-    meshData.vertices[vertexIndex] = (R3D_Vertex){
-        .position = {0.0f, -halfHeight, 0.0f},
-        .texcoord = {0.5f, 0.5f}, // Center of UV space
-        .normal = bottomNormal,
-        .color = {255, 255, 255, 255},
-        .tangent = bottomTangent
-    };
-    const int bottomCenterIndex = vertexIndex;
-    vertexIndex++;
-
-    // Perimeter of bottom cap
-    for (int slice = 0; slice < slices; slice++) {
-        const float theta = slice * sliceStep;
-        const float x = radius * cosf(theta);
-        const float z = -radius * sinf(theta); // Consistent with -Z forward
-
-        // Circular UV mapping
-        const float u = 0.5f + 0.5f * cosf(theta);
-        const float v = 0.5f - 0.5f * sinf(theta); // Flip V for -Z forward
-
-        meshData.vertices[vertexIndex] = (R3D_Vertex){
-            .position = {x, -halfHeight, z},
-            .texcoord = {u, v},
-            .normal = bottomNormal,
-            .color = {255, 255, 255, 255},
-            .tangent = bottomTangent
-        };
-        vertexIndex++;
-    }
-
-    // Generate top cap vertices
-    // Normal points upwards
-    const Vector3 topNormal = {0.0f, 1.0f, 0.0f};
-    // Tangent for a flat surface facing up, +X is a valid tangent
-    const Vector4 topTangent = {1.0f, 0.0f, 0.0f, 1.0f};
-
-    // Center of top cap
-    meshData.vertices[vertexIndex] = (R3D_Vertex){
-        .position = {0.0f, halfHeight, 0.0f},
-        .texcoord = {0.5f, 0.5f},
-        .normal = topNormal,
-        .color = {255, 255, 255, 255},
-        .tangent = topTangent
-    };
-    const int topCenterIndex = vertexIndex;
-    vertexIndex++;
-
-    // Perimeter of top cap
-    for (int slice = 0; slice < slices; slice++) {
-        const float theta = slice * sliceStep;
-        const float x = radius * cosf(theta);
-        const float z = -radius * sinf(theta); // Consistent with -Z forward
-
-        // Circular UV mapping
-        const float u = 0.5f + 0.5f * cosf(theta);
-        const float v = 0.5f - 0.5f * sinf(theta); // Flip V for -Z forward
-
-        meshData.vertices[vertexIndex] = (R3D_Vertex){
-            .position = {x, halfHeight, z},
-            .texcoord = {u, v},
-            .normal = topNormal,
-            .color = {255, 255, 255, 255},
-            .tangent = topTangent
-        };
-        vertexIndex++;
-    }
-
-    // Generate indices
-    int indexOffset = 0;
-    const int verticesPerRow = slices + 1; // Vertices in bottom and top rows of cylinder body
-
-    // Body indices (CCW winding from outside)
-    // For -Z forward, CCW order from outside remains the same
-    for (int slice = 0; slice < slices; slice++) {
-        const uint32_t bottomLeft = slice;
-        const uint32_t bottomRight = slice + 1;
-        const uint32_t topLeft = verticesPerRow + slice;
-        const uint32_t topRight = verticesPerRow + slice + 1;
-
-        // First triangle: bottomLeft -> bottomRight -> topRight (CCW from outside)
-        meshData.indices[indexOffset++] = bottomLeft;
-        meshData.indices[indexOffset++] = bottomRight;
-        meshData.indices[indexOffset++] = topRight;
-
-        // Second triangle: bottomLeft -> topRight -> topLeft (CCW from outside)
-        meshData.indices[indexOffset++] = bottomLeft;
-        meshData.indices[indexOffset++] = topRight;
-        meshData.indices[indexOffset++] = topLeft;
-    }
-
-    // Bottom cap indices (CCW winding from normal's perspective: looking from -Y up)
-    // With -Z forward, the order must be reversed to maintain correct winding
-    const int bottomPerimeterStart = bottomCenterIndex + 1;
-    for (int slice = 0; slice < slices; slice++) {
-        const uint32_t current = bottomPerimeterStart + slice;
-        const uint32_t next = bottomPerimeterStart + (slice + 1) % slices;
-
-        // Reverse order for -Z forward: center -> next -> current
-        meshData.indices[indexOffset++] = bottomCenterIndex;
-        meshData.indices[indexOffset++] = next;
-        meshData.indices[indexOffset++] = current;
-    }
-
-    // Top cap indices (CCW winding from normal's perspective: looking from +Y down)
-    // With -Z forward, the order must be reversed to maintain correct winding
-    const int topPerimeterStart = topCenterIndex + 1;
-    for (int slice = 0; slice < slices; slice++) {
-        const uint32_t current = topPerimeterStart + slice;
-        const uint32_t next = topPerimeterStart + (slice + 1) % slices;
-
-        // Reverse order for -Z forward: center -> current -> next
-        meshData.indices[indexOffset++] = topCenterIndex;
-        meshData.indices[indexOffset++] = current;
-        meshData.indices[indexOffset++] = next;
-    }
-
-    return meshData;
-}
-
-R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices)
-{
-    R3D_MeshData meshData = { 0 };
-
-    // Validate parameters
-    if (radius <= 0.0f || height <= 0.0f || slices < 3) return meshData;
-
-    // Vertex counts
-    // Side: slices+1 base vertices + 1 tip vertex
-    // Base: 1 center vertex + slices perimeter
-    const int sideVertexCount = slices + 1 + 1;  // base + tip
-    const int baseVertexCount = 1 + slices;      // center + perimeter
-    meshData.vertexCount = sideVertexCount + baseVertexCount;
-
-    // Index counts
-    // Side: slices triangles
-    // Base: slices triangles
-    const int sideIndexCount = slices * 3;
-    const int baseIndexCount = slices * 3;
-    meshData.indexCount = sideIndexCount + baseIndexCount;
-
-    // Memory allocation
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
-        return meshData;
-    }
-
-    const float halfHeight = height * 0.5f;
-    const float sliceStep = 2.0f * PI / slices;
-
-    int vertexIndex = 0;
-
-    // Base ring vertices (shared between side and base)
-    for (int slice = 0; slice <= slices; slice++) {
-        const float theta = slice * sliceStep;
-        const float x = radius * cosf(theta);
-        const float z = -radius * sinf(theta); // -Z forward
-
-        const float u = (float)slice / slices;
-        const float v = 0.0f;
-
-        const Vector3 pos = {x, -halfHeight, z};
-        const Vector3 normal = {cosf(theta), radius / height, -sinf(theta)};
-        const float len = sqrtf(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
-        const Vector3 norm = {normal.x / len, normal.y / len, normal.z / len};
-
-        const Vector4 tangent = {-sinf(theta), 0.0f, -cosf(theta), 1.0f};
-
-        meshData.vertices[vertexIndex++] = (R3D_Vertex){
-            .position = pos,
-            .texcoord = {u, 0.0f},
-            .normal = norm,
-            .color = {255, 255, 255, 255},
-            .tangent = tangent
-        };
-    }
-
-    // Tip of the cone (at y = +halfHeight)
-    const int tipIndex = vertexIndex;
-    meshData.vertices[vertexIndex++] = (R3D_Vertex){
-        .position = {0.0f, halfHeight, 0.0f},
-        .texcoord = {0.5f, 1.0f},
-        .normal = {0.0f, 1.0f, 0.0f}, // Rough default normal
-        .color = {255, 255, 255, 255},
-        .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
-    };
-
-    // Base center vertex
-    const int baseCenterIndex = vertexIndex;
-    meshData.vertices[vertexIndex++] = (R3D_Vertex){
-        .position = {0.0f, -halfHeight, 0.0f},
         .texcoord = {0.5f, 0.5f},
         .normal = {0.0f, -1.0f, 0.0f},
-        .color = {255, 255, 255, 255},
+        .color = WHITE,
         .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
     };
 
-    // Base perimeter
-    for (int slice = 0; slice < slices; slice++) {
-        const float theta = slice * sliceStep;
-        const float x = radius * cosf(theta);
-        const float z = -radius * sinf(theta);
+    for (int slice = 0; slice <= slices; slice++, vertex++)
+    {
+        float theta = slice * sliceStep;
+        float sinTheta = sinf(theta);
+        float cosTheta = cosf(theta);
 
-        const float u = 0.5f + 0.5f * cosf(theta);
-        const float v = 0.5f - 0.5f * sinf(theta);
+        float x = radius * cosTheta;
+        float z = radius * -sinTheta;
 
-        meshData.vertices[vertexIndex++] = (R3D_Vertex){
-            .position = {x, -halfHeight, z},
-            .texcoord = {u, v},
+        vertex->position = (Vector3){x, 0.0f, z};
+        vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
+        vertex->normal = (Vector3){0.0f, -1.0f, 0.0f};
+        vertex->color = WHITE;
+        vertex->tangent = (Vector4){1.0f, 0.0f, 0.0f, 1.0f};
+    }
+
+    uint32_t* index = meshData.indices;
+    for (int ring = 0; ring < rings; ring++)
+    {
+        uint32_t currentRow = ring * vertCountPerRing;
+        uint32_t nextRow = currentRow + vertCountPerRing;
+
+        for (int slice = 0; slice < slices; slice++)
+        {
+            uint32_t i0 = currentRow + slice;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRow + slice;
+            uint32_t i3 = i2 + 1;
+
+            *index++ = i0; *index++ = i2; *index++ = i3;
+            *index++ = i0; *index++ = i3; *index++ = i1;
+        }
+    }
+
+    uint32_t basePerimeterStart = baseCenterIdx + 1;
+    for (int slice = 0; slice < slices; slice++)
+    {
+        *index++ = basePerimeterStart + slice;
+        *index++ = baseCenterIdx;
+        *index++ = basePerimeterStart + slice + 1;
+    }
+
+    return meshData;
+}
+
+R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices)
+{
+    R3D_MeshData meshData = {0};
+
+    if (bottomRadius < 0.0f || topRadius < 0.0f || height <= 0.0f || slices < 3) {
+        return meshData;
+    }
+
+    if (bottomRadius == 0.0f && topRadius == 0.0f) {
+        return meshData;
+    }
+
+    int vertCountPerRing = slices + 1;
+    int bodyVertCount = 2 * vertCountPerRing;
+    int capVertCount = 0;
+    if (bottomRadius > 0.0f) capVertCount += 1 + slices;
+    if (topRadius > 0.0f) capVertCount += 1 + slices;
+    
+    int totalVertCount = bodyVertCount + capVertCount;
+    int bodyIndexCount = slices * 6;
+    int capIndexCount = 0;
+    if (bottomRadius > 0.0f) capIndexCount += slices * 3;
+    if (topRadius > 0.0f) capIndexCount += slices * 3;
+    int totalIndexCount = bodyIndexCount + capIndexCount;
+
+    if (!alloc_mesh(&meshData, totalVertCount, totalIndexCount)) {
+        return meshData;
+    }
+
+    float halfHeight = height * 0.5f;
+    float sliceStep = 2.0f * PI / slices;
+    float invSlices = 1.0f / slices;
+
+    R3D_Vertex* vertex = meshData.vertices;
+
+    for (int slice = 0; slice <= slices; slice++, vertex++)
+    {
+        float theta = slice * sliceStep;
+        float cosTheta = cosf(theta);
+        float sinTheta = sinf(theta);
+
+        float x = bottomRadius * cosTheta;
+        float z = -bottomRadius * sinTheta;
+
+        vertex->position = (Vector3){x, -halfHeight, z};
+        vertex->texcoord = (Vector2){slice * invSlices, 0.0f};
+        vertex->normal = (Vector3){cosTheta, 0.0f, -sinTheta};
+        vertex->color = WHITE;
+        vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+    }
+
+    for (int slice = 0; slice <= slices; slice++, vertex++)
+    {
+        float theta = slice * sliceStep;
+        float cosTheta = cosf(theta);
+        float sinTheta = sinf(theta);
+
+        float x = topRadius * cosTheta;
+        float z = -topRadius * sinTheta;
+
+        vertex->position = (Vector3){x, halfHeight, z};
+        vertex->texcoord = (Vector2){slice * invSlices, 1.0f};
+        vertex->normal = (Vector3){cosTheta, 0.0f, -sinTheta};
+        vertex->color = WHITE;
+        vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+    }
+
+    uint32_t bottomCapStart = 0;
+    uint32_t topCapStart = 0;
+
+    if (bottomRadius > 0.0f)
+    {
+        bottomCapStart = bodyVertCount;
+        *vertex++ = (R3D_Vertex){
+            .position = {0.0f, -halfHeight, 0.0f},
+            .texcoord = {0.5f, 0.5f},
             .normal = {0.0f, -1.0f, 0.0f},
-            .color = {255, 255, 255, 255},
+            .color = WHITE,
             .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
         };
+
+        for (int slice = 0; slice < slices; slice++, vertex++)
+        {
+            float theta = slice * sliceStep;
+            float cosTheta = cosf(theta);
+            float sinTheta = sinf(theta);
+
+            float x = bottomRadius * cosTheta;
+            float z = -bottomRadius * sinTheta;
+
+            vertex->position = (Vector3){x, -halfHeight, z};
+            vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
+            vertex->normal = (Vector3){0.0f, -1.0f, 0.0f};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){1.0f, 0.0f, 0.0f, 1.0f};
+        }
     }
 
-    // Indices
-    int index = 0;
+    if (topRadius > 0.0f)
+    {
+        topCapStart = bottomRadius > 0.0f ? bottomCapStart + 1 + slices : bodyVertCount;
+        *vertex++ = (R3D_Vertex){
+            .position = {0.0f, halfHeight, 0.0f},
+            .texcoord = {0.5f, 0.5f},
+            .normal = {0.0f, 1.0f, 0.0f},
+            .color = WHITE,
+            .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
+        };
 
-    // Side triangles (each slice connects base to tip)
-    for (int slice = 0; slice < slices; slice++) {
-        const uint32_t base0 = slice;
-        const uint32_t base1 = slice + 1;
-        meshData.indices[index++] = base0;
-        meshData.indices[index++] = base1;
-        meshData.indices[index++] = tipIndex; // All triangles meet at the tip
+        for (int slice = 0; slice < slices; slice++, vertex++)
+        {
+            float theta = slice * sliceStep;
+            float cosTheta = cosf(theta);
+            float sinTheta = sinf(theta);
+
+            float x = topRadius * cosTheta;
+            float z = -topRadius * sinTheta;
+
+            vertex->position = (Vector3){x, halfHeight, z};
+            vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
+            vertex->normal = (Vector3){0.0f, 1.0f, 0.0f};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){1.0f, 0.0f, 0.0f, 1.0f};
+        }
     }
 
-    // Base triangles (CCW order from below, so reversed here)
-    const int basePerimeterStart = baseCenterIndex + 1;
+    uint32_t* index = meshData.indices;
+
     for (int slice = 0; slice < slices; slice++) {
-        const uint32_t curr = basePerimeterStart + slice;
-        const uint32_t next = basePerimeterStart + ((slice + 1) % slices);
-        meshData.indices[index++] = baseCenterIndex;
-        meshData.indices[index++] = next;
-        meshData.indices[index++] = curr;
+        uint32_t i0 = slice;
+        uint32_t i1 = slice + 1;
+        uint32_t i2 = vertCountPerRing + slice;
+        uint32_t i3 = vertCountPerRing + slice + 1;
+        *index++ = i0; *index++ = i1; *index++ = i3;
+        *index++ = i0; *index++ = i3; *index++ = i2;
+    }
+
+    if (bottomRadius > 0.0f) {
+        uint32_t centerIdx = bottomCapStart;
+        uint32_t perimeterStart = bottomCapStart + 1;
+        for (int slice = 0; slice < slices; slice++) {
+            uint32_t current = perimeterStart + slice;
+            uint32_t next = perimeterStart + (slice + 1) % slices;
+            *index++ = centerIdx;
+            *index++ = next;
+            *index++ = current;
+        }
+    }
+
+    if (topRadius > 0.0f) {
+        uint32_t centerIdx = topCapStart;
+        uint32_t perimeterStart = topCapStart + 1;
+        for (int slice = 0; slice < slices; slice++) {
+            uint32_t current = perimeterStart + slice;
+            uint32_t next = perimeterStart + (slice + 1) % slices;
+            *index++ = centerIdx;
+            *index++ = current;
+            *index++ = next;
+        }
     }
 
     return meshData;
@@ -978,98 +748,74 @@ R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices)
 
 R3D_MeshData R3D_GenMeshDataTorus(float radius, float size, int radSeg, int sides)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
     if (radius <= 0.0f || size <= 0.0f || radSeg < 3 || sides < 3) {
         return meshData;
     }
 
-    const int rings = radSeg + 1;
-    const int segments = sides + 1;
+    int rings = radSeg + 1;
+    int segments = sides + 1;
 
-    meshData.vertexCount = rings * segments;
-    meshData.indexCount = radSeg * sides * 6;
-
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (!alloc_mesh(&meshData, rings * segments, radSeg * sides * 6)) {
         return meshData;
     }
 
-    const float ringStep = 2.0f * PI / radSeg;
-    const float sideStep = 2.0f * PI / sides;
+    float ringStep = 2.0f * PI / radSeg;
+    float sideStep = 2.0f * PI / sides;
+    float invRadSeg = 1.0f / radSeg;
+    float invSides = 1.0f / sides;
 
-    int vertexIndex = 0;
-
-    for (int ring = 0; ring <= radSeg; ring++) {
+    R3D_Vertex* vertex = meshData.vertices;
+    for (int ring = 0; ring <= radSeg; ring++)
+    {
         float theta = ring * ringStep;
         float cosTheta = cosf(theta);
         float sinTheta = sinf(theta);
 
-        // Center of current ring
-        Vector3 ringCenter = {
-            radius * cosTheta,
-            0.0f,
-            -radius * sinTheta
-        };
+        float ringCenterX = radius * cosTheta;
+        float ringCenterZ = -radius * sinTheta;
+        float u = ring * invRadSeg;
 
-        for (int side = 0; side <= sides; side++) {
+        for (int side = 0; side <= sides; side++, vertex++)
+        {
             float phi = side * sideStep;
             float cosPhi = cosf(phi);
             float sinPhi = sinf(phi);
 
-            // Normal at vertex
             Vector3 normal = {
                 cosTheta * cosPhi,
                 sinPhi,
                 -sinTheta * cosPhi
             };
 
-            // Position = ringCenter + normal * size
-            Vector3 pos = {
-                ringCenter.x + size * normal.x,
-                ringCenter.y + size * normal.y,
-                ringCenter.z + size * normal.z
+            vertex->position = (Vector3){
+                ringCenterX + size * normal.x,
+                size * normal.y,
+                ringCenterZ + size * normal.z
             };
-
-            // Tangent along ring (around main circle)
-            Vector4 tangent = {
-                -sinTheta, 0.0f, -cosTheta, 1.0f
-            };
-
-            // UV coordinates
-            float u = (float)ring / radSeg;
-            float v = (float)side / sides;
-
-            meshData.vertices[vertexIndex++] = (R3D_Vertex){
-                .position = pos,
-                .texcoord = {u, v},
-                .normal = normal,
-                .color = {255, 255, 255, 255},
-                .tangent = tangent
-            };
+            vertex->texcoord = (Vector2){u, side * invSides};
+            vertex->normal = normal;
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
         }
     }
 
-    // Indices
-    int index = 0;
-    for (int ring = 0; ring < radSeg; ring++) {
-        for (int side = 0; side < sides; side++) {
-            int current = ring * segments + side;
-            int next = (ring + 1) * segments + side;
+    uint32_t* index = meshData.indices;
+    for (int ring = 0; ring < radSeg; ring++)
+    {
+        uint32_t currentRow = ring * segments;
+        uint32_t nextRow = currentRow + segments;
 
-            // Triangle 1
-            meshData.indices[index++] = current;
-            meshData.indices[index++] = next;
-            meshData.indices[index++] = next + 1;
+        for (int side = 0; side < sides; side++)
+        {
+            uint32_t i0 = currentRow + side;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRow + side;
+            uint32_t i3 = i2 + 1;
 
-            // Triangle 2
-            meshData.indices[index++] = current;
-            meshData.indices[index++] = next + 1;
-            meshData.indices[index++] = current + 1;
+            *index++ = i0; *index++ = i2; *index++ = i3;
+            *index++ = i0; *index++ = i3; *index++ = i1;
         }
     }
 
@@ -1078,145 +824,118 @@ R3D_MeshData R3D_GenMeshDataTorus(float radius, float size, int radSeg, int side
 
 R3D_MeshData R3D_GenMeshDataKnot(float radius, float size, int radSeg, int sides)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    if (radius <= 0.0f || radius <= 0.0f || radSeg < 6 || sides < 3) {
+    if (radius <= 0.0f || size <= 0.0f || radSeg < 6 || sides < 3) {
         return meshData;
     }
 
-    const int knotSegments = radSeg + 1;
-    const int tubeSides = sides + 1;
+    int knotSegments = radSeg + 1;
+    int tubeSides = sides + 1;
 
-    meshData.vertexCount = knotSegments * tubeSides;
-    meshData.indexCount = radSeg * sides * 6;
-
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
-
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
+    if (!alloc_mesh(&meshData, knotSegments * tubeSides, radSeg * sides * 6)) {
         return meshData;
     }
 
-    const float segmentStep = 2.0f * PI / radSeg;
-    const float sideStep = 2.0f * PI / sides;
+    float segmentStep = 2.0f * PI / radSeg;
+    float sideStep = 2.0f * PI / sides;
+    float invRadSeg = 1.0f / radSeg;
+    float invSides = 1.0f / sides;
+    float knotScale = radius * 0.2f;
 
-    int vertexIndex = 0;
-
-    for (int seg = 0; seg <= radSeg; seg++) {
+    R3D_Vertex* vertex = meshData.vertices;
+    for (int seg = 0; seg <= radSeg; seg++)
+    {
         float t = seg * segmentStep;
+        float t2 = 2.0f * t;
+        float t3 = 3.0f * t;
         
-        // Trefoil knot parametric equations
-        float x = sinf(t) + 2.0f * sinf(2.0f * t);
-        float y = cosf(t) - 2.0f * cosf(2.0f * t);
-        float z = -sinf(3.0f * t);
-        
-        // Scale by radius
+        float sinT = sinf(t);
+        float cosT = cosf(t);
+        float sin2T = sinf(t2);
+        float cos2T = cosf(t2);
+        float sin3T = sinf(t3);
+        float cos3T = cosf(t3);
+
         Vector3 knotCenter = {
-            radius * x * 0.2f,  // Scale factor to normalize the knot size
-            radius * y * 0.2f,
-            radius * z * 0.2f
+            knotScale * (sinT + 2.0f * sin2T),
+            knotScale * (cosT - 2.0f * cos2T),
+            knotScale * -sin3T
         };
 
-        // Calculate tangent vector (derivative of knot curve)
-        float dx = cosf(t) + 4.0f * cosf(2.0f * t);
-        float dy = -sinf(t) + 4.0f * sinf(2.0f * t);
-        float dz = -3.0f * cosf(3.0f * t);
-        
-        Vector3 tangent = {dx, dy, dz};
-        
-        // Normalize tangent
-        float tangentLength = sqrtf(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
-        if (tangentLength > 0.0f) {
-            tangent.x /= tangentLength;
-            tangent.y /= tangentLength;
-            tangent.z /= tangentLength;
+        Vector3 tangent = {
+            cosT + 4.0f * cos2T,
+            -sinT + 4.0f * sin2T,
+            -3.0f * cos3T
+        };
+        float tangentLen = sqrtf(tangent.x * tangent.x + tangent.y * tangent.y + tangent.z * tangent.z);
+        if (tangentLen > 0.0f) {
+            float invTangentLen = 1.0f / tangentLen;
+            tangent.x *= invTangentLen;
+            tangent.y *= invTangentLen;
+            tangent.z *= invTangentLen;
         }
 
-        // Calculate binormal (second derivative for better frame)
-        float d2x = -sinf(t) - 8.0f * sinf(2.0f * t);
-        float d2y = -cosf(t) + 8.0f * cosf(2.0f * t);
-        float d2z = 9.0f * sinf(3.0f * t);
-        
-        Vector3 binormal = {d2x, d2y, d2z};
-        
-        // Normalize binormal
-        float binormalLength = sqrtf(binormal.x * binormal.x + binormal.y * binormal.y + binormal.z * binormal.z);
-        if (binormalLength > 0.0f) {
-            binormal.x /= binormalLength;
-            binormal.y /= binormalLength;
-            binormal.z /= binormalLength;
+        Vector3 binormal = {
+            -sinT - 8.0f * sin2T,
+            -cosT + 8.0f * cos2T,
+            9.0f * sin3T
+        };
+        float binormalLen = sqrtf(binormal.x * binormal.x + binormal.y * binormal.y + binormal.z * binormal.z);
+        if (binormalLen > 0.0f) {
+            float invBinormalLen = 1.0f / binormalLen;
+            binormal.x *= invBinormalLen;
+            binormal.y *= invBinormalLen;
+            binormal.z *= invBinormalLen;
         }
 
-        // Calculate normal (cross product of tangent and binormal)
         Vector3 normal = {
             tangent.y * binormal.z - tangent.z * binormal.y,
             tangent.z * binormal.x - tangent.x * binormal.z,
             tangent.x * binormal.y - tangent.y * binormal.x
         };
 
-        for (int side = 0; side <= sides; side++) {
+        float u = seg * invRadSeg;
+
+        for (int side = 0; side <= sides; side++, vertex++)
+        {
             float phi = side * sideStep;
             float cosPhi = cosf(phi);
             float sinPhi = sinf(phi);
 
-            // Create tube cross-section
-            Vector3 tubeOffset = {
-                radius * (normal.x * cosPhi + binormal.x * sinPhi),
-                radius * (normal.y * cosPhi + binormal.y * sinPhi),
-                radius * (normal.z * cosPhi + binormal.z * sinPhi)
-            };
-
-            // Final vertex position
-            Vector3 pos = {
-                knotCenter.x + tubeOffset.x,
-                knotCenter.y + tubeOffset.y,
-                knotCenter.z + tubeOffset.z
-            };
-
-            // Surface normal at this point
             Vector3 surfaceNormal = {
                 normal.x * cosPhi + binormal.x * sinPhi,
                 normal.y * cosPhi + binormal.y * sinPhi,
                 normal.z * cosPhi + binormal.z * sinPhi
             };
 
-            // Tangent along the knot curve
-            Vector4 vertexTangent = {
-                tangent.x, tangent.y, tangent.z, 1.0f
+            vertex->position = (Vector3){
+                knotCenter.x + size * surfaceNormal.x,
+                knotCenter.y + size * surfaceNormal.y,
+                knotCenter.z + size * surfaceNormal.z
             };
-
-            // UV coordinates
-            float u = (float)seg / radSeg;
-            float v = (float)side / sides;
-
-            meshData.vertices[vertexIndex++] = (R3D_Vertex){
-                .position = pos,
-                .texcoord = {u, v},
-                .normal = surfaceNormal,
-                .color = {255, 255, 255, 255},
-                .tangent = vertexTangent
-            };
+            vertex->texcoord = (Vector2){u, side * invSides};
+            vertex->normal = surfaceNormal;
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){tangent.x, tangent.y, tangent.z, 1.0f};
         }
     }
 
-    // Generate indices
-    int index = 0;
-    for (int seg = 0; seg < radSeg; seg++) {
-        for (int side = 0; side < sides; side++) {
-            int current = seg * tubeSides + side;
-            int next = (seg + 1) * tubeSides + side;
+    uint32_t* index = meshData.indices;
+    for (int seg = 0; seg < radSeg; seg++)
+    {
+        uint32_t currentRow = seg * tubeSides;
+        uint32_t nextRow = currentRow + tubeSides;
 
-            // Triangle 1
-            meshData.indices[index++] = current;
-            meshData.indices[index++] = next;
-            meshData.indices[index++] = next + 1;
+        for (int side = 0; side < sides; side++)
+        {
+            uint32_t i0 = currentRow + side;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRow + side;
+            uint32_t i3 = i2 + 1;
 
-            // Triangle 2
-            meshData.indices[index++] = current;
-            meshData.indices[index++] = next + 1;
-            meshData.indices[index++] = current + 1;
+            *index++ = i0; *index++ = i2; *index++ = i3;
+            *index++ = i0; *index++ = i3; *index++ = i1;
         }
     }
 
@@ -1225,25 +944,22 @@ R3D_MeshData R3D_GenMeshDataKnot(float radius, float size, int radSeg, int sides
 
 R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    // Parameter validation
-    if (heightmap.data == NULL || heightmap.width <= 1 || heightmap.height <= 1 ||
-        size.x <= 0.0f || size.y <= 0.0f || size.z <= 0.0f) {
+    if (heightmap.data == NULL || heightmap.width <= 1 || heightmap.height <= 1) {
         return meshData;
     }
 
-    // Heightmap dimensions
+    if (size.x <= 0.0f || size.y <= 0.0f || size.z <= 0.0f) {
+        return meshData;
+    }
+
     const int mapWidth = heightmap.width;
     const int mapHeight = heightmap.height;
 
-    // Mesh dimensions calculation
-    meshData.vertexCount = mapWidth * mapHeight;
-    meshData.indexCount = (mapWidth - 1) * (mapHeight - 1) * 6; // 2 triangles per quad
-
-    // Memory allocation
-    meshData.vertices = RL_MALLOC(meshData.vertexCount * sizeof(*meshData.vertices));
-    meshData.indices = RL_MALLOC(meshData.indexCount * sizeof(*meshData.indices));
+    if (!alloc_mesh(&meshData, mapWidth * mapHeight, (mapWidth - 1) * (mapHeight - 1) * 6)) {
+        return meshData;
+    }
 
     if (!meshData.vertices || !meshData.indices) {
         if (meshData.vertices) RL_FREE(meshData.vertices);
@@ -1251,95 +967,68 @@ R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
         return meshData;
     }
 
-    // Precompute some values
     const float halfSizeX = size.x * 0.5f;
     const float halfSizeZ = size.z * 0.5f;
-    const float stepX = size.x / (mapWidth - 1);
-    const float stepZ = size.z / (mapHeight - 1);
-    const float stepU = 1.0f / (mapWidth - 1);
-    const float stepV = 1.0f / (mapHeight - 1);
+    const float stepX     = size.x / (mapWidth - 1);
+    const float stepZ     = size.z / (mapHeight - 1);
+    const float inv2StepX = 1.0f / (2.0f * stepX);
+    const float inv2StepZ = 1.0f / (2.0f * stepZ);
+    const float stepU     = 1.0f / (mapWidth - 1);
+    const float stepV     = 1.0f / (mapHeight - 1);
 
-    // Macro to extract height from a pixel
     #define GET_HEIGHT_VALUE(x, y) \
         ((x) < 0 || (x) >= mapWidth || (y) < 0 || (y) >= mapHeight) \
             ? 0.0f : ((float)GetImageColor(heightmap, x, y).r / 255)
 
-    // Generate vertices
     int vertexIndex = 0;
-    float minY = FLT_MAX, maxY = -FLT_MAX;
-
     for (int z = 0; z < mapHeight; z++) {
-        for (int x = 0; x < mapWidth; x++) {
-            // Vertex position
+        for (int x = 0; x < mapWidth; x++)
+        {
             float posX = -halfSizeX + x * stepX;
             float posZ = -halfSizeZ + z * stepZ;
             float posY = GET_HEIGHT_VALUE(x, z) * size.y;
 
-            // Update Y bounds for AABB
-            if (posY < minY) minY = posY;
-            if (posY > maxY) maxY = posY;
+            float heightL = GET_HEIGHT_VALUE(x - 1, z);
+            float heightR = GET_HEIGHT_VALUE(x + 1, z);
+            float heightD = GET_HEIGHT_VALUE(x, z - 1);
+            float heightU = GET_HEIGHT_VALUE(x, z + 1);
 
-            // Calculate normal by finite differences (gradient method)
-            float heightL = GET_HEIGHT_VALUE(x - 1, z);     // Left
-            float heightR = GET_HEIGHT_VALUE(x + 1, z);     // Right
-            float heightD = GET_HEIGHT_VALUE(x, z - 1);     // Down
-            float heightU = GET_HEIGHT_VALUE(x, z + 1);     // Up
+            float gradX = (heightR - heightL) * inv2StepX;
+            float gradZ = (heightU - heightD) * inv2StepZ;
 
-            // Gradient in X and Z
-            float gradX = (heightR - heightL) / (2.0f * stepX);
-            float gradZ = (heightU - heightD) / (2.0f * stepZ);
-
-            // Normal (cross product of tangent vectors)
             Vector3 normal = Vector3Normalize((Vector3) {-gradX, 1.0f, -gradZ});
-
-            // UV mapping
-            float u = x * stepU;
-            float v = z * stepV;
-
-            // Tangent (X direction in texture space)
-            Vector3 tangentDir = {1.0f, gradX, 0.0f};
-            float tangentLength = sqrtf(tangentDir.x * tangentDir.x + tangentDir.y * tangentDir.y + tangentDir.z * tangentDir.z);
-            Vector4 tangent = {
-                tangentDir.x / tangentLength,
-                tangentDir.y / tangentLength,
-                tangentDir.z / tangentLength,
-                1.0f
-            };
+            Vector3 tangent = Vector3Normalize((Vector3) {1.0f, gradX, 0.0f});
 
             meshData.vertices[vertexIndex] = (R3D_Vertex){
                 .position = {posX, posY, posZ},
-                .texcoord = {u, v},
+                .texcoord = {x * stepU, z * stepV},
                 .normal = normal,
-                .color = {255, 255, 255, 255},
-                .tangent = tangent
+                .color = WHITE,
+                .tangent = (Vector4) {tangent.x, tangent.y, tangent.z, 1.0f}
             };
             vertexIndex++;
         }
     }
 
-    // Generate indices
     int indexOffset = 0;
     for (int z = 0; z < mapHeight - 1; z++) {
-        for (int x = 0; x < mapWidth - 1; x++) {
-            // Indices of the 4 corners of the current quad
+        for (int x = 0; x < mapWidth - 1; x++)
+        {
             uint32_t topLeft = z * mapWidth + x;
             uint32_t topRight = topLeft + 1;
             uint32_t bottomLeft = (z + 1) * mapWidth + x;
             uint32_t bottomRight = bottomLeft + 1;
-        
-            // First triangle (topLeft, bottomLeft, topRight)
+
             meshData.indices[indexOffset++] = topLeft;
             meshData.indices[indexOffset++] = bottomLeft;
             meshData.indices[indexOffset++] = topRight;
-        
-            // Second triangle (topRight, bottomLeft, bottomRight)
+
             meshData.indices[indexOffset++] = topRight;
             meshData.indices[indexOffset++] = bottomLeft;
             meshData.indices[indexOffset++] = bottomRight;
         }
     }
 
-    // Cleanup macro
     #undef GET_HEIGHT_VALUE
 
     return meshData;
@@ -1347,51 +1036,49 @@ R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
 
 R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
 {
-    R3D_MeshData meshData = { 0 };
+    R3D_MeshData meshData = {0};
 
-    // Validation of parameters
-    if (cubicmap.width <= 0 || cubicmap.height <= 0 || 
-        cubeSize.x <= 0.0f || cubeSize.y <= 0.0f || cubeSize.z <= 0.0f) {
+    if (cubicmap.width <= 0 || cubicmap.height <= 0) {
+        return meshData;
+    }
+
+    if (cubeSize.x <= 0.0f || cubeSize.y <= 0.0f || cubeSize.z <= 0.0f) {
         return meshData;
     }
 
     Color* pixels = LoadImageColors(cubicmap);
     if (!pixels) return meshData;
 
-    // Pre-compute some values
     const float halfW = cubeSize.x * 0.5f;
     const float halfH = cubeSize.y * 0.5f;
     const float halfL = cubeSize.z * 0.5f;
 
-    // Normals of the 6 faces of the cube
     const Vector3 normals[6] = {
-        {1.0f, 0.0f, 0.0f},   // right (+X)
-        {-1.0f, 0.0f, 0.0f},  // left (-X)
-        {0.0f, 1.0f, 0.0f},   // up (+Y)
-        {0.0f, -1.0f, 0.0f},  // down (-Y)
-        {0.0f, 0.0f, -1.0f},  // forward (-Z)
-        {0.0f, 0.0f, 1.0f}    // backward (+Z)
+        { 1.0f,  0.0f,  0.0f},
+        {-1.0f,  0.0f,  0.0f},
+        { 0.0f,  1.0f,  0.0f},
+        { 0.0f, -1.0f,  0.0f},
+        { 0.0f,  0.0f, -1.0f},
+        { 0.0f,  0.0f,  1.0f}
     };
 
-    // Corresponding tangents
     const Vector4 tangents[6] = {
-        {0.0f, 0.0f, -1.0f, 1.0f},  // right
-        {0.0f, 0.0f, 1.0f, 1.0f},   // left
-        {1.0f, 0.0f, 0.0f, 1.0f},   // up
-        {1.0f, 0.0f, 0.0f, 1.0f},   // down
-        {-1.0f, 0.0f, 0.0f, 1.0f},  // forward
-        {1.0f, 0.0f, 0.0f, 1.0f}    // backward
+        { 0.0f,  0.0f, -1.0f,  1.0f},
+        { 0.0f,  0.0f,  1.0f,  1.0f},
+        { 1.0f,  0.0f,  0.0f,  1.0f},
+        { 1.0f,  0.0f,  0.0f,  1.0f},
+        {-1.0f,  0.0f,  0.0f,  1.0f},
+        { 1.0f,  0.0f,  0.0f,  1.0f}
     };
 
-    // UV coordinates for the 6 faces (2x3 atlas texture)
     typedef struct { float x, y, width, height; } RectangleF;
     const RectangleF texUVs[6] = {
-        {0.0f, 0.0f, 0.5f, 0.5f},    // right
-        {0.5f, 0.0f, 0.5f, 0.5f},    // left
-        {0.0f, 0.5f, 0.5f, 0.5f},    // up
-        {0.5f, 0.5f, 0.5f, 0.5f},    // down
-        {0.5f, 0.0f, 0.5f, 0.5f},    // backward
-        {0.0f, 0.0f, 0.5f, 0.5f}     // forward
+        {0.0f, 0.0f, 0.5f, 0.5f},
+        {0.5f, 0.0f, 0.5f, 0.5f},
+        {0.0f, 0.5f, 0.5f, 0.5f},
+        {0.5f, 0.5f, 0.5f, 0.5f},
+        {0.5f, 0.0f, 0.5f, 0.5f},
+        {0.0f, 0.0f, 0.5f, 0.5f}
     };
 
     // Estimate the maximum number of faces needed
@@ -1399,55 +1086,36 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
     for (int z = 0; z < cubicmap.height; z++) {
         for (int x = 0; x < cubicmap.width; x++) {
             Color pixel = pixels[z * cubicmap.width + x];
-            if (ColorIsEqual(pixel, WHITE)) {
-                maxFaces += 6; // complete cube
-            }
-            else if (ColorIsEqual(pixel, BLACK)) {
-                maxFaces += 2; // floor and ceiling only
-            }
+            if (pixel.r >= 127) maxFaces += 6;  // (white) complete cube
+            else maxFaces += 2;                 // (black) floor and ceiling only
         }
     }
 
-    // Allocation of temporary tables
-    R3D_Vertex* vertices = RL_MALLOC(maxFaces * 4 * sizeof(R3D_Vertex));
-    uint32_t* indices = RL_MALLOC(maxFaces * 6 * sizeof(uint32_t));
-
-    if (!vertices || !indices) {
-        if (vertices) RL_FREE(vertices);
-        if (indices) RL_FREE(indices);
+    if (!alloc_mesh(&meshData, maxFaces * 4, maxFaces * 6)) {
         UnloadImageColors(pixels);
         return meshData;
     }
 
+    R3D_Vertex* vertices = meshData.vertices;
+    uint32_t* indices = meshData.indices;
+
     int vertexCount = 0;
     int indexCount = 0;
 
-    // Variables for calculating AABB
-    float minX = FLT_MAX, minY = FLT_MAX, minZ = FLT_MAX;
-    float maxX = -FLT_MAX, maxY = -FLT_MAX, maxZ = -FLT_MAX;
-
-    // Mesh generation
     for (int z = 0; z < cubicmap.height; z++) {
-        for (int x = 0; x < cubicmap.width; x++) {
+        for (int x = 0; x < cubicmap.width; x++)
+        {
             Color pixel = pixels[z * cubicmap.width + x];
 
             // Position of the center of the cube
             float posX = cubeSize.x * (x - cubicmap.width * 0.5f + 0.5f);
             float posZ = cubeSize.z * (z - cubicmap.height * 0.5f + 0.5f);
 
-            // AABB Update
-            minX = fminf(minX, posX - halfW);
-            maxX = fmaxf(maxX, posX + halfW);
-            minZ = fminf(minZ, posZ - halfL);
-            maxZ = fmaxf(maxZ, posZ + halfL);
-
-            if (ColorIsEqual(pixel, WHITE)) {
-                // Complete cube - generate all necessary faces
-                minY = fminf(minY, 0.0f);
-                maxY = fmaxf(maxY, cubeSize.y);
-
+            if (ColorIsEqual(pixel, WHITE))
+            {
                 // Face up (always generated for white cubes)
-                if (true) { // Top side still visible
+                if (true)
+                {
                     Vector2 uvs[4] = {
                         {texUVs[2].x, texUVs[2].y},
                         {texUVs[2].x, texUVs[2].y + texUVs[2].height},
@@ -1460,7 +1128,6 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[2], {255, 255, 255, 255}, tangents[2]};
                     vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[2], {255, 255, 255, 255}, tangents[2]};
 
-                    // Clues for 2 triangles
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
                     indices[indexCount + 2] = vertexCount + 2;
@@ -1472,8 +1139,9 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     indexCount += 6;
                 }
 
-                // Face down
-                if (true) {
+                // Face down (always generated for white cubes)
+                if (true)
+                {
                     Vector2 uvs[4] = {
                         {texUVs[3].x + texUVs[3].width, texUVs[3].y},
                         {texUVs[3].x, texUVs[3].y + texUVs[3].height},
@@ -1500,7 +1168,8 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                 // Checking the lateral faces (occlusion culling)
 
                 // Back face (+Z)
-                if ((z == cubicmap.height - 1) || !ColorIsEqual(pixels[(z + 1) * cubicmap.width + x], WHITE)) {
+                if ((z == cubicmap.height - 1) || !ColorIsEqual(pixels[(z + 1) * cubicmap.width + x], WHITE))
+                {
                     Vector2 uvs[4] = {
                         {texUVs[5].x, texUVs[5].y},
                         {texUVs[5].x, texUVs[5].y + texUVs[5].height},
@@ -1525,7 +1194,8 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                 }
 
                 // Front face (-Z)
-                if ((z == 0) || !ColorIsEqual(pixels[(z - 1) * cubicmap.width + x], WHITE)) {
+                if ((z == 0) || !ColorIsEqual(pixels[(z - 1) * cubicmap.width + x], WHITE))
+                {
                     Vector2 uvs[4] = {
                         {texUVs[4].x + texUVs[4].width, texUVs[4].y},
                         {texUVs[4].x, texUVs[4].y + texUVs[4].height},
@@ -1539,18 +1209,19 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[4], {255, 255, 255, 255}, tangents[4]};
 
                     indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 1;
-                    indices[indexCount + 2] = vertexCount + 2;
+                    indices[indexCount + 1] = vertexCount + 2;
+                    indices[indexCount + 2] = vertexCount + 1;
                     indices[indexCount + 3] = vertexCount + 0;
-                    indices[indexCount + 4] = vertexCount + 3;
-                    indices[indexCount + 5] = vertexCount + 1;
+                    indices[indexCount + 4] = vertexCount + 1;
+                    indices[indexCount + 5] = vertexCount + 3;
 
                     vertexCount += 4;
                     indexCount += 6;
                 }
 
                 // Right face (+X)
-                if ((x == cubicmap.width - 1) || !ColorIsEqual(pixels[z * cubicmap.width + (x + 1)], WHITE)) {
+                if ((x == cubicmap.width - 1) || !ColorIsEqual(pixels[z * cubicmap.width + (x + 1)], WHITE))
+                {
                     Vector2 uvs[4] = {
                         {texUVs[0].x, texUVs[0].y},
                         {texUVs[0].x, texUVs[0].y + texUVs[0].height},
@@ -1575,7 +1246,8 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                 }
 
                 // Left face (-X)
-                if ((x == 0) || !ColorIsEqual(pixels[z * cubicmap.width + (x - 1)], WHITE)) {
+                if ((x == 0) || !ColorIsEqual(pixels[z * cubicmap.width + (x - 1)], WHITE))
+                {
                     Vector2 uvs[4] = {
                         {texUVs[1].x, texUVs[1].y},
                         {texUVs[1].x + texUVs[1].width, texUVs[1].y + texUVs[1].height},
@@ -1599,11 +1271,8 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     indexCount += 6;
                 }
             }
-            else if (ColorIsEqual(pixel, BLACK)) {
-                // Black pixel - generate only the floor and ceiling
-                minY = fminf(minY, 0.0f);
-                maxY = fmaxf(maxY, cubeSize.y);
-
+            else if (ColorIsEqual(pixel, BLACK))
+            {
                 // Ceiling face (inverted to be visible from below)
                 Vector2 uvs_top[4] = {
                     {texUVs[2].x, texUVs[2].y},
@@ -1652,16 +1321,6 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
             }
         }
     }
-
-    // Final meshData allocation
-    meshData.vertexCount = vertexCount;
-    meshData.indexCount = indexCount;
-    meshData.vertices = vertices;
-    meshData.indices = indices;
-
-    // Copy of final data
-    memcpy(meshData.vertices, vertices, vertexCount * sizeof(R3D_Vertex));
-    memcpy(meshData.indices, indices, indexCount * sizeof(uint32_t));
 
     // Cleaning
     UnloadImageColors(pixels);
@@ -2008,4 +1667,95 @@ BoundingBox R3D_CalculateMeshDataBoundingBox(R3D_MeshData meshData)
     }
 
     return bounds;
+}
+
+// ========================================
+// INTERNAL FUNCTIONS
+// ========================================
+
+bool alloc_mesh(R3D_MeshData* meshData, int vertexCount, int indexCount)
+{
+    meshData->vertices = RL_CALLOC(vertexCount, sizeof(*meshData->vertices));
+    meshData->indices = RL_CALLOC(indexCount, sizeof(*meshData->indices));
+
+    if (!meshData->vertices || !meshData->indices) {
+        if (meshData->vertices) RL_FREE(meshData->vertices);
+        if (meshData->indices) RL_FREE(meshData->indices);
+        return false;
+    }
+
+    meshData->vertexCount = vertexCount;
+    meshData->indexCount = indexCount;
+
+    return true;
+}
+
+void gen_cube_face(
+    R3D_Vertex **vertexPtr,
+    uint32_t **indexPtr,
+    uint32_t *vertexOffset,
+    Vector3 origin,
+    Vector3 uAxis,
+    Vector3 vAxis,
+    float uSize,
+    float vSize,
+    int uRes,
+    int vRes,
+    Vector3 normal,
+    Vector3 tangent
+)
+{
+    float invU = 1.0f / (float)uRes;
+    float invV = 1.0f / (float)vRes;
+    Vector4 tangent4 = { tangent.x, tangent.y, tangent.z, 1.0f };
+
+    uint32_t faceVertStart = *vertexOffset;
+    R3D_Vertex *vertex = *vertexPtr;
+    uint32_t *index = *indexPtr;
+
+    for (int v = 0; v <= vRes; v++)
+    {
+        float vt = v * invV;
+        float localV = (vt - 0.5f) * vSize;
+
+        for (int u = 0; u <= uRes; u++)
+        {
+            float ut = u * invU;
+            float localU = (ut - 0.5f) * uSize;
+
+            vertex->position = (Vector3){
+                origin.x + localU * uAxis.x + localV * vAxis.x,
+                origin.y + localU * uAxis.y + localV * vAxis.y,
+                origin.z + localU * uAxis.z + localV * vAxis.z
+            };
+
+            vertex->texcoord = (Vector2){ ut, vt };
+            vertex->normal   = normal;
+            vertex->color    = WHITE;
+            vertex->tangent  = tangent4;
+
+            vertex++;
+            (*vertexOffset)++;
+        }
+    }
+
+    for (int v = 0; v < vRes; v++)
+    {
+        uint32_t rowStart     = faceVertStart + v * (uRes + 1);
+        uint32_t nextRowStart = rowStart + (uRes + 1);
+
+        for (int u = 0; u < uRes; u++)
+        {
+            uint32_t i0 = rowStart + u;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRowStart + u;
+            uint32_t i3 = i2 + 1;
+
+            *index++ = i0; *index++ = i1; *index++ = i2;
+            *index++ = i2; *index++ = i1; *index++ = i3;
+        }
+    }
+
+    *vertexPtr = vertex;
+    *indexPtr  = index;
 }

@@ -132,10 +132,12 @@ R3DAPI R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, in
  *
  * @param sides Number of sides for the polygon (minimum 3).
  * @param radius Radius of the circumscribed circle.
+ * @param frontDir Direction vector defining the polygon's front face and normal.
+ *                 This vector will be normalized internally.
  *
  * @return Generated polygon mesh structure.
  */
-R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius);
+R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius, Vector3 frontDir);
 
 /**
  * @brief Generate a cube mesh with specified dimensions.
@@ -150,6 +152,24 @@ R3DAPI R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius);
  * @return Generated cube mesh structure.
  */
 R3DAPI R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length);
+
+/**
+ * @brief Generate a subdivided cube mesh with specified dimensions.
+ *
+ * Extension of R3D_GenMeshDataCube() allowing per-axis subdivision.
+ * Each face can be tessellated along the X, Y, and Z axes according
+ * to the provided resolutions.
+ *
+ * @param width Width of the cube along the X axis.
+ * @param height Height of the cube along the Y axis.
+ * @param length Length of the cube along the Z axis.
+ * @param resX Number of subdivisions along the X axis.
+ * @param resY Number of subdivisions along the Y axis.
+ * @param resZ Number of subdivisions along the Z axis.
+ *
+ * @return Generated cube mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCubeEx(float width, float height, float length, int resX, int resY, int resZ);
 
 /**
  * @brief Generate a sphere mesh with specified parameters.
@@ -182,30 +202,18 @@ R3DAPI R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slice
 /**
  * @brief Generate a cylinder mesh with specified parameters.
  *
- * Creates a cylinder mesh centered at the origin, extending along the Y axis.
- * The cylinder includes both top and bottom caps and smooth side surfaces.
+ * Creates a mesh centered at the origin, extending along the Y axis.
+ * The mesh includes top and bottom caps and smooth side surfaces.
+ * A cone is produced when bottomRadius and topRadius differ.
  *
- * @param radius Radius of the cylinder base.
- * @param height Height of the cylinder along the Y axis.
- * @param slices Number of radial subdivisions around the cylinder.
+ * @param bottomRadius Radius of the bottom cap.
+ * @param topRadius Radius of the top cap.
+ * @param height Height of the shape along the Y axis.
+ * @param slices Number of radial subdivisions around the shape.
  *
- * @return Generated cylinder mesh structure.
+ * @return Generated mesh structure.
  */
-R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices);
-
-/**
- * @brief Generate a cone mesh with specified parameters.
- *
- * Creates a cone mesh with its base centered at the origin and apex pointing upward along the Y axis.
- * The cone includes a circular base and smooth tapered sides.
- *
- * @param radius Radius of the cone base.
- * @param height Height of the cone along the Y axis.
- * @param slices Number of radial subdivisions around the cone base.
- *
- * @return Generated cone mesh structure.
- */
-R3DAPI R3D_MeshData R3D_GenMeshDataCone(float radius, float height, int slices);
+R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices);
 
 /**
  * @brief Generate a torus mesh with specified parameters.

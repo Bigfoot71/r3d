@@ -147,10 +147,11 @@ R3DAPI R3D_Mesh R3D_GenMeshPlane(float width, float length, int resX, int resZ);
  * @brief Generate a polygon mesh.
  * @param sides Number of sides (min 3).
  * @param radius Radius of the polygon.
+ * @param frontDir Direction vector for the polygon's front face.
  * @return Mesh ready for rendering.
  * @see R3D_GenMeshDataPoly
  */
-R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius);
+R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius, Vector3 frontDir);
 
 /**
  * @brief Generate a cube mesh.
@@ -161,6 +162,19 @@ R3DAPI R3D_Mesh R3D_GenMeshPoly(int sides, float radius);
  * @see R3D_GenMeshDataCube
  */
 R3DAPI R3D_Mesh R3D_GenMeshCube(float width, float height, float length);
+
+/**
+ * @brief Generate a subdivided cube mesh.
+ * @param width Width along X axis.
+ * @param height Height along Y axis.
+ * @param length Length along Z axis.
+ * @param resX Subdivisions along X axis.
+ * @param resY Subdivisions along Y axis.
+ * @param resZ Subdivisions along Z axis.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCubeEx
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCubeEx(float width, float height, float length, int resX, int resY, int resZ);
 
 /**
  * @brief Generate a sphere mesh.
@@ -184,23 +198,14 @@ R3DAPI R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices);
 
 /**
  * @brief Generate a cylinder mesh.
- * @param radius Cylinder base radius.
+ * @param bottomRadius Bottom radius.
+ * @param topRadius Top radius.
  * @param height Height along Y axis.
  * @param slices Radial subdivisions.
  * @return Mesh ready for rendering.
  * @see R3D_GenMeshDataCylinder
  */
-R3DAPI R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices);
-
-/**
- * @brief Generate a cone mesh.
- * @param radius Cone base radius.
- * @param height Height along Y axis.
- * @param slices Radial subdivisions.
- * @return Mesh ready for rendering.
- * @see R3D_GenMeshDataCone
- */
-R3DAPI R3D_Mesh R3D_GenMeshCone(float radius, float height, int slices);
+R3DAPI R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices);
 
 /**
  * @brief Generate a torus mesh.
