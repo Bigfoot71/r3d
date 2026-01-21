@@ -231,6 +231,8 @@ void main()
 
 #if defined(DECAL)
     vDecalProjection = inverse(finalMatModel) * uView.invView;
-    vDecalAxes = mat3(finalMatModel);
+    vDecalAxes[0] = normalize(finalMatModel[0].xyz);
+    vDecalAxes[1] = normalize(finalMatModel[1].xyz);
+    vDecalAxes[2] = normalize(finalMatModel[2].xyz);
 #endif // DECAL
 }
