@@ -82,12 +82,12 @@ int main(void)
         UpdateCamera(&camera, CAMERA_ORBITAL);
         BeginDrawing();
         R3D_Begin(camera);
-        R3D_DrawMesh(&mesh, &material, MatrixIdentity());
+        R3D_DrawMesh(mesh, material, Vector3Zero(), 1.0f);
         R3D_End();
         EndDrawing();
     }
 
-    R3D_UnloadMesh(&mesh);
+    R3D_UnloadMesh(mesh);
     R3D_Close();
     CloseWindow();
     return 0;
