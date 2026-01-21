@@ -112,7 +112,7 @@ void R3D_End(void)
     upload_view_block();
     upload_env_block();
 
-    /* --- Update and collect all visible lights and probes and them (shadows and probes) --- */
+    /* --- Update and collect all visible lights and probes and process them (shadows and probes) --- */
 
     // TODO: Add `r3d_light_has()` along with a list of lights that cast shadows
     r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.viewPosition);
