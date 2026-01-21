@@ -16,8 +16,8 @@
 
 /* === Varyings === */
 
-smooth in mat4 vMatDecal;
-smooth in vec3 vOrientation;
+smooth in mat4 vDecalProjection;
+smooth in mat3 vDecalAxes;
 flat   in vec3 vEmission;
 smooth in vec4 vColor;
 
@@ -29,7 +29,7 @@ uniform sampler2D uEmissionMap;
 uniform sampler2D uOrmMap;
 
 uniform sampler2D uDepthTex;
-uniform sampler2D uNormTanTex;
+uniform sampler2D uGeomNormalTex;
 
 uniform float uAlphaCutoff;
 uniform float uNormalScale;
@@ -51,13 +51,28 @@ layout(location = 1) out vec4 FragEmission;
 layout(location = 2) out vec4 FragORM;
 layout(location = 3) out vec4 FragNormal;
 
+/* === Helper functions === */
+
+mat3 BuildDecalTBN(vec3 worldNormal)
+{
+    vec3 decalX = normalize(vDecalAxes[0]);
+    vec3 decalZ = normalize(vDecalAxes[2]);
+
+    vec3 T = normalize(decalX - dot(decalX, worldNormal) * worldNormal);
+    vec3 B = normalize(decalZ - dot(decalZ, worldNormal) * worldNormal);
+
+    B *= sign(dot(cross(T, B), worldNormal));
+
+    return mat3(T, B, worldNormal);
+}
+
 /* === Main function === */
 
 void main()
 {
     /* Transform view-space position to decal local space */
     vec3 positionViewSpace = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
-    vec4 positionObjectSpace = vMatDecal * vec4(positionViewSpace, 1.0);
+    vec4 positionObjectSpace = vDecalProjection * vec4(positionViewSpace, 1.0);
 
     /* Discard fragments outside projector bounds */
     if (any(greaterThan(abs(positionObjectSpace.xyz), vec3(0.5)))) discard;
@@ -69,31 +84,26 @@ void main()
     vec4 albedo = vColor * texture(uAlbedoMap, decalTexCoord);
     if (albedo.a < uAlphaCutoff) discard;
 
-    /* Fetch surface normal and tangent */
+    /* Fetch surface normal */
     ivec2 screenCoord = ivec2(gl_FragCoord.xy);
-    vec4 normTanData = texelFetch(uNormTanTex, screenCoord, 0);
-    vec3 surfaceNormal = M_DecodeOctahedral(normTanData.rg);
+    vec2 encGeomNormal = texelFetch(uGeomNormalTex, screenCoord, 0).rg;
+    vec3 worldNormal = M_DecodeOctahedral(encGeomNormal);
 
     /* Normal threshold culling */
-    float angle = acos(clamp(dot(vOrientation, surfaceNormal), -1.0, 1.0));
+    float angle = acos(clamp(dot(vDecalAxes[1], worldNormal), -1.0, 1.0));
     float difference = uNormalThreshold - angle;
     if (difference < 0.0) discard;
 
     /* Compute fade factor */
     float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0) * albedo.a;
 
-    /* Build TBN matrix (and correct handedness if necessary) */
-    vec3 surfaceTangent = M_DecodeOctahedral(normTanData.ba);
-    vec3 surfaceBitangent = normalize(cross(surfaceNormal, surfaceTangent));
-    surfaceBitangent *= sign(dot(cross(surfaceTangent, surfaceBitangent), surfaceNormal));
-    mat3 TBN = mat3(surfaceTangent, surfaceBitangent, surfaceNormal);
-
     /* Sample all other material textures together */
     vec3 normalSample = texture(uNormalMap, decalTexCoord).rgb * 2.0 - 1.0;
     vec3 emission = texture(uEmissionMap, decalTexCoord).rgb;
     vec3 orm = texture(uOrmMap, decalTexCoord).rgb;
 
-    /* Transform and scale decal normal */
+    /* Build TBN then transform and scale decal normal */
+    mat3 TBN = BuildDecalTBN(worldNormal);
     vec3 N = normalize(TBN * M_NormalScale(normalSample, uNormalScale * fadeAlpha));
 
     /* Output */
