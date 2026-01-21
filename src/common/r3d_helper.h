@@ -45,6 +45,30 @@
 #   define SWAP(type, a, b) do { type _tmp = (a); (a) = (b); (b) = _tmp; } while (0)
 #endif
 
+#ifndef BIT_SET
+#   define BIT_SET(v, m) ((v) |= (m))
+#endif
+
+#ifndef BIT_CLEAR
+#   define BIT_CLEAR(v, m) ((v) &= ~(m))
+#endif
+
+#ifndef BIT_TOGGLE
+#   define BIT_TOGGLE(v, m) ((v) ^= (m))
+#endif
+
+#ifndef BIT_TEST_ALL
+#   define BIT_TEST_ALL(v, m) (((v) & (m)) == (m))
+#endif
+
+#ifndef BIT_TEST_ANY
+#   define BIT_TEST_ANY(v, m) (((v) & (m)) != 0)
+#endif
+
+#ifndef BIT_TEST
+#   define BIT_TEST(v, b) BIT_TEST_ANY(v, b)
+#endif
+
 // ========================================
 // HELPER FUNCTIONS
 // ========================================

@@ -244,7 +244,7 @@ void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quat
 
 void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 {
-    if (!R3D_CORE_FLAGS_HAS(layers, mesh.layerMask)) {
+    if (!BIT_TEST_ANY(R3D.layers, mesh.layerMask)) {
         return;
     }
 
@@ -268,7 +268,7 @@ void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuf
 
 void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
-    if (!R3D_CORE_FLAGS_HAS(layers, mesh.layerMask)) {
+    if (!BIT_TEST_ANY(R3D.layers, mesh.layerMask)) {
         return;
     }
 
@@ -312,7 +312,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
 
-        if (!R3D_CORE_FLAGS_HAS(layers, mesh->layerMask)) {
+        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
             return;
         }
 
@@ -348,7 +348,7 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
     {
         const R3D_Mesh* mesh = &model.meshes[i];
 
-        if (!R3D_CORE_FLAGS_HAS(layers, mesh->layerMask)) {
+        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
             return;
         }
 
@@ -388,7 +388,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
     {
         const R3D_Mesh* mesh = &model.meshes[i];
 
-        if (!R3D_CORE_FLAGS_HAS(layers, mesh->layerMask)) {
+        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
             return;
         }
 
@@ -425,7 +425,7 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
     {
         const R3D_Mesh* mesh = &model.meshes[i];
 
-        if (!R3D_CORE_FLAGS_HAS(layers, mesh->layerMask)) {
+        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
             return;
         }
 

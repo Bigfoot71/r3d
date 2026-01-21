@@ -31,11 +31,6 @@ static struct r3d_texture {
 // UTILITY FUNCTIONS
 // ========================================
 
-static inline float randf(void)
-{
-    return (float)GetRandomValue(0, INT16_MAX) / INT16_MAX;
-}
-
 static void tex_params(GLenum target, GLint filter, GLint wrap)
 {
     glTexParameteri(target, GL_TEXTURE_MIN_FILTER, filter);
@@ -104,24 +99,28 @@ void load_ibl_brdf_lut(void) {
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_texture_init(void) {
+bool r3d_texture_init(void)
+{
     memset(&R3D_MOD_TEXTURE, 0, sizeof(R3D_MOD_TEXTURE));
     glGenTextures(R3D_TEXTURE_COUNT, R3D_MOD_TEXTURE.textures);
     return true;
 }
 
-void r3d_texture_quit(void) {
+void r3d_texture_quit(void)
+{
     glDeleteTextures(R3D_TEXTURE_COUNT, R3D_MOD_TEXTURE.textures);
 }
 
-bool r3d_texture_is_default(GLuint id) {
+bool r3d_texture_is_default(GLuint id)
+{
     for (int i = 0; i < R3D_TEXTURE_COUNT; i++) {
         if (id == R3D_MOD_TEXTURE.textures[i]) return true;
     }
     return false;
 }
 
-GLuint r3d_texture_get(r3d_texture_t texture) {
+GLuint r3d_texture_get(r3d_texture_t texture)
+{
     if (!R3D_MOD_TEXTURE.loaded[texture]) {
         R3D_MOD_TEXTURE.loaded[texture] = true;
         LOADERS[texture]();

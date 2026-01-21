@@ -7,6 +7,8 @@
  */
 
 #include "./r3d_env.h"
+
+#include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +17,6 @@
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_helper.h"
 #include "../common/r3d_math.h"
-#include "r3d/r3d_probe.h"
-#include <r3d_config.h>
 
 // ========================================
 // CONSTANTS
@@ -244,12 +244,12 @@ static bool init_probe(r3d_env_probe_t* probe, R3D_ProbeFlags flags)
     probe->irradiance = -1;
     probe->prefilter = -1;
 
-    if (flags & R3D_PROBE_ILLUMINATION) {
+    if (BIT_TEST(flags, R3D_PROBE_ILLUMINATION)) {
         probe->irradiance = r3d_env_irradiance_reserve_layer();
         if (probe->irradiance == -1) return false;
     }
 
-    if (flags & R3D_PROBE_REFLECTION) {
+    if (BIT_TEST(flags, R3D_PROBE_REFLECTION)) {
         probe->prefilter = r3d_env_prefilter_reserve_layer();
         if (probe->prefilter == -1) {
             if (probe->irradiance >= 0) {
@@ -382,7 +382,7 @@ void r3d_env_quit(void)
 
 R3D_Probe r3d_env_probe_new(R3D_ProbeFlags flags)
 {
-    if ((flags & (R3D_PROBE_ILLUMINATION | R3D_PROBE_REFLECTION)) == 0) {
+    if (!BIT_TEST_ANY(flags, R3D_PROBE_ILLUMINATION | R3D_PROBE_REFLECTION)) {
         R3D_TRACELOG(LOG_FATAL, "Failed to create probe; Invalid flags");
         return -1;
     }

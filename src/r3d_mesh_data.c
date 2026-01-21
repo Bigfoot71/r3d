@@ -6,7 +6,6 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "raylib.h"
 #include <r3d/r3d_mesh_data.h>
 #include <r3d_config.h>
 #include <raymath.h>

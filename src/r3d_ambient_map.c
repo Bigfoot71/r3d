@@ -14,6 +14,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#include "./common/r3d_helper.h"
 #include "./common/r3d_pass.h"
 #include "./modules/r3d_env.h"
 
@@ -42,7 +43,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
     R3D_AmbientMap ambientMap = {0};
 
     int irradiance = -1;
-    if (flags & R3D_AMBIENT_ILLUMINATION) {
+    if (BIT_TEST(flags, R3D_AMBIENT_ILLUMINATION)) {
         irradiance = r3d_env_irradiance_reserve_layer();
         if (irradiance < 0) {
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
@@ -52,7 +53,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
     }
 
     int prefilter = -1;
-    if (flags & R3D_AMBIENT_REFLECTION) {
+    if (BIT_TEST(flags, R3D_AMBIENT_REFLECTION)) {
         prefilter = r3d_env_prefilter_reserve_layer();
         if (prefilter < 0) {
             r3d_env_irradiance_release_layer(irradiance);
@@ -82,11 +83,11 @@ void R3D_UnloadAmbientMap(R3D_AmbientMap ambientMap)
 
 void R3D_UpdateAmbientMap(R3D_AmbientMap ambientMap, R3D_Cubemap cubemap)
 {
-    if ((ambientMap.flags & R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
+    if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
         r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size);
     }
 
-    if ((ambientMap.flags & R3D_AMBIENT_REFLECTION) && ambientMap.prefilter > 0) {
+    if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_REFLECTION) && ambientMap.prefilter > 0) {
         r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size);
     }
 }

@@ -36,7 +36,7 @@ R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlags flags)
     glGenBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer.buffers);
 
     for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
-        if ((1 << i) & flags) {
+        if (BIT_TEST(flags, 1 << i)) {
             glBindBuffer(GL_ARRAY_BUFFER, buffer.buffers[i]);
             glBufferData(GL_ARRAY_BUFFER, capacity * INSTANCE_ATTRIBUTE_SIZE[i], NULL, GL_DYNAMIC_DRAW);
         }
@@ -63,7 +63,7 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int 
         return;
     }
 
-    if ((flag & buffer.flags) == 0) {
+    if (!BIT_TEST(buffer.flags, flag)) {
         R3D_TRACELOG(LOG_WARNING, "UploadInstances -> attribute not allocated for this buffer (flag=0x%X)", flag);
         return;
     }
@@ -88,7 +88,7 @@ void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag)
         return NULL;
     }
 
-    if ((flag & buffer.flags) == 0) {
+    if (!BIT_TEST(buffer.flags, flag)) {
         R3D_TRACELOG(LOG_WARNING, "MapInstances -> attribute not allocated for this buffer (flag=0x%X)", flag);
         return NULL;
     }
@@ -106,7 +106,7 @@ void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag)
 void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flags)
 {
     for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
-        if (((1 << i) & flags) & buffer.flags) {
+        if (BIT_TEST(flags, 1 << i) && BIT_TEST(buffer.flags, 1 << i)) {
             glBindBuffer(GL_ARRAY_BUFFER, buffer.buffers[i]);
             glUnmapBuffer(GL_ARRAY_BUFFER);
         }

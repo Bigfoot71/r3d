@@ -852,7 +852,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
     const R3D_InstanceBuffer* instances = &group->instances;
 
-    if (instances->flags & R3D_INSTANCE_POSITION) {
+    if (BIT_TEST(instances->flags, R3D_INSTANCE_POSITION)) {
         glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[0]);
         glEnableVertexAttribArray(10);
         glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
@@ -861,7 +861,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
         glDisableVertexAttribArray(10);
     }
 
-    if (instances->flags & R3D_INSTANCE_ROTATION) {
+    if (BIT_TEST(instances->flags, R3D_INSTANCE_ROTATION)) {
         glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[1]);
         glEnableVertexAttribArray(11);
         glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), 0);
@@ -870,7 +870,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
         glDisableVertexAttribArray(11);
     }
 
-    if (instances->flags & R3D_INSTANCE_SCALE) {
+    if (BIT_TEST(instances->flags, R3D_INSTANCE_SCALE)) {
         glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[2]);
         glEnableVertexAttribArray(12);
         glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
@@ -879,7 +879,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
         glDisableVertexAttribArray(12);
     }
 
-    if (instances->flags & R3D_INSTANCE_COLOR) {
+    if (BIT_TEST(instances->flags, R3D_INSTANCE_COLOR)) {
         glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[3]);
         glEnableVertexAttribArray(13);
         glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), 0);

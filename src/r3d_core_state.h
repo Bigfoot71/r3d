@@ -17,30 +17,6 @@
 #include "./common/r3d_frustum.h"
 
 // ========================================
-// CORE MACROS
-// ========================================
-
-/*
- * Check if all specified flags are set.
- */
-#define R3D_CORE_FLAGS_HAS(flags, mask)         \
-    (((R3D.flags) & (mask)) == (mask))
-
-/*
- * Set specified flags (bitwise OR).
- */
-#define R3D_CORE_FLAGS_ASSIGN(flags, mask) do { \
-    (R3D.flags) |= (mask);                      \
-} while (0)
-
-/*
- * Clear specified flags (bitwise AND NOT).
- */
-#define R3D_CORE_FLAGS_CLEAR(flags, mask) do {  \
-    (R3D.flags) &= ~(mask);                     \
-} while (0)
-
-// ========================================
 // CORE STATE
 // ========================================
 

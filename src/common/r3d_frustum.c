@@ -7,7 +7,6 @@
  */
 
 #include "./r3d_frustum.h"
-#include "raylib.h"
 
 #include <raymath.h>
 #include <float.h>

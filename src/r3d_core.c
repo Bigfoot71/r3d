@@ -23,6 +23,7 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
+#include "common/r3d_helper.h"
 
 // ========================================
 // SHARED CORE STATE
@@ -168,10 +169,10 @@ void R3D_SetActiveLayers(R3D_Layer bitfield)
 
 void R3D_EnableLayers(R3D_Layer bitfield)
 {
-    R3D_CORE_FLAGS_ASSIGN(layers, bitfield);
+    BIT_SET(R3D.layers, bitfield);
 }
 
 void R3D_DisableLayers(R3D_Layer bitfield)
 {
-    R3D_CORE_FLAGS_CLEAR(layers, bitfield);
+    BIT_CLEAR(R3D.layers, bitfield);
 }
