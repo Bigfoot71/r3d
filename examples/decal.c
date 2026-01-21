@@ -118,7 +118,7 @@ int main(void)
             R3D_DrawDecalInstanced(decal, instances, decalCount);
         }
 
-        R3D_DrawDecal(decal, MatrixTransform(hitPoint, decalRotation, decalScale));
+        R3D_DrawDecalEx(decal, hitPoint, decalRotation, decalScale);
 
         R3D_End();
 

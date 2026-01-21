@@ -77,24 +77,23 @@ R3DAPI void R3D_BeginCluster(BoundingBox aabb);
 R3DAPI void R3D_EndCluster(void);
 
 /**
- * @brief Queues a mesh draw command.
- *
- * Draws the mesh at the given position and uniform scale.
+ * @brief Queues a mesh draw command with position and uniform scale.
+ * 
  * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawMesh(R3D_Mesh mesh, R3D_Material material, Vector3 position, float scale);
 
 /**
- * @brief Queues a mesh draw command with rotation and non-uniform scale.
+ * @brief Queues a mesh draw command with position, rotation and non-uniform scale.
  *
- * Executed during R3D_End().
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quaternion rotation, Vector3 scale);
 
 /**
  * @brief Queues a mesh draw command using a full transform matrix.
  *
- * Executed during R3D_End().
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform);
 
@@ -102,36 +101,38 @@ R3DAPI void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transfo
  * @brief Queues an instanced mesh draw command.
  *
  * Draws multiple instances using the provided instance buffer.
- * Executed during R3D_End().
+ * 
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count);
 
 /**
  * @brief Queues an instanced mesh draw command with an additional transform.
  *
- * The transform is applied to all instances. Executed during R3D_End().
+ * The transform is applied to all instances.
+ *
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform);
 
 /**
- * @brief Queues a model draw command.
- *
- * Draws the model at the given position and uniform scale.
- * Executed during R3D_End().
+ * @brief Queues a model draw command with position and uniform scale.
+ * 
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawModel(R3D_Model model, Vector3 position, float scale);
 
 /**
- * @brief Queues a model draw command with rotation and non-uniform scale.
+ * @brief Queues a model draw command with position, rotation and non-uniform scale.
  *
- * Executed during R3D_End().
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawModelEx(R3D_Model model, Vector3 position, Quaternion rotation, Vector3 scale);
 
 /**
  * @brief Queues a model draw command using a full transform matrix.
  *
- * Executed during R3D_End().
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawModelPro(R3D_Model model, Matrix transform);
 
@@ -139,14 +140,17 @@ R3DAPI void R3D_DrawModelPro(R3D_Model model, Matrix transform);
  * @brief Queues an instanced model draw command.
  *
  * Draws multiple instances using the provided instance buffer.
- * Executed during R3D_End().
+ * 
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int count);
 
 /**
  * @brief Queues an instanced model draw command with an additional transform.
  *
- * The transform is applied to all instances. Executed during R3D_End().
+ * The transform is applied to all instances.
+ *
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform);
 
@@ -154,21 +158,24 @@ R3DAPI void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instanc
  * @brief Queues an animated model draw command.
  *
  * Uses the provided animation player to compute the pose.
- * Executed during R3D_End().
+ * 
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawAnimatedModel(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, float scale);
 
 /**
- * @brief Queues an animated model draw command with rotation and non-uniform scale.
+ * @brief Queues an animated model draw command with position, rotation and non-uniform scale.
  *
- * Executed during R3D_End().
+ * Uses the provided animation player to compute the pose.
+ *
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawAnimatedModelEx(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, Quaternion rotation, Vector3 scale);
 
 /**
  * @brief Queues an animated model draw command using a full transform matrix.
  *
- * Executed during R3D_End().
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matrix transform);
 
@@ -176,32 +183,58 @@ R3DAPI void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player
  * @brief Queues an instanced animated model draw command.
  *
  * Draws multiple animated instances using the provided instance buffer.
- * Executed during R3D_End().
+ * 
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count);
 
 /**
  * @brief Queues an instanced animated model draw command with an additional transform.
  *
- * The transform is applied to all instances. Executed during R3D_End().
+ * The transform is applied to all instances.
+ *
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform);
 
 /**
- * @brief Queues a decal draw command.
- *
- * The decal is transformed by the given matrix.
- * Executed during R3D_End().
+ * @brief Queues a decal draw command with position and uniform scale.
+ * 
+ * The command is executed during R3D_End().
  */
-R3DAPI void R3D_DrawDecal(R3D_Decal decal, Matrix transform);
+R3DAPI void R3D_DrawDecal(R3D_Decal decal, Vector3 position, float scale);
+
+/**
+ * @brief Queues a decal draw command with position, rotation and non-uniform scale.
+ *
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawDecalEx(R3D_Decal decal, Vector3 position, Quaternion rotation, Vector3 scale);
+
+/**
+ * @brief Queues a decal draw command using a full transform matrix.
+ *
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform);
 
 /**
  * @brief Queues an instanced decal draw command.
  *
- * Draws multiple decals using the provided instance buffer.
- * Executed during R3D_End().
+ * Draws multiple instances using the provided instance buffer.
+ * 
+ * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count);
+
+/**
+ * @brief Queues an instanced decal draw command with an additional transform.
+ *
+ * The transform is applied to all instances.
+ * 
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int count, Matrix transform);
 
 #ifdef __cplusplus
 } // extern "C"

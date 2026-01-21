@@ -438,7 +438,19 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
     }
 }
 
-void R3D_DrawDecal(R3D_Decal decal, Matrix transform)
+void R3D_DrawDecal(R3D_Decal decal, Vector3 position, float scale)
+{
+    Matrix transform = r3d_matrix_scale_translate((Vector3) { scale, scale, scale }, position);
+    R3D_DrawDecalPro(decal, transform);
+}
+
+void R3D_DrawDecalEx(R3D_Decal decal, Vector3 position, Quaternion rotation, Vector3 scale)
+{
+    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    R3D_DrawDecalPro(decal, transform);
+}
+
+void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform)
 {
     decal.normalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
@@ -457,11 +469,16 @@ void R3D_DrawDecal(R3D_Decal decal, Matrix transform)
 
 void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count)
 {
+    R3D_DrawDecalInstancedEx(decal, instances, count, R3D_MATRIX_IDENTITY);
+}
+
+void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int count, Matrix transform)
+{
     decal.normalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
     r3d_draw_group_t drawGroup = {0};
-    drawGroup.transform = R3D_MATRIX_IDENTITY;
+    drawGroup.transform = transform;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
