@@ -49,6 +49,16 @@ set(R3D_CONFIG_DEFAULTS
     R3D_ENABLE_TRACELOG             1
 )
 
+# Project output directories
+
+set(R3D_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(R3D_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+set(R3D_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY})
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY})
+
 # Include cmake scripts
 
 include(CheckLibraryExists)
@@ -125,6 +135,12 @@ if(R3D_ASSIMP_VENDORED)
         add_subdirectory("${R3D_ASSIMP_SUBMODULE_PATH}")
 
         set(R3D_ASSIMP_INC_PATH "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "Path to assimp includes" FORCE)
+
+        set_target_properties(assimp PROPERTIES 
+            RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
+            LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
+            ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
+        )
     else()
         message(FATAL_ERROR "Vendored assimp not found!
 Missing: ${R3D_ASSIMP_CMAKELISTS}
@@ -157,8 +173,9 @@ if(R3D_RAYLIB_VENDORED)
     if(EXISTS "${R3D_RAYLIB_CMAKELISTS}")
         message(STATUS "Using vendored raylib from: ${R3D_RAYLIB_SUBMODULE_PATH}")
 
-        # Enable HDR image support
+        # Enable required image file formats
         set(SUPPORT_FILEFORMAT_HDR ON CACHE BOOL "" FORCE)
+        set(SUPPORT_FILEFORMAT_JPG ON CACHE BOOL "" FORCE)
 
         # Disable model loading and mesh generation support
         # to avoid symbol redefinition errors with Assimp,
@@ -176,6 +193,12 @@ if(R3D_RAYLIB_VENDORED)
         add_subdirectory("${R3D_RAYLIB_SUBMODULE_PATH}")
 
         set(R3D_RAYLIB_INC_PATH "${R3D_RAYLIB_SUBMODULE_PATH}/src" CACHE STRING "Path to raylib includes" FORCE)
+
+        set_target_properties(raylib PROPERTIES 
+            RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
+            LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
+            ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
+        )
     else()
         message(FATAL_ERROR "Vendored raylib not found!
 Missing: ${R3D_RAYLIB_CMAKELISTS}
@@ -248,7 +271,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"
     "${R3D_ROOT_PATH}/src/r3d_culling.c"
     "${R3D_ROOT_PATH}/src/r3d_draw.c"
-    "${R3D_ROOT_PATH}/src/r3d_decal.c"	
+    "${R3D_ROOT_PATH}/src/r3d_decal.c"
     "${R3D_ROOT_PATH}/src/r3d_ambient_map.c"
     "${R3D_ROOT_PATH}/src/r3d_environment.c"
     "${R3D_ROOT_PATH}/src/r3d_instance.c"
