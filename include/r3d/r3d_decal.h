@@ -68,7 +68,7 @@
  * forward rendered or non-opaque objects.
  */
 typedef struct R3D_Decal {
-    R3D_AlbedoMap albedo;       ///< Albedo map
+    R3D_AlbedoMap albedo;       ///< Albedo map (if the texture is undefined, implicitly treat `applyColor` as false, with alpha = 1.0)
     R3D_EmissionMap emission;   ///< Emission map
     R3D_NormalMap normal;       ///< Normal map
     R3D_OrmMap orm;             ///< Occlusion-Roughness-Metalness map

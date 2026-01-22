@@ -968,7 +968,7 @@ void raster_decal(const r3d_draw_call_t* call)
 
     R3D_SHADER_SET_FLOAT(scene.decal, uNormalThreshold, decal->normalThreshold);
     R3D_SHADER_SET_FLOAT(scene.decal, uFadeWidth, decal->fadeWidth);
-    R3D_SHADER_SET_INT(scene.decal, uApplyColor, decal->applyColor);
+    R3D_SHADER_SET_INT(scene.decal, uApplyColor, decal->applyColor && (decal->albedo.texture.id != 0));
 
     /* --- Bind active texture maps --- */
 
