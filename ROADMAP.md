@@ -2,6 +2,14 @@
 
 ## **v0.8**
 
+* [ ] **Offer more flexibility for model loading**
+  A flag system could be added to indicate additional operations during import via Assimp,
+  or to specify whether to keep a copy of the mesh data in RAM.
+
+* [ ] **Add basic functions for collisions / rudimentary physics**
+  Functions for collision checks / ray casting would be nice, like those provided in base raylib,
+  possibly with some additional functions for sweeps and similar operations.
+
 * [ ] **Add Support for Custom Screen-Space Shaders (Post-Processing)**
   Allow custom shaders to be used in screen-space for post-processing effects.
 
