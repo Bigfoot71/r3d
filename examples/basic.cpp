@@ -16,7 +16,7 @@ int main()
     R3D_Material material = R3D_GetDefaultMaterial();
 
     // Setup environment
-    R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
+    R3D_ENVIRONMENT_SET(ambient.color, Color{10, 10, 10, 255});
 
     // Create light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
@@ -25,12 +25,11 @@ int main()
     R3D_SetLightActive(light, true);
 
     // Setup camera
-    Camera3D camera = {
-        .position = {0, 2, 2},
-        .target = {0, 0, 0},
-        .up = {0, 1, 0},
-        .fovy = 60
-    };
+    Camera3D camera = {};
+    camera.position = {0, 2, 2};
+    camera.target = {0, 0, 0};
+    camera.up = {0, 1, 0};
+    camera.fovy = 60;
 
     // Main loop
     while (!WindowShouldClose())
