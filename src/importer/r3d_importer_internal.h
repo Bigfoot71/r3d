@@ -56,7 +56,8 @@ typedef struct {
 
 struct R3D_Importer {
     const struct aiScene* scene;
-    r3d_bone_map_entry_t* boneMap;
+    r3d_bone_map_entry_t* boneMapArray;
+    r3d_bone_map_entry_t* boneMapHead;
     int boneCount;
     R3D_ImportFlags flags;
 };
@@ -189,7 +190,7 @@ static inline int r3d_importer_get_bone_index(const R3D_Importer* importer, cons
     if (!importer || !name) return -1;
 
     r3d_bone_map_entry_t* entry = NULL;
-    HASH_FIND_STR(importer->boneMap, name, entry);
+    HASH_FIND_STR(importer->boneMapHead, name, entry);
 
     return entry ? entry->index : -1;
 }

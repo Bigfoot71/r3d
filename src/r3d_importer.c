@@ -45,7 +45,21 @@
 
 static void build_bone_mapping(R3D_Importer* importer)
 {
-    importer->boneMap = NULL;
+    int totalBones = 0;
+    for (uint32_t meshIdx = 0; meshIdx < importer->scene->mNumMeshes; meshIdx++) {
+        const struct aiMesh* mesh = importer->scene->mMeshes[meshIdx];
+        if (mesh && mesh->mNumBones) totalBones += mesh->mNumBones;
+    }
+
+    if (totalBones == 0) {
+        importer->boneMapArray = NULL;
+        importer->boneMapHead = NULL;
+        importer->boneCount = 0;
+        return;
+    }
+
+    importer->boneMapArray = RL_MALLOC(totalBones * sizeof(r3d_bone_map_entry_t));
+    importer->boneMapHead = NULL;
     importer->boneCount = 0;
 
     for (uint32_t meshIdx = 0; meshIdx < importer->scene->mNumMeshes; meshIdx++)
@@ -60,19 +74,18 @@ static void build_bone_mapping(R3D_Importer* importer)
 
             const char* boneName = bone->mName.data;
 
-            // Check if the bone already exists
             r3d_bone_map_entry_t* entry = NULL;
-            HASH_FIND_STR(importer->boneMap, boneName, entry);
+            HASH_FIND_STR(importer->boneMapHead, boneName, entry);
+            if (entry != NULL) continue;
 
-            if (entry == NULL) {
-                entry = RL_MALLOC(sizeof(r3d_bone_map_entry_t));
-                strncpy(entry->name, boneName, sizeof(entry->name) - 1);
-                entry->name[sizeof(entry->name) - 1] = '\0';
-                entry->index = importer->boneCount;
+            entry = &importer->boneMapArray[importer->boneCount];
 
-                HASH_ADD_STR(importer->boneMap, name, entry);
-                importer->boneCount++;
-            }
+            strncpy(entry->name, boneName, sizeof(entry->name) - 1);
+            entry->name[sizeof(entry->name) - 1] = '\0';
+            entry->index = importer->boneCount;
+
+            HASH_ADD_STR(importer->boneMapHead, name, entry);
+            importer->boneCount++;
         }
     }
 
@@ -133,13 +146,12 @@ void R3D_UnloadImporter(R3D_Importer* importer)
 {
     if (!importer) return;
 
-    r3d_bone_map_entry_t *entry, *tmp;
-    HASH_ITER(hh, importer->boneMap, entry, tmp) {
-        HASH_DEL(importer->boneMap, entry);
-        RL_FREE(entry);
+    HASH_CLEAR(hh, importer->boneMapHead);
+
+    if (importer->boneMapArray) {
+        RL_FREE(importer->boneMapArray);
     }
 
     aiReleaseImport(importer->scene);
-
     RL_FREE(importer);
 }
