@@ -17,7 +17,6 @@
 #include <float.h>
 
 #include "../common/r3d_math.h"
-#include "r3d/r3d_model.h"
 
 // ========================================
 // CONSTANTS
