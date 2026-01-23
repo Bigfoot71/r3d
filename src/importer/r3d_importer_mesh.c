@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./r3d_importer.h"
+#include "./r3d_importer_internal.h"
 
 #include <r3d/r3d_mesh_data.h>
 #include <r3d/r3d_mesh.h>
@@ -218,8 +218,40 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
 // MESH LOADING (INTERNAL)
 // ========================================
 
+static R3D_PrimitiveType get_primitive_type(unsigned int aiPrimitiveTypes)
+{
+    // A single mesh may theoretically contain multiple primitive types,
+    // but we use `aiProcess_SortByPType` during import, which resolves this issue,
+    // so we can assume there is only one primitive type per mesh.
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_POINT)) {
+        return R3D_PRIMITIVE_POINTS;
+    }
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_LINE)) {
+        return R3D_PRIMITIVE_LINES;
+    }
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_TRIANGLE)) {
+        return R3D_PRIMITIVE_TRIANGLES;
+    }
+
+    // NOTE: This should never happen if the mesh has been triangulated.
+    //if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_POLYGON)) {
+    //    return 0;
+    //}
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_NGONEncodingFlag)) {
+        R3D_TRACELOG(LOG_WARNING, "NGON primitive encoding not supported");
+        return R3D_PRIMITIVE_TRIANGLE_FAN;
+    }
+
+    return R3D_PRIMITIVE_TRIANGLES;
+}
+
 static bool load_mesh_internal(
     R3D_Mesh* outMesh,
+    R3D_MeshData* outMeshData,
     const struct aiMesh* aiMesh,
     Matrix transform,
     bool hasBones)
@@ -276,8 +308,10 @@ static bool load_mesh_internal(
     }
 
     // Upload the mesh
-    *outMesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
-    R3D_UnloadMeshData(data);
+    R3D_PrimitiveType ptype = get_primitive_type(aiMesh->mPrimitiveTypes);
+    *outMesh = R3D_LoadMesh(ptype, data, &aabb, R3D_STATIC_MESH);
+    if (outMeshData == NULL) R3D_UnloadMeshData(data);
+    else *outMeshData = data;
 
     return true;
 }
@@ -286,7 +320,7 @@ static bool load_mesh_internal(
 // RECURSIVE LOADING
 // ========================================
 
-static bool load_recursive(const r3d_importer_t* importer, R3D_Model* model, const struct aiNode* node, const Matrix* parentTransform)
+static bool load_recursive(const R3D_Importer* importer, R3D_Model* model, const struct aiNode* node, const Matrix* parentTransform)
 {
     Matrix localTransform = r3d_importer_cast(node->mTransformation);
     Matrix globalTransform = r3d_matrix_multiply(&localTransform, parentTransform);
@@ -296,7 +330,7 @@ static bool load_recursive(const r3d_importer_t* importer, R3D_Model* model, con
         uint32_t meshIndex = node->mMeshes[i];
         const struct aiMesh* mesh = r3d_importer_get_mesh(importer, meshIndex);
 
-        if (!load_mesh_internal(&model->meshes[meshIndex], mesh, globalTransform, mesh->mNumBones > 0)) {
+        if (!load_mesh_internal(&model->meshes[meshIndex], model->meshData ? &model->meshData[meshIndex] : NULL, mesh, globalTransform, mesh->mNumBones > 0)) {
             R3D_TRACELOG(LOG_ERROR, "Unable to load mesh [%u]; The model will be invalid", meshIndex);
             return false;
         }
@@ -318,34 +352,29 @@ static bool load_recursive(const r3d_importer_t* importer, R3D_Model* model, con
 // PUBLIC FUNCTIONS
 // ========================================
 
-bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model)
+bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model)
 {
     if (!model || !importer || !r3d_importer_is_valid(importer)) {
         R3D_TRACELOG(LOG_ERROR, "Invalid parameters for mesh loading");
         return false;
     }
 
+    bool keepMeshData = BIT_TEST(importer->flags, R3D_IMPORT_MESH_DATA);
     const struct aiScene* scene = r3d_importer_get_scene(importer);
 
+    // Allocate space for meshes
     model->meshCount = scene->mNumMeshes;
-    model->meshes = RL_CALLOC(model->meshCount, sizeof(R3D_Mesh));
-    model->meshMaterials = RL_CALLOC(model->meshCount, sizeof(int));
-
-    if (!model->meshes || !model->meshMaterials) {
+    model->meshes = RL_CALLOC(model->meshCount, sizeof(*model->meshes));
+    model->meshMaterials = RL_CALLOC(model->meshCount, sizeof(*model->meshMaterials));
+    if (keepMeshData) model->meshData = RL_CALLOC(model->meshCount, sizeof(*model->meshData));
+    if (!model->meshes || !model->meshMaterials || (keepMeshData && !model->meshData)) {
         R3D_TRACELOG(LOG_ERROR, "Unable to allocate memory for meshes");
-        if (model->meshMaterials) RL_FREE(model->meshMaterials);
-        if (model->meshes) RL_FREE(model->meshes);
-        return false;
+        goto cleanup_and_fail;
     }
 
     // Load all meshes recursively
     if (!load_recursive(importer, model, r3d_importer_get_root(importer), &R3D_MATRIX_IDENTITY)) {
-        for (int i = 0; i < model->meshCount; i++) {
-            R3D_UnloadMesh(model->meshes[i]);
-        }
-        RL_FREE(model->meshMaterials);
-        RL_FREE(model->meshes);
-        return false;
+        goto cleanup_and_fail;
     }
 
     // Calculate model bounding box
@@ -357,4 +386,28 @@ bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model)
     }
 
     return true;
+
+cleanup_and_fail:
+    if (model->meshes) {
+        for (int i = 0; i < model->meshCount; i++) {
+            R3D_UnloadMesh(model->meshes[i]);
+        }
+    }
+
+    if (model->meshData) {
+        for (int i = 0; i < model->meshCount; i++) {
+            R3D_UnloadMeshData(model->meshData[i]);
+        }
+    }
+
+    RL_FREE(model->meshMaterials);
+    RL_FREE(model->meshData);
+    RL_FREE(model->meshes);
+
+    model->meshMaterials = NULL;
+    model->meshData = NULL;
+    model->meshes = NULL;
+    model->meshCount = 0;
+
+    return false;
 }

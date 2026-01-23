@@ -12,6 +12,7 @@
 #include "./r3d_material.h"
 #include "./r3d_skeleton.h"
 #include "./r3d_platform.h"
+#include "./r3d_importer.h"
 #include "./r3d_mesh.h"
 
 /**
@@ -31,6 +32,7 @@
 typedef struct R3D_Model {
 
     R3D_Mesh* meshes;                   ///< Array of meshes composing the model.
+    R3D_MeshData* meshData;             ///< Array of meshes data in RAM (optional, can be NULL).
     R3D_Material* materials;            ///< Array of materials used by the model.
     int* meshMaterials;                 ///< Array of material indices, one per mesh.
 
@@ -63,6 +65,19 @@ extern "C" {
 R3DAPI R3D_Model R3D_LoadModel(const char* filePath);
 
 /**
+ * @brief Load a 3D model from a file with import flags.
+ *
+ * Extended version of R3D_LoadModel() allowing control over the import
+ * process through additional flags.
+ *
+ * @param filePath Path to the 3D model file to load.
+ * @param flags Importer behavior flags.
+ *
+ * @return Loaded model structure containing meshes and materials.
+ */
+R3DAPI R3D_Model R3D_LoadModelEx(const char* filePath, R3D_ImportFlags flags);
+
+/**
  * @brief Load a 3D model from memory buffer.
  *
  * Loads a 3D model from a memory buffer containing the file data.
@@ -80,19 +95,34 @@ R3DAPI R3D_Model R3D_LoadModel(const char* filePath);
 R3DAPI R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size, const char* hint);
 
 /**
- * @brief Create a model from a single mesh.
+ * @brief Load a 3D model from a memory buffer with import flags.
  *
- * Creates a model structure containing a single mesh with a default material.
- * This is useful for procedurally generated meshes or simple geometry.
+ * Extended version of R3D_LoadModelFromMemory() allowing control over
+ * the import process through additional flags.
  *
- * @warning The model's bounding box calculation assumes that the mesh's
- * bounding boxes has already been computed.
+ * @param data Pointer to the memory buffer containing the model data.
+ * @param size Size of the data buffer in bytes.
+ * @param hint Hint on the model format (can be NULL).
+ * @param flags Importer behavior flags.
  *
- * @param mesh The mesh to be wrapped in a model structure.
+ * @return Loaded model structure containing meshes and materials.
  *
- * @return Model structure containing the specified mesh.
+ * @note External dependencies (e.g., textures or linked resources) are not supported.
+ *       The model data must be fully self-contained.
  */
-R3DAPI R3D_Model R3D_LoadModelFromMesh(R3D_Mesh mesh);
+R3DAPI R3D_Model R3D_LoadModelFromMemoryEx(const void* data, unsigned int size, const char* hint, R3D_ImportFlags flags);
+
+/**
+ * @brief Load a 3D model from an existing importer.
+ *
+ * Creates a model from a previously loaded importer instance.
+ * This avoids re-importing the source file.
+ *
+ * @param importer Importer instance to extract the model from.
+ *
+ * @return Loaded model structure containing meshes and materials.
+ */
+R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer);
 
 /**
  * @brief Unload a model and optionally its materials.

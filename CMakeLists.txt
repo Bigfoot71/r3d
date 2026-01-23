@@ -249,7 +249,6 @@ endif()
 
 add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
-    "${R3D_ROOT_PATH}/src/importer/r3d_importer.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
@@ -274,6 +273,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_decal.c"
     "${R3D_ROOT_PATH}/src/r3d_ambient_map.c"
     "${R3D_ROOT_PATH}/src/r3d_environment.c"
+    "${R3D_ROOT_PATH}/src/r3d_importer.c"
     "${R3D_ROOT_PATH}/src/r3d_instance.c"
     "${R3D_ROOT_PATH}/src/r3d_lighting.c"
     "${R3D_ROOT_PATH}/src/r3d_material.c"

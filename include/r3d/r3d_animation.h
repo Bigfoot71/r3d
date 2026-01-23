@@ -10,6 +10,7 @@
 #define R3D_ANIMATION_H
 
 #include "./r3d_platform.h"
+#include "./r3d_importer.h"
 #include <raylib.h>
 #include <stdint.h>
 
@@ -101,6 +102,14 @@ R3DAPI R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath);
  * @note Free the returned array using R3D_UnloadAnimationLib().
  */
 R3DAPI R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int size, const char* hint);
+
+/**
+ * @brief Loads animations from an existing importer.
+ * @param importer Importer instance containing animation data.
+ * @return Pointer to an array of R3D_Animation, or NULL on failure.
+ * @note Free the returned array using R3D_UnloadAnimationLib().
+ */
+R3DAPI R3D_AnimationLib R3D_LoadAnimationLibFromImporter(const R3D_Importer* importer);
 
 /**
  * @brief Releases all resources associated with an animation library.
