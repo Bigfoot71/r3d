@@ -219,6 +219,37 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
 // MESH LOADING (INTERNAL)
 // ========================================
 
+static R3D_PrimitiveType get_primitive_type(unsigned int aiPrimitiveTypes)
+{
+    // A single mesh may theoretically contain multiple primitive types,
+    // but we use `aiProcess_SortByPType` during import, which resolves this issue,
+    // so we can assume there is only one primitive type per mesh.
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_POINT)) {
+        return R3D_PRIMITIVE_POINTS;
+    }
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_LINE)) {
+        return R3D_PRIMITIVE_LINES;
+    }
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_TRIANGLE)) {
+        return R3D_PRIMITIVE_TRIANGLES;
+    }
+
+    // NOTE: This should never happen if the mesh has been triangulated.
+    //if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_POLYGON)) {
+    //    return 0;
+    //}
+
+    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_NGONEncodingFlag)) {
+        R3D_TRACELOG(LOG_WARNING, "NGON primitive encoding not supported");
+        return R3D_PRIMITIVE_TRIANGLE_FAN;
+    }
+
+    return R3D_PRIMITIVE_TRIANGLES;
+}
+
 static bool load_mesh_internal(
     R3D_Mesh* outMesh,
     R3D_MeshData* outMeshData,
@@ -278,7 +309,8 @@ static bool load_mesh_internal(
     }
 
     // Upload the mesh
-    *outMesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_PrimitiveType ptype = get_primitive_type(aiMesh->mPrimitiveTypes);
+    *outMesh = R3D_LoadMesh(ptype, data, &aabb, R3D_STATIC_MESH);
     if (outMeshData == NULL) R3D_UnloadMeshData(data);
     else *outMeshData = data;
 
