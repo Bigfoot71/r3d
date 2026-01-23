@@ -63,6 +63,10 @@ typedef struct R3D_Importer R3D_Importer;
 // PUBLIC API
 // ========================================
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Load an importer from a file.
  *
@@ -101,6 +105,10 @@ R3DAPI R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int s
  * @param importer Importer instance to destroy.
  */
 R3DAPI void R3D_UnloadImporter(R3D_Importer* importer);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 /** @} */ // end of Importer
 
