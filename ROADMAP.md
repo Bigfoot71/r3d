@@ -2,7 +2,7 @@
 
 ## **v0.8**
 
-* [ ] **Offer more flexibility for model loading**
+* [x] **Offer more flexibility for model loading**
   A flag system could be added to indicate additional operations during import via Assimp,
   or to specify whether to keep a copy of the mesh data in RAM.
 
