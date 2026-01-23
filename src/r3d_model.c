@@ -11,31 +11,8 @@
 #include <r3d/r3d_model.h>
 #include <r3d/r3d_mesh.h>
 
-#include "./importer/r3d_importer.h"
+#include "./importer/r3d_importer_internal.h"
 #include "./r3d_core_state.h"
-
-// ========================================
-// INTERNAL FUNCTIONS
-// ========================================
-
-static bool import_model(r3d_importer_t* importer, R3D_Model* model)
-{
-    if (!r3d_importer_load_meshes(importer, model)) goto fail;
-    if (!r3d_importer_load_skeleton(importer, &model->skeleton)) goto fail;
-
-    r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
-        importer, R3D.colorSpace, R3D.textureFilter);
-    if (textureCache == NULL) goto fail;
-
-    if (!r3d_importer_load_materials(importer, model, textureCache)) goto fail;
-
-    r3d_importer_unload_texture_cache(textureCache, false);
-    return true;
-
-fail:
-    r3d_importer_unload_texture_cache(textureCache, true);
-    return false;
-}
 
 // ========================================
 // PUBLIC API
@@ -43,57 +20,63 @@ fail:
 
 R3D_Model R3D_LoadModel(const char* filePath)
 {
+    return R3D_LoadModelEx(filePath, 0);
+}
+
+R3D_Model R3D_LoadModelEx(const char* filePath, R3D_ImportFlags flags)
+{
     R3D_Model model = {0};
 
-    r3d_importer_t importer = {0};
-    if (!r3d_importer_create_from_file(&importer, filePath)) {
-        return model;
-    }
+    R3D_Importer* importer = R3D_LoadImporter(filePath, flags);
+    if (importer == NULL) return model;
 
-    if (!import_model(&importer, &model)) {
-        R3D_UnloadModel(model, true);
-    }
+    model = R3D_LoadModelFromImporter(importer);
 
-    r3d_importer_destroy(&importer);
+    R3D_UnloadImporter(importer);
 
     return model;
 }
 
 R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size, const char* hint)
 {
+    return R3D_LoadModelFromMemory(data, size, hint);
+}
+
+R3D_Model R3D_LoadModelFromMemoryEx(const void* data, unsigned int size, const char* hint, R3D_ImportFlags flags)
+{
     R3D_Model model = {0};
 
-    r3d_importer_t importer = {0};
-    if (!r3d_importer_create_from_memory(&importer, data, size, hint)) {
-        return model;
-    }
+    R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, flags);
+    if (importer == NULL) return model;
 
-    if (!import_model(&importer, &model)) {
-        R3D_UnloadModel(model, true);
-    }
+    model = R3D_LoadModelFromImporter(importer);
 
-    r3d_importer_destroy(&importer);
+    R3D_UnloadImporter(importer);
 
     return model;
 }
 
-R3D_Model R3D_LoadModelFromMesh(R3D_Mesh mesh)
+R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 {
     R3D_Model model = {0};
 
-    model.meshes = RL_MALLOC(sizeof(R3D_Mesh));
-    model.meshes[0] = mesh;
-    model.meshCount = 1;
+    if (!r3d_importer_load_meshes(importer, &model)) goto fail;
+    if (!r3d_importer_load_skeleton(importer, &model.skeleton)) goto fail;
 
-    model.materials = RL_MALLOC(sizeof(R3D_Material));
-    model.materials[0] = R3D_GetDefaultMaterial();
-    model.materialCount = 1;
+    r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
+        importer, R3D.colorSpace, R3D.textureFilter);
+    if (textureCache == NULL) goto fail;
 
-    model.meshMaterials = RL_MALLOC(sizeof(int));
-    model.meshMaterials[0] = 0;
+    if (!r3d_importer_load_materials(importer, &model, textureCache)) goto fail;
 
-    model.aabb = mesh.aabb;
+    r3d_importer_unload_texture_cache(textureCache, false);
 
+    return model;
+
+fail:
+    r3d_importer_unload_texture_cache(textureCache, true);
+    R3D_UnloadModel(model, false);
+    memset(&model, 0, sizeof(model));
     return model;
 }
 
@@ -107,6 +90,12 @@ void R3D_UnloadModel(R3D_Model model, bool unloadMaterials)
         }
     }
 
+    if (model.meshData != NULL) {
+        for (int i = 0; i < model.meshCount; i++) {
+            R3D_UnloadMeshData(model.meshData[i]);
+        }
+    }
+
     if (unloadMaterials && model.materials != NULL) {
         for (int i = 0; i < model.materialCount; i++) {
             R3D_UnloadMaterial(model.materials[i]);
@@ -115,5 +104,6 @@ void R3D_UnloadModel(R3D_Model model, bool unloadMaterials)
 
     RL_FREE(model.meshMaterials);
     RL_FREE(model.materials);
+    RL_FREE(model.meshData);
     RL_FREE(model.meshes);
 }

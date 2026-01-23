@@ -1,4 +1,4 @@
-/* r3d_importer.c -- Module to manage model imports via assimp.
+/* r3d_importer.c -- R3D Importer Module
  *
  * Copyright (c) 2025 Le Juez Victor
  *
@@ -6,15 +6,44 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./r3d_importer.h"
+#include "./importer/r3d_importer_internal.h"
+#include "./common/r3d_helper.h"
 #include <assimp/cimport.h>
 #include <r3d_config.h>
+
+// ========================================
+// INTERNAL CONSTANTS
+// ========================================
+
+#define POST_PROCESS_PRESET_FAST        \
+    aiProcess_CalcTangentSpace      |   \
+    aiProcess_GenNormals            |   \
+    aiProcess_JoinIdenticalVertices |   \
+    aiProcess_Triangulate           |   \
+    aiProcess_GenUVCoords           |   \
+    aiProcess_SortByPType           |   \
+    aiProcess_FlipUVs
+
+#define POST_PROCESS_PRESET_QUALITY        \
+    aiProcess_CalcTangentSpace          |  \
+    aiProcess_GenSmoothNormals          |  \
+    aiProcess_JoinIdenticalVertices     |  \
+    aiProcess_ImproveCacheLocality      |  \
+    aiProcess_LimitBoneWeights          |  \
+    aiProcess_RemoveRedundantMaterials  |  \
+    aiProcess_SplitLargeMeshes          |  \
+    aiProcess_Triangulate               |  \
+    aiProcess_GenUVCoords               |  \
+    aiProcess_SortByPType               |  \
+    aiProcess_FindDegenerates           |  \
+    aiProcess_FindInvalidData           |  \
+    aiProcess_FlipUVs
 
 // ========================================
 // PRIVATE FUNCTIONS
 // ========================================
 
-static void build_bone_mapping(r3d_importer_t* importer)
+static void build_bone_mapping(R3D_Importer* importer)
 {
     importer->boneMap = NULL;
     importer->boneCount = 0;
@@ -56,57 +85,51 @@ static void build_bone_mapping(r3d_importer_t* importer)
 // PUBLIC FUNCTIONS
 // ========================================
 
-bool r3d_importer_create_from_file(r3d_importer_t* importer, const char* filePath)
+R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
 {
-    const uint32_t flags = (
-        aiProcess_Triangulate |
-        aiProcess_FlipUVs |
-        aiProcess_GenNormals |
-        aiProcess_CalcTangentSpace |
-        aiProcess_JoinIdenticalVertices
-    );
-
-    const struct aiScene* scene = aiImportFile(filePath, flags);
-    if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
-        return false;
+    enum aiPostProcessSteps aiFlags = POST_PROCESS_PRESET_FAST;
+    if (BIT_TEST(flags, R3D_IMPORT_QUALITY)) {
+        aiFlags = POST_PROCESS_PRESET_QUALITY;
     }
 
-    importer->scene = scene;
-    importer->boneMap = NULL;
-    importer->boneCount = 0;
-
-    build_bone_mapping(importer);
-    
-    return true;
-}
-
-bool r3d_importer_create_from_memory(r3d_importer_t* importer, const void* data, uint32_t size, const char* hint)
-{
-    const uint32_t flags = (
-        aiProcess_Triangulate |
-        aiProcess_FlipUVs |
-        aiProcess_GenNormals |
-        aiProcess_CalcTangentSpace |
-        aiProcess_JoinIdenticalVertices
-    );
-
-    const struct aiScene* scene = aiImportFileFromMemory(data, size, flags, hint);
+    const struct aiScene* scene = aiImportFile(filePath, aiFlags);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
         R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
-        return false;
+        return NULL;
     }
 
+    R3D_Importer* importer = RL_CALLOC(1, sizeof(*importer));
     importer->scene = scene;
-    importer->boneMap = NULL;
-    importer->boneCount = 0;
+    importer->flags = flags;
 
     build_bone_mapping(importer);
-    
-    return true;
+
+    return importer;
 }
 
-void r3d_importer_destroy(r3d_importer_t* importer)
+R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, const char* hint, R3D_ImportFlags flags)
+{
+    enum aiPostProcessSteps aiFlags = POST_PROCESS_PRESET_FAST;
+    if (BIT_TEST(flags, R3D_IMPORT_QUALITY)) {
+        aiFlags = POST_PROCESS_PRESET_QUALITY;
+    }
+
+    const struct aiScene* scene = aiImportFileFromMemory(data, size, aiFlags, hint);
+    if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
+        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
+        return NULL;
+    }
+
+    R3D_Importer* importer = RL_CALLOC(1, sizeof(*importer));
+    importer->scene = scene;
+    importer->flags = flags;
+
+    build_bone_mapping(importer);
+
+    return importer;
+}
+
+void R3D_UnloadImporter(R3D_Importer* importer)
 {
     if (!importer) return;
 
@@ -117,14 +140,6 @@ void r3d_importer_destroy(r3d_importer_t* importer)
     }
 
     aiReleaseImport(importer->scene);
-}
 
-int r3d_importer_get_bone_index(const r3d_importer_t* importer, const char* name)
-{
-    if (!importer || !name) return -1;
-    
-    r3d_bone_map_entry_t* entry = NULL;
-    HASH_FIND_STR(importer->boneMap, name, entry);
-    
-    return entry ? entry->index : -1;
+    RL_FREE(importer);
 }

@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./r3d_importer.h"
+#include "./r3d_importer_internal.h"
 
 #include <assimp/GltfMaterial.h>
 #include <assimp/material.h>
@@ -18,7 +18,7 @@
 // MATERIAL LOADING (INTERNAL)
 // ========================================
 
-static void load_material(R3D_Material* material, const r3d_importer_t* importer, r3d_importer_texture_cache_t* textureCache, int index)
+static void load_material(R3D_Material* material, const R3D_Importer* importer, r3d_importer_texture_cache_t* textureCache, int index)
 {
     const struct aiMaterial* aiMat = r3d_importer_get_material(importer, index);
 
@@ -138,7 +138,7 @@ static void load_material(R3D_Material* material, const r3d_importer_t* importer
 // PUBLIC FUNCTIONS
 // ========================================
 
-bool r3d_importer_load_materials(const r3d_importer_t* importer, R3D_Model* model, r3d_importer_texture_cache_t* textureCache)
+bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Model* model, r3d_importer_texture_cache_t* textureCache)
 {
     if (!model || !importer || !textureCache || !r3d_importer_is_valid(importer)) {
         R3D_TRACELOG(LOG_ERROR, "Invalid parameters for material loading");

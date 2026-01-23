@@ -11,7 +11,7 @@
 #include <string.h>
 #include <glad.h>
 
-#include "./importer/r3d_importer.h"
+#include "./importer/r3d_importer_internal.h"
 
 // ========================================
 // PUBLIC API
@@ -19,31 +19,30 @@
 
 R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath)
 {
-    R3D_AnimationLib animLib = {0};
+    R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
+    if (importer == NULL) return (R3D_AnimationLib) {0};
 
-    r3d_importer_t importer = {0};
-    if (!r3d_importer_create_from_file(&importer, filePath)) {
-        return animLib;
-    }
-
-    r3d_importer_load_animations(&importer, &animLib);
-    r3d_importer_destroy(&importer);
+    R3D_AnimationLib animLib = R3D_LoadAnimationLibFromImporter(importer);
+    R3D_UnloadImporter(importer);
 
     return animLib;
 }
 
 R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int size, const char* hint)
 {
+    R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
+    if (importer == NULL) return (R3D_AnimationLib) {0};
+
+    R3D_AnimationLib animLib = R3D_LoadAnimationLibFromImporter(importer);
+    R3D_UnloadImporter(importer);
+
+    return animLib;
+}
+
+R3D_AnimationLib R3D_LoadAnimationLibFromImporter(const R3D_Importer* importer)
+{
     R3D_AnimationLib animLib = {0};
-
-    r3d_importer_t importer = {0};
-    if (!r3d_importer_create_from_memory(&importer, data, size, hint)) {
-        return animLib;
-    }
-
-    r3d_importer_load_animations(&importer, &animLib);
-    r3d_importer_destroy(&importer);
-
+    r3d_importer_load_animations(importer, &animLib);
     return animLib;
 }
 

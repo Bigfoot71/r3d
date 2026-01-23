@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./r3d_importer.h"
+#include "./r3d_importer_internal.h"
 
 #include <assimp/mesh.h>
 #include <r3d_config.h>
@@ -21,7 +21,7 @@
 // ========================================
 
 typedef struct {
-    const r3d_importer_t* importer;
+    const R3D_Importer* importer;
     R3D_BoneInfo* bones;
     Matrix* invBind;
     Matrix* localBind;
@@ -98,7 +98,7 @@ static void upload_skeleton_bind_pose(R3D_Skeleton* skeleton)
 // PUBLIC FUNCTIONS
 // ========================================
 
-bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* skeleton)
+bool r3d_importer_load_skeleton(const R3D_Importer* importer, R3D_Skeleton* skeleton)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
         R3D_TRACELOG(LOG_ERROR, "Invalid importer for skeleton processing");

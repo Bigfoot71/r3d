@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <glad.h>
 
-#include "./importer/r3d_importer.h"
+#include "./importer/r3d_importer_internal.h"
 
 // ========================================
 // PUBLIC API
@@ -21,28 +21,24 @@ R3D_Skeleton R3D_LoadSkeleton(const char* filePath)
 {
     R3D_Skeleton skeleton = {0};
 
-    r3d_importer_t importer = {0};
-    if (!r3d_importer_create_from_file(&importer, filePath)) {
-        return skeleton;
-    }
+    R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
+    if (importer == NULL) return skeleton;
 
-    r3d_importer_load_skeleton(&importer, &skeleton);
-    r3d_importer_destroy(&importer);
+    r3d_importer_load_skeleton(importer, &skeleton);
+    R3D_UnloadImporter(importer);
 
     return skeleton;
 }
 
-R3D_Skeleton R3D_LoadSkeletonFromData(const void* data, unsigned int size, const char* hint)
+R3D_Skeleton R3D_LoadSkeletonFromMemory(const void* data, unsigned int size, const char* hint)
 {
     R3D_Skeleton skeleton = {0};
 
-    r3d_importer_t importer = {0};
-    if (!r3d_importer_create_from_memory(&importer, data, size, hint)) {
-        return skeleton;
-    }
+    R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
+    if (importer == NULL) return skeleton;
 
-    r3d_importer_load_skeleton(&importer, &skeleton);
-    r3d_importer_destroy(&importer);
+    r3d_importer_load_skeleton(importer, &skeleton);
+    R3D_UnloadImporter(importer);
 
     return skeleton;
 }

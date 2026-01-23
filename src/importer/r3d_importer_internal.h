@@ -6,8 +6,8 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#ifndef R3D_IMPORTER_H
-#define R3D_IMPORTER_H
+#ifndef R3D_IMPORTER_INTERNAL_H
+#define R3D_IMPORTER_INTERNAL_H
 
 #include <raylib.h>
 #include <uthash.h>
@@ -15,6 +15,7 @@
 #include <r3d/r3d_animation.h>
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_skeleton.h>
+#include <r3d/r3d_importer.h>
 #include <r3d/r3d_model.h>
 
 #include <assimp/postprocess.h>
@@ -53,11 +54,12 @@ typedef struct {
     UT_hash_handle hh;       // Uthash handle
 } r3d_bone_map_entry_t;
 
-typedef struct {
+struct R3D_Importer {
     const struct aiScene* scene;
     r3d_bone_map_entry_t* boneMap;
     int boneCount;
-} r3d_importer_t;
+    R3D_ImportFlags flags;
+};
 
 // ========================================
 // TEXTURE CACHE
@@ -78,33 +80,11 @@ typedef struct r3d_importer_texture_cache r3d_importer_texture_cache_t;
 // ========================================
 
 /**
- * Create an Assimp importer and cache data used for loading
- * by reading from a file.
- */
-bool r3d_importer_create_from_file(r3d_importer_t* importer, const char* filePath);
-
-/**
- * Create an Assimp importer and cache data used for loading
- * by reading from memory.
- */
-bool r3d_importer_create_from_memory(r3d_importer_t* importer, const void* data, uint32_t size, const char* hint);
-
-/**
- * Release the Assimp importer along with all associated cached data.
- */
-void r3d_importer_destroy(r3d_importer_t* importer);
-
-/**
- * Return the index of a bone by its name, stored in a hash table.
- */
-int r3d_importer_get_bone_index(const r3d_importer_t* importer, const char* name);
-
-/**
  * Create a texture cache that loads all textures for all materials
  * This will spawn worker threads to load images in parallel, then
  * progressively upload them to GPU as they become ready
  */
-r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const r3d_importer_t* importer, R3D_ColorSpace colorSpace, TextureFilter filter);
+r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(const R3D_Importer* importer, R3D_ColorSpace colorSpace, TextureFilter filter);
 
 /**
  * Frees the memory space allocated to store textures.
@@ -123,88 +103,98 @@ Texture2D* r3d_importer_get_loaded_texture(r3d_importer_texture_cache_t* cache, 
  * Load all meshes from the importer into the model
  * Returns true on success, false on failure
  */
-bool r3d_importer_load_meshes(const r3d_importer_t* importer, R3D_Model* model);
+bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model);
 
 /**
  * Process and create a skeleton from the imported scene
  * Returns NULL if the scene has no bones or on allocation failure
  * The returned skeleton must be freed by the caller
  */
-bool r3d_importer_load_skeleton(const r3d_importer_t* importer, R3D_Skeleton* skeleton);
+bool r3d_importer_load_skeleton(const R3D_Importer* importer, R3D_Skeleton* skeleton);
 
 /**
  * Load all materials from the importer into the model
  * Returns true on success, false on failure
  */
-bool r3d_importer_load_materials(const r3d_importer_t* importer, R3D_Model* model, r3d_importer_texture_cache_t* textureCache);
+bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Model* model, r3d_importer_texture_cache_t* textureCache);
 
 /**
  * Load all animations from the imported scene
  * Returns NULL if no animations are found or on error
  * The returned animation library must be freed by the caller
  */
-bool r3d_importer_load_animations(const r3d_importer_t* importer, R3D_AnimationLib* animationLib);
+bool r3d_importer_load_animations(const R3D_Importer* importer, R3D_AnimationLib* animationLib);
 
 // ========================================
 // INLINE FUNCTIONS
 // ========================================
 
-static const struct aiAnimation* r3d_importer_get_animation(const r3d_importer_t* importer, int index)
+static inline const struct aiAnimation* r3d_importer_get_animation(const R3D_Importer* importer, int index)
 {
     return importer->scene->mAnimations[index];
 }
 
-static const struct aiMaterial* r3d_importer_get_material(const r3d_importer_t* importer, int index)
+static inline const struct aiMaterial* r3d_importer_get_material(const R3D_Importer* importer, int index)
 {
     return importer->scene->mMaterials[index];
 }
 
-static const struct aiTexture* r3d_importer_get_texture(const r3d_importer_t* importer, int index)
+static inline const struct aiTexture* r3d_importer_get_texture(const R3D_Importer* importer, int index)
 {
     return importer->scene->mTextures[index];
 }
 
-static const struct aiMesh* r3d_importer_get_mesh(const r3d_importer_t* importer, int index)
+static inline const struct aiMesh* r3d_importer_get_mesh(const R3D_Importer* importer, int index)
 {
     return importer->scene->mMeshes[index];
 }
 
-static const struct aiNode* r3d_importer_get_root(const r3d_importer_t* importer)
+static inline const struct aiNode* r3d_importer_get_root(const R3D_Importer* importer)
 {
     return importer->scene->mRootNode;
 }
 
-static const struct aiScene* r3d_importer_get_scene(const r3d_importer_t* importer)
+static inline const struct aiScene* r3d_importer_get_scene(const R3D_Importer* importer)
 {
     return importer->scene;
 }
 
-static int r3d_importer_get_animation_count(const r3d_importer_t* importer)
+static inline int r3d_importer_get_animation_count(const R3D_Importer* importer)
 {
     return importer->scene->mNumAnimations;
 }
 
-static int r3d_importer_get_material_count(const r3d_importer_t* importer)
+static inline int r3d_importer_get_material_count(const R3D_Importer* importer)
 {
     return importer->scene->mNumMaterials;
 }
 
-static int r3d_importer_get_texture_count(const r3d_importer_t* importer)
+static inline int r3d_importer_get_texture_count(const R3D_Importer* importer)
 {
     return importer->scene->mNumTextures;
 }
 
-static int r3d_importer_get_mesh_count(const r3d_importer_t* importer)
+static inline int r3d_importer_get_mesh_count(const R3D_Importer* importer)
 {
     return importer->scene->mNumMeshes;
 }
 
-static int r3d_importer_get_bone_count(const r3d_importer_t* importer)
+static inline int r3d_importer_get_bone_count(const R3D_Importer* importer)
 {
     return importer->boneCount;
 }
 
-static bool r3d_importer_is_valid(const r3d_importer_t* importer)
+static inline int r3d_importer_get_bone_index(const R3D_Importer* importer, const char* name)
+{
+    if (!importer || !name) return -1;
+
+    r3d_bone_map_entry_t* entry = NULL;
+    HASH_FIND_STR(importer->boneMap, name, entry);
+
+    return entry ? entry->index : -1;
+}
+
+static inline bool r3d_importer_is_valid(const R3D_Importer* importer)
 {
     return importer && importer->scene;
 }
@@ -253,4 +243,4 @@ static inline Matrix r3d_importer_cast_aimatrix4x4_to_matrix(struct aiMatrix4x4 
     };
 }
 
-#endif // R3D_IMPORTER_H
+#endif // R3D_IMPORTER_INTERNAL_H

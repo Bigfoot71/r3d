@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./r3d_importer.h"
+#include "./r3d_importer_internal.h"
 #include <r3d_config.h>
 
 #include <assimp/GltfMaterial.h>
@@ -80,7 +80,7 @@ typedef struct {
 } texture_entry_t;
 
 typedef struct {
-    const r3d_importer_t* importer;
+    const R3D_Importer* importer;
     texture_job_t* jobs;
     texture_slot_t* slots;
     int slotCount;
@@ -242,7 +242,7 @@ static bool texture_job_init(texture_job_t* job, const struct aiMaterial* materi
 // IMAGE LOADING
 // ========================================
 
-static bool load_image_base(Image* outImage, bool* outOwned, const r3d_importer_t* importer, const char* path)
+static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer* importer, const char* path)
 {
     if (path[0] == '*') {
         int textureIndex = atoi(&path[1]);
@@ -273,7 +273,7 @@ static bool load_image_base(Image* outImage, bool* outOwned, const r3d_importer_
     return outImage->data != NULL;
 }
 
-static bool load_image_simple(texture_slot_t* slot, const r3d_importer_t* importer, const texture_job_t* job)
+static bool load_image_simple(texture_slot_t* slot, const R3D_Importer* importer, const texture_job_t* job)
 {
     slot->wrapMode = get_wrap_mode(job->wrap[0]);
     bool success = load_image_base(&slot->image, &slot->ownsImageData, importer, job->paths[0]);
@@ -283,7 +283,7 @@ static bool load_image_simple(texture_slot_t* slot, const r3d_importer_t* import
     return success;
 }
 
-static bool load_image_orm(texture_slot_t* slot, const r3d_importer_t* importer, const texture_job_t* job)
+static bool load_image_orm(texture_slot_t* slot, const R3D_Importer* importer, const texture_job_t* job)
 {
 #   define ROUGHNESS_IDX 1
 
@@ -363,7 +363,7 @@ static int worker_thread(void* arg)
 // ========================================
 
 r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
-    const r3d_importer_t* importer, 
+    const R3D_Importer* importer, 
     R3D_ColorSpace colorSpace, 
     TextureFilter filter)
 {
