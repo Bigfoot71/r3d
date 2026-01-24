@@ -208,6 +208,17 @@ R3DAPI R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices);
 R3DAPI R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices);
 
 /**
+ * @brief Generate a capsule mesh.
+ * @param radius Capsule radius.
+ * @param height Height along Y axis.
+ * @param rings Number of latitude divisions.
+ * @param slices Number of longitude divisions.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCapsule
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCapsule(float radius, float height, int rings, int slices);
+
+/**
  * @brief Generate a torus mesh.
  * @param radius Major radius (center to tube).
  * @param size Minor radius (tube thickness).

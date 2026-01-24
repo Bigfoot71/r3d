@@ -271,6 +271,24 @@ R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, 
     return mesh;
 }
 
+R3D_Mesh R3D_GenMeshCapsule(float radius, float height, int rings, int slices)
+{
+    R3D_Mesh mesh = {0};
+
+    R3D_MeshData data = R3D_GenMeshDataCapsule(radius, height, rings, slices);
+    if (!R3D_IsMeshDataValid(data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius, -radius,          -radius},
+        { radius,  height + radius,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
+
+    return mesh;
+}
+
 R3D_Mesh R3D_GenMeshTorus(float radius, float size, int radSeg, int sides)
 {
     R3D_Mesh mesh = {0};

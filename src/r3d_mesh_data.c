@@ -745,6 +745,122 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
     return meshData;
 }
 
+R3D_MeshData R3D_GenMeshDataCapsule(float radius, float height, int rings, int slices)
+{
+    R3D_MeshData meshData = {0};
+
+    if (radius <= 0.0f || height < 0.0f || rings < 1 || slices < 3) {
+        return meshData;
+    }
+
+    int vertCountPerRing = slices + 1;
+
+    int totalRings = rings * 2 + 3;
+    int totalVertCount = totalRings * vertCountPerRing;
+    int totalIndexCount = (totalRings - 1) * slices * 6;
+
+    if (!alloc_mesh(&meshData, totalVertCount, totalIndexCount)) {
+        return meshData;
+    }
+
+    float halfHeight = height * 0.5f;
+    float sliceStep = 2.0f * PI / slices;
+    float invSlices = 1.0f / slices;
+    
+    R3D_Vertex* vertex = meshData.vertices;
+    int vertIndex = 0;
+
+    for (int ring = 0; ring <= rings; ring++)
+    {
+        float phi = (PI * 0.5f) * (1.0f - (float)ring / rings);
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+        float y = radius * sinPhi + halfHeight;
+        float ringRadius = radius * cosPhi;
+        float v = (float)ring / (rings * 2 + 2);
+
+        for (int slice = 0; slice <= slices; slice++, vertex++, vertIndex++)
+        {
+            float theta = slice * sliceStep;
+            float sinTheta = sinf(theta);
+            float cosTheta = cosf(theta);
+
+            float x = ringRadius * cosTheta;
+            float z = ringRadius * sinTheta;
+
+            vertex->position = (Vector3){x, y, z};
+            vertex->texcoord = (Vector2){slice * invSlices, v};
+
+            vertex->normal = (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+        }
+    }
+
+    float v = (float)(rings + 1) / (rings * 2 + 2);
+    for (int slice = 0; slice <= slices; slice++, vertex++, vertIndex++)
+    {
+        float theta = slice * sliceStep;
+        float sinTheta = sinf(theta);
+        float cosTheta = cosf(theta);
+
+        float x = radius * cosTheta;
+        float z = radius * sinTheta;
+
+        vertex->position = (Vector3){x, -halfHeight, z};
+        vertex->texcoord = (Vector2){slice * invSlices, v};
+        vertex->normal = (Vector3){cosTheta, 0.0f, sinTheta};
+        vertex->color = WHITE;
+        vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+    }
+
+    for (int ring = 1; ring <= rings; ring++)
+    {
+        float phi = -(PI * 0.5f) * ((float)ring / rings);
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+        float y = radius * sinPhi - halfHeight;
+        float ringRadius = radius * cosPhi;
+        float v = (float)(rings + 1 + ring) / (rings * 2 + 2);
+
+        for (int slice = 0; slice <= slices; slice++, vertex++, vertIndex++)
+        {
+            float theta = slice * sliceStep;
+            float sinTheta = sinf(theta);
+            float cosTheta = cosf(theta);
+
+            float x = ringRadius * cosTheta;
+            float z = ringRadius * sinTheta;
+
+            vertex->position = (Vector3){x, y, z};
+            vertex->texcoord = (Vector2){slice * invSlices, v};
+            vertex->normal = (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+        }
+    }
+
+    uint32_t* index = meshData.indices;
+    for (int ring = 0; ring < totalRings - 1; ring++)
+    {
+        uint32_t currentRow = ring * vertCountPerRing;
+        uint32_t nextRow = currentRow + vertCountPerRing;
+
+        for (int slice = 0; slice < slices; slice++)
+        {
+            uint32_t i0 = currentRow + slice;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRow + slice;
+            uint32_t i3 = i2 + 1;
+
+            *index++ = i0; *index++ = i3; *index++ = i2;
+            *index++ = i0; *index++ = i1; *index++ = i3;
+        }
+    }
+
+    return meshData;
+}
+
 R3D_MeshData R3D_GenMeshDataTorus(float radius, float size, int radSeg, int sides)
 {
     R3D_MeshData meshData = {0};

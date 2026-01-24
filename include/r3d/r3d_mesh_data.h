@@ -213,7 +213,23 @@ R3DAPI R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slice
  *
  * @return Generated mesh structure.
  */
-R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices);
+R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices);
+
+/**
+ * @brief Generate a capsule mesh with specified parameters.
+ *
+ * Creates a capsule mesh centered at the origin, extending along the Y axis.
+ * The capsule consists of a cylindrical body with hemispherical caps on both ends.
+ * The total height of the capsule is height + 2 * radius.
+ *
+ * @param radius Radius of the capsule (both cylindrical body and hemispherical caps).
+ * @param height Height of the cylindrical portion along the Y axis.
+ * @param rings Total number of latitudinal subdivisions for both hemispheres combined.
+ * @param slices Number of radial subdivisions around the shape.
+ *
+ * @return Generated mesh structure.
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCapsule(float radius, float height, int rings, int slices);
 
 /**
  * @brief Generate a torus mesh with specified parameters.
