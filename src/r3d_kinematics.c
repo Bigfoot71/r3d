@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <float.h>
 
+#include "./common/r3d_math.h"
+
 // ========================================
 // PUBLIC API
 // ========================================
@@ -104,9 +106,9 @@ bool R3D_CheckCollisionCapsuleMesh(R3D_Capsule capsule, R3D_MeshData mesh, Matri
             v2 = mesh.vertices[i*3 + 2].position;
         }
 
-        Vector3 a = Vector3Transform(mesh.vertices[mesh.indices[i]].position, transform);
-        Vector3 b = Vector3Transform(mesh.vertices[mesh.indices[i+1]].position, transform);
-        Vector3 c = Vector3Transform(mesh.vertices[mesh.indices[i+2]].position, transform);
+        Vector3 a = r3d_vector3_transform(mesh.vertices[mesh.indices[i]].position, &transform);
+        Vector3 b = r3d_vector3_transform(mesh.vertices[mesh.indices[i+1]].position, &transform);
+        Vector3 c = r3d_vector3_transform(mesh.vertices[mesh.indices[i+2]].position, &transform);
 
         const int samples = 5;
         for (int s = 0; s < samples; s++)
@@ -457,8 +459,8 @@ RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
     Matrix invTransform = MatrixInvert(transform);
     Matrix normalMatrix = MatrixTranspose(invTransform);
 
-    Vector3 localOrigin = Vector3Transform(ray.position, invTransform);
-    Vector3 localDirection = Vector3Normalize(Vector3Transform(ray.direction, invTransform));
+    Vector3 localOrigin = r3d_vector3_transform(ray.position, &invTransform);
+    Vector3 localDirection = Vector3Normalize(r3d_vector3_transform_normal(ray.direction, &invTransform));
 
     bool useIndices = (mesh.indices != NULL);
     int triangleCount = useIndices ? (mesh.indexCount / 3) : (mesh.vertexCount / 3);
@@ -504,7 +506,7 @@ RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
         if (t > 1e-5f)
         {
             Vector3 hitLocal = Vector3Add(localOrigin, Vector3Scale(localDirection, t));
-            Vector3 hitWorld = Vector3Transform(hitLocal, transform);
+            Vector3 hitWorld = r3d_vector3_transform(hitLocal, &transform);
             float distance = Vector3Distance(ray.position, hitWorld);
 
             if (distance < collision.distance)
@@ -514,7 +516,7 @@ RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
                 collision.point = hitWorld;
 
                 Vector3 normalLocal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
-                collision.normal = Vector3Normalize(Vector3Transform(normalLocal, normalMatrix));
+                collision.normal = Vector3Normalize(r3d_vector3_transform_normal(normalLocal, &normalMatrix));
             }
         }
     }
@@ -721,9 +723,9 @@ R3D_SweepCollision R3D_SweepSphereMesh(Vector3 center, float radius, Vector3 vel
             v2 = mesh.vertices[i * 3 + 2].position;
         }
 
-        Vector3 a = Vector3Transform(v0, transform);
-        Vector3 b = Vector3Transform(v1, transform);
-        Vector3 c = Vector3Transform(v2, transform);
+        Vector3 a = r3d_vector3_transform(v0, &transform);
+        Vector3 b = r3d_vector3_transform(v1, &transform);
+        Vector3 c = r3d_vector3_transform(v2, &transform);
 
         R3D_SweepCollision hit = R3D_SweepSphereTriangle(center, radius, velocity, a, b, c);
         if (hit.hit && hit.time < result.time) result = hit;
@@ -783,9 +785,9 @@ R3D_SweepCollision R3D_SweepCapsuleMesh(R3D_Capsule capsule, Vector3 velocity, R
 
     for (int i = 0; i < mesh.indexCount; i += 3)
     {
-        Vector3 a = Vector3Transform(mesh.vertices[mesh.indices[i]].position, transform);
-        Vector3 b = Vector3Transform(mesh.vertices[mesh.indices[i+1]].position, transform);
-        Vector3 c = Vector3Transform(mesh.vertices[mesh.indices[i+2]].position, transform);
+        Vector3 a = r3d_vector3_transform(mesh.vertices[mesh.indices[i]].position, &transform);
+        Vector3 b = r3d_vector3_transform(mesh.vertices[mesh.indices[i+1]].position, &transform);
+        Vector3 c = r3d_vector3_transform(mesh.vertices[mesh.indices[i+2]].position, &transform);
 
         // Face plane test
         R3D_SweepCollision faceHit = R3D_SweepSphereTrianglePlane(capsule.start, capsule.radius, velocity, a, b, c);
