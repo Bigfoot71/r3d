@@ -177,6 +177,17 @@ R3DAPI R3D_Mesh R3D_GenMeshCube(float width, float height, float length);
 R3DAPI R3D_Mesh R3D_GenMeshCubeEx(float width, float height, float length, int resX, int resY, int resZ);
 
 /**
+ * @brief Generate a slope mesh.
+ * @param width Width along X axis.
+ * @param height Height along Y axis.
+ * @param length Length along Z axis.
+ * @param slopeNormal Direction of the slope.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataSlope
+ */
+R3DAPI R3D_Mesh R3D_GenMeshSlope(float width, float height, float length, Vector3 slopeNormal);
+
+/**
  * @brief Generate a sphere mesh.
  * @param radius Sphere radius.
  * @param rings Number of latitude divisions.

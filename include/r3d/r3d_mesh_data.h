@@ -172,6 +172,30 @@ R3DAPI R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length)
 R3DAPI R3D_MeshData R3D_GenMeshDataCubeEx(float width, float height, float length, int resX, int resY, int resZ);
 
 /**
+ * @brief Generate a slope mesh by cutting a cube with a plane.
+ *
+ * Creates a slope mesh by slicing a cube with a plane that passes through the origin.
+ * The plane is defined by its normal vector, and the portion of the cube on the side
+ * opposite to the normal direction is kept. This allows creating ramps, wedges, and
+ * angled surfaces with arbitrary orientations.
+ *
+ * @param width Width of the base cube along the X axis.
+ * @param height Height of the base cube along the Y axis.
+ * @param length Length of the base cube along the Z axis.
+ * @param slopeNormal Normal vector of the cutting plane. The mesh keeps the portion
+ *                    of the cube in the direction opposite to this normal.
+ *                    Example: {-1, 0, 0} creates a ramp rising towards +X.
+ *                             {0, 1, 0} creates a wedge with the slope facing up.
+ *                             {-1.0, 1.0, 0} creates a 45° diagonal slope.
+ *
+ * @return Generated slope mesh structure.
+ *
+ * @note The normal vector will be automatically normalized internally.
+ * @note The cutting plane always passes through the center of the cube (origin).
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vector3 slopeNormal);
+
+/**
  * @brief Generate a sphere mesh with specified parameters.
  *
  * Creates a UV sphere mesh centered at the origin using latitude-longitude subdivision.

@@ -410,6 +410,180 @@ R3D_MeshData R3D_GenMeshDataCubeEx(float width, float height, float length, int 
     return meshData;
 }
 
+R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vector3 slopeNormal)
+{
+    R3D_MeshData meshData = {0};
+
+    if (width <= 0.0f || height <= 0.0f || length <= 0.0f) {
+        return meshData;
+    }
+
+    Vector3 normal = Vector3Normalize(slopeNormal);
+
+    float halfW = width * 0.5f;
+    float halfH = height * 0.5f;
+    float halfL = length * 0.5f;
+
+    Vector3 corners[8] = {
+        {-halfW, -halfH, -halfL}, { halfW, -halfH, -halfL},
+        { halfW, -halfH,  halfL}, {-halfW, -halfH,  halfL},
+        {-halfW,  halfH, -halfL}, { halfW,  halfH, -halfL},
+        { halfW,  halfH,  halfL}, {-halfW,  halfH,  halfL}
+    };
+
+    bool keepCorner[8];
+    int keptCount = 0;
+    for (int i = 0; i < 8; i++) {
+        keepCorner[i] = (Vector3DotProduct(corners[i], normal) <= 0.0f);
+        keptCount += keepCorner[i];
+    }
+
+    if (keptCount == 0 || keptCount == 8) {
+        return meshData;
+    }
+
+    static const int edges[12][2] = {
+        {0,1},{1,2},{2,3},{3,0},
+        {4,5},{5,6},{6,7},{7,4},
+        {0,4},{1,5},{2,6},{3,7}
+    };
+
+    Vector3 intersections[12];
+    bool hasIntersection[12] = {0};
+    int intersectionCount = 0;
+    
+    for (int i = 0; i < 12; i++) {
+        int c1 = edges[i][0], c2 = edges[i][1];
+        if (keepCorner[c1] != keepCorner[c2]) {
+            Vector3 p1 = corners[c1], p2 = corners[c2];
+            float d1 = Vector3DotProduct(p1, normal);
+            float d2 = Vector3DotProduct(p2, normal);
+            float t = -d1 / (d2 - d1);
+            intersections[i] = Vector3Lerp(p1, p2, t);
+            hasIntersection[i] = true;
+            intersectionCount++;
+        }
+    }
+
+    if (!alloc_mesh(&meshData, 32, 48)) {
+        return meshData;
+    }
+
+    R3D_Vertex* v = meshData.vertices;
+    uint32_t* idx = meshData.indices;
+    int vertexCount = 0, indexCount = 0;
+
+    static const Vector2 uvs[4] = {{0,0},{1,0},{1,1},{0,1}};
+    static const int faces[6][4] = {{3,2,1,0}, {4,5,6,7}, {0,1,5,4}, {2,3,7,6}, {1,2,6,5}, {3,0,4,7}};
+    static const Vector3 faceNormals[6] = {{0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1}, {1,0,0}, {-1,0,0}};
+    static const Vector3 faceTangents[6] = {{1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0}, {0,0,-1}, {0,0,1}};
+
+    for (int f = 0; f < 6; f++)
+    {
+        const int* ci = faces[f];
+        int keptInFace = keepCorner[ci[0]] + keepCorner[ci[1]] + 
+                         keepCorner[ci[2]] + keepCorner[ci[3]];
+
+        if (keptInFace == 0) continue;
+
+        if (keptInFace == 4) {
+            int baseV = vertexCount;
+            for (int i = 0; i < 4; i++) {
+                v[vertexCount++] = (R3D_Vertex){
+                    corners[ci[i]], uvs[i], faceNormals[f], WHITE,
+                    {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
+                };
+            }
+            idx[indexCount++] = baseV; idx[indexCount++] = baseV+2; idx[indexCount++] = baseV+1;
+            idx[indexCount++] = baseV+2; idx[indexCount++] = baseV; idx[indexCount++] = baseV+3;
+            continue;
+        }
+
+        Vector3 polygon[6];
+        int polyCount = 0;
+
+        for (int i = 0; i < 4; i++) {
+            int curr = ci[i], next = ci[(i+1)%4];
+            if (keepCorner[curr]) polygon[polyCount++] = corners[curr];
+            for (int e = 0; e < 12; e++) {
+                if (((edges[e][0] == curr && edges[e][1] == next) ||
+                     (edges[e][0] == next && edges[e][1] == curr)) && hasIntersection[e]) {
+                    polygon[polyCount++] = intersections[e];
+                    break;
+                }
+            }
+        }
+
+        if (polyCount >= 3) {
+            int baseV = vertexCount;
+            for (int i = 0; i < polyCount; i++) {
+                v[vertexCount++] = (R3D_Vertex){
+                    polygon[i], {(float)i/polyCount, 0.5f}, faceNormals[f], WHITE,
+                    {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
+                };
+            }
+            for (int i = 1; i < polyCount - 1; i++) {
+                idx[indexCount++] = baseV;
+                idx[indexCount++] = baseV+i+1;
+                idx[indexCount++] = baseV+i;
+            }
+        }
+    }
+
+    if (intersectionCount >= 3) {
+        Vector3 center = {0};
+        Vector3 cutPolygon[12];
+        int cutCount = 0;
+
+        for (int i = 0; i < 12; i++) {
+            if (hasIntersection[i]) {
+                cutPolygon[cutCount++] = intersections[i];
+                center = Vector3Add(center, intersections[i]);
+            }
+        }
+        center = Vector3Scale(center, 1.0f / cutCount);
+
+        Vector3 u = fabsf(normal.x) < 0.9f ? (Vector3){1,0,0} : (Vector3){0,1,0};
+        u = Vector3Subtract(u, Vector3Scale(normal, Vector3DotProduct(u, normal)));
+        u = Vector3Normalize(u);
+        Vector3 w = Vector3CrossProduct(normal, u);
+
+        float angles[12];
+        for (int i = 0; i < cutCount; i++) {
+            Vector3 vec = Vector3Subtract(cutPolygon[i], center);
+            angles[i] = atan2f(Vector3DotProduct(vec, w), Vector3DotProduct(vec, u));
+        }
+
+        for (int i = 0; i < cutCount - 1; i++) {
+            for (int j = 0; j < cutCount - i - 1; j++) {
+                if (angles[j] > angles[j+1]) {
+                    float tmpA = angles[j]; angles[j] = angles[j+1]; angles[j+1] = tmpA;
+                    Vector3 tmpV = cutPolygon[j]; cutPolygon[j] = cutPolygon[j+1]; cutPolygon[j+1] = tmpV;
+                }
+            }
+        }
+
+        int baseV = vertexCount;
+        for (int i = 0; i < cutCount; i++) {
+            v[vertexCount++] = (R3D_Vertex){
+                cutPolygon[i], {(float)i/cutCount, 0.5f}, normal, WHITE,
+                {u.x, u.y, u.z, 1.0f}
+            };
+        }
+
+        for (int i = 1; i < cutCount - 1; i++) {
+            idx[indexCount++] = baseV;
+            idx[indexCount++] = baseV+i;
+            idx[indexCount++] = baseV+i+1;
+        }
+    }
+
+    meshData.vertexCount = vertexCount;
+    meshData.indexCount = indexCount;
+
+    return meshData;
+}
+
 R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices)
 {
     R3D_MeshData meshData = {0};
