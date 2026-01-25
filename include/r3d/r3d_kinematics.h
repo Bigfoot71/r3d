@@ -84,6 +84,15 @@ R3DAPI bool R3D_CheckCollisionCapsuleSphere(R3D_Capsule capsule, Vector3 center,
 R3DAPI bool R3D_CheckCollisionCapsules(R3D_Capsule a, R3D_Capsule b);
 
 /**
+ * @brief Check if capsule intersects with mesh
+ * @param capsule Capsule shape
+ * @param mesh Mesh data
+ * @param transform Mesh transform
+ * @return true if collision detected
+ */
+R3DAPI bool R3D_CheckCollisionCapsuleMesh(R3D_Capsule capsule, R3D_MeshData mesh, Matrix transform);
+
+/**
  * @brief Check penetration between capsule and box
  * @param capsule Capsule shape
  * @param box Bounding box

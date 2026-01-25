@@ -81,6 +81,49 @@ bool R3D_CheckCollisionCapsules(R3D_Capsule a, R3D_Capsule b)
     return distSq <= (radiusSum * radiusSum);
 }
 
+bool R3D_CheckCollisionCapsuleMesh(R3D_Capsule capsule, R3D_MeshData mesh, Matrix transform)
+{
+    Vector3 axis = Vector3Subtract(capsule.end, capsule.start);
+    float radiusSq = capsule.radius * capsule.radius;
+
+    bool useIndices = (mesh.indices != NULL);
+    int triangleCount = useIndices ? (mesh.indexCount / 3) : (mesh.vertexCount / 3);
+
+    for (int i = 0; i < triangleCount; i++)
+    {
+        Vector3 v0, v1, v2;
+
+        if (useIndices) {
+            v0 = mesh.vertices[mesh.indices[i*3    ]].position;
+            v1 = mesh.vertices[mesh.indices[i*3 + 1]].position;
+            v2 = mesh.vertices[mesh.indices[i*3 + 2]].position;
+        }
+        else {
+            v0 = mesh.vertices[i*3    ].position;
+            v1 = mesh.vertices[i*3 + 1].position;
+            v2 = mesh.vertices[i*3 + 2].position;
+        }
+
+        Vector3 a = Vector3Transform(mesh.vertices[mesh.indices[i]].position, transform);
+        Vector3 b = Vector3Transform(mesh.vertices[mesh.indices[i+1]].position, transform);
+        Vector3 c = Vector3Transform(mesh.vertices[mesh.indices[i+2]].position, transform);
+
+        const int samples = 5;
+        for (int s = 0; s < samples; s++)
+        {
+            float t = (float)s / (samples - 1);
+            Vector3 p = Vector3Add(capsule.start, Vector3Scale(axis, t));
+
+            Vector3 closest = R3D_ClosestPointOnTriangle(p, a, b, c);
+            if (Vector3LengthSqr(Vector3Subtract(closest, p)) <= radiusSq) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 R3D_Penetration R3D_CheckPenetrationCapsuleBox(R3D_Capsule capsule, BoundingBox box)
 {
     R3D_Penetration result = {0};
