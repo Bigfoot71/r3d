@@ -500,25 +500,57 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
         }
 
         Vector3 polygon[6];
+        Vector2 polyUVs[6];
         int polyCount = 0;
+
+        Vector3 faceU = faceTangents[f];
+        Vector3 faceV = Vector3CrossProduct(faceNormals[f], faceU);
+
+        Vector3 faceMin = {1e6f, 1e6f, 1e6f};
+        Vector3 faceMax = {-1e6f, -1e6f, -1e6f};
 
         for (int i = 0; i < 4; i++) {
             int curr = ci[i], next = ci[(i+1)%4];
-            if (keepCorner[curr]) polygon[polyCount++] = corners[curr];
+            if (keepCorner[curr]) {
+                polygon[polyCount] = corners[curr];
+                polyCount++;
+            }
             for (int e = 0; e < 12; e++) {
                 if (((edges[e][0] == curr && edges[e][1] == next) ||
                      (edges[e][0] == next && edges[e][1] == curr)) && hasIntersection[e]) {
-                    polygon[polyCount++] = intersections[e];
+                    polygon[polyCount] = intersections[e];
+                    polyCount++;
                     break;
                 }
             }
+        }
+
+        for (int i = 0; i < polyCount; i++) {
+            float u = Vector3DotProduct(polygon[i], faceU);
+            float v = Vector3DotProduct(polygon[i], faceV);
+            if (u < faceMin.x) faceMin.x = u;
+            if (u > faceMax.x) faceMax.x = u;
+            if (v < faceMin.y) faceMin.y = v;
+            if (v > faceMax.y) faceMax.y = v;
+        }
+
+        float rangeU = faceMax.x - faceMin.x;
+        float rangeV = faceMax.y - faceMin.y;
+        if (rangeU < 0.001f) rangeU = 1.0f;
+        if (rangeV < 0.001f) rangeV = 1.0f;
+
+        for (int i = 0; i < polyCount; i++) {
+            float u = Vector3DotProduct(polygon[i], faceU);
+            float v = Vector3DotProduct(polygon[i], faceV);
+            polyUVs[i].x = (u - faceMin.x) / rangeU;
+            polyUVs[i].y = (v - faceMin.y) / rangeV;
         }
 
         if (polyCount >= 3) {
             int baseV = vertexCount;
             for (int i = 0; i < polyCount; i++) {
                 v[vertexCount++] = (R3D_Vertex){
-                    polygon[i], {(float)i/polyCount, 0.5f}, faceNormals[f], WHITE,
+                    polygon[i], polyUVs[i], faceNormals[f], WHITE,
                     {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
                 };
             }
@@ -543,10 +575,12 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
         }
         center = Vector3Scale(center, 1.0f / cutCount);
 
-        Vector3 u = fabsf(normal.x) < 0.9f ? (Vector3){1,0,0} : (Vector3){0,1,0};
-        u = Vector3Subtract(u, Vector3Scale(normal, Vector3DotProduct(u, normal)));
+        Vector3 cutNormal = normal;
+
+        Vector3 u = fabsf(cutNormal.x) < 0.9f ? (Vector3){1,0,0} : (Vector3){0,1,0};
+        u = Vector3Subtract(u, Vector3Scale(cutNormal, Vector3DotProduct(u, cutNormal)));
         u = Vector3Normalize(u);
-        Vector3 w = Vector3CrossProduct(normal, u);
+        Vector3 w = Vector3CrossProduct(cutNormal, u);
 
         float angles[12];
         for (int i = 0; i < cutCount; i++) {
@@ -563,10 +597,34 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
             }
         }
 
+        Vector3 uvMin = {1e6f, 1e6f, 1e6f};
+        Vector3 uvMax = {-1e6f, -1e6f, -1e6f};
+
+        for (int i = 0; i < cutCount; i++) {
+            float projU = Vector3DotProduct(cutPolygon[i], u);
+            float projV = Vector3DotProduct(cutPolygon[i], w);
+            if (projU < uvMin.x) uvMin.x = projU;
+            if (projU > uvMax.x) uvMax.x = projU;
+            if (projV < uvMin.y) uvMin.y = projV;
+            if (projV > uvMax.y) uvMax.y = projV;
+        }
+
+        float rangeU = uvMax.x - uvMin.x;
+        float rangeV = uvMax.y - uvMin.y;
+        if (rangeU < 0.001f) rangeU = 1.0f;
+        if (rangeV < 0.001f) rangeV = 1.0f;
+
         int baseV = vertexCount;
         for (int i = 0; i < cutCount; i++) {
+            float projU = Vector3DotProduct(cutPolygon[i], u);
+            float projV = Vector3DotProduct(cutPolygon[i], w);
+            Vector2 uv = {
+                (projU - uvMin.x) / rangeU,
+                (projV - uvMin.y) / rangeV
+            };
+            
             v[vertexCount++] = (R3D_Vertex){
-                cutPolygon[i], {(float)i/cutCount, 0.5f}, normal, WHITE,
+                cutPolygon[i], uv, cutNormal, WHITE,
                 {u.x, u.y, u.z, 1.0f}
             };
         }
