@@ -215,6 +215,24 @@ R3D_Mesh R3D_GenMeshCubeEx(float width, float height, float length, int resX, in
     return mesh;
 }
 
+R3D_Mesh R3D_GenMeshSlope(float width, float height, float length, Vector3 slopeNormal)
+{
+    R3D_Mesh mesh = {0};
+
+    R3D_MeshData data = R3D_GenMeshDataSlope(width, height, length, slopeNormal);
+    if (!R3D_IsMeshDataValid(data)) return mesh;
+
+    BoundingBox aabb = {
+        {-width * 0.5f, -height * 0.5f, -length * 0.5f},
+        { width * 0.5f,  height * 0.5f,  length * 0.5f}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
+
+    return mesh;
+}
+
 R3D_Mesh R3D_GenMeshSphere(float radius, int rings, int slices)
 {
     R3D_Mesh mesh = {0};
@@ -263,6 +281,24 @@ R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, 
     BoundingBox aabb = {
         {-radius,   0.0f, -radius},
         { radius, height,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshCapsule(float radius, float height, int rings, int slices)
+{
+    R3D_Mesh mesh = {0};
+
+    R3D_MeshData data = R3D_GenMeshDataCapsule(radius, height, rings, slices);
+    if (!R3D_IsMeshDataValid(data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius, -radius,          -radius},
+        { radius,  height + radius,  radius}
     };
 
     mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);

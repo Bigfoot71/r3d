@@ -410,6 +410,238 @@ R3D_MeshData R3D_GenMeshDataCubeEx(float width, float height, float length, int 
     return meshData;
 }
 
+R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vector3 slopeNormal)
+{
+    R3D_MeshData meshData = {0};
+
+    if (width <= 0.0f || height <= 0.0f || length <= 0.0f) {
+        return meshData;
+    }
+
+    Vector3 normal = Vector3Normalize(slopeNormal);
+
+    float halfW = width * 0.5f;
+    float halfH = height * 0.5f;
+    float halfL = length * 0.5f;
+
+    Vector3 corners[8] = {
+        {-halfW, -halfH, -halfL}, { halfW, -halfH, -halfL},
+        { halfW, -halfH,  halfL}, {-halfW, -halfH,  halfL},
+        {-halfW,  halfH, -halfL}, { halfW,  halfH, -halfL},
+        { halfW,  halfH,  halfL}, {-halfW,  halfH,  halfL}
+    };
+
+    bool keepCorner[8];
+    int keptCount = 0;
+    for (int i = 0; i < 8; i++) {
+        keepCorner[i] = (Vector3DotProduct(corners[i], normal) <= 0.0f);
+        keptCount += keepCorner[i];
+    }
+
+    if (keptCount == 0 || keptCount == 8) {
+        return meshData;
+    }
+
+    static const int edges[12][2] = {
+        {0,1},{1,2},{2,3},{3,0},
+        {4,5},{5,6},{6,7},{7,4},
+        {0,4},{1,5},{2,6},{3,7}
+    };
+
+    Vector3 intersections[12];
+    bool hasIntersection[12] = {0};
+    int intersectionCount = 0;
+    
+    for (int i = 0; i < 12; i++) {
+        int c1 = edges[i][0], c2 = edges[i][1];
+        if (keepCorner[c1] != keepCorner[c2]) {
+            Vector3 p1 = corners[c1], p2 = corners[c2];
+            float d1 = Vector3DotProduct(p1, normal);
+            float d2 = Vector3DotProduct(p2, normal);
+            float t = -d1 / (d2 - d1);
+            intersections[i] = Vector3Lerp(p1, p2, t);
+            hasIntersection[i] = true;
+            intersectionCount++;
+        }
+    }
+
+    if (!alloc_mesh(&meshData, 32, 48)) {
+        return meshData;
+    }
+
+    R3D_Vertex* v = meshData.vertices;
+    uint32_t* idx = meshData.indices;
+    int vertexCount = 0, indexCount = 0;
+
+    static const Vector2 uvs[4] = {{0,0},{1,0},{1,1},{0,1}};
+    static const int faces[6][4] = {{3,2,1,0}, {4,5,6,7}, {0,1,5,4}, {2,3,7,6}, {1,2,6,5}, {3,0,4,7}};
+    static const Vector3 faceNormals[6] = {{0,-1,0}, {0,1,0}, {0,0,-1}, {0,0,1}, {1,0,0}, {-1,0,0}};
+    static const Vector3 faceTangents[6] = {{1,0,0}, {1,0,0}, {1,0,0}, {-1,0,0}, {0,0,-1}, {0,0,1}};
+
+    for (int f = 0; f < 6; f++)
+    {
+        const int* ci = faces[f];
+        int keptInFace = keepCorner[ci[0]] + keepCorner[ci[1]] + 
+                         keepCorner[ci[2]] + keepCorner[ci[3]];
+
+        if (keptInFace == 0) continue;
+
+        if (keptInFace == 4) {
+            int baseV = vertexCount;
+            for (int i = 0; i < 4; i++) {
+                v[vertexCount++] = (R3D_Vertex){
+                    corners[ci[i]], uvs[i], faceNormals[f], WHITE,
+                    {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
+                };
+            }
+            idx[indexCount++] = baseV; idx[indexCount++] = baseV+2; idx[indexCount++] = baseV+1;
+            idx[indexCount++] = baseV+2; idx[indexCount++] = baseV; idx[indexCount++] = baseV+3;
+            continue;
+        }
+
+        Vector3 polygon[6];
+        Vector2 polyUVs[6];
+        int polyCount = 0;
+
+        Vector3 faceU = faceTangents[f];
+        Vector3 faceV = Vector3CrossProduct(faceNormals[f], faceU);
+
+        Vector3 faceMin = {1e6f, 1e6f, 1e6f};
+        Vector3 faceMax = {-1e6f, -1e6f, -1e6f};
+
+        for (int i = 0; i < 4; i++) {
+            int curr = ci[i], next = ci[(i+1)%4];
+            if (keepCorner[curr]) {
+                polygon[polyCount] = corners[curr];
+                polyCount++;
+            }
+            for (int e = 0; e < 12; e++) {
+                if (((edges[e][0] == curr && edges[e][1] == next) ||
+                     (edges[e][0] == next && edges[e][1] == curr)) && hasIntersection[e]) {
+                    polygon[polyCount] = intersections[e];
+                    polyCount++;
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < polyCount; i++) {
+            float u = Vector3DotProduct(polygon[i], faceU);
+            float v = Vector3DotProduct(polygon[i], faceV);
+            if (u < faceMin.x) faceMin.x = u;
+            if (u > faceMax.x) faceMax.x = u;
+            if (v < faceMin.y) faceMin.y = v;
+            if (v > faceMax.y) faceMax.y = v;
+        }
+
+        float rangeU = faceMax.x - faceMin.x;
+        float rangeV = faceMax.y - faceMin.y;
+        if (rangeU < 0.001f) rangeU = 1.0f;
+        if (rangeV < 0.001f) rangeV = 1.0f;
+
+        for (int i = 0; i < polyCount; i++) {
+            float u = Vector3DotProduct(polygon[i], faceU);
+            float v = Vector3DotProduct(polygon[i], faceV);
+            polyUVs[i].x = (u - faceMin.x) / rangeU;
+            polyUVs[i].y = (v - faceMin.y) / rangeV;
+        }
+
+        if (polyCount >= 3) {
+            int baseV = vertexCount;
+            for (int i = 0; i < polyCount; i++) {
+                v[vertexCount++] = (R3D_Vertex){
+                    polygon[i], polyUVs[i], faceNormals[f], WHITE,
+                    {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
+                };
+            }
+            for (int i = 1; i < polyCount - 1; i++) {
+                idx[indexCount++] = baseV;
+                idx[indexCount++] = baseV+i+1;
+                idx[indexCount++] = baseV+i;
+            }
+        }
+    }
+
+    if (intersectionCount >= 3) {
+        Vector3 center = {0};
+        Vector3 cutPolygon[12];
+        int cutCount = 0;
+
+        for (int i = 0; i < 12; i++) {
+            if (hasIntersection[i]) {
+                cutPolygon[cutCount++] = intersections[i];
+                center = Vector3Add(center, intersections[i]);
+            }
+        }
+        center = Vector3Scale(center, 1.0f / cutCount);
+
+        Vector3 cutNormal = normal;
+
+        Vector3 u = fabsf(cutNormal.x) < 0.9f ? (Vector3){1,0,0} : (Vector3){0,1,0};
+        u = Vector3Subtract(u, Vector3Scale(cutNormal, Vector3DotProduct(u, cutNormal)));
+        u = Vector3Normalize(u);
+        Vector3 w = Vector3CrossProduct(cutNormal, u);
+
+        float angles[12];
+        for (int i = 0; i < cutCount; i++) {
+            Vector3 vec = Vector3Subtract(cutPolygon[i], center);
+            angles[i] = atan2f(Vector3DotProduct(vec, w), Vector3DotProduct(vec, u));
+        }
+
+        for (int i = 0; i < cutCount - 1; i++) {
+            for (int j = 0; j < cutCount - i - 1; j++) {
+                if (angles[j] > angles[j+1]) {
+                    float tmpA = angles[j]; angles[j] = angles[j+1]; angles[j+1] = tmpA;
+                    Vector3 tmpV = cutPolygon[j]; cutPolygon[j] = cutPolygon[j+1]; cutPolygon[j+1] = tmpV;
+                }
+            }
+        }
+
+        Vector3 uvMin = {1e6f, 1e6f, 1e6f};
+        Vector3 uvMax = {-1e6f, -1e6f, -1e6f};
+
+        for (int i = 0; i < cutCount; i++) {
+            float projU = Vector3DotProduct(cutPolygon[i], u);
+            float projV = Vector3DotProduct(cutPolygon[i], w);
+            if (projU < uvMin.x) uvMin.x = projU;
+            if (projU > uvMax.x) uvMax.x = projU;
+            if (projV < uvMin.y) uvMin.y = projV;
+            if (projV > uvMax.y) uvMax.y = projV;
+        }
+
+        float rangeU = uvMax.x - uvMin.x;
+        float rangeV = uvMax.y - uvMin.y;
+        if (rangeU < 0.001f) rangeU = 1.0f;
+        if (rangeV < 0.001f) rangeV = 1.0f;
+
+        int baseV = vertexCount;
+        for (int i = 0; i < cutCount; i++) {
+            float projU = Vector3DotProduct(cutPolygon[i], u);
+            float projV = Vector3DotProduct(cutPolygon[i], w);
+            Vector2 uv = {
+                (projU - uvMin.x) / rangeU,
+                (projV - uvMin.y) / rangeV
+            };
+            
+            v[vertexCount++] = (R3D_Vertex){
+                cutPolygon[i], uv, cutNormal, WHITE,
+                {u.x, u.y, u.z, 1.0f}
+            };
+        }
+
+        for (int i = 1; i < cutCount - 1; i++) {
+            idx[indexCount++] = baseV;
+            idx[indexCount++] = baseV+i;
+            idx[indexCount++] = baseV+i+1;
+        }
+    }
+
+    meshData.vertexCount = vertexCount;
+    meshData.indexCount = indexCount;
+
+    return meshData;
+}
+
 R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices)
 {
     R3D_MeshData meshData = {0};
@@ -739,6 +971,122 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
             *index++ = centerIdx;
             *index++ = current;
             *index++ = next;
+        }
+    }
+
+    return meshData;
+}
+
+R3D_MeshData R3D_GenMeshDataCapsule(float radius, float height, int rings, int slices)
+{
+    R3D_MeshData meshData = {0};
+
+    if (radius <= 0.0f || height < 0.0f || rings < 1 || slices < 3) {
+        return meshData;
+    }
+
+    int vertCountPerRing = slices + 1;
+
+    int totalRings = rings * 2 + 3;
+    int totalVertCount = totalRings * vertCountPerRing;
+    int totalIndexCount = (totalRings - 1) * slices * 6;
+
+    if (!alloc_mesh(&meshData, totalVertCount, totalIndexCount)) {
+        return meshData;
+    }
+
+    float halfHeight = height * 0.5f;
+    float sliceStep = 2.0f * PI / slices;
+    float invSlices = 1.0f / slices;
+    
+    R3D_Vertex* vertex = meshData.vertices;
+    int vertIndex = 0;
+
+    for (int ring = 0; ring <= rings; ring++)
+    {
+        float phi = (PI * 0.5f) * (1.0f - (float)ring / rings);
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+        float y = radius * sinPhi + halfHeight;
+        float ringRadius = radius * cosPhi;
+        float v = (float)ring / (rings * 2 + 2);
+
+        for (int slice = 0; slice <= slices; slice++, vertex++, vertIndex++)
+        {
+            float theta = slice * sliceStep;
+            float sinTheta = sinf(theta);
+            float cosTheta = cosf(theta);
+
+            float x = ringRadius * cosTheta;
+            float z = ringRadius * sinTheta;
+
+            vertex->position = (Vector3){x, y, z};
+            vertex->texcoord = (Vector2){slice * invSlices, v};
+
+            vertex->normal = (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+        }
+    }
+
+    float v = (float)(rings + 1) / (rings * 2 + 2);
+    for (int slice = 0; slice <= slices; slice++, vertex++, vertIndex++)
+    {
+        float theta = slice * sliceStep;
+        float sinTheta = sinf(theta);
+        float cosTheta = cosf(theta);
+
+        float x = radius * cosTheta;
+        float z = radius * sinTheta;
+
+        vertex->position = (Vector3){x, -halfHeight, z};
+        vertex->texcoord = (Vector2){slice * invSlices, v};
+        vertex->normal = (Vector3){cosTheta, 0.0f, sinTheta};
+        vertex->color = WHITE;
+        vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+    }
+
+    for (int ring = 1; ring <= rings; ring++)
+    {
+        float phi = -(PI * 0.5f) * ((float)ring / rings);
+        float sinPhi = sinf(phi);
+        float cosPhi = cosf(phi);
+        float y = radius * sinPhi - halfHeight;
+        float ringRadius = radius * cosPhi;
+        float v = (float)(rings + 1 + ring) / (rings * 2 + 2);
+
+        for (int slice = 0; slice <= slices; slice++, vertex++, vertIndex++)
+        {
+            float theta = slice * sliceStep;
+            float sinTheta = sinf(theta);
+            float cosTheta = cosf(theta);
+
+            float x = ringRadius * cosTheta;
+            float z = ringRadius * sinTheta;
+
+            vertex->position = (Vector3){x, y, z};
+            vertex->texcoord = (Vector2){slice * invSlices, v};
+            vertex->normal = (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+        }
+    }
+
+    uint32_t* index = meshData.indices;
+    for (int ring = 0; ring < totalRings - 1; ring++)
+    {
+        uint32_t currentRow = ring * vertCountPerRing;
+        uint32_t nextRow = currentRow + vertCountPerRing;
+
+        for (int slice = 0; slice < slices; slice++)
+        {
+            uint32_t i0 = currentRow + slice;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRow + slice;
+            uint32_t i3 = i2 + 1;
+
+            *index++ = i0; *index++ = i3; *index++ = i2;
+            *index++ = i0; *index++ = i1; *index++ = i3;
         }
     }
 
