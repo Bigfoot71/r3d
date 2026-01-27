@@ -14,6 +14,7 @@
 #include <stdalign.h>
 #include <raylib.h>
 #include <stdint.h>
+#include <assert.h>
 #include <glad.h>
 
 #include "../common/r3d_math.h"
@@ -22,101 +23,283 @@
 // MODULE CONSTANTS
 // ========================================
 
+#define R3D_SHADER_MAX_VAR_TYPE_LENGTH 32
+#define R3D_SHADER_MAX_VAR_NAME_LENGTH 64
+
 #define R3D_SHADER_BLOCK_VIEW_SLOT          0
 #define R3D_SHADER_BLOCK_ENV_SLOT           1
 #define R3D_SHADER_BLOCK_LIGHT_SLOT         2
 #define R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT   3
+#define R3D_SHADER_BLOCK_USER_SLOT          4
 
 // ========================================
 // SHADER MANAGEMENT MACROS
 // ========================================
 
-#define R3D_SHADER_USE(shader_name) do {                                                            \
-    if (R3D_MOD_SHADER.shader_name.id == 0) {                                                       \
-        R3D_MOD_SHADER_LOADER.shader_name();                                                        \
-    }                                                                                               \
-    glUseProgram(R3D_MOD_SHADER.shader_name.id);                                                    \
+#define R3D_SHADER_GET_STRUCT(shader_name, custom)                              \
+    (((r3d_shader_custom_t*)(custom) != NULL)                                   \
+        ? &((r3d_shader_custom_t*)(custom))->shader_name                        \
+        : &R3D_MOD_SHADER.shader_name)
+
+#define R3D_SHADER_CUSTOM_PRELOAD(custom, shader_name, success) do {            \
+    if ((custom)->shader_name.id == 0) {                                        \
+        R3D_MOD_SHADER_LOADER.shader_name((custom));                            \
+        *success = (!!(custom)->shader_name.id);                                \
+        R3D_MOD_SHADER.currentProgram = 0;                                      \
+        glUseProgram(0);                                                        \
+    }                                                                           \
+} while (0)
+
+#define R3D_SHADER_USE(shader_name) do {                                        \
+    if (R3D_MOD_SHADER.shader_name.id == 0) {                                   \
+        R3D_MOD_SHADER_LOADER.shader_name(NULL);                                \
+    }                                                                           \
+    if (R3D_MOD_SHADER.currentProgram != R3D_MOD_SHADER.shader_name.id) {       \
+        R3D_MOD_SHADER.currentProgram = R3D_MOD_SHADER.shader_name.id;          \
+        glUseProgram(R3D_MOD_SHADER.shader_name.id);                            \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SLOT_SAMPLER(shader_name, uniform)                                               \
-    R3D_MOD_SHADER.shader_name.uniform.slot                                                         \
-
-#define R3D_SHADER_BIND_SAMPLER(shader_name, uniform, texId) do {                                   \
-    r3d_shader_bind_sampler(R3D_MOD_SHADER.shader_name.uniform.slot, (texId));                      \
+#define R3D_SHADER_USE_EX(shader_name, custom) do {                             \
+    r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
+    if (c_shader != NULL) {                                                     \
+        if (c_shader->shader_name.id == 0) {                                    \
+            R3D_MOD_SHADER_LOADER.shader_name(c_shader);                        \
+        }                                                                       \
+        if (R3D_MOD_SHADER.currentProgram != c_shader->shader_name.id) {        \
+            R3D_MOD_SHADER.currentProgram = c_shader->shader_name.id;           \
+            glUseProgram(c_shader->shader_name.id);                             \
+            r3d_shader_bind_custom_samplers(c_shader);                          \
+            r3d_shader_bind_custom_uniforms(c_shader);                          \
+        }                                                                       \
+    }                                                                           \
+    else {                                                                      \
+        R3D_SHADER_USE(shader_name);                                            \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_INT(shader_name, uniform, value) do {                                        \
-    if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                                        \
-        R3D_MOD_SHADER.shader_name.uniform.val = (value);                                           \
-        glUniform1i(                                                                                \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            R3D_MOD_SHADER.shader_name.uniform.val                                                  \
-        );                                                                                          \
-    }                                                                                               \
+#define R3D_SHADER_SLOT_SAMPLER(shader_name, uniform) do {                      \
+    R3D_MOD_SHADER.shader_name.uniform.slot                                     \
 } while(0)
 
-#define R3D_SHADER_SET_FLOAT(shader_name, uniform, value) do {                                      \
-    if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                                        \
-        R3D_MOD_SHADER.shader_name.uniform.val = (value);                                           \
-        glUniform1f(                                                                                \
-            R3D_MOD_SHADER.shader_name.uniform.loc,                                                 \
-            R3D_MOD_SHADER.shader_name.uniform.val                                                  \
-        );                                                                                          \
-    }                                                                                               \
+#define R3D_SHADER_SLOT_SAMPLER_EX(shader_name, custom, uniform) do {           \
+    r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
+    if (c_shader != NULL) c_shader->shader_name.uniform.slot                    \
+    else R3D_MOD_SHADER.shader_name.uniform.slot                                \
+} while(0)                                                                      \
+
+#define R3D_SHADER_BIND_SAMPLER(shader_name, uniform, texId) do {               \
+    r3d_shader_bind_sampler(R3D_MOD_SHADER.shader_name.uniform.slot, (texId));  \
 } while(0)
 
-#define R3D_SHADER_SET_VEC2(shader_name, uniform, ...) do {                                         \
-    const Vector2 tmp = (__VA_ARGS__);                                                              \
-    if (!Vector2Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
-        glUniform2fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&tmp));                    \
-        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-    }                                                                                               \
+#define R3D_SHADER_BIND_SAMPLER_EX(shader_name, custom, uniform, texId) do {    \
+    r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
+    r3d_shader_bind_sampler((c_shader != NULL)                                  \
+        ? c_shader->shader_name.uniform.slot                                    \
+        : R3D_MOD_SHADER.shader_name.uniform.slot,                              \
+        (texId));                                                               \
 } while(0)
 
-#define R3D_SHADER_SET_VEC3(shader_name, uniform, ...) do {                                         \
-    const Vector3 tmp = (__VA_ARGS__);                                                              \
-    if (!Vector3Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
-        glUniform3fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&tmp));                    \
-        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-    }                                                                                               \
+#define R3D_SHADER_SET_INT(shader_name, uniform, value) do {                    \
+    if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                    \
+        R3D_MOD_SHADER.shader_name.uniform.val = (value);                       \
+        glUniform1i(                                                            \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            (value)                                                             \
+        );                                                                      \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC4(shader_name, uniform, ...) do {                                         \
-    const Vector4 tmp = (__VA_ARGS__);                                                              \
-    if (!Vector4Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {                              \
-        glUniform4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&tmp));                    \
-        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-    }                                                                                               \
+#define R3D_SHADER_SET_INT_EX(shader_name, custom, uniform, value) do {         \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    if (shader_ptr->uniform.val != (value)) {                                   \
+        shader_ptr->uniform.val = (value);                                      \
+        glUniform1i(shader_ptr->uniform.loc, (value));                          \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL3(shader_name, uniform, space, ...) do {                                  \
-    const Color tmp = (__VA_ARGS__);                                                                \
-    if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||                                 \
-        memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
-        Vector3 v = r3d_color_to_linear_vec3(tmp, (space));                                         \
-        glUniform3fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
-        R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                                    \
-        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-    }                                                                                               \
+#define R3D_SHADER_SET_FLOAT(shader_name, uniform, value) do {                  \
+    if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                    \
+        R3D_MOD_SHADER.shader_name.uniform.val = (value);                       \
+        glUniform1f(                                                            \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            (value)                                                             \
+        );                                                                      \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL4(shader_name, uniform, space, ...) do {                                  \
-    const Color tmp = (__VA_ARGS__);                                                                \
-    if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||                                 \
-        memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp, sizeof(Color)) != 0) {                \
-        Vector4 v = r3d_color_to_linear_vec4(tmp, (space));                                         \
-        glUniform4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, (float*)(&v));                      \
-        R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                                    \
-        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                                               \
-    }                                                                                               \
+#define R3D_SHADER_SET_FLOAT_EX(shader_name, custom, uniform, value) do {       \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    if (shader_ptr->uniform.val != (value)) {                                   \
+        shader_ptr->uniform.val = (value);                                      \
+        glUniform1f(shader_ptr->uniform.loc, (value));                          \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_MAT4(shader_name, uniform, value) do {                                       \
-    glUniformMatrix4fv(R3D_MOD_SHADER.shader_name.uniform.loc, 1, GL_TRUE, (float*)(&(value)));     \
+#define R3D_SHADER_SET_VEC2(shader_name, uniform, ...) do {                     \
+    const Vector2 tmp = (__VA_ARGS__);                                          \
+    if (!Vector2Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {          \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
+        glUniform2fv(                                                           \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            1,                                                                  \
+            (float*)(&tmp)                                                      \
+        );                                                                      \
+    }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_MAT4_V(shader_name, uniform, array, count) do {                              \
-    glUniformMatrix4fv(R3D_MOD_SHADER.shader_name.uniform.loc, (count), GL_TRUE, (float*)(array));  \
+#define R3D_SHADER_SET_VEC2_EX(shader_name, custom, uniform, ...) do {          \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    const Vector2 tmp = (__VA_ARGS__);                                          \
+    if (!Vector2Equals(shader_ptr->uniform.val, tmp)) {                         \
+        shader_ptr->uniform.val = tmp;                                          \
+        glUniform2fv(shader_ptr->uniform.loc, 1, (float*)(&tmp));               \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_VEC3(shader_name, uniform, ...) do {                     \
+    const Vector3 tmp = (__VA_ARGS__);                                          \
+    if (!Vector3Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {          \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
+        glUniform3fv(                                                           \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            1,                                                                  \
+            (float*)(&tmp)                                                      \
+        );                                                                      \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_VEC3_EX(shader_name, custom, uniform, ...) do {          \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    const Vector3 tmp = (__VA_ARGS__);                                          \
+    if (!Vector3Equals(shader_ptr->uniform.val, tmp)) {                         \
+        shader_ptr->uniform.val = tmp;                                          \
+        glUniform3fv(shader_ptr->uniform.loc, 1, (float*)(&tmp));               \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_VEC4(shader_name, uniform, ...) do {                     \
+    const Vector4 tmp = (__VA_ARGS__);                                          \
+    if (!Vector4Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {          \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
+        glUniform4fv(                                                           \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            1,                                                                  \
+            (float*)(&tmp)                                                      \
+        );                                                                      \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_VEC4_EX(shader_name, custom, uniform, ...) do {          \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    const Vector4 tmp = (__VA_ARGS__);                                          \
+    if (!Vector4Equals(shader_ptr->uniform.val, tmp)) {                         \
+        shader_ptr->uniform.val = tmp;                                          \
+        glUniform4fv(shader_ptr->uniform.loc, 1, (float*)(&tmp));               \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_COL3(shader_name, uniform, space, ...) do {              \
+    const Color tmp = (__VA_ARGS__);                                            \
+    if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||             \
+        memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp,                   \
+               sizeof(Color)) != 0) {                                           \
+        Vector3 v = r3d_color_to_linear_vec3(tmp, (space));                     \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
+        R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                \
+        glUniform3fv(                                                           \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            1,                                                                  \
+            (float*)(&v)                                                        \
+        );                                                                      \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_COL3_EX(shader_name, custom, uniform, space, ...) do {   \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                        \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    const Color tmp = (__VA_ARGS__);                                            \
+    if (shader_ptr->uniform.colorSpace != (space) ||                            \
+        memcmp(&shader_ptr->uniform.val, &tmp, sizeof(Color)) != 0) {           \
+        Vector3 v = r3d_color_to_linear_vec3(tmp, (space));                     \
+        shader_ptr->uniform.val = tmp;                                          \
+        shader_ptr->uniform.colorSpace = (space);                               \
+        glUniform3fv(shader_ptr->uniform.loc, 1, (float*)(&v));                 \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_COL4(shader_name, uniform, space, ...) do {              \
+    const Color tmp = (__VA_ARGS__);                                            \
+    if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||             \
+        memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp,                   \
+               sizeof(Color)) != 0) {                                           \
+        Vector4 v = r3d_color_to_linear_vec4(tmp, (space));                     \
+        R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
+        R3D_MOD_SHADER.shader_name.uniform.colorSpace = (space);                \
+        glUniform4fv(                                                           \
+            R3D_MOD_SHADER.shader_name.uniform.loc,                             \
+            1,                                                                  \
+            (float*)(&v)                                                        \
+        );                                                                      \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_COL4_EX(shader_name, custom, uniform, space, ...) do {   \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                        \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    const Color tmp = (__VA_ARGS__);                                            \
+    if (shader_ptr->uniform.colorSpace != (space) ||                            \
+        memcmp(&shader_ptr->uniform.val, &tmp, sizeof(Color)) != 0) {           \
+        Vector4 v = r3d_color_to_linear_vec4(tmp, (space));                     \
+        shader_ptr->uniform.val = tmp;                                          \
+        shader_ptr->uniform.colorSpace = (space);                               \
+        glUniform4fv(shader_ptr->uniform.loc, 1, (float*)(&v));                 \
+    }                                                                           \
+} while(0)
+
+#define R3D_SHADER_SET_MAT4(shader_name, uniform, value) do {                   \
+    glUniformMatrix4fv(                                                         \
+        R3D_MOD_SHADER.shader_name.uniform.loc,                                 \
+        1,                                                                      \
+        GL_TRUE,                                                                \
+        (float*)(&(value))                                                      \
+    );                                                                          \
+} while(0)
+
+#define R3D_SHADER_SET_MAT4_EX(shader_name, custom, uniform, value) do {        \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    glUniformMatrix4fv(                                                         \
+        shader_ptr->uniform.loc,                                                \
+        1,                                                                      \
+        GL_TRUE,                                                                \
+        (float*)(&(value))                                                      \
+    );                                                                          \
+} while(0)
+
+#define R3D_SHADER_SET_MAT4_V(shader_name, uniform, array, count) do {          \
+    glUniformMatrix4fv(                                                         \
+        R3D_MOD_SHADER.shader_name.uniform.loc,                                 \
+        (count),                                                                \
+        GL_TRUE,                                                                \
+        (float*)(array)                                                         \
+    );                                                                          \
+} while(0)
+
+#define R3D_SHADER_SET_MAT4_V_EX(shader_name, custom, uniform, array, count) do { \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
+        R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
+    glUniformMatrix4fv(                                                         \
+        shader_ptr->uniform.loc,                                                \
+        (count),                                                                \
+        GL_TRUE,                                                                \
+        (float*)(array)                                                         \
+    );                                                                          \
 } while(0)
 
 // ========================================
@@ -164,8 +347,15 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_SCENE          = 36,
 
     // Unamed for special passes
-    R3D_SHADER_SAMPLER_SOURCE_2D             = 50,
-    R3D_SHADER_SAMPLER_SOURCE_CUBE           = 55,
+    R3D_SHADER_SAMPLER_SOURCE_2D             = 40,
+    R3D_SHADER_SAMPLER_SOURCE_CUBE           = 41,
+
+    // Custom samplers
+    R3D_SHADER_SAMPLER_CUSTOM_1D             = 45,
+    R3D_SHADER_SAMPLER_CUSTOM_2D             = R3D_SHADER_SAMPLER_CUSTOM_1D + R3D_CUSTOM_SHADER_MAX_SAMPLERS,
+    R3D_SHADER_SAMPLER_CUSTOM_3D             = R3D_SHADER_SAMPLER_CUSTOM_2D + R3D_CUSTOM_SHADER_MAX_SAMPLERS,
+    R3D_SHADER_SAMPLER_CUSTOM_CUBE           = R3D_SHADER_SAMPLER_CUSTOM_3D + R3D_CUSTOM_SHADER_MAX_SAMPLERS,
+    R3D_SHADER_SAMPLER_CUSTOM_COUNT          = R3D_SHADER_SAMPLER_CUSTOM_CUBE + R3D_CUSTOM_SHADER_MAX_SAMPLERS,
 
     // Sentinel
     R3D_SHADER_SAMPLER_COUNT
@@ -203,6 +393,9 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_SCENE]          = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_SOURCE_2D]             = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_SOURCE_CUBE]           = GL_TEXTURE_CUBE_MAP,
+
+    // NOTE: Custom samplers are defined at initialization
+    //       time in `R3D_MOD_SHADER.samplerTargets`
 };
 
 // ========================================
@@ -309,7 +502,7 @@ typedef struct {
 } r3d_shader_block_light_array_t;
 
 // ========================================
-// SHADER STRUCTURES DECLARATIONS
+// BUILT-IN SHADERS STRUCTURES
 // ========================================
 
 typedef struct {
@@ -705,12 +898,57 @@ typedef struct {
 } r3d_shader_post_visualizer_t;
 
 // ========================================
+// CUSTOM SHADERS STRUCTURES
+// ========================================
+
+typedef struct {
+    char name[R3D_SHADER_MAX_VAR_NAME_LENGTH];
+    GLenum target;
+    GLuint texture;
+} r3d_shader_custom_sampler_t;
+
+typedef struct {
+    struct {
+        char type[R3D_SHADER_MAX_VAR_TYPE_LENGTH];
+        char name[R3D_SHADER_MAX_VAR_NAME_LENGTH];
+        int offset;
+        int size;
+    } entries[R3D_CUSTOM_SHADER_MAX_UNIFORMS];
+    uint8_t buffer[R3D_CUSTOM_SHADER_MAX_UNIFORMS * 64];
+    GLuint bufferId;
+    int bufferSize;
+    bool dirty;
+} r3d_shader_custom_uniform_t;
+
+typedef struct {
+    union {
+        // Defined in a union for possible future extension
+        // Must follow the same naming pattern as `r3d_mod_shader`
+        struct {
+            r3d_shader_scene_geometry_t geometry;
+            r3d_shader_scene_forward_t forward;
+            r3d_shader_scene_depth_t depth;
+            r3d_shader_scene_depth_cube_t depthCube;
+            r3d_shader_scene_probe_t probe;
+            r3d_shader_scene_decal_t decal;
+        } scene;
+    };
+    r3d_shader_custom_sampler_t samplers[R3D_CUSTOM_SHADER_MAX_SAMPLERS];
+    r3d_shader_custom_uniform_t uniforms;
+    const char* userCode;
+} r3d_shader_custom_t;
+
+// ========================================
 // MODULE STATE
 // ========================================
 
-extern struct r3d_shader {
+extern struct r3d_mod_shader {
+
+    // Program state
+    GLuint currentProgram;
 
     // Samplers state
+    GLenum samplerTargets[R3D_SHADER_SAMPLER_COUNT];
     GLuint samplerBindings[R3D_SHADER_SAMPLER_COUNT];
 
     // Uniform buffers
@@ -770,40 +1008,40 @@ extern struct r3d_shader {
 // BUILT-IN SHADER LOADER
 // ========================================
 
-typedef void (*r3d_shader_loader_func)(void);
+typedef void (*r3d_shader_loader_func)(r3d_shader_custom_t* custom);
 
-void r3d_shader_load_prepare_buffer_down(void);
-void r3d_shader_load_prepare_atrous_wavelet(void);
-void r3d_shader_load_prepare_bicubic_up(void);
-void r3d_shader_load_prepare_lanczos_up(void);
-void r3d_shader_load_prepare_blur_down(void);
-void r3d_shader_load_prepare_blur_up(void);
-void r3d_shader_load_prepare_ssao(void);
-void r3d_shader_load_prepare_ssil(void);
-void r3d_shader_load_prepare_ssr(void);
-void r3d_shader_load_prepare_bloom_down(void);
-void r3d_shader_load_prepare_bloom_up(void);
-void r3d_shader_load_prepare_cubemap_from_equirectangular(void);
-void r3d_shader_load_prepare_cubemap_irradiance(void);
-void r3d_shader_load_prepare_cubemap_prefilter(void);
-void r3d_shader_load_prepare_cubemap_skybox(void);
-void r3d_shader_load_scene_geometry(void);
-void r3d_shader_load_scene_forward(void);
-void r3d_shader_load_scene_background(void);
-void r3d_shader_load_scene_skybox(void);
-void r3d_shader_load_scene_depth(void);
-void r3d_shader_load_scene_depth_cube(void);
-void r3d_shader_load_scene_probe(void);
-void r3d_shader_load_scene_decal(void);
-void r3d_shader_load_deferred_ambient(void);
-void r3d_shader_load_deferred_lighting(void);
-void r3d_shader_load_deferred_compose(void);
-void r3d_shader_load_post_bloom(void);
-void r3d_shader_load_post_fog(void);
-void r3d_shader_load_post_dof(void);
-void r3d_shader_load_post_output(void);
-void r3d_shader_load_post_fxaa(void);
-void r3d_shader_load_post_visualizer(void);
+void r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom);
+void r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_forward(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_background(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_depth(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_probe(r3d_shader_custom_t* custom);
+void r3d_shader_load_scene_decal(r3d_shader_custom_t* custom);
+void r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom);
+void r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom);
+void r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
+void r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
+void r3d_shader_load_post_fog(r3d_shader_custom_t* custom);
+void r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
+void r3d_shader_load_post_output(r3d_shader_custom_t* custom);
+void r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom);
+void r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
 
 static const struct r3d_shader_loader {
 
@@ -926,14 +1164,35 @@ void r3d_shader_quit();
 void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture);
 
 /*
- * Iterates through all samplers to unbind any textures that were bound.
- * Must be called at the end of each frame to avoid leaving a dirty state to raylib.
- */
-void r3d_shader_unbind_samplers(void);
-
-/*
  * Upload and bind the specified uniform block with the provided data.
  */
 void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data);
+
+/*
+ * Sets the value of a client-side uniform, marks its state as dirty, and flags it for upload.
+ */
+bool r3d_shader_set_custom_uniform(r3d_shader_custom_t* shader, const char* name, const void* value);
+
+/*
+ * Assigns a texture to a sampler; it must be bound afterwards.
+ */
+bool r3d_shader_set_custom_sampler(r3d_shader_custom_t* shader, const char* name, Texture texture);
+
+/*
+ * Checks if any uniforms are dirty and need to be uploaded then bind it.
+ * Automatically called when `R3D_SHADER_USE_EX` is invoked with a custom shader.
+ */
+void r3d_shader_bind_custom_uniforms(r3d_shader_custom_t* shader);
+
+/*
+ * Binds the textures of a custom shader and verifies the state of its samplers then bind them.
+ * Automatically called when `R3D_SHADER_USE_EX` is invoked with a custom shader.
+ */
+void r3d_shader_bind_custom_samplers(r3d_shader_custom_t* shader);
+
+/*
+ * Reset the internal state cache, use program zero, and unbind all textures.
+ */
+void r3d_shader_reset(void);
 
 #endif // R3D_MODULE_SHADER_H
