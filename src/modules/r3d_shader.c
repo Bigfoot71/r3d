@@ -1132,6 +1132,8 @@ bool r3d_shader_set_custom_sampler(r3d_shader_custom_t* shader, const char* name
 
 void r3d_shader_bind_custom_uniforms(r3d_shader_custom_t* shader)
 {
+    if (shader->uniforms.bufferId == 0) return;
+
     if (shader->uniforms.dirty) {
         glBindBuffer(GL_UNIFORM_BUFFER, shader->uniforms.bufferId);
         glBufferSubData(GL_UNIFORM_BUFFER, 0, shader->uniforms.bufferSize, shader->uniforms.buffer);

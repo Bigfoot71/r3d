@@ -325,15 +325,19 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
 
     /* --- PHASE 4: Initialize uniform buffer --- */
 
-    memset(shader->program.uniforms.buffer, 0, sizeof(shader->program.uniforms.buffer));
-    int uboSize = (currentOffset < 16) ? 16 : currentOffset;
-    shader->program.uniforms.bufferSize = uboSize;
-    shader->program.uniforms.dirty = true;
+    // Create the UBO only if there is at least one uniform
+    if (shader->program.uniforms.entries[0].name[0] != '\0')
+    {
+        memset(shader->program.uniforms.buffer, 0, sizeof(shader->program.uniforms.buffer));
+        int uboSize = (currentOffset < 16) ? 16 : currentOffset;
+        shader->program.uniforms.bufferSize = uboSize;
+        shader->program.uniforms.dirty = true;
 
-    glGenBuffers(1, &shader->program.uniforms.bufferId);
-    glBindBuffer(GL_UNIFORM_BUFFER, shader->program.uniforms.bufferId);
-    glBufferData(GL_UNIFORM_BUFFER, uboSize, shader->program.uniforms.buffer, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        glGenBuffers(1, &shader->program.uniforms.bufferId);
+        glBindBuffer(GL_UNIFORM_BUFFER, shader->program.uniforms.bufferId);
+        glBufferData(GL_UNIFORM_BUFFER, uboSize, shader->program.uniforms.buffer, GL_DYNAMIC_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    }
 
     return shader;
 }
