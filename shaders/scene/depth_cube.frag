@@ -8,20 +8,27 @@
 
 #version 330 core
 
+/* === Varyings === */
+
 smooth in vec3 vPosition;
 smooth in vec2 vTexCoord;
 smooth in vec4 vColor;
 
-uniform sampler2D uAlbedoMap;
+/* === Uniforms === */
 
+uniform sampler2D uAlbedoMap;
 uniform float uAlphaCutoff;
 uniform vec3 uViewPosition;
 uniform float uFar;
 
+/* === User override === */
+
+#include "../include/user/scene.frag"
+
+/* === Main function === */
+
 void main()
 {
-    float alpha = vColor.a * texture(uAlbedoMap, vTexCoord).a;
-    if (alpha < uAlphaCutoff) discard;
-
+    SceneFragment(vTexCoord, uAlphaCutoff);
     gl_FragDepth = length(vPosition - uViewPosition) / uFar;
 }

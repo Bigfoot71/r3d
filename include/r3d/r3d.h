@@ -33,6 +33,7 @@
 #include "r3d_kinematics.h"
 #include "r3d_lighting.h"
 #include "r3d_material.h"
+#include "r3d/r3d_surface_shader.h"
 #include "r3d_mesh_data.h"
 #include "r3d_mesh.h"
 #include "r3d_model.h"

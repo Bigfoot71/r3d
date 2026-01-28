@@ -38,15 +38,18 @@ option(R3D_ASSIMP_VENDORED "Use vendored assimp from submodule" OFF)
 # R3D compile-time options
 
 set(R3D_CONFIG_DEFAULTS
-    R3D_MAX_LIGHT_FORWARD_PER_MESH  8
-    R3D_MAX_PROBE_ON_SCREEN         8
-    R3D_PROBE_CAPTURE_SIZE          256
-    R3D_SHADOW_MAP_DIRECTIONAL_SIZE 4096
-    R3D_SHADOW_MAP_SPOT_SIZE        2048
-    R3D_SHADOW_MAP_OMNI_SIZE        2048
-    R3D_CUBEMAP_IRRADIANCE_SIZE     32
-    R3D_CUBEMAP_PREFILTER_SIZE      128
-    R3D_ENABLE_TRACELOG             1
+    R3D_MAX_LIGHT_FORWARD_PER_MESH          8
+    R3D_MAX_PROBE_ON_SCREEN                 8
+    R3D_PROBE_CAPTURE_SIZE                  256
+    R3D_SHADOW_MAP_DIRECTIONAL_SIZE         4096
+    R3D_SHADOW_MAP_SPOT_SIZE                2048
+    R3D_SHADOW_MAP_OMNI_SIZE                2048
+    R3D_CUBEMAP_IRRADIANCE_SIZE             32
+    R3D_CUBEMAP_PREFILTER_SIZE              128
+    R3D_CUSTOM_SHADER_USER_CODE_MAX_LENGTH  16384
+    R3D_CUSTOM_SHADER_MAX_UNIFORMS          16
+    R3D_CUSTOM_SHADER_MAX_SAMPLERS          4
+    R3D_ENABLE_TRACELOG                     1
 )
 
 # Project output directories
@@ -277,6 +280,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_instance.c"
     "${R3D_ROOT_PATH}/src/r3d_kinematics.c"
     "${R3D_ROOT_PATH}/src/r3d_lighting.c"
+    "${R3D_ROOT_PATH}/src/r3d_surface_shader.c"
     "${R3D_ROOT_PATH}/src/r3d_material.c"
     "${R3D_ROOT_PATH}/src/r3d_mesh.c"
     "${R3D_ROOT_PATH}/src/r3d_mesh_data.c"

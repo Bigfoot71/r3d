@@ -146,25 +146,25 @@ float ShadowOmni(int i, float cNdotL, mat2 diskRot)
     return shadow / float(SHADOW_SAMPLES);
 }
 
-/* === Main === */
+/* === User override === */
+
+#include "../include/user/scene.frag"
+
+/* === Main function === */
 
 void main()
 {
     /* Sample material maps */
 
-    vec4 albedo = vColor * texture(uAlbedoMap, vTexCoord);
-    vec3 emission = vEmission * texture(uEmissionMap, vTexCoord).rgb;
-    vec3 orm = texture(uOrmMap, vTexCoord).rgb;
+    SceneFragment(vTexCoord, 0.0);
 
-    float occlusion = uOcclusion * orm.x;
-    float roughness = uRoughness * orm.y;
-    float metalness = uMetalness * orm.z;
-    float dielectric = (1.0 - metalness);
+    vec3 orm = vec3(OCCLUSION, ROUGHNESS, METALNESS);
+    float dielectric = (1.0 - METALNESS);
 
     /* Compute F0 (reflectance at normal incidence) and diffuse coefficient */
 
-    vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo.rgb);
-    vec3 kD = dielectric * albedo.rgb;
+    vec3 F0 = PBR_ComputeF0(METALNESS, 0.5, ALBEDO);
+    vec3 kD = dielectric * ALBEDO;
 
     /* Sample normal and compute view direction vector */
 
@@ -215,12 +215,12 @@ void main()
 
         /* Compute diffuse lighting */
 
-        vec3 diffLight = L_Diffuse(cLdotH, cNdotV, cNdotL, roughness);
+        vec3 diffLight = L_Diffuse(cLdotH, cNdotV, cNdotL, ROUGHNESS);
         diffLight *= lightColE * dielectric;
 
         /* Compute specular lighting */
 
-        vec3 specLight =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
+        vec3 specLight =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, ROUGHNESS);
         specLight *= lightColE * light.specular;
 
         /*  Calculating a random rotation matrix for shadow debanding */
@@ -269,7 +269,7 @@ void main()
     /* Compute ambient */
 
 #if defined(PROBE)
-    if (uProbeInterior) E_ComputeAmbientColor(diffuse, kD, occlusion);
+    if (uProbeInterior) E_ComputeAmbientColor(diffuse, kD, OCCLUSION);
     else E_ComputeAmbientOnly(diffuse, specular, kD, orm, F0, vPosition, N, V, cNdotV);
 #else
     E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, vPosition, N, V, cNdotV);
@@ -277,5 +277,5 @@ void main()
 
     /* Compute the final fragment color */
 
-    FragColor = vec4(albedo.rgb * diffuse + specular + emission, albedo.a);
+    FragColor = vec4(ALBEDO * diffuse + specular + EMISSION, ALPHA);
 }

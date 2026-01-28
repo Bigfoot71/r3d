@@ -152,18 +152,24 @@ void BillboardYAxis(inout vec3 position, inout vec3 normal, inout vec3 tangent, 
     tangent = localTangent.x*right + localTangent.y*upVector + localTangent.z*front;
 }
 
+/* === User override === */
+
+#include "../include/user/scene.vert"
+
 /* === Main program === */
 
 void main()
 {
+    SceneVertex();
+
 #if defined(DECAL)
     mat4 finalMatModel = uMatModel;
 #endif // DECAL
 
     vec3 billboardCenter = vec3(uMatModel[3]);
-    vec3 localPosition = aPosition;
-    vec3 localNormal = aNormal;
-    vec3 localTangent = aTangent.xyz;
+    vec3 localPosition = POSITION;
+    vec3 localNormal = NORMAL;
+    vec3 localTangent = TANGENT.xyz;
 
     if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
@@ -209,12 +215,12 @@ void main()
 
     vec3 T = normalize(finalTangent);
     vec3 N = normalize(finalNormal);
-    vec3 B = normalize(cross(N, T) * aTangent.w);
+    vec3 B = normalize(cross(N, T) * TANGENT.w);
 
     vPosition = finalPosition;
-    vTexCoord = uTexCoordOffset + aTexCoord * uTexCoordScale;
-    vEmission = uEmissionColor * uEmissionEnergy;
-    vColor = aColor * iColor * uAlbedoColor;
+    vTexCoord = TEXCOORD;
+    vEmission = EMISSION;
+    vColor = COLOR;
     vTBN = mat3(T, B, N);
 
 #if defined(FORWARD) || defined(PROBE)
