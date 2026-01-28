@@ -344,15 +344,25 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
 
 void R3D_UnloadSurfaceShader(R3D_SurfaceShader* shader)
 {
-    glDeleteBuffers(1, &shader->program.uniforms.bufferId);
-    glDeleteProgram(shader->program.scene.geometry.id);
-    glDeleteProgram(shader->program.scene.forward.id);
-    glDeleteProgram(shader->program.scene.depth.id);
-    glDeleteProgram(shader->program.scene.depthCube.id);
-    glDeleteProgram(shader->program.scene.probe.id);
-    glDeleteProgram(shader->program.scene.decal.id);
+    #define DELETE_PROGRAM(id) \
+        do { if ((id) != 0) glDeleteProgram((id)); } while(0)
+
+    if (shader == NULL) return;
+
+    if (shader->program.uniforms.bufferId != 0) {
+        glDeleteBuffers(1, &shader->program.uniforms.bufferId);
+    }
+
+    DELETE_PROGRAM(shader->program.scene.geometry.id);
+    DELETE_PROGRAM(shader->program.scene.forward.id);
+    DELETE_PROGRAM(shader->program.scene.depth.id);
+    DELETE_PROGRAM(shader->program.scene.depthCube.id);
+    DELETE_PROGRAM(shader->program.scene.probe.id);
+    DELETE_PROGRAM(shader->program.scene.decal.id);
 
     RL_FREE(shader);
+
+#undef DELETE_PROGRAM
 }
 
 void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* name, const void* value)
