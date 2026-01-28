@@ -376,6 +376,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
 {
     switch (call->type) {
     case R3D_DRAW_CALL_MESH:
+        sortData->material.shader = (uintptr_t)call->mesh.material.shader;
         sortData->material.albedo = call->mesh.material.albedo.texture.id;
         sortData->material.normal = call->mesh.material.normal.texture.id;
         sortData->material.orm = call->mesh.material.orm.texture.id;
@@ -387,6 +388,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         break;
     
     case R3D_DRAW_CALL_DECAL:
+        sortData->material.shader = (uintptr_t)call->decal.instance.shader;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
         sortData->material.normal = call->decal.instance.normal.texture.id;
         sortData->material.orm = call->decal.instance.orm.texture.id;
@@ -455,7 +457,7 @@ static void sort_fill_cache_by_material(r3d_draw_list_enum_t list)
         r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
 
         sortData->distance = 0.0f;
-        
+
         sort_fill_material_data(sortData, call);
     }
 }

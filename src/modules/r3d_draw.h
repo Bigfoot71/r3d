@@ -227,14 +227,15 @@ typedef struct {
 typedef struct {
     float distance;
     struct {
+        uintptr_t shader;
         uint32_t albedo;
         uint32_t normal;
         uint32_t orm;
         uint32_t emission;
-        uint32_t blend;
-        uint32_t cull;
-        uint32_t transparency;
-        uint32_t billboard;
+        uint8_t blend;
+        uint8_t cull;
+        uint8_t transparency;
+        uint8_t billboard;
     } material;
 } r3d_draw_sort_t;
 
