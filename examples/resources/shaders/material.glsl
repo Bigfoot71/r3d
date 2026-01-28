@@ -1,7 +1,7 @@
 uniform sampler2D u_texture;
 uniform float u_time;
 
-varying float v_time;
+flat varying float v_time;
 
 void vertex() {
     v_time = (0.5 * sin(u_time) + 0.5);
