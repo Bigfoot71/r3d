@@ -9,6 +9,7 @@
 #ifndef R3D_DECAL_H
 #define R3D_DECAL_H
 
+#include "./r3d_surface_shader.h"
 #include "./r3d_platform.h"
 #include "./r3d_material.h"
 
@@ -78,6 +79,7 @@ typedef struct R3D_Decal {
     float normalThreshold;      ///< Maximum angle against the surface normal to draw decal. 0.0f disables threshold. (default: 0.0f)
     float fadeWidth;            ///< The width of fading along the normal threshold (default: 0.0f)
     bool applyColor;            ///< Indicates that the albedo color will not be rendered, only the alpha component of the albedo will be used as a mask. (default: true)
+    R3D_SurfaceShader* shader;  ///< Custom shader applied to the decal (default: NULL)
 } R3D_Decal;
 
 // ========================================

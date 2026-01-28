@@ -975,7 +975,7 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Use shader --- */
 
-    R3D_SurfaceShader* shader = call->mesh.material.shader;
+    R3D_SurfaceShader* shader = call->decal.instance.shader;
     R3D_SHADER_USE_EX(scene.decal, shader);
 
     /* --- Bind global textures --- */
