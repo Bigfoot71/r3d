@@ -41,6 +41,9 @@ struct R3D_SurfaceShader {
 // INTERNAL FUNCTIONS
 // ========================================
 
+/* Check if the code contains at least one `vertex()` or `fragment()` function */
+static bool has_minimal_shader_entry(const char* userCode);
+
 /* Returns the size of a GLSL type */
 static int get_type_size(const char* type);
 
@@ -82,6 +85,11 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     int userCodeLen = strlen(code);
     if (userCodeLen > R3D_CUSTOM_SHADER_USER_CODE_MAX_LENGTH) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load surface shader; User code too long");
+        return NULL;
+    }
+
+    if (!has_minimal_shader_entry(code)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load surface shader; Missing entry points");
         return NULL;
     }
 
@@ -319,6 +327,19 @@ void R3D_SetSurfaceShaderSampler(R3D_SurfaceShader* shader, const char* name, Te
 // ========================================
 // INTERNAL FUNCTIONS
 // ========================================
+
+bool has_minimal_shader_entry(const char* userCode)
+{
+    if (strstr(userCode, "void vertex()") != NULL) {
+        return true;
+    }
+
+    if (strstr(userCode, "void fragment()") != NULL) {
+        return true;
+    }
+
+    return false;
+}
 
 int get_type_size(const char* type)
 {
