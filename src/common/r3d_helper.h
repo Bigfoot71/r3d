@@ -69,22 +69,6 @@
 #   define BIT_TEST(v, b) BIT_TEST_ANY(v, b)
 #endif
 
-#ifndef TYPEOF
-#   if defined(__GNUC__) || defined(__clang__)
-#       define TYPEOF(x) __typeof__(x)
-#   elif defined(_MSC_VER)
-#       if _MSC_VER >= 1920
-#           define TYPEOF(x) __typeof__(x)
-#       else
-#           error "MSVC version < 2019 detected. Please upgrade to Visual Studio 2019 or later for typeof support."
-#       endif
-#   elif defined(__TINYC__)
-#       define TYPEOF(x) __typeof__(x)
-#   else
-#       error "Unknown compiler - typeof support required. Please use GCC, Clang, MSVC 2019+, or TinyCC."
-#   endif
-#endif
-
 // ========================================
 // HELPER FUNCTIONS
 // ========================================

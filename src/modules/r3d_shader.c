@@ -66,12 +66,11 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 // INTERNAL MACROS
 // ========================================
 
-#define DECL_SHADER(category, shader_name)                                      \
-    TYPEOF(R3D_MOD_SHADER.category.shader_name)* shader_name =                  \
-        &R3D_MOD_SHADER.category.shader_name
+#define DECL_SHADER(type, category, shader_name) \
+    type* shader_name = &R3D_MOD_SHADER.category.shader_name
 
-#define DECL_SHADER_EX(category, shader_name, custom)                           \
-    TYPEOF(R3D_MOD_SHADER.category.shader_name)* shader_name = ((custom) == NULL) \
+#define DECL_SHADER_EX(type, category, shader_name, custom)                     \
+    type* shader_name = ((custom) == NULL)                                      \
         ? &R3D_MOD_SHADER.category.shader_name                                  \
         : &(custom)->category.shader_name
 
@@ -224,7 +223,7 @@ GLuint load_shader(const char* vsCode, const char* fsCode)
 
 bool r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, bufferDown);
+    DECL_SHADER(r3d_shader_prepare_buffer_down_t, prepare, bufferDown);
     LOAD_SHADER(bufferDown, SCREEN_VERT, BUFFER_DOWN_FRAG);
 
     USE_SHADER(bufferDown);
@@ -239,7 +238,7 @@ bool r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, atrousWavelet);
+    DECL_SHADER(r3d_shader_prepare_atrous_wavelet_t, prepare, atrousWavelet);
     LOAD_SHADER(atrousWavelet, SCREEN_VERT, ATROUS_WAVELET_FRAG);
 
     SET_UNIFORM_BUFFER(atrousWavelet, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
@@ -255,7 +254,7 @@ bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, bicubicUp);
+    DECL_SHADER(r3d_shader_prepare_bicubic_up_t, prepare, bicubicUp);
     LOAD_SHADER(bicubicUp, SCREEN_VERT, BICUBIC_UP_FRAG);
 
     GET_LOCATION(bicubicUp, uSourceTexel);
@@ -268,7 +267,7 @@ bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, lanczosUp);
+    DECL_SHADER(r3d_shader_prepare_lanczos_up_t, prepare, lanczosUp);
     LOAD_SHADER(lanczosUp, SCREEN_VERT, LANCZOS_UP_FRAG);
 
     GET_LOCATION(lanczosUp, uSourceTexel);
@@ -281,7 +280,7 @@ bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, blurDown);
+    DECL_SHADER(r3d_shader_prepare_blur_down_t, prepare, blurDown);
     LOAD_SHADER(blurDown, SCREEN_VERT, BLUR_DOWN_FRAG);
 
     GET_LOCATION(blurDown, uSourceLod);
@@ -294,7 +293,7 @@ bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, blurUp);
+    DECL_SHADER(r3d_shader_prepare_blur_up_t, prepare, blurUp);
     LOAD_SHADER(blurUp, SCREEN_VERT, BLUR_UP_FRAG);
 
     GET_LOCATION(blurUp, uSourceLod);
@@ -307,7 +306,7 @@ bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, ssao);
+    DECL_SHADER(r3d_shader_prepare_ssao_t, prepare, ssao);
     LOAD_SHADER(ssao, SCREEN_VERT, SSAO_FRAG);
 
     SET_UNIFORM_BUFFER(ssao, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
@@ -328,7 +327,7 @@ bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, ssil);
+    DECL_SHADER(r3d_shader_prepare_ssil_t, prepare, ssil);
     LOAD_SHADER(ssil, SCREEN_VERT, SSIL_FRAG);
 
     SET_UNIFORM_BUFFER(ssil, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
@@ -353,7 +352,7 @@ bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, ssr);
+    DECL_SHADER(r3d_shader_prepare_ssr_t, prepare, ssr);
     LOAD_SHADER(ssr, SCREEN_VERT, SSR_FRAG);
 
     SET_UNIFORM_BUFFER(ssr, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
@@ -380,7 +379,7 @@ bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, bloomDown);
+    DECL_SHADER(r3d_shader_prepare_bloom_down_t, prepare, bloomDown);
     LOAD_SHADER(bloomDown, SCREEN_VERT, BLOOM_DOWN_FRAG);
 
     GET_LOCATION(bloomDown, uTexelSize);
@@ -395,7 +394,7 @@ bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, bloomUp);
+    DECL_SHADER(r3d_shader_prepare_bloom_up_t, prepare, bloomUp);
     LOAD_SHADER(bloomUp, SCREEN_VERT, BLOOM_UP_FRAG);
 
     GET_LOCATION(bloomUp, uFilterRadius);
@@ -409,7 +408,7 @@ bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, cubemapFromEquirectangular);
+    DECL_SHADER(r3d_shader_prepare_cubemap_from_equirectangular_t, prepare, cubemapFromEquirectangular);
     LOAD_SHADER(cubemapFromEquirectangular, CUBEMAP_VERT, CUBEMAP_FROM_EQUIRECTANGULAR_FRAG);
 
     GET_LOCATION(cubemapFromEquirectangular, uMatProj);
@@ -423,7 +422,7 @@ bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* c
 
 bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, cubemapIrradiance);
+    DECL_SHADER(r3d_shader_prepare_cubemap_irradiance_t, prepare, cubemapIrradiance);
     LOAD_SHADER(cubemapIrradiance, CUBEMAP_VERT, CUBEMAP_IRRADIANCE_FRAG);
 
     GET_LOCATION(cubemapIrradiance, uMatProj);
@@ -437,7 +436,7 @@ bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, cubemapPrefilter);
+    DECL_SHADER(r3d_shader_prepare_cubemap_prefilter_t, prepare, cubemapPrefilter);
     LOAD_SHADER(cubemapPrefilter, CUBEMAP_VERT, CUBEMAP_PREFILTER_FRAG);
 
     GET_LOCATION(cubemapPrefilter, uMatProj);
@@ -454,7 +453,7 @@ bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(prepare, cubemapSkybox);
+    DECL_SHADER(r3d_shader_prepare_cubemap_skybox_t, prepare, cubemapSkybox);
     LOAD_SHADER(cubemapSkybox, CUBEMAP_VERT, CUBEMAP_SKYBOX_FRAG);
 
     GET_LOCATION(cubemapSkybox, uMatProj);
@@ -480,7 +479,7 @@ bool r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_EX(scene, geometry, custom);
+    DECL_SHADER_EX(r3d_shader_scene_geometry_t, scene, geometry, custom);
 
     const char* VS_DEFINES[] = {"STAGE_VERT", "GEOMETRY"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "GEOMETRY"};
@@ -538,7 +537,7 @@ bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_EX(scene, forward, custom);
+    DECL_SHADER_EX(r3d_shader_scene_forward_t, scene, forward, custom);
 
     char defNumForwardLights[32] = {0};
     char defNumProbes[32] = {0};
@@ -610,7 +609,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_background(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(scene, background);
+    DECL_SHADER(r3d_shader_scene_background_t, scene, background);
     LOAD_SHADER(background, SCREEN_VERT, COLOR_FRAG);
     GET_LOCATION(background, uColor);
 
@@ -619,7 +618,7 @@ bool r3d_shader_load_scene_background(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(scene, skybox);
+    DECL_SHADER(r3d_shader_scene_skybox_t, scene, skybox);
     LOAD_SHADER(skybox, SKYBOX_VERT, SKYBOX_FRAG);
 
     GET_LOCATION(skybox, uRotation);
@@ -637,7 +636,7 @@ bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_EX(scene, depth, custom);
+    DECL_SHADER_EX(r3d_shader_scene_depth_t, scene, depth, custom);
 
     const char* VS_DEFINES[] = {"STAGE_VERT", "DEPTH"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DEPTH"};
@@ -685,7 +684,7 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(scene, depthCube);
+    DECL_SHADER(r3d_shader_scene_depth_cube_t, scene, depthCube);
 
     const char* VS_DEFINES[] = {"STAGE_VERT", "DEPTH_CUBE"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DEPTH_CUBE"};
@@ -735,7 +734,7 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_EX(scene, probe, custom);
+    DECL_SHADER_EX(r3d_shader_scene_probe_t, scene, probe, custom);
 
     char defNumForwardLights[32] = {0};
     char defNumProbes[32] = {0};
@@ -810,7 +809,7 @@ bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_EX(scene, decal, custom);
+    DECL_SHADER_EX(r3d_shader_scene_decal_t, scene, decal, custom);
 
     const char* VS_DEFINES[] = {"STAGE_VERT", "DECAL"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DECAL"};
@@ -871,7 +870,7 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(deferred, ambient);
+    DECL_SHADER(r3d_shader_deferred_ambient_t, deferred, ambient);
 
     char defNumProbes[32] = {0};
     r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
@@ -906,7 +905,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(deferred, lighting);
+    DECL_SHADER(r3d_shader_deferred_lighting_t, deferred, lighting);
     LOAD_SHADER(lighting, SCREEN_VERT, LIGHTING_FRAG);
 
     SET_UNIFORM_BUFFER(lighting, LightBlock, R3D_SHADER_BLOCK_LIGHT_SLOT);
@@ -928,7 +927,7 @@ bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(deferred, compose);
+    DECL_SHADER(r3d_shader_deferred_compose_t, deferred, compose);
     LOAD_SHADER(compose, SCREEN_VERT, COMPOSE_FRAG);
 
     USE_SHADER(compose);
@@ -941,7 +940,7 @@ bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(post, bloom);
+    DECL_SHADER(r3d_shader_post_bloom_t, post, bloom);
     LOAD_SHADER(bloom, SCREEN_VERT, BLOOM_FRAG);
 
     GET_LOCATION(bloom, uBloomMode);
@@ -957,7 +956,7 @@ bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(post, fog);
+    DECL_SHADER(r3d_shader_post_fog_t, post, fog);
     LOAD_SHADER(fog, SCREEN_VERT, FOG_FRAG);
 
     SET_UNIFORM_BUFFER(fog, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
@@ -979,7 +978,7 @@ bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(post, dof);
+    DECL_SHADER(r3d_shader_post_dof_t, post, dof);
     LOAD_SHADER(dof, SCREEN_VERT, DOF_FRAG);
 
     SET_UNIFORM_BUFFER(dof, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
@@ -999,7 +998,7 @@ bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_post_output(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(post, output);
+    DECL_SHADER(r3d_shader_post_output_t, post, output);
     LOAD_SHADER(output, SCREEN_VERT, OUTPUT_FRAG);
 
     GET_LOCATION(output, uTonemapExposure);
@@ -1017,7 +1016,7 @@ bool r3d_shader_load_post_output(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(post, fxaa);
+    DECL_SHADER(r3d_shader_post_fxaa_t, post, fxaa);
     LOAD_SHADER(fxaa, SCREEN_VERT, FXAA_FRAG);
 
     GET_LOCATION(fxaa, uSourceTexel);
@@ -1030,7 +1029,7 @@ bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(post, visualizer);
+    DECL_SHADER(r3d_shader_post_visualizer_t, post, visualizer);
     LOAD_SHADER(visualizer, SCREEN_VERT, VISUALIZER_FRAG);
 
     GET_LOCATION(visualizer, uOutputMode);
