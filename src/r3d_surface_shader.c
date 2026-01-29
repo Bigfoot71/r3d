@@ -9,13 +9,28 @@
 #include <r3d/r3d_surface_shader.h>
 #include <r3d_config.h>
 #include <raylib.h>
+#include <string.h>
 #include <ctype.h>
 #include <glad.h>
 
 #include "./modules/r3d_shader.h"
+#include "./common/r3d_helper.h"
 
 // ========================================
-// INTERNAL STRUCTURES
+// INTERNAL ENUMS
+// ========================================
+
+typedef uint32_t usage_hint_t;
+
+#define USAGE_HINT_OPAQUE        (1 << 0)   //< Build: geometry
+#define USAGE_HINT_PREPASS       (1 << 1)   //< Build: geometry, forward, depth
+#define USAGE_HINT_TRANSPARENT   (1 << 2)   //< Build: forward
+#define USAGE_HINT_SHADOW        (1 << 3)   //< Build: depth, depthCube
+#define USAGE_HINT_DECAL         (1 << 4)   //< Build: decal
+#define USAGE_HINT_PROBE         (1 << 5)   //< Build: probe
+
+// ========================================
+// INTERNAL STRUCTS
 // ========================================
 
 typedef struct {
@@ -30,7 +45,7 @@ typedef struct {
 } parsed_function_t;
 
 // ========================================
-// OPAQUE STRUCTURES
+// OPAQUE STRUCTS
 // ========================================
 
 struct R3D_SurfaceShader {
@@ -75,6 +90,9 @@ static void skip_whitespace_and_comments(const char** ptr);
 /* Check if current position starts with keyword followed by whitespace */
 static bool match_keyword(const char* ptr, const char* keyword, size_t len);
 
+/* Parse usage pragma to decide wich shader to pre-compile */
+static usage_hint_t parse_pragma_usage(const char** ptr);
+
 /* Parse an identifier (stopping at whitespace, semicolon, or bracket) */
 static bool parse_identifier(const char** ptr, char* output, size_t maxLen);
 
@@ -92,6 +110,9 @@ static char* write_varyings(char* outPtr, const char* qualifier, varying_t* vary
 
 /* Write a shader function body (vertex or fragment) */
 static char* write_shader_function(char* outPtr, const char* name, parsed_function_t* func);
+
+/* Compile all needed variants accordingly to the usage hints specified in pragma */
+static bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage);
 
 // ========================================
 // PUBLIC API
@@ -139,6 +160,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     int varyingCount = 0;
     int currentOffset = 0;
 
+    usage_hint_t usage = 0;
     varying_t varyings[32] = {0};
     parsed_function_t vertexFunc = {0};
     parsed_function_t fragmentFunc = {0};
@@ -149,6 +171,12 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     {
         skip_whitespace_and_comments(&ptr);
         if (!*ptr) break;  // End of code
+
+        // Parse #pragma usage directive
+        if (strncmp(ptr, "#pragma", 7) == 0 && isspace(ptr[7])) {
+            usage = parse_pragma_usage(&ptr);
+            continue;
+        }
 
         // Parse uniform declarations
         if (match_keyword(ptr, "uniform", 7))
@@ -241,16 +269,23 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     }
     if (samplerCount > 0) outPtr += sprintf(outPtr, "\n");
 
-    // Copy global code (functions, etc.) excluding comments, uniforms, varyings, and entry points 
+    // Copy global code (functions, etc.) excluding pragma, comments, uniforms, varyings, and entry points 
     ptr = code;
     while (*ptr)
     {
-        // Check for comments before copying
+        // Skip pragma
+        if (strncmp(ptr, "#pragma", 7) == 0) {
+            skip_to_end_of_line(&ptr);
+            continue;
+        }
+
+        // Skip single line comments
         if (strncmp(ptr, "//", 2) == 0) {
             skip_to_end_of_line(&ptr);
             continue;
         }
 
+        // Skip multi line comments
         if (strncmp(ptr, "/*", 2) == 0) {
             ptr += 2;
             while (*ptr && strncmp(ptr, "*/", 2) != 0) ptr++;
@@ -313,13 +348,10 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     // Store reference to the user code in custom shader struct
     shader->program.userCode = shader->userCode;
 
-    /* --- PHASE 3: Pre-compile a shader to check user code --- */
+    /* --- PHASE 3: Pre-compile needed shader variants --- */
 
-    bool success = false;
-    R3D_SHADER_CUSTOM_PRELOAD(&shader->program, scene.geometry, &success);
-    if (!success) {
-        R3D_TRACELOG(LOG_ERROR, "Failed to compile surface shader");
-        RL_FREE(shader);
+    if (!compile_shader_variants(shader, usage)) {
+        R3D_UnloadSurfaceShader(shader);
         return NULL;
     }
 
@@ -509,6 +541,65 @@ bool match_keyword(const char* ptr, const char* keyword, size_t len)
     return strncmp(ptr, keyword, len) == 0 && isspace(ptr[len]);
 }
 
+usage_hint_t parse_pragma_usage(const char** ptr)
+{
+    usage_hint_t result = 0;
+
+    // Skip "#pragma"
+    *ptr += 7;  // strlen("#pragma")
+    skip_whitespace(ptr);
+
+    // Check for "usage" keyword
+    if (strncmp(*ptr, "usage", 5) != 0 || !isspace((*ptr)[5])) {
+        skip_to_end_of_line(ptr);
+        return 0;
+    }
+
+    *ptr += 5;  // strlen("usage")
+    skip_whitespace(ptr);
+
+    // Parse usage hints until end of line
+    while (**ptr && **ptr != '\n')
+    {
+        skip_whitespace(ptr);
+        if (!**ptr || **ptr == '\n') break;
+
+        // Match usage hint keywords
+        static const struct {
+            const char* name;
+            size_t len;
+            usage_hint_t flag;
+        } hints[] = {
+            {"opaque",      6,  USAGE_HINT_OPAQUE},
+            {"prepass",     7,  USAGE_HINT_PREPASS},
+            {"transparent", 11, USAGE_HINT_TRANSPARENT},
+            {"shadow",      6,  USAGE_HINT_SHADOW},
+            {"decal",       5,  USAGE_HINT_DECAL},
+            {"probe",       5,  USAGE_HINT_PROBE}
+        };
+
+        bool matched = false;
+        for (int i = 0; i < 6; i++) {
+            if (strncmp(*ptr, hints[i].name, hints[i].len) == 0 &&
+                (isspace((*ptr)[hints[i].len]) || (*ptr)[hints[i].len] == '\n' || (*ptr)[hints[i].len] == '\0'))
+            {
+                result |= hints[i].flag;
+                *ptr += hints[i].len;
+                matched = true;
+                break;
+            }
+        }
+
+        if (!matched) {
+            // Unknown hint, skip to next whitespace or end of line
+            while (**ptr && !isspace(**ptr)) (*ptr)++;
+        }
+    }
+
+    skip_to_end_of_line(ptr);
+    return result;
+}
+
 bool parse_identifier(const char** ptr, char* output, size_t maxLen)
 {
     skip_whitespace(ptr);
@@ -606,4 +697,39 @@ char* write_shader_function(char* outPtr, const char* name, parsed_function_t* f
         outPtr += sprintf(outPtr, "\n");
     }
     return outPtr;
+}
+
+static bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
+{
+    if (usage == 0) {
+        bool ok = R3D_MOD_SHADER_LOADER.scene.geometry(&shader->program);
+        if (!ok) {
+            R3D_TRACELOG(LOG_ERROR, "Failed to compile surface shader");
+        }
+        return ok;
+    }
+
+    const struct {
+        const char* name;
+        usage_hint_t condition;
+        r3d_shader_loader_func func;
+    } variants[] = {
+        {"geometry",  USAGE_HINT_OPAQUE | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.geometry},
+        {"forward",   USAGE_HINT_PREPASS | USAGE_HINT_TRANSPARENT, R3D_MOD_SHADER_LOADER.scene.forward},
+        {"depth",     USAGE_HINT_SHADOW | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.depth},
+        {"depthCube", USAGE_HINT_SHADOW,                           R3D_MOD_SHADER_LOADER.scene.depthCube},
+        {"decal",     USAGE_HINT_DECAL,                            R3D_MOD_SHADER_LOADER.scene.decal},
+        {"probe",     USAGE_HINT_PROBE,                            R3D_MOD_SHADER_LOADER.scene.probe}
+    };
+
+    for (int i = 0; i < 6; i++) {
+        if (BIT_TEST_ANY(usage, variants[i].condition)) {
+            if (!variants[i].func(&shader->program)) {
+                R3D_TRACELOG(LOG_ERROR, "Failed to compile surface shader (variant: '%s')", variants[i].name);
+                return false;
+            }
+        }
+    }
+
+    return true;
 }

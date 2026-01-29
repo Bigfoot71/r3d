@@ -79,8 +79,7 @@ struct r3d_mod_shader R3D_MOD_SHADER;
     shader_name->id = load_shader(vsCode, fsCode);                              \
     if (shader_name->id == 0) {                                                 \
         R3D_TRACELOG(LOG_ERROR, "Failed to load shader '" #shader_name "'");    \
-        assert(false);                                                          \
-        return;                                                                 \
+        return false;                                                           \
     }                                                                           \
 } while(0)
 
@@ -223,7 +222,7 @@ GLuint load_shader(const char* vsCode, const char* fsCode)
 // SHADER LOADING FUNCTIONS
 // ========================================
 
-void r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, bufferDown);
     LOAD_SHADER(bufferDown, SCREEN_VERT, BUFFER_DOWN_FRAG);
@@ -234,9 +233,11 @@ void r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom)
     SET_SAMPLER(bufferDown, uOrmTex, R3D_SHADER_SAMPLER_BUFFER_ORM);
     SET_SAMPLER(bufferDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
     SET_SAMPLER(bufferDown, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, atrousWavelet);
     LOAD_SHADER(atrousWavelet, SCREEN_VERT, ATROUS_WAVELET_FRAG);
@@ -248,9 +249,11 @@ void r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
     SET_SAMPLER(atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
     SET_SAMPLER(atrousWavelet, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(atrousWavelet, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, bicubicUp);
     LOAD_SHADER(bicubicUp, SCREEN_VERT, BICUBIC_UP_FRAG);
@@ -259,9 +262,11 @@ void r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
 
     USE_SHADER(bicubicUp);
     SET_SAMPLER(bicubicUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, lanczosUp);
     LOAD_SHADER(lanczosUp, SCREEN_VERT, LANCZOS_UP_FRAG);
@@ -270,9 +275,11 @@ void r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
 
     USE_SHADER(lanczosUp);
     SET_SAMPLER(lanczosUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, blurDown);
     LOAD_SHADER(blurDown, SCREEN_VERT, BLUR_DOWN_FRAG);
@@ -281,9 +288,11 @@ void r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom)
 
     USE_SHADER(blurDown);
     SET_SAMPLER(blurDown, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, blurUp);
     LOAD_SHADER(blurUp, SCREEN_VERT, BLUR_UP_FRAG);
@@ -292,9 +301,11 @@ void r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom)
 
     USE_SHADER(blurUp);
     SET_SAMPLER(blurUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, ssao);
     LOAD_SHADER(ssao, SCREEN_VERT, SSAO_FRAG);
@@ -311,9 +322,11 @@ void r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(ssao, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssao, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, ssil);
     LOAD_SHADER(ssil, SCREEN_VERT, SSIL_FRAG);
@@ -334,9 +347,11 @@ void r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
     SET_SAMPLER(ssil, uHistoryTex, R3D_SHADER_SAMPLER_BUFFER_SSIL);
     SET_SAMPLER(ssil, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssil, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, ssr);
     LOAD_SHADER(ssr, SCREEN_VERT, SSR_FRAG);
@@ -359,9 +374,11 @@ void r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
     SET_SAMPLER(ssr, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssr, uOrmTex, R3D_SHADER_SAMPLER_BUFFER_ORM);
     SET_SAMPLER(ssr, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, bloomDown);
     LOAD_SHADER(bloomDown, SCREEN_VERT, BLOOM_DOWN_FRAG);
@@ -371,11 +388,12 @@ void r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
     GET_LOCATION(bloomDown, uDstLevel);
 
     USE_SHADER(bloomDown);
-
     SET_SAMPLER(bloomDown, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, bloomUp);
     LOAD_SHADER(bloomUp, SCREEN_VERT, BLOOM_UP_FRAG);
@@ -384,11 +402,12 @@ void r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
     GET_LOCATION(bloomUp, uSrcLevel);
 
     USE_SHADER(bloomUp);
-
     SET_SAMPLER(bloomUp, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, cubemapFromEquirectangular);
     LOAD_SHADER(cubemapFromEquirectangular, CUBEMAP_VERT, CUBEMAP_FROM_EQUIRECTANGULAR_FRAG);
@@ -397,11 +416,12 @@ void r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* c
     GET_LOCATION(cubemapFromEquirectangular, uMatView);
 
     USE_SHADER(cubemapFromEquirectangular);
-
     SET_SAMPLER(cubemapFromEquirectangular, uPanoramaTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, cubemapIrradiance);
     LOAD_SHADER(cubemapIrradiance, CUBEMAP_VERT, CUBEMAP_IRRADIANCE_FRAG);
@@ -410,11 +430,12 @@ void r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom)
     GET_LOCATION(cubemapIrradiance, uMatView);
 
     USE_SHADER(cubemapIrradiance);
-
     SET_SAMPLER(cubemapIrradiance, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, cubemapPrefilter);
     LOAD_SHADER(cubemapPrefilter, CUBEMAP_VERT, CUBEMAP_PREFILTER_FRAG);
@@ -426,11 +447,12 @@ void r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
     GET_LOCATION(cubemapPrefilter, uRoughness);
 
     USE_SHADER(cubemapPrefilter);
-
     SET_SAMPLER(cubemapPrefilter, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+
+    return true;
 }
 
-void r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(prepare, cubemapSkybox);
     LOAD_SHADER(cubemapSkybox, CUBEMAP_VERT, CUBEMAP_SKYBOX_FRAG);
@@ -452,9 +474,11 @@ void r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom)
     GET_LOCATION(cubemapSkybox, uSunEnergy);
 
     USE_SHADER(cubemapSkybox);
+
+    return true;
 }
 
-void r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_EX(scene, geometry, custom);
 
@@ -508,9 +532,11 @@ void r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
     if (custom != NULL) {
         set_custom_samplers(geometry->id, custom);
     }
+
+    return true;
 }
 
-void r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_EX(scene, forward, custom);
 
@@ -578,16 +604,20 @@ void r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     if (custom != NULL) {
         set_custom_samplers(forward->id, custom);
     }
+
+    return true;
 }
 
-void r3d_shader_load_scene_background(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_background(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(scene, background);
     LOAD_SHADER(background, SCREEN_VERT, COLOR_FRAG);
     GET_LOCATION(background, uColor);
+
+    return true;
 }
 
-void r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(scene, skybox);
     LOAD_SHADER(skybox, SKYBOX_VERT, SKYBOX_FRAG);
@@ -601,9 +631,11 @@ void r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
     USE_SHADER(skybox);
 
     SET_SAMPLER(skybox, uSkyMap, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+
+    return true;
 }
 
-void r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_EX(scene, depth, custom);
 
@@ -647,9 +679,11 @@ void r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
     if (custom != NULL) {
         set_custom_samplers(depth->id, custom);
     }
+
+    return true;
 }
 
-void r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(scene, depthCube);
 
@@ -695,9 +729,11 @@ void r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
     if (custom != NULL) {
         set_custom_samplers(depthCube->id, custom);
     }
+
+    return true;
 }
 
-void r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_EX(scene, probe, custom);
 
@@ -768,9 +804,11 @@ void r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
     if (custom != NULL) {
         set_custom_samplers(probe->id, custom);
     }
+
+    return true;
 }
 
-void r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_EX(scene, decal, custom);
 
@@ -827,9 +865,11 @@ void r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
     if (custom != NULL) {
         set_custom_samplers(decal->id, custom);
     }
+
+    return true;
 }
 
-void r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
+bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(deferred, ambient);
 
@@ -860,9 +900,11 @@ void r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     SET_SAMPLER(ambient, uIrradianceTex, R3D_SHADER_SAMPLER_IBL_IRRADIANCE);
     SET_SAMPLER(ambient, uPrefilterTex, R3D_SHADER_SAMPLER_IBL_PREFILTER);
     SET_SAMPLER(ambient, uBrdfLutTex, R3D_SHADER_SAMPLER_IBL_BRDF_LUT);
+
+    return true;
 }
 
-void r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom)
+bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(deferred, lighting);
     LOAD_SHADER(lighting, SCREEN_VERT, LIGHTING_FRAG);
@@ -880,9 +922,11 @@ void r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom)
     SET_SAMPLER(lighting, uShadowDirTex, R3D_SHADER_SAMPLER_SHADOW_DIR);
     SET_SAMPLER(lighting, uShadowSpotTex, R3D_SHADER_SAMPLER_SHADOW_SPOT);
     SET_SAMPLER(lighting, uShadowOmniTex, R3D_SHADER_SAMPLER_SHADOW_OMNI);
+
+    return true;
 }
 
-void r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
+bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(deferred, compose);
     LOAD_SHADER(compose, SCREEN_VERT, COMPOSE_FRAG);
@@ -891,9 +935,11 @@ void r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(compose, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(compose, uSpecularTex, R3D_SHADER_SAMPLER_BUFFER_SPECULAR);
+
+    return true;
 }
 
-void r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(post, bloom);
     LOAD_SHADER(bloom, SCREEN_VERT, BLOOM_FRAG);
@@ -905,9 +951,11 @@ void r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(bloom, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(bloom, uBloomTex, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
 }
 
-void r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(post, fog);
     LOAD_SHADER(fog, SCREEN_VERT, FOG_FRAG);
@@ -925,9 +973,11 @@ void r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(fog, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(fog, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
 }
 
-void r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(post, dof);
     LOAD_SHADER(dof, SCREEN_VERT, DOF_FRAG);
@@ -943,9 +993,11 @@ void r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(dof, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(dof, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
 }
 
-void r3d_shader_load_post_output(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_output(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(post, output);
     LOAD_SHADER(output, SCREEN_VERT, OUTPUT_FRAG);
@@ -958,11 +1010,12 @@ void r3d_shader_load_post_output(r3d_shader_custom_t* custom)
     GET_LOCATION(output, uSaturation);
 
     USE_SHADER(output);
-
     SET_SAMPLER(output, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+
+    return true;
 }
 
-void r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(post, fxaa);
     LOAD_SHADER(fxaa, SCREEN_VERT, FXAA_FRAG);
@@ -971,9 +1024,11 @@ void r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
 
     USE_SHADER(fxaa);
     SET_SAMPLER(fxaa, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+
+    return true;
 }
 
-void r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(post, visualizer);
     LOAD_SHADER(visualizer, SCREEN_VERT, VISUALIZER_FRAG);
@@ -982,6 +1037,8 @@ void r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
 
     USE_SHADER(visualizer);
     SET_SAMPLER(visualizer, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+
+    return true;
 }
 
 // ========================================

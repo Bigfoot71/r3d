@@ -41,18 +41,10 @@
         ? &((r3d_shader_custom_t*)(custom))->shader_name                        \
         : &R3D_MOD_SHADER.shader_name)
 
-#define R3D_SHADER_CUSTOM_PRELOAD(custom, shader_name, success) do {            \
-    if ((custom)->shader_name.id == 0) {                                        \
-        R3D_MOD_SHADER_LOADER.shader_name((custom));                            \
-        *success = (!!(custom)->shader_name.id);                                \
-        R3D_MOD_SHADER.currentProgram = 0;                                      \
-        glUseProgram(0);                                                        \
-    }                                                                           \
-} while (0)
-
 #define R3D_SHADER_USE(shader_name) do {                                        \
     if (R3D_MOD_SHADER.shader_name.id == 0) {                                   \
-        R3D_MOD_SHADER_LOADER.shader_name(NULL);                                \
+        bool ok = R3D_MOD_SHADER_LOADER.shader_name(NULL);                      \
+        assert(ok);                                                             \
     }                                                                           \
     if (R3D_MOD_SHADER.currentProgram != R3D_MOD_SHADER.shader_name.id) {       \
         R3D_MOD_SHADER.currentProgram = R3D_MOD_SHADER.shader_name.id;          \
@@ -64,7 +56,8 @@
     r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
     if (c_shader != NULL) {                                                     \
         if (c_shader->shader_name.id == 0) {                                    \
-            R3D_MOD_SHADER_LOADER.shader_name(c_shader);                        \
+            bool ok = R3D_MOD_SHADER_LOADER.shader_name(c_shader);              \
+            assert(ok);                                                         \
         }                                                                       \
         if (R3D_MOD_SHADER.currentProgram != c_shader->shader_name.id) {        \
             R3D_MOD_SHADER.currentProgram = c_shader->shader_name.id;           \
@@ -250,7 +243,7 @@
 } while(0)
 
 #define R3D_SHADER_SET_COL4_EX(shader_name, custom, uniform, space, ...) do {   \
-    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                        \
+    TYPEOF(R3D_MOD_SHADER.shader_name)* shader_ptr =                            \
         R3D_SHADER_GET_STRUCT(shader_name, custom);                             \
     const Color tmp = (__VA_ARGS__);                                            \
     if (shader_ptr->uniform.colorSpace != (space) ||                            \
@@ -1008,40 +1001,40 @@ extern struct r3d_mod_shader {
 // BUILT-IN SHADER LOADER
 // ========================================
 
-typedef void (*r3d_shader_loader_func)(r3d_shader_custom_t* custom);
+typedef bool (*r3d_shader_loader_func)(r3d_shader_custom_t* custom);
 
-void r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom);
-void r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_forward(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_background(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_depth(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_probe(r3d_shader_custom_t* custom);
-void r3d_shader_load_scene_decal(r3d_shader_custom_t* custom);
-void r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom);
-void r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom);
-void r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
-void r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
-void r3d_shader_load_post_fog(r3d_shader_custom_t* custom);
-void r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
-void r3d_shader_load_post_output(r3d_shader_custom_t* custom);
-void r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom);
-void r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_buffer_down(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_background(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_output(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
 
 static const struct r3d_shader_loader {
 

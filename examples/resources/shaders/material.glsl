@@ -1,3 +1,5 @@
+#pragma usage opaque shadow
+
 uniform sampler2D u_texture;
 uniform float u_time;
 
