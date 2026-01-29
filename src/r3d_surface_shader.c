@@ -90,6 +90,9 @@ static void skip_whitespace_and_comments(const char** ptr);
 /* Check if current position starts with keyword followed by whitespace */
 static bool match_keyword(const char* ptr, const char* keyword, size_t len);
 
+/* Check if current position is a varying (match_keyword varying, flat, noperspective, smooth) */
+static bool match_varying_keyword(const char* ptr);
+
 /* Parse usage pragma to decide wich shader to pre-compile */
 static usage_hint_t parse_pragma_usage(const char** ptr);
 
@@ -214,8 +217,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
         }
 
         // Parse varying declarations
-        if (match_keyword(ptr, "varying", 7)) {
-            ptr += 7;
+        if (match_varying_keyword(ptr)) {
             if (varyingCount < 32) {
                 if (parse_varying_declaration(&ptr, &varyings[varyingCount])) {
                     varyingCount++;
@@ -299,13 +301,13 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
         bool skip = false;
 
         // Skip uniforms and varyings
-        if (match_keyword(ptr, "uniform", 7) || match_keyword(ptr, "varying", 7)) {
+        if (match_keyword(ptr, "uniform", 7) || match_varying_keyword(ptr)) {
             skip = true;
         }
         // Skip vertex() and fragment() functions
         else if (check_shader_function(ptr, &vertexFunc, &fragmentFunc)) {
-            skip = true;
             skip_to_matching_brace(&ptr);
+            skip = true;
             continue;
         }
 
@@ -541,6 +543,14 @@ bool match_keyword(const char* ptr, const char* keyword, size_t len)
     return strncmp(ptr, keyword, len) == 0 && isspace(ptr[len]);
 }
 
+bool match_varying_keyword(const char* ptr)
+{
+    return match_keyword(ptr, "varying", 7)         ||
+           match_keyword(ptr, "flat", 4)            ||
+           match_keyword(ptr, "noperspective", 13)  ||
+           match_keyword(ptr, "smooth", 6);
+}
+
 usage_hint_t parse_pragma_usage(const char** ptr)
 {
     usage_hint_t result = 0;
@@ -633,26 +643,35 @@ bool parse_declaration(const char** ptr, char* type, char* name)
 
 bool parse_varying_declaration(const char** ptr, varying_t* varying)
 {
-    skip_whitespace(ptr);
-
     varying->qualifier[0] = '\0';
 
-    // Check for interpolation qualifiers
-    static const struct {const char* name; size_t len;}
-    qualifiers[] = {{"smooth", 6}, {"flat", 4}, {"noperspective", 14}};
+    // Check for qualifier before varying
+    const char* qualStart = *ptr;
+    size_t qualLen = 0;
 
-    for (int i = 0; i < 3; i++) {
-        if (strncmp(*ptr, qualifiers[i].name, qualifiers[i].len) == 0 && 
-            isspace((*ptr)[qualifiers[i].len])) 
-        {
-            strncpy(varying->qualifier, qualifiers[i].name, sizeof(varying->qualifier) - 1);
-            varying->qualifier[sizeof(varying->qualifier) - 1] = '\0';
-            *ptr += qualifiers[i].len;
-            skip_whitespace(ptr);
-            break;
+    if      (strncmp(*ptr, "flat", 4) == 0 && isspace((*ptr)[4]))            qualLen = 4;
+    else if (strncmp(*ptr, "noperspective", 13) == 0 && isspace((*ptr)[13])) qualLen = 13;
+    else if (strncmp(*ptr, "smooth", 6) == 0 && isspace((*ptr)[6]))          qualLen = 6;
+
+    if (qualLen > 0)
+    {
+        memcpy(varying->qualifier, qualStart, qualLen);
+        varying->qualifier[qualLen] = '\0';
+
+        *ptr += qualLen;
+        skip_whitespace(ptr);
+
+        // Must be followed by "varying"
+        if (strncmp(*ptr, "varying", 7) != 0 || !isspace((*ptr)[7])) {
+            skip_to_semicolon(ptr);
+            return false;
         }
     }
 
+    // Skip 'varying' keyword
+    *ptr += 7;
+
+    // Parse type and name
     return parse_declaration(ptr, varying->type, varying->name);
 }
 
