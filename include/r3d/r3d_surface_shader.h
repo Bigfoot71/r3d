@@ -57,8 +57,8 @@ R3DAPI void R3D_UnloadSurfaceShader(R3D_SurfaceShader* shader);
 /**
  * @brief Sets a uniform value for the current frame.
  *
- * Once a uniform is set, it remains valid for the entire frame.
- * If the same uniform is set multiple times during the frame,
+ * Once a uniform is set, it remains valid for the all frames.
+ * If an uniform is set multiple times during the same frame,
  * the last value defined before R3D_End() is used.
  *
  * Supported types:
@@ -78,8 +78,8 @@ R3DAPI void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* n
 /**
  * @brief Sets a texture sampler for the current frame.
  *
- * Once a sampler is set, it remains valid for the entire frame.
- * If the same sampler is set multiple times during the frame,
+ * Once a sampler is set, it remains valid for all frames.
+ * If a sampler is set multiple times during the same frame,
  * the last value defined before R3D_End() is used.
  *
  * Supported samplers:
@@ -97,4 +97,4 @@ R3DAPI void R3D_SetSurfaceShaderSampler(R3D_SurfaceShader* shader, const char* n
 
 /** @} */ // end of SurfaceShader
 
-#endif // R3D_SURFACE_SHADER
+#endif // R3D_SURFACE_SHADER_H
