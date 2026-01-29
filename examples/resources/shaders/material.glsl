@@ -9,7 +9,7 @@ void vertex() {
 }
 
 void fragment() {
-    vec2 uv = vTexCoord;
+    vec2 uv = TEXCOORD;
     uv.y += v_time * 0.5;
 
     const vec3 base_color = vec3(0.5, 0.1, 0.0);

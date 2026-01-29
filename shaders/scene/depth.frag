@@ -27,5 +27,5 @@ uniform float uAlphaCutoff;
 void main()
 {
     // NOTE: The depth is automatically written
-    SceneFragment(vTexCoord, uAlphaCutoff);
+    SceneFragment(vTexCoord, mat3(1.0), uAlphaCutoff);
 }

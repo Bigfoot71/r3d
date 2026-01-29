@@ -84,23 +84,24 @@ void main()
     /* Compute decal UVs in [0, 1] range */
     vec2 decalTexCoord = uTexCoordOffset + (positionObjectSpace.xz + 0.5) * uTexCoordScale;
 
-    /* Sample material maps with alpha cutoff */
-    SceneFragment(decalTexCoord, uAlphaCutoff);
-
-    /* Fetch surface normal */
+    /* Fetch surface normal and build TBN */
     vec2 encGeomNormal = texelFetch(uGeomNormalTex, ivec2(gl_FragCoord.xy), 0).rg;
     vec3 worldNormal = M_DecodeOctahedral(encGeomNormal);
+    mat3 TBN = BuildDecalTBN(worldNormal);
 
     /* Normal threshold culling */
     float angle = acos(clamp(dot(vDecalAxes[1], worldNormal), -1.0, 1.0));
     float difference = uNormalThreshold - angle;
     if (difference < 0.0) discard;
 
+    /* Sample material maps with alpha cutoff */
+    SceneFragment(decalTexCoord, TBN, uAlphaCutoff);
+
     /* Compute fade factor */
     float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0) * ALPHA;
 
-    /* Build TBN then transform and scale decal normal */
-    mat3 TBN = BuildDecalTBN(worldNormal);
+    /* Transform and scale decal normal */
+    TBN = mat3(TANGENT, BITANGENT, NORMAL);
     vec3 N = normalize(TBN * M_NormalScale(NORMAL_MAP * 2.0 - 1.0, uNormalScale * fadeAlpha));
 
     /* Output */

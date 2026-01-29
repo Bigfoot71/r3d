@@ -156,9 +156,10 @@ void main()
 {
     /* Sample material maps */
 
-    SceneFragment(vTexCoord, 0.0);
+    SceneFragment(vTexCoord, vTBN, 0.0);
 
-    vec3 orm = vec3(OCCLUSION, ROUGHNESS, METALNESS);
+    vec3 ORM = vec3(OCCLUSION, ROUGHNESS, METALNESS);
+    mat3 TBN = mat3(TANGENT, BITANGENT, NORMAL);
     float dielectric = (1.0 - METALNESS);
 
     /* Compute F0 (reflectance at normal incidence) and diffuse coefficient */
@@ -168,7 +169,7 @@ void main()
 
     /* Sample normal and compute view direction vector */
 
-    vec3 N = normalize(vTBN * M_NormalScale(texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
+    vec3 N = normalize(TBN * M_NormalScale(texture(uNormalMap, vTexCoord).rgb * 2.0 - 1.0, uNormalScale));
     if (!gl_FrontFacing) N = -N; // Flip for back facing triangles with double sided meshes
 
     vec3 V = normalize(uViewPosition - vPosition);
@@ -270,9 +271,9 @@ void main()
 
 #if defined(PROBE)
     if (uProbeInterior) E_ComputeAmbientColor(diffuse, kD, OCCLUSION);
-    else E_ComputeAmbientOnly(diffuse, specular, kD, orm, F0, vPosition, N, V, cNdotV);
+    else E_ComputeAmbientOnly(diffuse, specular, kD, ORM, F0, vPosition, N, V, cNdotV);
 #else
-    E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, vPosition, N, V, cNdotV);
+    E_ComputeAmbientAndProbes(diffuse, specular, kD, ORM, F0, vPosition, N, V, cNdotV);
 #endif
 
     /* Compute the final fragment color */

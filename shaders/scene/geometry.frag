@@ -50,7 +50,7 @@ layout(location = 5) out float FragDepth;
 
 void main()
 {
-    SceneFragment(vTexCoord, uAlphaCutoff);
+    SceneFragment(vTexCoord, vTBN, uAlphaCutoff);
 
     mat3 TBN = mat3(TANGENT, BITANGENT, NORMAL);
     vec3 N = normalize(TBN * M_NormalScale(NORMAL_MAP * 2.0 - 1.0, uNormalScale));
