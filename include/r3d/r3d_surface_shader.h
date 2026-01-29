@@ -13,7 +13,7 @@
 #include <raylib.h>
 
 /**
- * @defgroup SurfaceMaterial
+ * @defgroup SurfaceShader
  * @{
  */
 
@@ -94,5 +94,7 @@ R3DAPI void R3D_SetSurfaceShaderSampler(R3D_SurfaceShader* shader, const char* n
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+/** @} */ // end of SurfaceShader
 
 #endif // R3D_SURFACE_SHADER
