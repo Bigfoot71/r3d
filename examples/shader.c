@@ -34,6 +34,10 @@ int main(void)
     // Set custom sampler
     R3D_SetSurfaceShaderSampler(material.shader, "u_texture", texture);
 
+    // Load a screen shader
+    R3D_ScreenShader* shader = R3D_LoadScreenShader(RESOURCES_PATH "shaders/screen.glsl");
+    R3D_SetScreenShaderChain(&shader, 1);
+
     // Create light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
     R3D_LightLookAt(light, (Vector3){0, 10, 5}, (Vector3){0});
@@ -57,6 +61,7 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             float time = 2.0f * GetTime();
+            R3D_SetScreenShaderUniform(shader, "u_time", &time);
             R3D_SetSurfaceShaderUniform(material.shader, "u_time", &time);
 
             R3D_Begin(camera);

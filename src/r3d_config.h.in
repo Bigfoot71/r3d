@@ -78,15 +78,7 @@
 /*
  * Maximum size of user-provided code for a custom shader.
  */
-#define R3D_CUSTOM_SHADER_USER_CODE_MAX_LENGTH @R3D_CUSTOM_SHADER_USER_CODE_MAX_LENGTH@
-
-/*
- * Maximum number of uniforms for custom shaders.
- * As long as you stay within the maximum UBO size supported by the target hardware, you are fine.
- * To be safe, assume each uniform has the size of a mat4 (64b) and ensure the total does not exceed 16 KB;
- * this should guarantee compatibility across all platforms.
- */
-#define R3D_CUSTOM_SHADER_MAX_UNIFORMS @R3D_CUSTOM_SHADER_MAX_UNIFORMS@
+#define R3D_MAX_SHADER_CODE_LENGTH @R3D_MAX_SHADER_CODE_LENGTH@
 
 /*
  * Maximum number of samplers for custom shaders.
@@ -94,7 +86,20 @@
  * Going beyond 8 samplers is strongly discouraged, as it can cause
  * compatibility issues on many devices.
  */
-#define R3D_CUSTOM_SHADER_MAX_SAMPLERS @R3D_CUSTOM_SHADER_MAX_SAMPLERS@
+#define R3D_MAX_SHADER_SAMPLERS @R3D_MAX_SHADER_SAMPLERS@
+
+/*
+ * Maximum number of uniforms for custom shaders.
+ * As long as you stay within the maximum UBO size supported by the target hardware, you are fine.
+ * To be safe, assume each uniform has the size of a mat4 (64b) and ensure the total does not exceed 16 KB;
+ * this should guarantee compatibility across all platforms.
+ */
+#define R3D_MAX_SHADER_UNIFORMS @R3D_MAX_SHADER_UNIFORMS@
+
+/*
+ * Defines the maximum possible number in the screen shader chain.
+ */
+#define R3D_MAX_SCREEN_SHADERS @R3D_MAX_SCREEN_SHADERS@
 
 // ========================================
 // Debug
