@@ -34,6 +34,9 @@ extern "C" {
 /**
  * @brief Loads a surface shader from a file.
  *
+ * The shader must define at least one entry point: `void vertex()` or `void fragment()`.
+ * It can define either one or both.
+ *
  * @param filePath Path to the shader source file.
  * @return Pointer to the loaded surface shader, or NULL on failure.
  */
@@ -41,6 +44,9 @@ R3DAPI R3D_SurfaceShader* R3D_LoadSurfaceShader(const char* filePath);
 
 /**
  * @brief Loads a surface shader from a source code string in memory.
+ *
+ * The shader must define at least one entry point: `void vertex()` or `void fragment()`.
+ * It can define either one or both.
  *
  * @param code Null-terminated shader source code.
  * @return Pointer to the loaded surface shader, or NULL on failure.
