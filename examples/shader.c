@@ -20,7 +20,7 @@ int main(void)
 
     // Create meshes
     R3D_Mesh plane = R3D_GenMeshPlane(1000, 1000, 1, 1);
-    R3D_Mesh sphere = R3D_GenMeshTorus(0.5f, 0.1f, 32, 16);
+    R3D_Mesh torus = R3D_GenMeshTorus(0.5f, 0.1f, 32, 16);
 
     // Create material
     R3D_Material material = R3D_GetDefaultMaterial();
@@ -66,7 +66,7 @@ int main(void)
 
             R3D_Begin(camera);
                 R3D_DrawMesh(plane, R3D_MATERIAL_BASE, (Vector3) {0, -0.5f, 0}, 1.0f);
-                R3D_DrawMesh(sphere, material, Vector3Zero(), 1.0f);
+                R3D_DrawMesh(torus, material, Vector3Zero(), 1.0f);
             R3D_End();
 
         EndDrawing();
@@ -74,7 +74,8 @@ int main(void)
 
     // Cleanup
     R3D_UnloadSurfaceShader(material.shader);
-    R3D_UnloadMesh(sphere);
+    R3D_UnloadScreenShader(shader);
+    R3D_UnloadMesh(torus);
     R3D_UnloadMesh(plane);
     R3D_Close();
 
