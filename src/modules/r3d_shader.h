@@ -1204,7 +1204,7 @@ void r3d_shader_quit();
 
 /*
  * Binds the texture to the specified sampler.
- * Called by `R3D_SHADER_BIND_SAMPLER_BLT`, no need to call it manually.
+ * Called by `R3D_SHADER_BIND_SAMPLER`, no need to call it manually.
  */
 void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture);
 
@@ -1225,13 +1225,13 @@ bool r3d_shader_set_custom_sampler(r3d_shader_custom_t* shader, const char* name
 
 /*
  * Checks if any uniforms are dirty and need to be uploaded then bind it.
- * Automatically called when `R3D_SHADER_USE_EX` is invoked with a custom shader.
+ * Automatically called when `R3D_SHADER_USE` (OVR/OPT) is invoked with a custom shader.
  */
 void r3d_shader_bind_custom_uniforms(r3d_shader_custom_t* shader);
 
 /*
  * Binds the textures of a custom shader and verifies the state of its samplers then bind them.
- * Automatically called when `R3D_SHADER_USE_EX` is invoked with a custom shader.
+ * Automatically called when `R3D_SHADER_USE` (OVR/OPT) is invoked with a custom shader.
  */
 void r3d_shader_bind_custom_samplers(r3d_shader_custom_t* shader);
 
