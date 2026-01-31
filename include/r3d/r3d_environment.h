@@ -84,6 +84,16 @@
             .convergence = 0.5f,                        \
             .enabled = false,                           \
         },                                              \
+        .ssr = {                                        \
+            .maxRaySteps = 32,                          \
+            .binarySearchSteps = 4,                     \
+            .rayMarchLength = 5.0f,                     \
+            .depthThickness = 0.5f,                     \
+            .depthTolerance = 0.01f,                    \
+            .edgeFadeStart = 0.75f,                     \
+            .edgeFadeEnd = 1.0f,                        \
+            .enabled = false,                           \
+        },                                              \
         .bloom = {                                      \
             .mode = R3D_BLOOM_DISABLED,                 \
             .levels = 0.5f,                             \
@@ -91,16 +101,6 @@
             .threshold = 0.0f,                          \
             .softThreshold = 0.5f,                      \
             .filterRadius = 1.0f,                       \
-        },                                              \
-        .ssr = {                                        \
-            .maxRaySteps = 64,                          \
-            .binarySearchSteps = 8,                     \
-            .rayMarchLength = 8.0f,                     \
-            .depthThickness = 0.2f,                     \
-            .depthTolerance = 0.005f,                   \
-            .edgeFadeStart = 0.7f,                      \
-            .edgeFadeEnd = 1.0f,                        \
-            .enabled = false,                           \
         },                                              \
         .fog = {                                        \
             .mode = R3D_FOG_DISABLED,                   \
@@ -245,20 +245,6 @@ typedef struct R3D_EnvSSIL {
 } R3D_EnvSSIL;
 
 /**
- * @brief Bloom post-processing settings.
- *
- * Glow effect around bright areas in the scene.
- */
-typedef struct R3D_EnvBloom {
-    R3D_Bloom mode;         ///< Bloom blending mode (default: R3D_BLOOM_DISABLED)
-    float levels;           ///< Mipmap spread factor [0-1]: higher = wider glow (default: 0.5)
-    float intensity;        ///< Bloom strength multiplier (default: 0.05)
-    float threshold;        ///< Minimum brightness to trigger bloom (default: 0.0)
-    float softThreshold;    ///< Softness of brightness cutoff transition (default: 0.5)
-    float filterRadius;     ///< Blur filter radius during upscaling (default: 1.0)
-} R3D_EnvBloom;
-
-/**
  * @brief Screen Space Reflections (SSR) settings.
  *
  * Real-time reflections calculated in screen space.
@@ -273,6 +259,20 @@ typedef struct R3D_EnvSSR {
     float edgeFadeEnd;          ///< Screen edge fade end [0-1] (default: 1.0)
     bool enabled;               ///< Enable/disable SSR (default: false)
 } R3D_EnvSSR;
+
+/**
+ * @brief Bloom post-processing settings.
+ *
+ * Glow effect around bright areas in the scene.
+ */
+typedef struct R3D_EnvBloom {
+    R3D_Bloom mode;         ///< Bloom blending mode (default: R3D_BLOOM_DISABLED)
+    float levels;           ///< Mipmap spread factor [0-1]: higher = wider glow (default: 0.5)
+    float intensity;        ///< Bloom strength multiplier (default: 0.05)
+    float threshold;        ///< Minimum brightness to trigger bloom (default: 0.0)
+    float softThreshold;    ///< Softness of brightness cutoff transition (default: 0.5)
+    float filterRadius;     ///< Blur filter radius during upscaling (default: 1.0)
+} R3D_EnvBloom;
 
 /**
  * @brief Fog atmospheric effect settings.
@@ -332,8 +332,8 @@ typedef struct R3D_Environment {
     R3D_EnvAmbient    ambient;      ///< Ambient lighting configuration
     R3D_EnvSSAO       ssao;         ///< Screen space ambient occlusion
     R3D_EnvSSIL       ssil;         ///< Screen space indirect lighting
-    R3D_EnvBloom      bloom;        ///< Bloom glow effect
     R3D_EnvSSR        ssr;          ///< Screen space reflections
+    R3D_EnvBloom      bloom;        ///< Bloom glow effect
     R3D_EnvFog        fog;          ///< Atmospheric fog
     R3D_EnvDoF        dof;          ///< Depth of field focus effect
     R3D_EnvTonemap    tonemap;      ///< HDR tone mapping
