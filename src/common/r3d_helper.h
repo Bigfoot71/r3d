@@ -140,4 +140,9 @@ static inline int32_t r3d_lsb_index(uint32_t value)
 #endif
 }
 
+static inline int r3d_align_offset(int offset, int align)
+{
+    return (offset + align - 1) & ~(align - 1);
+}
+
 #endif // R3D_COMMON_HELPER_H

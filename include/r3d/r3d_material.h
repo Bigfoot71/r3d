@@ -9,6 +9,7 @@
 #ifndef R3D_MATERIAL_H
 #define R3D_MATERIAL_H
 
+#include "./r3d_surface_shader.h"
 #include "./r3d_platform.h"
 #include <raylib.h>
 
@@ -54,7 +55,8 @@
         .cullMode = R3D_CULL_BACK,                      \
         .uvOffset = {0.0f, 0.0f},                       \
         .uvScale = {1.0f, 1.0f},                        \
-        .alphaCutoff = 0.01f                            \
+        .alphaCutoff = 0.01f,                           \
+        .shader = 0,                                    \
     }
 
 // ========================================
@@ -179,6 +181,8 @@ typedef struct R3D_Material {
     Vector2 uvScale;     ///< UV scale (default: {1.0f, 1.0f})
 
     float alphaCutoff;   ///< Alpha cutoff threshold (default: 0.01f)
+
+    R3D_SurfaceShader* shader; ///< Custom shader applied to the material (default: NULL)
 
 } R3D_Material;
 

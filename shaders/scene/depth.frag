@@ -18,12 +18,14 @@ smooth in vec4 vColor;
 uniform sampler2D uAlbedoMap;
 uniform float uAlphaCutoff;
 
+/* === User override === */
+
+#include "../include/user/scene.frag"
+
 /* === Main function === */
 
 void main()
 {
     // NOTE: The depth is automatically written
-
-    float alpha = vColor.a * texture(uAlbedoMap, vTexCoord).a;
-    if (alpha < uAlphaCutoff) discard;
+    SceneFragment(vTexCoord, mat3(1.0), uAlphaCutoff);
 }

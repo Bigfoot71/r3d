@@ -9,9 +9,11 @@
 #ifndef R3D_CORE_STATE_H
 #define R3D_CORE_STATE_H
 
+#include <r3d/r3d_screen_shader.h>
 #include <r3d/r3d_environment.h>
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_core.h>
+#include <r3d_config.h>
 #include <raylib.h>
 
 #include "./common/r3d_frustum.h"
@@ -38,7 +40,8 @@ typedef struct {
  * Core state shared between all public modules.
  */
 extern struct r3d_core_state {
-    RenderTexture screen;
+    RenderTexture screen;               //< Texture target (screen if null id)
+    R3D_ScreenShader* screenShaders[R3D_MAX_SCREEN_SHADERS]; //< Chain of screen shaders
     R3D_Environment environment;        //< Current environment settings
     R3D_Material material;              //< Default material to use
     r3d_core_view_t viewState;          //< Current view state

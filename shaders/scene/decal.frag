@@ -11,8 +11,8 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
 #include "../include/blocks/view.glsl"
+#include "../include/math.glsl"
 
 /* === Varyings === */
 
@@ -66,6 +66,10 @@ mat3 BuildDecalTBN(vec3 worldNormal)
     return mat3(T, B, worldNormal);
 }
 
+/* === User override === */
+
+#include "../include/user/scene.frag"
+
 /* === Main function === */
 
 void main()
@@ -80,35 +84,29 @@ void main()
     /* Compute decal UVs in [0, 1] range */
     vec2 decalTexCoord = uTexCoordOffset + (positionObjectSpace.xz + 0.5) * uTexCoordScale;
 
-    /* Sample albedo and apply alpha cutoff */
-    vec4 albedo = vColor * texture(uAlbedoMap, decalTexCoord);
-    if (albedo.a < uAlphaCutoff) discard;
-
-    /* Fetch surface normal */
-    ivec2 screenCoord = ivec2(gl_FragCoord.xy);
-    vec2 encGeomNormal = texelFetch(uGeomNormalTex, screenCoord, 0).rg;
+    /* Fetch surface normal and build TBN */
+    vec2 encGeomNormal = texelFetch(uGeomNormalTex, ivec2(gl_FragCoord.xy), 0).rg;
     vec3 worldNormal = M_DecodeOctahedral(encGeomNormal);
+    mat3 TBN = BuildDecalTBN(worldNormal);
 
     /* Normal threshold culling */
     float angle = acos(clamp(dot(vDecalAxes[1], worldNormal), -1.0, 1.0));
     float difference = uNormalThreshold - angle;
     if (difference < 0.0) discard;
 
+    /* Sample material maps with alpha cutoff */
+    SceneFragment(decalTexCoord, TBN, uAlphaCutoff);
+
     /* Compute fade factor */
-    float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0) * albedo.a;
+    float fadeAlpha = clamp(difference / uFadeWidth, 0.0, 1.0) * ALPHA;
 
-    /* Sample all other material textures together */
-    vec3 normalSample = texture(uNormalMap, decalTexCoord).rgb * 2.0 - 1.0;
-    vec3 emission = texture(uEmissionMap, decalTexCoord).rgb;
-    vec3 orm = texture(uOrmMap, decalTexCoord).rgb;
-
-    /* Build TBN then transform and scale decal normal */
-    mat3 TBN = BuildDecalTBN(worldNormal);
-    vec3 N = normalize(TBN * M_NormalScale(normalSample, uNormalScale * fadeAlpha));
+    /* Transform and scale decal normal */
+    TBN = mat3(TANGENT, BITANGENT, NORMAL);
+    vec3 N = normalize(TBN * M_NormalScale(NORMAL_MAP * 2.0 - 1.0, uNormalScale * fadeAlpha));
 
     /* Output */
-    FragAlbedo   = vec4(albedo.rgb, fadeAlpha * float(uApplyColor));
+    FragAlbedo   = vec4(ALBEDO, fadeAlpha * float(uApplyColor));
     FragNormal   = vec4(M_EncodeOctahedral(N), 0.0, 1.0);
-    FragEmission = vec4(vEmission * emission, fadeAlpha);
-    FragORM      = vec4(orm * vec3(uOcclusion, uRoughness, uMetalness), fadeAlpha);
+    FragEmission = vec4(EMISSION, fadeAlpha);
+    FragORM      = vec4(vec3(OCCLUSION, ROUGHNESS, METALNESS), fadeAlpha);
 }
