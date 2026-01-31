@@ -62,6 +62,18 @@ float SampleDepth(vec2 texCoord)
     return texture(uDepthTex, texCoord).r;
 }
 
+float FetchDepth01(ivec2 pixCoord)
+{
+    float z = texelFetch(uDepthTex, pixCoord, 0).r;
+    return clamp((z - uView.near) / (uView.far - uView.near), 0.0, 1.0);
+}
+
+float SampleDepth01(vec2 texCoord)
+{
+    float z = texture(uDepthTex, texCoord).r;
+    return clamp((z - uView.near) / (uView.far - uView.near), 0.0, 1.0);
+}
+
 vec3 FetchPosition(ivec2 pixCoord)
 {
     return V_GetViewPosition(uDepthTex, pixCoord);
