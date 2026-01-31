@@ -53,7 +53,8 @@
         .alphaCutoff = 0.01f,                           \
         .normalThreshold = 0,                           \
         .fadeWidth = 0,                                 \
-        .applyColor = true                              \
+        .applyColor = true,                             \
+        .shader = 0                                     \
     }
 
 // ========================================

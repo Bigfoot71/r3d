@@ -1,4 +1,4 @@
-/* r3d_surface_shader.h -- R3D Material Shader Module.
+/* r3d_surface_shader.h -- R3D Surface Shader Module.
  *
  * Copyright (c) 2025 Le Juez Victor
  *

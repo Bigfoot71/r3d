@@ -6,7 +6,7 @@ uniform float u_time;
 flat varying float v_time;
 
 void vertex() {
-    v_time = (0.5 * sin(u_time) + 0.5);
+    v_time = 0.5 * sin(u_time) + 0.5;
     POSITION *= 1.0 + v_time;
 }
 
