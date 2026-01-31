@@ -106,7 +106,8 @@ void fragment() {
     vec3 color = vec3(0.0);
     for (int x = -1; x <= 1; x++) {
         for (int y = -1; y <= 1; y++) {
-            color += FetchColor(PIXCOORD + ivec2(x, y));
+            vec2 offset = vec2(x, y) * TEXEL_SIZE;
+            color += SampleColor(TEXCOORD + offset);
         }
     }
     COLOR = color / 9.0; // Average of 3x3 grid
