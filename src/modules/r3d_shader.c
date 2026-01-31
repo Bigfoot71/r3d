@@ -358,6 +358,7 @@ bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
 
     SET_UNIFORM_BUFFER(ssr, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
+    GET_LOCATION(ssr, uMaxRaySteps);
     GET_LOCATION(ssr, uBinarySearchSteps);
     GET_LOCATION(ssr, uRayMarchLength);
     GET_LOCATION(ssr, uDepthThickness);
