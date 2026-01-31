@@ -116,7 +116,7 @@ void R3D_End(void)
     /* --- Update and collect all visible lights and probes and process them (shadows and probes) --- */
 
     // TODO: Add `r3d_light_has()` along with a list of lights that cast shadows
-    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.viewPosition);
+    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.position);
     pass_scene_shadow();
 
     if (r3d_env_probe_has(R3D_ENV_PROBE_ARRAY_VALID)) {
@@ -128,15 +128,15 @@ void R3D_End(void)
 
     r3d_draw_compute_visible_groups(&R3D.viewState.frustum);
 
-    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED, R3D.viewState.viewPosition, R3D_DRAW_SORT_FRONT_TO_BACK);
-    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.viewPosition, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS, R3D.viewState.viewPosition, R3D_DRAW_SORT_BACK_TO_FRONT);
-    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD, R3D.viewState.viewPosition, R3D_DRAW_SORT_BACK_TO_FRONT);
+    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED, R3D.viewState.position, R3D_DRAW_SORT_FRONT_TO_BACK);
+    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
+    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
 
-    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED_INST, R3D.viewState.viewPosition, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS_INST, R3D.viewState.viewPosition, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD_INST, R3D.viewState.viewPosition, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL_INST, R3D.viewState.viewPosition, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
 
     /* --- Deferred path for opaques and decals --- */
 
@@ -531,7 +531,7 @@ void update_view_state(Camera3D camera, double near, double far)
     Matrix viewProj = r3d_matrix_multiply(&view, &proj);
 
     R3D.viewState.frustum = r3d_frustum_create(viewProj);
-    R3D.viewState.viewPosition = camera.position;
+    R3D.viewState.position = camera.position;
 
     R3D.viewState.view = view;
     R3D.viewState.proj = proj;
@@ -539,6 +539,7 @@ void update_view_state(Camera3D camera, double near, double far)
     R3D.viewState.invProj = MatrixInvert(proj);
     R3D.viewState.viewProj = viewProj;
 
+    R3D.viewState.projMode = camera.projection;
     R3D.viewState.aspect = (float)aspect;
     R3D.viewState.near = (float)near;
     R3D.viewState.far = (float)far;
@@ -590,12 +591,13 @@ void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
 void upload_view_block(void)
 {
     r3d_shader_block_view_t view = {
-        .viewPosition = R3D.viewState.viewPosition,
+        .position = R3D.viewState.position,
         .view = r3d_matrix_transpose(&R3D.viewState.view),
         .invView = r3d_matrix_transpose(&R3D.viewState.invView),
         .proj = r3d_matrix_transpose(&R3D.viewState.proj),
         .invProj = r3d_matrix_transpose(&R3D.viewState.invProj),
         .viewProj = r3d_matrix_transpose(&R3D.viewState.viewProj),
+        .projMode = R3D.viewState.projMode,
         .aspect = R3D.viewState.aspect,
         .near = R3D.viewState.near,
         .far = R3D.viewState.far,
@@ -1069,7 +1071,7 @@ void raster_forward(const r3d_draw_call_t* call)
     /* --- Set view related data --- */
 
     // NOTE: We don't use the UBO view position because this shader is reused by probes with their own view position
-    R3D_SHADER_SET_VEC3_OPT(scene.forward, shader, uViewPosition, R3D.viewState.viewPosition);
+    R3D_SHADER_SET_VEC3_OPT(scene.forward, shader, uViewPosition, R3D.viewState.position);
 
     /* --- Send matrices --- */
 

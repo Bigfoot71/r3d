@@ -486,12 +486,13 @@ typedef enum {
 // ========================================
 
 typedef struct {
-    alignas(16) Vector3 viewPosition;
+    alignas(16) Vector3 position;
     alignas(16) Matrix view;
     alignas(16) Matrix invView;
     alignas(16) Matrix proj;
     alignas(16) Matrix invProj;
     alignas(16) Matrix viewProj;
+    alignas(4) int32_t projMode;
     alignas(4) float aspect;
     alignas(4) float near;
     alignas(4) float far;
