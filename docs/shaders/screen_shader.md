@@ -225,6 +225,11 @@ Uniforms are constant values that can be set from your C code. They remain const
 **Samplers:**
 - `sampler1D`, `sampler2D`, `sampler3D`, `samplerCube`
 
+### Limits
+
+- **Maximum uniform values:** 16 by default (configurable via `R3D_MAX_SHADER_UNIFORMS`)
+- **Maximum samplers:** 4 by default (configurable via `R3D_MAX_SHADER_SAMPLERS`)
+
 ### Declaring Uniforms
 
 ```glsl
@@ -243,6 +248,10 @@ R3D_SetSurfaceShaderUniform(shader, "u_time", &time);
 
 Vector3 color = {1.0f, 0.0f, 0.0f};
 R3D_SetSurfaceShaderUniform(shader, "u_color", &color);
+
+// For booleans, use int (4 bytes)
+int flag = 1;  // true
+R3D_SetSurfaceShaderUniform(shader, "u_flag", &flag);
 ```
 
 **Samplers:**
@@ -254,6 +263,7 @@ R3D_SetSurfaceShaderSampler(shader, "u_texture", texture);
 ### Important Notes
 
 - **Default values:** All uniforms default to zero (samplers have no default texture)
+- **Boolean handling:** When setting `bool` uniforms from C, pass an `int` (4 bytes). Non-zero values are `true`, zero is `false`.
 - **Persistence:** Uniform values persist across frames until changed
 - **Per-shader state:** Each shader maintains its own uniform state
 - **Update timing:** Uniforms are uploaded to GPU only when needed (marked dirty)
@@ -264,18 +274,23 @@ R3D_SetSurfaceShaderSampler(shader, "u_texture", texture);
 ```glsl
 uniform float u_time;
 uniform sampler2D u_noise;
+uniform bool u_enable_effect;
 
 void fragment() {
-    vec2 uv = TEXCOORD + texture(u_noise, TEXCOORD * 2.0).xy * 0.1;
-    ALBEDO *= 0.5 + 0.5 * sin(u_time + uv.x * 10.0);
+    if (u_enable_effect) {
+        vec2 uv = TEXCOORD + texture(u_noise, TEXCOORD * 2.0).xy * 0.1;
+        ALBEDO *= 0.5 + 0.5 * sin(u_time + uv.x * 10.0);
+    }
 }
 ```
 
 ```c
 float time = 0.0f;
 Texture2D noise = LoadTexture("noise.png");
+int enableEffect = 1;
 
 R3D_SetSurfaceShaderSampler(shader, "u_noise", noise);
+R3D_SetSurfaceShaderUniform(shader, "u_enable_effect", &enableEffect);
 
 while (!WindowShouldClose()) {
     time += GetFrameTime();
