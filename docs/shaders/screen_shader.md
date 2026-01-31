@@ -77,6 +77,7 @@ Screen shaders provide built-in variables for screen-space operations:
 | `PIXCOORD` | `ivec2` | Integer pixel coordinates (0 to resolution-1) |
 | `TEXEL_SIZE` | `vec2` | Size of one texel (1.0 / RESOLUTION) |
 | `RESOLUTION` | `vec2` | Screen resolution in pixels |
+| `ASPECT` | `float` | Screen aspect ratio |
 | `COLOR` | `vec3` | Output color (write to this) |
 
 ### Usage Examples
@@ -333,7 +334,7 @@ R3D_UnloadScreenShader(outline);
 
 ### Quality
 
-1. **Respect aspect ratio:** Use `RESOLUTION.x / RESOLUTION.y` for aspect-aware effects
+1. **Respect aspect ratio:** Use `ASPECT` for aspect-aware effects
 2. **Test at different resolutions:** Effects should scale properly
 3. **Use linear filtering wisely:** Sample (filtered) for smooth effects, Fetch (unfiltered) for sharp details
 4. **Consider edge cases:** Check behavior at screen edges (TEXCOORD = 0.0 or 1.0)
@@ -361,7 +362,7 @@ void fragment() {
 
     // Calculate distance from center
     vec2 center = TEXCOORD - vec2(0.5);
-    center.x *= RESOLUTION.x / RESOLUTION.y; // Aspect correction
+    center.x *= ASPECT; // Aspect correction
     float dist = length(center);
 
     // Apply vignette
@@ -397,7 +398,7 @@ void R3D_SetScreenShaderChain(R3D_ScreenShader** shaders, int count);
 uniform <type> <name>;          // Optional: uniforms
 
 void fragment() {               // Required: fragment stage
-    // Read: TEXCOORD, PIXCOORD, RESOLUTION, TEXEL_SIZE
+    // Read: TEXCOORD, PIXCOORD, RESOLUTION, TEXEL_SIZE, ASPECT
     // Sample: SampleColor(), SampleDepth(), SamplePosition(), SampleNormal()
     // Fetch: FetchColor(), FetchDepth(), FetchPosition(), FetchNormal()
     // Write: COLOR
@@ -411,6 +412,7 @@ vec2 TEXCOORD;      // Normalized coordinates [0..1]
 ivec2 PIXCOORD;     // Integer pixel coordinates
 vec2 TEXEL_SIZE;    // Size of one pixel (1.0 / RESOLUTION)
 vec2 RESOLUTION;    // Screen resolution
+float ASPECT;       // Screen aspect ratio
 
 // Output (write)
 vec3 COLOR;         // Final pixel color

@@ -35,6 +35,7 @@ ivec2 PIXCOORD  = ivec2(0);
 
 vec2 TEXEL_SIZE = vec2(0.0);
 vec2 RESOLUTION = vec2(0.0);
+float ASPECT = 0.0;
 
 /* === Built-In Output Variables === */
 
@@ -105,6 +106,7 @@ void main()
 
     TEXEL_SIZE = uTexelSize;
     RESOLUTION = uResolution;
+    ASPECT = uView.aspect;
 
     fragment();
 
