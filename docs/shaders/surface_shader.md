@@ -1,16 +1,16 @@
-# Screen Shaders
+# Surface Shaders
 
-Screen shaders are post-processing effects applied to the entire rendered frame.
-Unlike surface shaders, they operate on the final image rather than individual objects.
+Surface shaders are custom shaders that can be applied to materials and decals in R3D. They provide a simplified way to write GLSL code by abstracting away the complexity of multiple render passes.
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Entry Point](#entry-point)
+- [Entry Points](#entry-points)
 - [Built-in Variables](#built-in-variables)
-- [Helper Functions](#helper-functions)
+- [Varyings](#varyings)
 - [Uniforms](#uniforms)
-- [Shader Chains](#shader-chains)
+- [Material Sampling](#material-sampling)
+- [Usage Hints](#usage-hints)
 - [Best Practices](#best-practices)
 - [Quick Reference](#quick-reference)
 
@@ -18,13 +18,15 @@ Unlike surface shaders, they operate on the final image rather than individual o
 
 ## Overview
 
-Screen shaders process the entire rendered frame as a 2D image. They run after all 3D rendering is complete and can read from depth, color, and geometry buffers to create post-processing effects.
+A surface shader is a simplified shader interface that allows you to modify vertex and fragment behavior without worrying about the underlying render pipeline. R3D automatically handles multiple render passes (opaque, transparent, shadows, etc.) from a single shader definition.
 
 ### Basic Example
 
 ```glsl
+uniform float u_time;
+
 void fragment() {
-    COLOR = SampleColor(TEXCOORD) * vec3(1.0, 0.5, 0.5); // Red tint
+    ALBEDO *= 0.5 + 0.5 * sin(u_time);
 }
 ```
 
@@ -32,36 +34,56 @@ void fragment() {
 
 ```c
 // From file
-R3D_ScreenShader* shader = R3D_LoadScreenShader("vignette.glsl");
+R3D_SurfaceShader* shader = R3D_LoadSurfaceShader("my_shader.glsl");
 
 // From memory
-const char* code = "void fragment() { COLOR = vec3(1.0 - SampleColor(TEXCOORD)); }";
-R3D_ScreenShader* shader = R3D_LoadScreenShaderFromMemory(code);
+const char* code = "void fragment() { ALBEDO = vec3(1.0, 0.0, 0.0); }";
+R3D_SurfaceShader* shader = R3D_LoadSurfaceShaderFromMemory(code);
 
 // Don't forget to unload when done
-R3D_UnloadScreenShader(shader);
+R3D_UnloadSurfaceShader(shader);
 ```
 
 ---
 
-## Entry Point
+## Entry Points
 
-Screen shaders have only **one required entry point**: `fragment()`. There is no vertex stage, and consequently, no varyings.
+Surface shaders have two optional entry points: `vertex()` and `fragment()`. At least one must be defined.
+
+### Vertex Stage
+
+Runs once per vertex, before rasterization. Use it to modify vertex positions, colors, or pass data to the fragment stage.
+
+```glsl
+void vertex() {
+    POSITION.y += sin(POSITION.x * 10.0) * 0.1;
+}
+```
 
 ### Fragment Stage
 
-Runs once per screen pixel to compute the final output color.
+Runs once per pixel. Use it to modify final surface properties like albedo, roughness, or emission.
 
 ```glsl
 void fragment() {
-    // Read input color
-    vec3 color = SampleColor(TEXCOORD);
-    
-    // Apply effect
-    color = vec3(dot(color, vec3(0.299, 0.587, 0.114))); // Grayscale conversion
-    
-    // Write output
-    COLOR = color;
+    ALBEDO = vec3(1.0, 0.0, 0.0); // Red surface
+    ROUGHNESS = 0.5;
+}
+```
+
+### Both Stages
+
+You can define both stages to create complex effects:
+
+```glsl
+varying float v_height;
+
+void vertex() {
+    v_height = POSITION.y;
+}
+
+void fragment() {
+    ALBEDO = mix(vec3(0.0, 0.5, 0.0), vec3(1.0, 1.0, 1.0), v_height);
 }
 ```
 
@@ -69,169 +91,129 @@ void fragment() {
 
 ## Built-in Variables
 
-Screen shaders provide built-in variables for screen-space operations:
+Built-in variables are pre-defined values you can read and modify in your shader. They can only be accessed within their corresponding entry point.
+
+### Vertex Stage
+
+All vertex-stage variables are initialized with local (pre-transformation) attribute values:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `TEXCOORD` | `vec2` | Normalized texture coordinates (0.0 to 1.0) |
-| `PIXCOORD` | `ivec2` | Integer pixel coordinates (0 to resolution-1) |
-| `TEXEL_SIZE` | `vec2` | Size of one texel (1.0 / RESOLUTION) |
-| `RESOLUTION` | `vec2` | Screen resolution in pixels |
-| `COLOR` | `vec3` | Output color (write to this) |
+| `POSITION` | `vec3` | Vertex position |
+| `TEXCOORD` | `vec2` | Texture coordinates |
+| `NORMAL` | `vec3` | Vertex normal |
+| `TANGENT` | `vec4` | Vertex tangent (w = handedness) |
+| `COLOR` | `vec4` | Vertex color |
+| `EMISSION` | `vec3` | Vertex emission |
 
-### Usage Examples
-
-**Texture coordinates:**
+**Example:**
 ```glsl
-void fragment() {
-    // Sample at current screen position
-    COLOR = SampleColor(TEXCOORD);
+void vertex() {
+    POSITION *= 1.5; // Scale vertex position
+    COLOR.rgb *= 0.5; // Darken vertex color
 }
 ```
 
-**Pixel coordinates:**
+### Fragment Stage
+
+Fragment-stage variables are pre-initialized with material values (unless `R3D_NO_AUTO_FETCH` is defined):
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `TEXCOORD` | `vec2` | Interpolated texture coordinates |
+| `NORMAL` | `vec3` | Surface normal (world space) |
+| `TANGENT` | `vec3` | Surface tangent |
+| `BITANGENT` | `vec3` | Surface bitangent |
+| `ALBEDO` | `vec3` | Base color |
+| `ALPHA` | `float` | Transparency |
+| `EMISSION` | `vec3` | Emissive color |
+| `NORMAL_MAP` | `vec3` | Normal map value |
+| `OCCLUSION` | `float` | Ambient occlusion |
+| `ROUGHNESS` | `float` | Surface roughness (0 = smooth, 1 = rough) |
+| `METALNESS` | `float` | Metallic property (0 = dielectric, 1 = metal) |
+
+**Example:**
 ```glsl
 void fragment() {
-    // Checkerboard pattern
-    int checker = (PIXCOORD.x / 8 + PIXCOORD.y / 8) % 2;
-    COLOR = SampleColor(TEXCOORD) * (checker == 0 ? 1.0 : 0.5);
+    ALBEDO = vec3(1.0, 0.0, 0.0); // Red surface
+    ROUGHNESS = 0.2; // Shiny
+    METALNESS = 1.0; // Metallic
 }
 ```
 
-**Resolution-aware effects:**
+### Important Notes
+
+- Built-in variables are **scoped to their entry point**. You cannot access `ALBEDO` in `vertex()` or `POSITION` in `fragment()`.
+- If you need to pass data between stages, use [varyings](#varyings).
+- To use built-in variables in helper functions, pass them as parameters:
+
 ```glsl
+vec3 darken(vec3 color, float amount) {
+    return color * amount;
+}
+
 void fragment() {
-    // Blur using texel size for offset
-    vec3 color = vec3(0.0);
-    for (int x = -1; x <= 1; x++) {
-        for (int y = -1; y <= 1; y++) {
-            color += FetchColor(PIXCOORD + ivec2(x, y));
-        }
-    }
-    COLOR = color / 9.0; // Average of 3x3 grid
+    ALBEDO = darken(ALBEDO, 0.5);
 }
 ```
 
 ---
 
-## Helper Functions
+## Varyings
 
-Screen shaders provide convenience functions for accessing frame data. Each function comes in two variants: `Fetch` (uses integer pixel coordinates) and `Sample` (uses normalized texture coordinates).
+Varyings allow you to pass data from the vertex stage to the fragment stage. They are automatically interpolated across the triangle.
 
-### Color Sampling
+### Basic Usage
 
 ```glsl
-vec3 FetchColor(ivec2 pixCoord);  // Fast, no filtering
-vec3 SampleColor(vec2 texCoord);  // Bilinear filtering
-```
+varying float v_height;
 
-**Example:**
-```glsl
+void vertex() {
+    v_height = POSITION.y;
+}
+
 void fragment() {
-    // Fetch exact pixel (faster)
-    vec3 center = FetchColor(PIXCOORD);
-    
-    // Sample with filtering (smoother)
-    vec3 blurred = SampleColor(TEXCOORD + vec2(0.01, 0.0));
-    
-    COLOR = mix(center, blurred, 0.5);
+    ALBEDO = mix(vec3(0.2, 0.8, 0.2), vec3(1.0), v_height);
 }
 ```
 
-### Depth Sampling
+### Interpolation Qualifiers
 
-Returns linear depth values from the depth buffer.
+You can control how varyings are interpolated using qualifiers:
 
-```glsl
-float FetchDepth(ivec2 pixCoord);    // linear depth [near, far]
-float SampleDepth(vec2 texCoord);
-
-float FetchDepth01(ivec2 pixCoord);  // linear depth normalized [0, 1]
-float SampleDepth01(vec2 texCoord);
-```
+| Qualifier | Description |
+|-----------|-------------|
+| `flat` | No interpolation (use value from provoking vertex) |
+| `smooth` | Perspective-correct interpolation (default) |
+| `noperspective` | Linear interpolation in screen space |
 
 **Example:**
 ```glsl
+flat varying int v_material_id;
+noperspective varying vec2 v_screen_uv;
+
+void vertex() {
+    v_material_id = 1;
+    v_screen_uv = TEXCOORD;
+}
+
 void fragment() {
-    vec3 color = SampleColor(TEXCOORD);
-
-    const float outline_size = 1.5;
-    vec2 px = TEXEL_SIZE * outline_size;
-
-    // Edge detection using depth
-    float d  = SampleDepth(TEXCOORD);
-    float dx1 = abs(d - SampleDepth(TEXCOORD + vec2(px.x, 0)));
-    float dx2 = abs(d - SampleDepth(TEXCOORD - vec2(px.x, 0)));
-    float dy1 = abs(d - SampleDepth(TEXCOORD + vec2(0, px.y)));
-    float dy2 = abs(d - SampleDepth(TEXCOORD - vec2(0, px.y)));
-
-    float edge = step(0.5, max(max(dx1, dx2), max(dy1, dy2)));
-
-    COLOR = mix(color, vec3(0.0), edge);
+    if (v_material_id == 1) {
+        ALBEDO = texture(u_texture, v_screen_uv).rgb;
+    }
 }
 ```
 
-### Position Sampling
+### Limits
 
-Returns view-space position (camera-relative coordinates).
-
-```glsl
-vec3 FetchPosition(ivec2 pixCoord);
-vec3 SamplePosition(vec2 texCoord);
-```
-
-**Example:**
-```glsl
-void fragment() {
-    vec3 position = SamplePosition(TEXCOORD);
-    
-    // Distance from camera
-    float distance = length(position);
-    
-    // Depth-based effect
-    vec3 color = SampleColor(TEXCOORD);
-    COLOR = color * (1.0 - smoothstep(10.0, 50.0, distance));
-}
-```
-
-### Normal Sampling
-
-Returns view-space surface normal.
-
-```glsl
-vec3 FetchNormal(ivec2 pixCoord);
-vec3 SampleNormal(vec2 texCoord);
-```
-
-**Example:**
-```glsl
-void fragment() {
-    vec3 normal = SampleNormal(TEXCOORD);
-    
-    // Edge detection using normals
-    vec3 normal_right = SampleNormal(TEXCOORD + vec2(TEXEL_SIZE.x, 0.0));
-    float edge = length(normal - normal_right);
-    
-    vec3 color = SampleColor(TEXCOORD);
-    COLOR = mix(color, vec3(0.0), edge * 10.0);
-}
-```
-
-### Fetch vs Sample
-
-- **`Fetch`**: Uses integer pixel coordinates, no filtering, faster
-  - Best for: Exact pixel reads, performance-critical code
-  - Use with: `PIXCOORD`
-
-- **`Sample`**: Uses normalized coordinates, bilinear filtering, smoother
-  - Best for: Smooth effects, interpolated values
-  - Use with: `TEXCOORD`
+- **Maximum varyings:** 32 (hardware permitting)
+- In practice, you'll rarely need more than a handful
 
 ---
 
 ## Uniforms
 
-Screen shaders support the same uniform system as surface shaders, with the same limits and behavior.
+Uniforms are constant values that can be set from your C code. They remain constant across all vertices/fragments in a draw call.
 
 ### Supported Types
 
@@ -248,76 +230,193 @@ Screen shaders support the same uniform system as surface shaders, with the same
 - **Maximum uniform values:** 16 by default (configurable via `R3D_MAX_SHADER_UNIFORMS`)
 - **Maximum samplers:** 4 by default (configurable via `R3D_MAX_SHADER_SAMPLERS`)
 
+### Declaring Uniforms
+
+```glsl
+uniform float u_time;
+uniform vec3 u_color;
+uniform mat4 u_transform;
+uniform sampler2D u_texture;
+```
+
+### Setting Uniforms from C
+
+**Values:**
+```c
+float time = GetTime();
+R3D_SetSurfaceShaderUniform(shader, "u_time", &time);
+
+Vector3 color = {1.0f, 0.0f, 0.0f};
+R3D_SetSurfaceShaderUniform(shader, "u_color", &color);
+
+// For booleans, use int (4 bytes)
+int flag = 1;  // true
+R3D_SetSurfaceShaderUniform(shader, "u_flag", &flag);
+```
+
+**Samplers:**
+```c
+Texture2D texture = LoadTexture("texture.png");
+R3D_SetSurfaceShaderSampler(shader, "u_texture", texture);
+```
+
+### Important Notes
+
+- **Default values:** All uniforms default to zero (samplers have no default texture)
+- **Boolean handling:** When setting `bool` uniforms from C, pass an `int` (4 bytes). Non-zero values are `true`, zero is `false`.
+- **Persistence:** Uniform values persist across frames until changed
+- **Per-shader state:** Each shader maintains its own uniform state
+- **Update timing:** Uniforms are uploaded to GPU only when needed (marked dirty)
+- **No per-draw updates:** You cannot change uniforms between draw calls within a single frame. Since rendering happens at `R3D_End()`, only the last uniform value set before `R3D_End()` will be used.
+
 ### Example
 
 ```glsl
-uniform float u_intensity;
-uniform sampler2D u_lut;
+uniform float u_time;
+uniform sampler2D u_noise;
+uniform bool u_enable_effect;
 
 void fragment() {
-    vec3 color = SampleColor(TEXCOORD);
-    
-    // Apply color grading
-    color = texture(u_lut, color.rg).rgb;
-    
-    // Apply intensity
-    COLOR = mix(SampleColor(TEXCOORD), color, u_intensity);
+    if (u_enable_effect) {
+        vec2 uv = TEXCOORD + texture(u_noise, TEXCOORD * 2.0).xy * 0.1;
+        ALBEDO *= 0.5 + 0.5 * sin(u_time + uv.x * 10.0);
+    }
 }
 ```
 
 ```c
-float intensity = 0.5f;
-Texture2D lut = LoadTexture("color_lut.png");
+float time = 0.0f;
+Texture2D noise = LoadTexture("noise.png");
+int enableEffect = 1;
 
-R3D_SetScreenShaderUniform(shader, "u_intensity", &intensity);
-R3D_SetScreenShaderSampler(shader, "u_lut", lut);
+R3D_SetSurfaceShaderSampler(shader, "u_noise", noise);
+R3D_SetSurfaceShaderUniform(shader, "u_enable_effect", &enableEffect);
+
+while (!WindowShouldClose()) {
+    time += GetFrameTime();
+    R3D_SetSurfaceShaderUniform(shader, "u_time", &time);
+    
+    R3D_Begin();
+    // ... draw with shader ...
+    R3D_End();
+}
 ```
 
 ---
 
-## Shader Chains
+## Material Sampling
 
-Screen shaders can be chained, R3D executes them using internal ping-pong buffers, avoiding extra buffers like with a `RenderTexture`.
+By default, material textures (albedo, normal, ORM) are automatically sampled and available as built-in variables in the fragment stage.
 
-### Setting Up a Chain
+### Disabling Auto-Fetch
 
-```c
-void R3D_SetScreenShaderChain(R3D_ScreenShader** shaders, int count);
+If you want to start with zero values and sample materials manually, define:
+
+```glsl
+#define R3D_NO_AUTO_FETCH
 ```
 
-- **Maximum shaders:** Defined by `R3D_MAX_SCREEN_SHADERS` (default: 8)
-- Shaders execute in the order specified
-- Each shader receives the output of the previous shader
-- `NULL` entries in the array are safely ignored
-- Passing `shaders = NULL` or `count = 0` disables all screen shaders
+This sets `ALBEDO`, `NORMAL_MAP`, and `OCCLUSION`/`ROUGHNESS`/`METALNESS` to zero.
+
+### Manual Sampling Functions
+
+```glsl
+vec4 SampleAlbedo(vec2 texCoord);
+vec3 SampleEmission(vec2 texCoord);
+vec3 SampleNormal(vec2 texCoord);
+vec3 SampleOrm(vec2 texCoord); // (Occlusion, Roughness, Metalness)
+```
+
+### Quick Auto-Fill
+
+To automatically fill all built-in variables with material values:
+
+```glsl
+void FetchMaterial(vec2 texCoord);
+```
 
 ### Example
 
-```c
-// Create shaders
-R3D_ScreenShader* outline = R3D_LoadScreenShader("outline.glsl");
-R3D_ScreenShader* fisheye = R3D_LoadScreenShader("fisheye.glsl");
-R3D_ScreenShader* grain = R3D_LoadScreenShader("grain.glsl");
+```glsl
+#define R3D_NO_AUTO_FETCH
 
-// Set up chain
-R3D_ScreenShader* chain[] = {outline, fisheye, grain};
-R3D_SetScreenShaderChain(chain, 3);
-
-// Render loop
-while (!WindowShouldClose()) {
-    R3D_Begin();
-    // ... draw 3D scene ...
-    R3D_End(); // Screen shaders execute here
+void fragment() {
+    // Sample material at distorted UV
+    vec2 distorted_uv = TEXCOORD + vec2(sin(TEXCOORD.y * 10.0) * 0.1, 0.0);
+    FetchMaterial(distorted_uv);
+    
+    // Or sample individual textures
+    // ALBEDO = SampleAlbedo(distorted_uv).rgb;
+    // vec3 orm = SampleOrm(distorted_uv);
+    // ROUGHNESS = orm.g;
 }
-
-// Disable screen shaders (not mandatory at the end of the program)
-R3D_SetScreenShaderChain(NULL, 0);
-
-// Cleanup
-R3D_UnloadScreenShader(fisheye);
-R3D_UnloadScreenShader(grain);
-R3D_UnloadScreenShader(outline);
 ```
+
+---
+
+## Usage Hints
+
+R3D compiles multiple shader variants for different render passes (opaque, transparent, shadows, etc.). By default, only the opaque variant is pre-compiled; others compile on-demand when needed.
+
+### The Problem
+
+On-demand compilation can cause stuttering when a new variant is first used. For example, if your shader is used on a transparent object, the transparent variant compiles when the object first becomes visible.
+
+### The Solution
+
+Use `#pragma usage` to specify which variants should be pre-compiled:
+
+```glsl
+#pragma usage transparent shadow
+```
+
+### Available Usage Hints
+
+| Hint | Description |
+|------|-------------|
+| `opaque` | Opaque rendering (default if no pragma specified) |
+| `prepass` | Transparent pre-pass rendering |
+| `transparent` | Transparent rendering (alpha blending) |
+| `shadow` | Shadow map rendering |
+| `decal` | Decal rendering |
+| `probe` | Reflection probe rendering |
+
+### Examples
+
+**Opaque object with shadows:**
+```glsl
+#pragma usage opaque shadow
+
+void fragment() {
+    ALBEDO = vec3(1.0, 0.0, 0.0);
+}
+```
+
+**Transparent object:**
+```glsl
+#pragma usage transparent
+
+void fragment() {
+    ALBEDO = vec3(0.0, 0.5, 1.0);
+    ALPHA = 0.5;
+}
+```
+
+**Decal shader:**
+```glsl
+#pragma usage decal
+
+void fragment() {
+    ALBEDO = vec3(1.0, 1.0, 0.0);
+}
+```
+
+### Important Notes
+
+- Usage hints are **optional**; missing variants will still compile on-demand
+- Multiple hints can be specified: `#pragma usage opaque transparent shadow`
+- If no pragma is specified, only `opaque` is pre-compiled
+- Variants not in the pragma can still be used; they just compile lazily
 
 ---
 
@@ -325,50 +424,23 @@ R3D_UnloadScreenShader(outline);
 
 ### Performance
 
-1. **Use Fetch when possible:** `FetchColor(PIXCOORD)` is faster than `SampleColor(TEXCOORD)` when filtering isn't needed
-2. **Minimize texture samples:** Cache sampled values if used multiple times
-3. **Keep chains short:** Each shader in the chain adds overhead
-4. **Avoid heavy loops:** Keep iterations bounded and minimal
-5. **Leverage built-ins:** Use `TEXEL_SIZE` instead of computing `1.0 / RESOLUTION`
+1. **Minimize varyings:** Only pass what's needed
+2. **Leverage vertex math:** Compute values per-vertex when they can be interpolated
+3. **Avoid dynamic loops & heavy branches:** Keep loops bounded and branches predictable/simple
+4. **Reuse calculations:** Don't repeat work in shader
 
-### Quality
+### Debugging
 
-1. **Respect aspect ratio:** Use `RESOLUTION.x / RESOLUTION.y` for aspect-aware effects
-2. **Test at different resolutions:** Effects should scale properly
-3. **Use linear filtering wisely:** Sample (filtered) for smooth effects, Fetch (unfiltered) for sharp details
-4. **Consider edge cases:** Check behavior at screen edges (TEXCOORD = 0.0 or 1.0)
+1. **Test incrementally:** Start simple, add complexity gradually
+2. **Use constants first:** Replace textures or calculations with constants to confirm logic
+3. **Isolate effects:** Disable parts of the shader to identify issues
+4. **Use emissive for debugging:** `EMISSION = vec3(some_value)` to visualize values
 
 ### Organization
 
-1. **One effect per shader:** Keep shaders focused and reusable
-2. **Chain for complexity:** Combine simple shaders instead of creating monolithic ones
-3. **Name meaningfully:** Use clear, descriptive names for shaders and uniforms
-4. **Document parameters:** Comment uniform purposes and expected ranges
-
-### Example: Well-Structured Effect
-
-**vignette.glsl:**
-```glsl
-// Simple vignette effect
-// u_intensity: Controls vignette strength (0.0 = none, 1.0 = full)
-// u_radius: Controls vignette size (0.0 = tight, 1.0 = wide)
-
-uniform float u_intensity;
-uniform float u_radius;
-
-void fragment() {
-    vec3 color = SampleColor(TEXCOORD);
-
-    // Calculate distance from center
-    vec2 center = TEXCOORD - vec2(0.5);
-    center.x *= RESOLUTION.x / RESOLUTION.y; // Aspect correction
-    float dist = length(center);
-
-    // Apply vignette
-    float vignette = smoothstep(u_radius, u_radius * 0.5, dist);
-    COLOR = color * mix(1.0, vignette, u_intensity);
-}
-```
+1. **One shader per effect:** Don't create mega-shaders with branches for different effects
+2. **Use meaningful names:** You can prefix uniforms with `u_`, varyings with `v_`
+3. **Use usage hints:** Pre-compile variants you know you'll need
 
 ---
 
@@ -376,65 +448,30 @@ void fragment() {
 
 ### Loading/Unloading
 ```c
-R3D_ScreenShader* R3D_LoadScreenShader(const char* filePath);
-R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code);
-void R3D_UnloadScreenShader(R3D_ScreenShader* shader);
+R3D_SurfaceShader* R3D_LoadSurfaceShader(const char* filePath);
+R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code);
+void R3D_UnloadSurfaceShader(R3D_SurfaceShader* shader);
 ```
 
 ### Setting Uniforms
 ```c
-void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* name, const void* value);
-void R3D_SetScreenShaderSampler(R3D_ScreenShader* shader, const char* name, Texture texture);
-```
-
-### Shader Chain
-```c
-void R3D_SetScreenShaderChain(R3D_ScreenShader** shaders, int count);
+void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* name, const void* value);
+void R3D_SetSurfaceShaderSampler(R3D_SurfaceShader* shader, const char* name, Texture texture);
 ```
 
 ### Shader Structure
 ```glsl
-uniform <type> <name>;          // Optional: uniforms
+#pragma usage <hints>           // Optional: opaque, transparent, shadow, etc.
+#define R3D_NO_AUTO_FETCH       // Optional: disable automatic material sampling
 
-void fragment() {               // Required: fragment stage
-    // Read: TEXCOORD, PIXCOORD, RESOLUTION, TEXEL_SIZE
-    // Sample: SampleColor(), SampleDepth(), SamplePosition(), SampleNormal()
-    // Fetch: FetchColor(), FetchDepth(), FetchPosition(), FetchNormal()
-    // Write: COLOR
+uniform <type> <name>;          // Uniforms
+varying <type> <name>;          // Varyings (communication between stages)
+
+void vertex() {                 // Optional: vertex stage
+    // Modify POSITION, NORMAL, etc.
 }
-```
 
-### Built-in Variables
-```glsl
-// Input (read-only)
-vec2 TEXCOORD;      // Normalized coordinates [0..1]
-ivec2 PIXCOORD;     // Integer pixel coordinates
-vec2 TEXEL_SIZE;    // Size of one pixel (1.0 / RESOLUTION)
-vec2 RESOLUTION;    // Screen resolution
-
-// Output (write)
-vec3 COLOR;         // Final pixel color
-```
-
-### Helper Functions
-```glsl
-// Color
-vec3 FetchColor(ivec2 pixCoord);
-vec3 SampleColor(vec2 texCoord);
-
-// Depth (linear, near to far)
-float FetchDepth(ivec2 pixCoord);
-float SampleDepth(vec2 texCoord);
-
-// Depth (linear normalized, 0 to 1)
-float FetchDepth01(ivec2 pixCoord);
-float SampleDepth01(vec2 texCoord);
-
-// Position (view-space)
-vec3 FetchPosition(ivec2 pixCoord);
-vec3 SamplePosition(vec2 texCoord);
-
-// Normal (view-space)
-vec3 FetchNormal(ivec2 pixCoord);
-vec3 SampleNormal(vec2 texCoord);
+void fragment() {               // Optional: fragment stage
+    // Modify ALBEDO, ROUGHNESS, etc.
+}
 ```
