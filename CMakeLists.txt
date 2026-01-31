@@ -1,19 +1,22 @@
 ﻿cmake_minimum_required(VERSION 3.8)
 project(r3d VERSION 0.7.0 LANGUAGES C CXX)
 
-# Defines the used C standard
+# ========================================
+# Standards and Policies
+# ========================================
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-# This section configures MSVC (Visual Studio) to enable "Edit and Continue" debugging
-
 if(POLICY CMP0141)
     cmake_policy(SET CMP0141 NEW)
+    # This section configures MSVC (Visual Studio) to enable "Edit and Continue" debugging
     set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-# Determine the project's root directory and check if it's the main project
+# ========================================
+# Project Configuration
+# ========================================
 
 set(R3D_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -23,37 +26,16 @@ else()
     set(R3D_IS_MAIN OFF)
 endif()
 
-# Set the cmake module path
-
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${R3D_ROOT_PATH}/cmake")
 
-# Project configuration options
-
-option(R3D_BUILD_DOCS "Build the doxygen doc" OFF)
+option(R3D_BUILD_DOCS "Build the doxygen documentation" OFF)
 option(R3D_BUILD_EXAMPLES "Build the examples" ${R3D_IS_MAIN})
-
 option(R3D_RAYLIB_VENDORED "Use vendored raylib from submodule" OFF)
 option(R3D_ASSIMP_VENDORED "Use vendored assimp from submodule" OFF)
 
-# R3D compile-time options
-
-set(R3D_CONFIG_DEFAULTS
-    R3D_MAX_LIGHT_FORWARD_PER_MESH          8
-    R3D_MAX_PROBE_ON_SCREEN                 8
-    R3D_PROBE_CAPTURE_SIZE                  256
-    R3D_SHADOW_MAP_DIRECTIONAL_SIZE         4096
-    R3D_SHADOW_MAP_SPOT_SIZE                2048
-    R3D_SHADOW_MAP_OMNI_SIZE                2048
-    R3D_CUBEMAP_IRRADIANCE_SIZE             32
-    R3D_CUBEMAP_PREFILTER_SIZE              128
-    R3D_MAX_SHADER_CODE_LENGTH              16384
-    R3D_MAX_SHADER_SAMPLERS                 4
-    R3D_MAX_SHADER_UNIFORMS                 16
-    R3D_MAX_SCREEN_SHADERS                  8
-    R3D_ENABLE_TRACELOG                     1
-)
-
-# Project output directories
+# ========================================
+# Output Directories
+# ========================================
 
 set(R3D_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(R3D_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
@@ -63,166 +45,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY})
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY})
 
-# Include cmake scripts
+# ========================================
+# R3D Compile-Time Configuration
+# ========================================
 
-include(CheckLibraryExists)
-include(EmbedShaders)
-include(EmbedAssets)
-
-# Checks for assimp installation
-
-if(R3D_ASSIMP_VENDORED)
-    set(R3D_ASSIMP_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/assimp")
-    set(R3D_ASSIMP_CMAKELISTS "${R3D_ASSIMP_SUBMODULE_PATH}/CMakeLists.txt")
-
-    # Vendored assimp configuration here!
-    if(EXISTS "${R3D_ASSIMP_CMAKELISTS}")
-        message(STATUS "Using vendored assimp from: ${R3D_ASSIMP_SUBMODULE_PATH}")
-
-        set(ASSIMP_INJECT_DEBUG_POSTFIX     OFF CACHE BOOL "")
-        set(ASSIMP_WARNINGS_AS_ERRORS       OFF CACHE BOOL "")
-        set(ASSIMP_IGNORE_GIT_HASH          ON CACHE BOOL "")
-        set(ASSIMP_BUILD_TESTS              OFF CACHE BOOL "")
-        set(ASSIMP_NO_EXPORT                ON CACHE BOOL "")
-        set(ASSIMP_INSTALL                  OFF CACHE BOOL "")
-
-        set(ASSIMP_BUILD_COLLADA_IMPORTER   ON CACHE BOOL "")
-        set(ASSIMP_BUILD_GLTF_IMPORTER      ON CACHE BOOL "")
-        set(ASSIMP_BUILD_OBJ_IMPORTER       ON CACHE BOOL "")
-        set(ASSIMP_BUILD_M3D_IMPORTER       ON CACHE BOOL "")
-        set(ASSIMP_BUILD_FBX_IMPORTER       ON CACHE BOOL "")
-        set(ASSIMP_BUILD_IQM_IMPORTER       ON CACHE BOOL "")
-
-        set(ASSIMP_BUILD_AMF_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_BVH_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_OFF_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_COB_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_STL_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_3DS_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_AC_IMPORTER        OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_ASE_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_ASSBIN_IMPORTER    OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_B3D_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_DXF_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_CSM_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_HMP_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_IRRMESH_IMPORTER   OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_IRR_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_LWO_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_LWS_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MD2_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MD3_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MD5_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MDC_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MDL_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_NFF_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_NDO_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_OGRE_IMPORTER      OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_OPENGEX_IMPORTER   OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_PLY_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MS3D_IMPORTER      OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_BLEND_IMPORTER     OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_IFC_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_XGL_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_Q3D_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_Q3BSP_IMPORTER     OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_RAW_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_SIB_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_SMD_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_TERRAGEN_IMPORTER  OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_3D_IMPORTER        OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_X_IMPORTER         OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_X3D_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_3MF_IMPORTER       OFF CACHE BOOL "")
-        set(ASSIMP_BUILD_MMD_IMPORTER       OFF CACHE BOOL "")
-
-        add_subdirectory("${R3D_ASSIMP_SUBMODULE_PATH}")
-
-        set(R3D_ASSIMP_INC_PATH "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "Path to assimp includes" FORCE)
-
-        set_target_properties(assimp PROPERTIES 
-            RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
-            LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
-            ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
-        )
-    else()
-        message(FATAL_ERROR "Vendored assimp not found!
-Missing: ${R3D_ASSIMP_CMAKELISTS}
-Please initialize the submodule with:
-    git submodule update --init --recursive")
-    endif()
-else()
-    find_package(assimp QUIET)
-
-    if(TARGET assimp)
-        message(STATUS "Using system-installed assimp")
-        get_target_property(RAYLIB_INCLUDE_DIR assimp INTERFACE_INCLUDE_DIRECTORIES)
-        set(R3D_ASSIMP_INC_PATH "${RAYLIB_INCLUDE_DIR}" CACHE STRING "Path to assimp includes" FORCE)
-    else()
-        message(FATAL_ERROR "System assimp not found.
-Make sure assimp is installed and discoverable by CMake (e.g. via CMAKE_PREFIX_PATH or pkg-config).")
-    endif()
-endif()
-
-# Checks for raylib installation
-
-# TODO: Add a version check for raylib, currently compatible with 5.6 dev
-#       Do this for the next release
-
-if(R3D_RAYLIB_VENDORED)
-    set(R3D_RAYLIB_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/raylib")
-    set(R3D_RAYLIB_CMAKELISTS "${R3D_RAYLIB_SUBMODULE_PATH}/CMakeLists.txt")
-
-    # Vendored raylib configuration here!
-    if(EXISTS "${R3D_RAYLIB_CMAKELISTS}")
-        message(STATUS "Using vendored raylib from: ${R3D_RAYLIB_SUBMODULE_PATH}")
-
-        # Enable required image file formats
-        set(SUPPORT_FILEFORMAT_HDR ON CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_JPG ON CACHE BOOL "" FORCE)
-
-        # Disable model loading and mesh generation support
-        # to avoid symbol redefinition errors with Assimp,
-        # and because it's not needed with r3d
-
-        set(CUSTOMIZE_BUILD ON CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_OBJ OFF CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_MTL OFF CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_IQM OFF CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_GLTF OFF CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_VOX OFF CACHE BOOL "" FORCE)
-        set(SUPPORT_FILEFORMAT_M3D OFF CACHE BOOL "" FORCE)
-        set(SUPPORT_MESH_GENERATION OFF CACHE BOOL "" FORCE)
-
-        add_subdirectory("${R3D_RAYLIB_SUBMODULE_PATH}")
-
-        set(R3D_RAYLIB_INC_PATH "${R3D_RAYLIB_SUBMODULE_PATH}/src" CACHE STRING "Path to raylib includes" FORCE)
-
-        set_target_properties(raylib PROPERTIES 
-            RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
-            LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
-            ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
-        )
-    else()
-        message(FATAL_ERROR "Vendored raylib not found!
-Missing: ${R3D_RAYLIB_CMAKELISTS}
-Please initialize the submodule with:
-    git submodule update --init --recursive")
-    endif()
-else()
-    find_package(raylib QUIET)
-
-    if(TARGET raylib)
-        message(STATUS "Using system-installed raylib")
-        get_target_property(RAYLIB_INCLUDE_DIR raylib INTERFACE_INCLUDE_DIRECTORIES)
-        set(R3D_RAYLIB_INC_PATH "${RAYLIB_INCLUDE_DIR}" CACHE STRING "Path to raylib includes" FORCE)
-    else()
-        message(FATAL_ERROR "System raylib not found.
-Make sure raylib is installed and discoverable by CMake (e.g. via CMAKE_PREFIX_PATH or pkg-config).")
-    endif()
-endif()
-
-# Create R3D configuration header
+set(R3D_CONFIG_DEFAULTS
+    R3D_MAX_LIGHT_FORWARD_PER_MESH      8
+    R3D_MAX_PROBE_ON_SCREEN             8
+    R3D_PROBE_CAPTURE_SIZE              256
+    R3D_SHADOW_MAP_DIRECTIONAL_SIZE     4096
+    R3D_SHADOW_MAP_SPOT_SIZE            2048
+    R3D_SHADOW_MAP_OMNI_SIZE            2048
+    R3D_CUBEMAP_IRRADIANCE_SIZE         32
+    R3D_CUBEMAP_PREFILTER_SIZE          128
+    R3D_MAX_SHADER_CODE_LENGTH          16384
+    R3D_MAX_SHADER_SAMPLERS             4
+    R3D_MAX_SHADER_UNIFORMS             16
+    R3D_MAX_SCREEN_SHADERS              8
+    R3D_ENABLE_TRACELOG                 1
+)
 
 list(LENGTH R3D_CONFIG_DEFAULTS _len)
 math(EXPR _count "${_len} / 2")
@@ -231,20 +72,158 @@ math(EXPR _last "${_count} - 1")
 foreach(i RANGE 0 ${_last})
     math(EXPR key_index "2 * ${i}")
     math(EXPR val_index "2 * ${i} + 1")
-
     list(GET R3D_CONFIG_DEFAULTS ${key_index} key)
     list(GET R3D_CONFIG_DEFAULTS ${val_index} val)
-
     set(${key} ${val} CACHE STRING "R3D compile-time configuration")
 endforeach()
 
+set(R3D_GENERATED_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated/include")
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/r3d_config.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/include/r3d_config.h
+    ${R3D_GENERATED_INCLUDE_DIR}/r3d_config.h
     @ONLY
 )
 
-# Create the r3d library by adding all the source files
+# ========================================
+# Dependencies: Assimp
+# ========================================
+
+if(R3D_ASSIMP_VENDORED)
+    set(R3D_ASSIMP_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/assimp")
+    set(R3D_ASSIMP_CMAKELISTS "${R3D_ASSIMP_SUBMODULE_PATH}/CMakeLists.txt")
+
+    if(NOT EXISTS "${R3D_ASSIMP_CMAKELISTS}")
+        message(FATAL_ERROR 
+            "Vendored assimp not found!\n"
+            "Missing: ${R3D_ASSIMP_CMAKELISTS}\n"
+            "Please initialize the submodule with:\n"
+            "    git submodule update --init --recursive")
+    endif()
+
+    message(STATUS "Using vendored assimp from: ${R3D_ASSIMP_SUBMODULE_PATH}")
+
+    # Common settings
+    set(ASSIMP_INJECT_DEBUG_POSTFIX     OFF CACHE BOOL "")
+    set(ASSIMP_WARNINGS_AS_ERRORS       OFF CACHE BOOL "")
+    set(ASSIMP_IGNORE_GIT_HASH          ON CACHE BOOL "")
+    set(ASSIMP_BUILD_TESTS              OFF CACHE BOOL "")
+    set(ASSIMP_NO_EXPORT                ON CACHE BOOL "")
+    set(ASSIMP_INSTALL                  OFF CACHE BOOL "")
+
+    # Enabled importers
+    set(_ASSIMP_ENABLED_IMPORTERS
+        COLLADA GLTF OBJ M3D FBX IQM
+    )
+
+    # Disabled importers
+    set(_ASSIMP_DISABLED_IMPORTERS
+        AMF BVH OFF COB STL 3DS AC ASE ASSBIN B3D DXF CSM HMP 
+        IRRMESH IRR LWO LWS MD2 MD3 MD5 MDC MDL NFF NDO OGRE 
+        OPENGEX PLY MS3D BLEND IFC XGL Q3D Q3BSP RAW SIB SMD 
+        TERRAGEN 3D X X3D 3MF MMD
+    )
+
+    foreach(importer ${_ASSIMP_ENABLED_IMPORTERS})
+        set(ASSIMP_BUILD_${importer}_IMPORTER ON CACHE BOOL "")
+    endforeach()
+
+    foreach(importer ${_ASSIMP_DISABLED_IMPORTERS})
+        set(ASSIMP_BUILD_${importer}_IMPORTER OFF CACHE BOOL "")
+    endforeach()
+
+    add_subdirectory("${R3D_ASSIMP_SUBMODULE_PATH}")
+
+    set(R3D_ASSIMP_INC_PATH "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "" FORCE)
+
+    set_target_properties(assimp PROPERTIES 
+        RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
+        LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
+        ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
+    )
+else()
+    find_package(assimp QUIET)
+
+    if(NOT TARGET assimp)
+        message(FATAL_ERROR 
+            "System assimp not found.\n"
+            "Make sure assimp is installed and discoverable by CMake.")
+    endif()
+
+    message(STATUS "Using system-installed assimp")
+    get_target_property(ASSIMP_INCLUDE_DIR assimp INTERFACE_INCLUDE_DIRECTORIES)
+    set(R3D_ASSIMP_INC_PATH "${ASSIMP_INCLUDE_DIR}" CACHE STRING "" FORCE)
+endif()
+
+# ========================================
+# Dependencies: Raylib
+# ========================================
+
+if(R3D_RAYLIB_VENDORED)
+    set(R3D_RAYLIB_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/raylib")
+    set(R3D_RAYLIB_CMAKELISTS "${R3D_RAYLIB_SUBMODULE_PATH}/CMakeLists.txt")
+
+    if(NOT EXISTS "${R3D_RAYLIB_CMAKELISTS}")
+        message(FATAL_ERROR 
+            "Vendored raylib not found!\n"
+            "Missing: ${R3D_RAYLIB_CMAKELISTS}\n"
+            "Please initialize the submodule with:\n"
+            "    git submodule update --init --recursive")
+    endif()
+
+    message(STATUS "Using vendored raylib from: ${R3D_RAYLIB_SUBMODULE_PATH}")
+
+    set(CUSTOMIZE_BUILD ON CACHE BOOL "" FORCE)
+
+    # Enabled file formats
+    set(_RAYLIB_ENABLED_FORMATS
+        HDR JPG
+    )
+
+    # Disabled file formats (r3d provides its own model importers via Assimp)
+    # Note: M3D must be disabled to avoid symbol conflicts between raylib and Assimp
+    set(_RAYLIB_DISABLED_FORMATS
+        OBJ MTL IQM GLTF VOX M3D
+    )
+
+    foreach(format ${_RAYLIB_ENABLED_FORMATS})
+        set(SUPPORT_FILEFORMAT_${format} ON CACHE BOOL "" FORCE)
+    endforeach()
+
+    foreach(format ${_RAYLIB_DISABLED_FORMATS})
+        set(SUPPORT_FILEFORMAT_${format} OFF CACHE BOOL "" FORCE)
+    endforeach()
+
+    add_subdirectory("${R3D_RAYLIB_SUBMODULE_PATH}")
+
+    set(R3D_RAYLIB_INC_PATH "${R3D_RAYLIB_SUBMODULE_PATH}/src" CACHE STRING "" FORCE)
+
+    set_target_properties(raylib PROPERTIES 
+        RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
+        LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
+        ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
+    )
+else()
+    find_package(raylib QUIET)
+
+    if(NOT TARGET raylib)
+        message(FATAL_ERROR 
+            "System raylib not found.\n"
+            "Make sure raylib is installed and discoverable by CMake.")
+    endif()
+
+    message(STATUS "Using system-installed raylib")
+    get_target_property(RAYLIB_INCLUDE_DIR raylib INTERFACE_INCLUDE_DIRECTORIES)
+    set(R3D_RAYLIB_INC_PATH "${RAYLIB_INCLUDE_DIR}" CACHE STRING "" FORCE)
+endif()
+
+# ========================================
+# Library Definition
+# ========================================
+
+include(CheckLibraryExists)
+include(EmbedShaders)
+include(EmbedAssets)
 
 if(BUILD_SHARED_LIBS)
     add_definitions(-DR3D_BUILD_SHARED)
@@ -252,15 +231,18 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 add_library(${PROJECT_NAME}
+    # Importer
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
     "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
+    # Common
     "${R3D_ROOT_PATH}/src/common/r3d_frustum.c"
     "${R3D_ROOT_PATH}/src/common/r3d_helper.c"
     "${R3D_ROOT_PATH}/src/common/r3d_image.c"
     "${R3D_ROOT_PATH}/src/common/r3d_pass.c"
+    # Modules
     "${R3D_ROOT_PATH}/src/modules/r3d_texture.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_target.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_shader.c"
@@ -268,6 +250,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_light.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_draw.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_env.c"
+    # Core
     "${R3D_ROOT_PATH}/src/r3d_animation_player.c"
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
@@ -290,12 +273,20 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_probe.c"
     "${R3D_ROOT_PATH}/src/r3d_skeleton.c"
     "${R3D_ROOT_PATH}/src/r3d_utils.c"
+    # External
+    "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
 )
 
+# ========================================
+# Embedded Resources
+# ========================================
+
 embed_shaders(${PROJECT_NAME}
+    # Generic
     "${R3D_ROOT_PATH}/shaders/generic/color.frag"
     "${R3D_ROOT_PATH}/shaders/generic/screen.vert"
     "${R3D_ROOT_PATH}/shaders/generic/cubemap.vert"
+    # Prepare
     "${R3D_ROOT_PATH}/shaders/prepare/buffer_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/atrous_wavelet.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/bicubic_up.frag"
@@ -311,6 +302,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_irradiance.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_prefilter.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_skybox.frag"
+    # Scene
     "${R3D_ROOT_PATH}/shaders/scene/scene.vert"
     "${R3D_ROOT_PATH}/shaders/scene/geometry.frag"
     "${R3D_ROOT_PATH}/shaders/scene/forward.frag"
@@ -319,9 +311,11 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/scene/decal.frag"
     "${R3D_ROOT_PATH}/shaders/scene/skybox.vert"
     "${R3D_ROOT_PATH}/shaders/scene/skybox.frag"
+    # Deferred
     "${R3D_ROOT_PATH}/shaders/deferred/ambient.frag"
     "${R3D_ROOT_PATH}/shaders/deferred/lighting.frag"
     "${R3D_ROOT_PATH}/shaders/deferred/compose.frag"
+    # Post
     "${R3D_ROOT_PATH}/shaders/post/bloom.frag"
     "${R3D_ROOT_PATH}/shaders/post/fog.frag"
     "${R3D_ROOT_PATH}/shaders/post/dof.frag"
@@ -335,74 +329,73 @@ embed_assets(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/assets/brdf_lut_512_rg16_float.raw"
 )
 
-# Add external sources
-
-target_sources(${PROJECT_NAME}
-    PRIVATE
-        "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
-)
-
-# Link project dependencies
-
-target_link_libraries(${PROJECT_NAME}
-    PRIVATE
-        raylib assimp
-)
-
-check_library_exists(m cos "" HAVE_LIB_M)
-
-if(HAVE_LIB_M)
-    target_link_libraries(${PROJECT_NAME} PUBLIC m)
-endif()
-
-# Specify the include directories needed for the project
+# ========================================
+# Include Directories
+# ========================================
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
         "${R3D_ROOT_PATH}/external/tinycthread"
         "${R3D_ROOT_PATH}/external/uthash"
         "${R3D_ROOT_PATH}/external/glad"
+        "${R3D_GENERATED_INCLUDE_DIR}"
         "${R3D_ROOT_PATH}/include"
         "${R3D_RAYLIB_INC_PATH}"
         "${R3D_ASSIMP_INC_PATH}"
 )
 
-# Ensure the C standard is set for MSVC if using CMake version greater than 3.12
+# ========================================
+# Link Libraries
+# ========================================
+
+target_link_libraries(${PROJECT_NAME}
+    PRIVATE raylib assimp
+)
+
+check_library_exists(m cos "" HAVE_LIB_M)
+if(HAVE_LIB_M)
+    target_link_libraries(${PROJECT_NAME} PUBLIC m)
+endif()
+
+# ========================================
+# Compiler Settings
+# ========================================
 
 if(CMAKE_VERSION VERSION_GREATER 3.12)
     set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)
 endif()
 
-# C11 atomics for MSVC
-
-if (MSVC)
+if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /experimental:c11atomics)
 endif()
 
-# Doxygen configuration
+# ========================================
+# Documentation
+# ========================================
 
 if(R3D_BUILD_DOCS)
     find_package(Doxygen QUIET)
 
-    if(Doxygen_FOUND)
-        set(DOXYGEN_IN ${R3D_ROOT_PATH}/Doxyfile.in)
-        set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-
-        configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-
-        add_custom_target(docs
-            COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMENT "Generating API documentation with Doxygen"
-            VERBATIM
-        )
-    else()
-        message(FATAL_ERROR "System Doxygen not found.
-Make sure Doxygen is installed and discoverable by CMake (e.g. via CMAKE_PREFIX_PATH or pkg-config).")
+    if(NOT Doxygen_FOUND)
+        message(FATAL_ERROR "Doxygen not found. Install Doxygen to build documentation.")
     endif()
+
+    set(DOXYGEN_IN ${R3D_ROOT_PATH}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
 endif()
 
-# Example configuration
+# ========================================
+# Examples
+# ========================================
 
 if(R3D_BUILD_EXAMPLES)
     include("${R3D_ROOT_PATH}/examples/CMakeLists.txt")

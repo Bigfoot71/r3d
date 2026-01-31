@@ -45,7 +45,6 @@ function(embed_assets target_name)
     )
     
     add_dependencies(${target_name} ${assets_target})
-    target_include_directories(${target_name} PRIVATE "${CMAKE_BINARY_DIR}/generated/include")
     
     message(STATUS "Target ${assets_target} created with ${num_assets} asset(s)")
     message(STATUS "Assets will be automatically recompiled if modified")

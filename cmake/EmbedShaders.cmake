@@ -48,7 +48,6 @@ function(embed_shaders target_name)
     )
 
     add_dependencies(${target_name} ${shader_target})
-    target_include_directories(${target_name} PRIVATE "${CMAKE_BINARY_DIR}/generated/include")
 
     message(STATUS "Target ${shader_target} created with ${shader_count} shader(s)")
 endfunction()
