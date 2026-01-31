@@ -1197,9 +1197,6 @@ void pass_scene_probes(void)
 
         for (int iFace = 0; iFace < 6; iFace++)
         {
-            Matrix viewProj = r3d_matrix_multiply(&probe->view[iFace], &probe->proj[iFace]);
-            Matrix invView = MatrixInvert(probe->view[iFace]);
-
             /* --- Generates the list of visible groups for the current face of the capture --- */
 
             const r3d_frustum_t* frustum = &probe->frustum[iFace];
@@ -1217,7 +1214,7 @@ void pass_scene_probes(void)
 
             R3D_DRAW_FOR_EACH(call, true, frustum, PROBES_DRAW_LISTS) {
                 upload_light_array_block_for_mesh(call, probe->shadows);
-                raster_probe(call, &invView, &viewProj, probe);
+                raster_probe(call, &probe->invView[iFace], &probe->viewProj[iFace], probe);
             }
 
             /* --- Render background --- */
@@ -1232,13 +1229,11 @@ void pass_scene_probes(void)
                 float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
 
                 R3D_SHADER_BIND_SAMPLER_BLT(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
-                R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
-                R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uSkyLod, R3D.environment.background.skyBlur * lod);
+                R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uEnergy, R3D.environment.background.energy);
+                R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uLod, R3D.environment.background.skyBlur * lod);
                 R3D_SHADER_SET_VEC4_BLT(scene.skybox, uRotation, R3D.environment.background.rotation);
-                R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatView, probe->view[iFace]);
-                R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatProj, probe->proj[iFace]);
-
-                R3D_DRAW_CUBE();
+                R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatInvView, probe->invView[iFace]);
+                R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatInvProj, probe->invProj);
             }
             else {
                 Vector4 background = r3d_color_to_linear_scaled_vec4(
@@ -1247,8 +1242,9 @@ void pass_scene_probes(void)
                 );
                 R3D_SHADER_USE_BLT(scene.background);
                 R3D_SHADER_SET_VEC4_BLT(scene.background, uColor, background);
-                R3D_DRAW_SCREEN();
             }
+
+            R3D_DRAW_SCREEN();
         }
 
         /* --- Generate irradiance and prefilter maps --- */
@@ -1653,13 +1649,11 @@ void pass_scene_background(r3d_target_t sceneTarget)
         float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
 
         R3D_SHADER_BIND_SAMPLER_BLT(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
-        R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uSkyEnergy, R3D.environment.background.energy);
-        R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uSkyLod, R3D.environment.background.skyBlur * lod);
+        R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uEnergy, R3D.environment.background.energy);
+        R3D_SHADER_SET_FLOAT_BLT(scene.skybox, uLod, R3D.environment.background.skyBlur * lod);
         R3D_SHADER_SET_VEC4_BLT(scene.skybox, uRotation, R3D.environment.background.rotation);
-        R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatView, R3D.viewState.view);
-        R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatProj, R3D.viewState.proj);
-
-        R3D_DRAW_CUBE();
+        R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatInvView, R3D.viewState.invView);
+        R3D_SHADER_SET_MAT4_BLT(scene.skybox, uMatInvProj, R3D.viewState.invProj);
     }
     else {
         Vector4 background = r3d_color_to_linear_scaled_vec4(
@@ -1668,8 +1662,9 @@ void pass_scene_background(r3d_target_t sceneTarget)
         );
         R3D_SHADER_USE_BLT(scene.background);
         R3D_SHADER_SET_VEC4_BLT(scene.background, uColor, background);
-        R3D_DRAW_SCREEN();
     }
+
+    R3D_DRAW_SCREEN();
 }
 
 r3d_target_t pass_post_setup(r3d_target_t sceneTarget)

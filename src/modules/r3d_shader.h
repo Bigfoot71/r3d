@@ -279,7 +279,7 @@
     if (((r3d_shader_custom_t*)(custom))->shader_name.uniform.colorSpace != (space) || \
         memcmp(&((r3d_shader_custom_t*)(custom))->shader_name.uniform.val, &tmp, sizeof(Color)) != 0) { \
         Vector4 v = r3d_color_to_linear_vec4(tmp, (space));                     \
-        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = tmp;          \
+        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = tmp;        \
         ((r3d_shader_custom_t*)(custom))->shader_name.uniform.colorSpace = (space); \
         glUniform4fv(((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc, 1, (float*)(&v)); \
     }                                                                           \
@@ -307,7 +307,7 @@
 
 #define R3D_SHADER_SET_MAT4_OVR(custom, shader_name, uniform, value) do {       \
     glUniformMatrix4fv(                                                         \
-        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc,                \
+        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc,              \
         1,                                                                      \
         GL_TRUE,                                                                \
         (float*)(&(value))                                                      \
@@ -334,7 +334,7 @@
 
 #define R3D_SHADER_SET_MAT4V_OVR(custom, shader_name, uniform, array, count) do { \
     glUniformMatrix4fv(                                                         \
-        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc,                \
+        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc,              \
         (count),                                                                \
         GL_TRUE,                                                                \
         (float*)(array)                                                         \
@@ -852,12 +852,12 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_vec4_t uRotation;
-    r3d_shader_uniform_mat4_t uMatView;
-    r3d_shader_uniform_mat4_t uMatProj;
+    r3d_shader_uniform_mat4_t uMatInvView;
+    r3d_shader_uniform_mat4_t uMatInvProj;
     r3d_shader_uniform_sampler_t uSkyMap;
-    r3d_shader_uniform_float_t uSkyEnergy;
-    r3d_shader_uniform_float_t uSkyLod;
+    r3d_shader_uniform_vec4_t uRotation;
+    r3d_shader_uniform_float_t uEnergy;
+    r3d_shader_uniform_float_t uLod;
 } r3d_shader_scene_skybox_t;
 
 typedef struct {

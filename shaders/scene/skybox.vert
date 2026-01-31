@@ -8,30 +8,31 @@
 
 #version 330 core
 
-/* === Includes === */
+/* === Constants === */
 
-#include "../include/math.glsl"
-
-/* === Attributes === */
-
-layout (location = 0) in vec3 aPosition;
+const vec2 positions[3] = vec2[]
+(
+    vec2(-1.0, -1.0),
+    vec2( 3.0, -1.0),
+    vec2(-1.0,  3.0)
+);
 
 /* === Uniforms === */
 
-uniform vec4 uRotation;
-uniform mat4 uMatView;
-uniform mat4 uMatProj;
+uniform mat4 uMatInvProj;
+uniform mat4 uMatInvView;
 
 /* === Varyings === */
 
-out vec3 vPosition;
+out vec3 vViewRay;
 
 /* === Program === */
 
 void main()
 {
-    vPosition = M_Rotate3D(aPosition, uRotation);
+    vec2 pos = positions[gl_VertexID];
+    gl_Position = vec4(pos, 1.0, 1.0);
 
-    mat4 rotView = mat4(mat3(uMatView));
-    gl_Position = (uMatProj * rotView * vec4(aPosition, 1.0)).xyww;
+    vec4 unprojected = uMatInvProj * vec4(pos, 1.0, 1.0);
+    vViewRay = mat3(uMatInvView) * unprojected.xyz;
 }

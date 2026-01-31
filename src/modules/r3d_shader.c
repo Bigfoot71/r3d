@@ -623,11 +623,11 @@ bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
     DECL_SHADER_BLT(r3d_shader_scene_skybox_t, scene, skybox);
     LOAD_SHADER(skybox, SKYBOX_VERT, SKYBOX_FRAG);
 
+    GET_LOCATION(skybox, uMatInvView);
+    GET_LOCATION(skybox, uMatInvProj);
     GET_LOCATION(skybox, uRotation);
-    GET_LOCATION(skybox, uMatView);
-    GET_LOCATION(skybox, uMatProj);
-    GET_LOCATION(skybox, uSkyEnergy);
-    GET_LOCATION(skybox, uSkyLod);
+    GET_LOCATION(skybox, uEnergy);
+    GET_LOCATION(skybox, uLod);
 
     USE_SHADER(skybox);
 

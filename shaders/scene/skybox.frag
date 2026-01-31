@@ -8,15 +8,30 @@
 
 #version 330 core
 
-in vec3 vPosition;
+/* === Includes === */
+
+#include "../include/math.glsl"
+
+/* === Varyings === */
+
+in vec3 vViewRay;
+
+/* === Uniforms === */
 
 uniform samplerCube uSkyMap;
-uniform float uSkyEnergy;
-uniform float uSkyLod;
+uniform vec4 uRotation;
+uniform float uEnergy;
+uniform float uLod;
+
+/* === Fragments === */
 
 layout(location = 0) out vec3 FragColor;
 
+/* === Program === */
+
 void main()
 {
-    FragColor = textureLod(uSkyMap, vPosition, uSkyLod).rgb * uSkyEnergy;
+    vec3 direction = normalize(vViewRay);
+    direction = M_Rotate3D(direction, uRotation);
+    FragColor = textureLod(uSkyMap, direction, uLod).rgb * uEnergy;
 }

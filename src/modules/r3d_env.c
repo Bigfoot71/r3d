@@ -300,14 +300,14 @@ static void update_probe_matrix_frustum(r3d_env_probe_t* probe)
     };
 
     Matrix proj = MatrixPerspective(90 * DEG2RAD, 1.0, 0.05f, probe->range);
+    probe->invProj = MatrixInvert(proj);
 
     for (int face = 0; face < 6; face++) {
         Vector3 target = Vector3Add(probe->position, dirs[face]);
         Matrix view = MatrixLookAt(probe->position, target, ups[face]);
-        Matrix viewProj = r3d_matrix_multiply(&view, &proj);
-        probe->frustum[face] = r3d_frustum_create(viewProj);
-        probe->view[face] = view;
-        probe->proj[face] = proj;
+        probe->viewProj[face] = r3d_matrix_multiply(&view, &proj);
+        probe->frustum[face] = r3d_frustum_create(probe->viewProj[face]);
+        probe->invView[face] = MatrixInvert(view);
     }
 }
 

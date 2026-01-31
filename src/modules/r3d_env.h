@@ -40,8 +40,9 @@ typedef struct {
 typedef struct {
     r3d_env_probe_state_t state;
     r3d_frustum_t frustum[6];
-    Matrix view[6];
-    Matrix proj[6];
+    Matrix viewProj[6];
+    Matrix invView[6];
+    Matrix invProj;
 
     R3D_ProbeFlags flags;
     int irradiance;     // Layer index, -1 if unused
