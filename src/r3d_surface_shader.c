@@ -109,7 +109,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
 
         // Parse #pragma usage directive
         if (strncmp(ptr, "#pragma", 7) == 0 && isspace(ptr[7])) {
-            usage = parse_pragma_usage(&ptr);
+            usage |= parse_pragma_usage(&ptr);
             continue;
         }
 
