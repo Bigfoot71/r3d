@@ -1,13 +1,13 @@
 find_program(PYTHON_EXECUTABLE python3 REQUIRED)
 
-function(process_shader shader_file output_file_var)
+function(process_shader shader_file output_file_var generated_dir)
     get_filename_component(shader_name "${shader_file}" NAME)
-    set(output_file "${CMAKE_BINARY_DIR}/generated/include/shaders/${shader_name}.h")
+    set(output_file "${generated_dir}/shaders/${shader_name}.h")
     set("${output_file_var}" "${output_file}" PARENT_SCOPE)
 
     add_custom_command(
         OUTPUT "${output_file}"
-        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/generated/include/shaders"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${generated_dir}/shaders"
         COMMAND "${PYTHON_EXECUTABLE}" "${R3D_ROOT_PATH}/scripts/glsl_processor.py" 
                 "${shader_file}" "${CMAKE_CURRENT_BINARY_DIR}/shader_${shader_name}.tmp"
         COMMAND "${PYTHON_EXECUTABLE}" "${R3D_ROOT_PATH}/scripts/bin2c.py" 
@@ -27,6 +27,10 @@ function(embed_shaders target_name)
         message(FATAL_ERROR "embed_shaders: No shader file specified")
     endif()
 
+    if(NOT DEFINED R3D_GENERATED_INCLUDE_DIR)
+        message(FATAL_ERROR "embed_shaders: R3D_GENERATED_INCLUDE_DIR is not defined")
+    endif()
+
     set(output_files)
     list(LENGTH shader_files shader_count)
     message(STATUS "Configuring processing of ${shader_count} shader(s) for target ${target_name}...")
@@ -36,7 +40,7 @@ function(embed_shaders target_name)
             message(FATAL_ERROR "embed_shaders: Shader file not found: ${shader_file}")
         endif()
 
-        process_shader("${shader_file}" output_file)
+        process_shader("${shader_file}" output_file "${R3D_GENERATED_INCLUDE_DIR}")
         list(APPEND output_files "${output_file}")
         message(STATUS "  - ${shader_file} -> ${output_file}")
     endforeach()
