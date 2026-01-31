@@ -49,13 +49,14 @@
             .roughness = 1.0f,                          \
             .metalness = 0.0f,                          \
         },                                              \
-        .transparencyMode = R3D_TRANSPARENCY_DISABLED,  \
-        .billboardMode = R3D_BILLBOARD_DISABLED,        \
-        .blendMode = R3D_BLEND_MIX,                     \
-        .cullMode = R3D_CULL_BACK,                      \
         .uvOffset = {0.0f, 0.0f},                       \
         .uvScale = {1.0f, 1.0f},                        \
         .alphaCutoff = 0.01f,                           \
+        .transparencyMode = R3D_TRANSPARENCY_DISABLED,  \
+        .billboardMode = R3D_BILLBOARD_DISABLED,        \
+        .blendMode = R3D_BLEND_MIX,                     \
+        .depthMode = R3D_DEPTH_LESS,                    \
+        .cullMode = R3D_CULL_BACK,                      \
         .shader = 0,                                    \
     }
 
@@ -101,6 +102,23 @@ typedef enum R3D_BlendMode {
     R3D_BLEND_MULTIPLY,             ///< Multiply blending: source color is multiplied with the destination, darkening the image.
     R3D_BLEND_PREMULTIPLIED_ALPHA   ///< Premultiplied alpha blending: source color is blended with the destination assuming the source color is already multiplied by its alpha.
 } R3D_BlendMode;
+
+/**
+ * @brief Depth comparison modes.
+ *
+ * Defines how fragments are tested against the depth buffer during rendering.
+ * @note The depth mode affects both forward and deferred rendering passes.
+ */
+typedef enum R3D_DepthMode {
+    R3D_DEPTH_LESS = 0,    // Passes if depth < depth buffer (default)
+    R3D_DEPTH_LEQUAL,      // Passes if depth <= depth buffer
+    R3D_DEPTH_EQUAL,       // Passes if depth == depth buffer
+    R3D_DEPTH_GREATER,     // Passes if depth > depth buffer
+    R3D_DEPTH_GEQUAL,      // Passes if depth >= depth buffer
+    R3D_DEPTH_NOTEQUAL,    // Passes if depth != depth buffer
+    R3D_DEPTH_ALWAYS,      // Always passes
+    R3D_DEPTH_NEVER        // Never passes
+} R3D_DepthMode;
 
 /**
  * @brief Face culling modes.
@@ -167,22 +185,22 @@ typedef struct R3D_OrmMap {
  */
 typedef struct R3D_Material {
 
-    R3D_AlbedoMap albedo;       ///< Albedo map
-    R3D_EmissionMap emission;   ///< Emission map
-    R3D_NormalMap normal;       ///< Normal map
-    R3D_OrmMap orm;             ///< Occlusion-Roughness-Metalness map
+    R3D_AlbedoMap albedo;                   ///< Albedo map
+    R3D_EmissionMap emission;               ///< Emission map
+    R3D_NormalMap normal;                   ///< Normal map
+    R3D_OrmMap orm;                         ///< Occlusion-Roughness-Metalness map
+
+    Vector2 uvOffset;                       ///< UV offset (default: {0.0f, 0.0f})
+    Vector2 uvScale;                        ///< UV scale (default: {1.0f, 1.0f})
+    float alphaCutoff;                      ///< Alpha cutoff threshold (default: 0.01f)
 
     R3D_TransparencyMode transparencyMode;  ///< Transparency mode (default: DISABLED)
     R3D_BillboardMode billboardMode;        ///< Billboard mode (default: DISABLED)
     R3D_BlendMode blendMode;                ///< Blend mode (default: MIX)
+    R3D_DepthMode depthMode;                ///< Depth mode (default: LESS)
     R3D_CullMode cullMode;                  ///< Face culling mode (default: BACK)
 
-    Vector2 uvOffset;    ///< UV offset (default: {0.0f, 0.0f})
-    Vector2 uvScale;     ///< UV scale (default: {1.0f, 1.0f})
-
-    float alphaCutoff;   ///< Alpha cutoff threshold (default: 0.01f)
-
-    R3D_SurfaceShader* shader; ///< Custom shader applied to the material (default: NULL)
+    R3D_SurfaceShader* shader;              ///< Custom shader applied to the material (default: NULL)
 
 } R3D_Material;
 
