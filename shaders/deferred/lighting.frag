@@ -138,7 +138,7 @@ void main()
     vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
     /* Compute view direction and the dot product of the normal and view direction */
-    
+
     vec3 V = normalize(uView.position - position);
 
     float NdotV = dot(N, V);

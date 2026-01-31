@@ -245,8 +245,7 @@ void main()
 
         /* Apply attenuation based on the distance from the light */
 
-        if (light.type != LIGHT_DIR)
-        {
+        if (light.type != LIGHT_DIR) {
             float dist = length(light.position - vPosition);
             float atten = 1.0 - clamp(dist / light.range, 0.0, 1.0);
             shadow *= atten * light.attenuation;
@@ -254,8 +253,7 @@ void main()
 
         /* Apply spotlight effect if the light is a spotlight */
 
-        if (light.type == LIGHT_SPOT)
-        {
+        if (light.type == LIGHT_SPOT) {
             float theta = dot(L, -light.direction);
             float epsilon = (light.innerCutOff - light.outerCutOff);
             shadow *= smoothstep(0.0, 1.0, (theta - light.outerCutOff) / epsilon);
