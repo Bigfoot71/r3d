@@ -54,7 +54,7 @@ static void upload_env_block(void);
 
 static void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light);
 static void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light);
-static void raster_geometry(const r3d_draw_call_t* call);
+static void raster_geometry(const r3d_draw_call_t* call, bool applyDepthMode);
 static void raster_decal(const r3d_draw_call_t* call);
 static void raster_forward(const r3d_draw_call_t* call);
 
@@ -697,6 +697,7 @@ void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light
         r3d_draw_apply_shadow_cast_mode(mesh->shadowCastMode, material->cullMode);
     }
     else {
+        r3d_draw_apply_depth_mode(material->depthMode);
         r3d_draw_apply_cull_mode(material->cullMode);
     }
 
@@ -777,6 +778,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_
         r3d_draw_apply_shadow_cast_mode(mesh->shadowCastMode, material->cullMode);
     }
     else {
+        r3d_draw_apply_depth_mode(material->depthMode);
         r3d_draw_apply_cull_mode(material->cullMode);
     }
 
@@ -790,12 +792,6 @@ void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_
         R3D_SHADER_SET_INT_OPT(scene.depthCube, shader, uInstancing, false);
         r3d_draw(call);
     }
-
-    /* --- Unbind vertex buffers --- */
-
-    rlDisableVertexArray();
-    rlDisableVertexBuffer();
-    rlDisableVertexBufferElement();
 }
 
 void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj, r3d_env_probe_t* probe)
@@ -891,7 +887,7 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     }
 }
 
-void raster_geometry(const r3d_draw_call_t* call)
+void raster_geometry(const r3d_draw_call_t* call, bool applyDepthMode)
 {
     assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
 
@@ -956,6 +952,9 @@ void raster_geometry(const r3d_draw_call_t* call)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
+    if (applyDepthMode) {
+        r3d_draw_apply_depth_mode(material->depthMode);
+    }
     r3d_draw_apply_cull_mode(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
@@ -1122,6 +1121,7 @@ void raster_forward(const r3d_draw_call_t* call)
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
+    r3d_draw_apply_depth_mode(material->depthMode);
     r3d_draw_apply_cull_mode(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
@@ -1268,13 +1268,12 @@ void pass_scene_geometry(void)
     R3D_TARGET_BIND(true, R3D_TARGET_GBUFFER);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_DEFERRED_INST, R3D_DRAW_LIST_DEFERRED) {
-        raster_geometry(call);
+        raster_geometry(call, true);
     }
 }
 
@@ -1285,7 +1284,6 @@ void pass_scene_prepass(void)
     r3d_target_bind(NULL, 0, 0, true);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
@@ -1302,7 +1300,7 @@ void pass_scene_prepass(void)
     glDepthMask(GL_FALSE);
 
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS) {
-        raster_geometry(call);
+        raster_geometry(call, false);
     }
 }
 
@@ -1622,7 +1620,6 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     R3D_TARGET_BIND(true, sceneTarget);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
 

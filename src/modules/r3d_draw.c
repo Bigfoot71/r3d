@@ -383,7 +383,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         sortData->material.emission = call->mesh.material.emission.texture.id;
         sortData->material.blend = call->mesh.material.blendMode;
         sortData->material.cull = call->mesh.material.cullMode;
-        sortData->material.transparency = call->mesh.material.transparencyMode;
+        sortData->material.depthFunc = call->mesh.material.depthMode;
         sortData->material.billboard = call->mesh.material.billboardMode;
         break;
     
@@ -395,7 +395,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         sortData->material.emission = call->decal.instance.emission.texture.id;
         sortData->material.blend = R3D_BLEND_MIX;
         sortData->material.cull = R3D_CULL_NONE;
-        sortData->material.transparency = R3D_TRANSPARENCY_ALPHA;
+        sortData->material.depthFunc = R3D_DEPTH_ALWAYS;
         sortData->material.billboard = R3D_BILLBOARD_DISABLED;
         break;
     }
@@ -759,23 +759,6 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     );
 }
 
-void r3d_draw_apply_cull_mode(R3D_CullMode mode)
-{
-    switch (mode) {
-    case R3D_CULL_NONE:
-        glDisable(GL_CULL_FACE);
-        break;
-    case R3D_CULL_BACK:
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        break;
-    case R3D_CULL_FRONT:
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
-        break;
-    }
-}
-
 void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transparency)
 {
     switch (blend) {
@@ -795,6 +778,40 @@ void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transpa
         break;
     case R3D_BLEND_PREMULTIPLIED_ALPHA:
         glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        break;
+    default:
+        break;
+    }
+}
+
+void r3d_draw_apply_depth_mode(R3D_DepthMode mode)
+{
+    switch (mode) {
+    case R3D_DEPTH_LESS: glDepthFunc(GL_LESS); break;
+    case R3D_DEPTH_LEQUAL: glDepthFunc(GL_LEQUAL); break;
+    case R3D_DEPTH_EQUAL: glDepthFunc(GL_EQUAL); break;
+    case R3D_DEPTH_GREATER: glDepthFunc(GL_GREATER); break;
+    case R3D_DEPTH_GEQUAL: glDepthFunc(GL_GEQUAL); break;
+    case R3D_DEPTH_NOTEQUAL: glDepthFunc(GL_NOTEQUAL); break;
+    case R3D_DEPTH_ALWAYS: glDepthFunc(GL_ALWAYS); break;
+    case R3D_DEPTH_NEVER: glDepthFunc(GL_NEVER); break;
+    default: break;
+    }
+}
+
+void r3d_draw_apply_cull_mode(R3D_CullMode mode)
+{
+    switch (mode) {
+    case R3D_CULL_NONE:
+        glDisable(GL_CULL_FACE);
+        break;
+    case R3D_CULL_BACK:
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+        break;
+    case R3D_CULL_FRONT:
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
         break;
     default:
         break;
