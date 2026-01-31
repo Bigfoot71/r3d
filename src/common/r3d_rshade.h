@@ -329,12 +329,13 @@ static inline char* r3d_rshade_copy_global_code(char* outPtr, const char* code, 
 
     while (*ptr)
     {
-        // Skip comments
+        // Skip single-line comments
         if (strncmp(ptr, "//", 2) == 0) {
             r3d_rshade_skip_to_end_of_line(&ptr);
             continue;
         }
 
+        // Skip multi-line comments
         if (strncmp(ptr, "/*", 2) == 0) {
             ptr += 2;
             while (*ptr && strncmp(ptr, "*/", 2) != 0) ptr++;
@@ -347,9 +348,15 @@ static inline char* r3d_rshade_copy_global_code(char* outPtr, const char* code, 
 
         // Check if line should be skipped
         if (r3d_rshade_should_skip_line(ptr, hasVaryings, vertexFunc, fragmentFunc)) {
+            // Special handling for entry points, skip entire function body
             if (r3d_rshade_check_shader_entry(ptr, vertexFunc, fragmentFunc)) {
                 r3d_rshade_skip_to_matching_brace(&ptr);
             }
+            // For pragmas, skip to end of line (not semicolon)
+            else if (strncmp(ptr, "#pragma", 7) == 0) {
+                r3d_rshade_skip_to_end_of_line(&ptr);
+            }
+            // For uniforms/varyings, skip to semicolon
             else {
                 r3d_rshade_skip_to_semicolon(&ptr);
             }
