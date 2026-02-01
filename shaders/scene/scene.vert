@@ -197,7 +197,7 @@ void main()
     #endif // DECAL
     }
 
-#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     if (uBillboard == BILLBOARD_FRONT) {
         BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
     }
@@ -229,7 +229,7 @@ void main()
     }
 #endif // FORWARD
 
-#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     gl_Position = uMatViewProj * vec4(vPosition, 1.0);
 #else
     gl_Position = uView.viewProj * vec4(vPosition, 1.0);
