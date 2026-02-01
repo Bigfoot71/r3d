@@ -465,6 +465,7 @@ static inline bool r3d_draw_is_decal(const r3d_draw_call_t* call)
 
 /*
  * Indicates whether a draw call corresponds to an object that is only rendered in deferred.
+ * Always check if an object is prepassed before checking if it is deferred.
  */
 static inline bool r3d_draw_is_deferred(const r3d_draw_call_t* call)
 {
@@ -505,6 +506,7 @@ static inline bool r3d_draw_is_prepass(const r3d_draw_call_t* call)
 
 /*
  * Indicates whether a draw call corresponds to an object rendered only in forward (unlit opaque / transparent)
+ * Always check if an object is prepassed before checking if it is forwarded.
  */
 static inline bool r3d_draw_is_forward(const r3d_draw_call_t* call)
 {
