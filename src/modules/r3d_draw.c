@@ -20,6 +20,7 @@
 
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
+#include "r3d/r3d_material.h"
 
 // ========================================
 // MODULE STATE
@@ -358,11 +359,12 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
     switch (call->type) {
     case R3D_DRAW_CALL_MESH:
         sortData->material.shader = (uintptr_t)call->mesh.material.shader;
-        sortData->material.unlit = call->mesh.material.unlit;
+        sortData->material.shading = call->mesh.material.unlit;
         sortData->material.albedo = call->mesh.material.albedo.texture.id;
         sortData->material.normal = call->mesh.material.normal.texture.id;
         sortData->material.orm = call->mesh.material.orm.texture.id;
         sortData->material.emission = call->mesh.material.emission.texture.id;
+        sortData->material.transparency = sortData->material.transparency;
         sortData->material.blend = call->mesh.material.blendMode;
         sortData->material.cull = call->mesh.material.cullMode;
         sortData->material.depthFunc = call->mesh.material.depthMode;
@@ -371,11 +373,12 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
     
     case R3D_DRAW_CALL_DECAL:
         sortData->material.shader = (uintptr_t)call->decal.instance.shader;
-        sortData->material.unlit = false;
+        sortData->material.shading = 0;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
         sortData->material.normal = call->decal.instance.normal.texture.id;
         sortData->material.orm = call->decal.instance.orm.texture.id;
         sortData->material.emission = call->decal.instance.emission.texture.id;
+        sortData->material.transparency = R3D_TRANSPARENCY_ALPHA;
         sortData->material.blend = R3D_BLEND_MIX;
         sortData->material.cull = R3D_CULL_NONE;
         sortData->material.depthFunc = R3D_DEPTH_ALWAYS;
