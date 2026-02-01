@@ -110,14 +110,14 @@ typedef enum R3D_BlendMode {
  * @note The depth mode affects both forward and deferred rendering passes.
  */
 typedef enum R3D_DepthMode {
-    R3D_DEPTH_LESS = 0,    // Passes if depth < depth buffer (default)
-    R3D_DEPTH_LEQUAL,      // Passes if depth <= depth buffer
-    R3D_DEPTH_EQUAL,       // Passes if depth == depth buffer
-    R3D_DEPTH_GREATER,     // Passes if depth > depth buffer
-    R3D_DEPTH_GEQUAL,      // Passes if depth >= depth buffer
-    R3D_DEPTH_NOTEQUAL,    // Passes if depth != depth buffer
-    R3D_DEPTH_ALWAYS,      // Always passes
-    R3D_DEPTH_NEVER        // Never passes
+    R3D_DEPTH_LESS = 0,     ///< Passes if depth < depth buffer (default)
+    R3D_DEPTH_LEQUAL,       ///< Passes if depth <= depth buffer
+    R3D_DEPTH_EQUAL,        ///< Passes if depth == depth buffer
+    R3D_DEPTH_GREATER,      ///< Passes if depth > depth buffer
+    R3D_DEPTH_GEQUAL,       ///< Passes if depth >= depth buffer
+    R3D_DEPTH_NOTEQUAL,     ///< Passes if depth != depth buffer
+    R3D_DEPTH_ALWAYS,       ///< Always passes
+    R3D_DEPTH_NEVER         ///< Never passes
 } R3D_DepthMode;
 
 /**
@@ -126,9 +126,9 @@ typedef enum R3D_DepthMode {
  * Specifies which faces of a geometry are discarded during rendering based on their winding order.
  */
 typedef enum R3D_CullMode {
-    R3D_CULL_NONE,              ///< No culling; all faces are rendered.
-    R3D_CULL_BACK,              ///< Cull back-facing polygons (faces with clockwise winding order).
-    R3D_CULL_FRONT              ///< Cull front-facing polygons (faces with counter-clockwise winding order).
+    R3D_CULL_NONE,          ///< No culling; all faces are rendered.
+    R3D_CULL_BACK,          ///< Cull back-facing polygons (faces with clockwise winding order).
+    R3D_CULL_FRONT          ///< Cull front-facing polygons (faces with counter-clockwise winding order).
 } R3D_CullMode;
 
 // ========================================
