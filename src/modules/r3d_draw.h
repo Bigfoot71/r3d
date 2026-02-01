@@ -24,6 +24,26 @@
 // ========================================
 
 /*
+ * A set of all lists that can be rendered in probe captures.
+ * May require check per draw call depending on the context.
+ */
+#define R3D_DRAW_PACKLIST_PROBE         \
+    R3D_DRAW_LIST_OPAQUE_INST,          \
+    R3D_DRAW_LIST_OPAQUE,               \
+    R3D_DRAW_LIST_TRANSPARENT_INST,     \
+    R3D_DRAW_LIST_TRANSPARENT
+
+/*
+ * A set of all lists that can be rendered in shadow maps.
+ * May require check per draw call depending on the context.
+ */
+#define R3D_DRAW_PACKLIST_SHADOW        \
+    R3D_DRAW_LIST_OPAQUE_INST,          \
+    R3D_DRAW_LIST_TRANSPARENT_INST,     \
+    R3D_DRAW_LIST_OPAQUE,               \
+    R3D_DRAW_LIST_TRANSPARENT
+
+/*
  * Iterate over multiple draw lists in the order specified by the variadic arguments,
  * yielding a pointer to each r3d_draw_call_t.
  *
@@ -115,16 +135,14 @@ typedef enum {
  */
 typedef enum {
 
-    R3D_DRAW_LIST_DEFERRED,         //< Fully opaque lit
-    R3D_DRAW_LIST_PREPASS,          //< Lit forward but with opaque depth prepass
-    R3D_DRAW_LIST_FORWARD,          //< Lit and unlit forward, without prepass
+    R3D_DRAW_LIST_OPAQUE,
+    R3D_DRAW_LIST_TRANSPARENT,
     R3D_DRAW_LIST_DECAL,
 
     R3D_DRAW_LIST_NON_INST_COUNT,
 
-    R3D_DRAW_LIST_DEFERRED_INST = R3D_DRAW_LIST_NON_INST_COUNT,
-    R3D_DRAW_LIST_PREPASS_INST,
-    R3D_DRAW_LIST_FORWARD_INST,
+    R3D_DRAW_LIST_OPAQUE_INST = R3D_DRAW_LIST_NON_INST_COUNT,
+    R3D_DRAW_LIST_TRANSPARENT_INST,
     R3D_DRAW_LIST_DECAL_INST,
 
     R3D_DRAW_LIST_COUNT
@@ -269,6 +287,10 @@ extern struct r3d_draw {
     int numCalls;                                   //< Number of active draw calls
     int capacity;                                   //< Allocated capacity for all arrays (in number of elements)
 
+    bool hasDeferred;                               //< If there are any deferred calls (lit opaque)
+    bool hasPrepass;                                //< If there are any prepass calls (lit opaque / lit transparent)
+    bool hasForward;                                //< If there are any forward calls (unlit opaque / transparent)
+
 } R3D_MOD_DRAW;
 
 // ========================================
@@ -400,9 +422,7 @@ static inline bool r3d_draw_has_instances(const r3d_draw_group_t* group)
  */
 static inline bool r3d_draw_has_deferred(void)
 {
-    return
-        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DEFERRED].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DEFERRED_INST].numCalls > 0);
+    return R3D_MOD_DRAW.hasDeferred;
 }
 
 /*
@@ -411,9 +431,7 @@ static inline bool r3d_draw_has_deferred(void)
  */
 static inline bool r3d_draw_has_prepass(void)
 {
-    return
-        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_PREPASS].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_PREPASS_INST].numCalls > 0);
+    return R3D_MOD_DRAW.hasPrepass;
 }
 
 /*
@@ -422,9 +440,7 @@ static inline bool r3d_draw_has_prepass(void)
  */
 static inline bool r3d_draw_has_forward(void)
 {
-    return
-        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_FORWARD].numCalls > 0) ||
-        (R3D_MOD_DRAW.list[R3D_DRAW_LIST_FORWARD_INST].numCalls > 0);
+    return R3D_MOD_DRAW.hasForward;
 }
 
 /*
@@ -436,6 +452,78 @@ static inline bool r3d_draw_has_decal(void)
     return
         (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DECAL].numCalls > 0) ||
         (R3D_MOD_DRAW.list[R3D_DRAW_LIST_DECAL_INST].numCalls > 0);
+}
+
+/*
+ * Indicates whether a draw call corresponds to a decal.
+ */
+static inline bool r3d_draw_is_decal(const r3d_draw_call_t* call)
+{
+    return call->type == R3D_DRAW_CALL_DECAL;
+}
+
+/*
+ * Indicates whether a draw call corresponds to an object that is only rendered in deferred.
+ */
+static inline bool r3d_draw_is_deferred(const r3d_draw_call_t* call)
+{
+    if (call->type != R3D_DRAW_CALL_MESH) return false;
+    if (call->mesh.material.unlit) return false;
+
+    if (call->mesh.material.blendMode != R3D_BLEND_MIX) {
+        return false;
+    }
+
+    return call->mesh.material.transparencyMode == R3D_TRANSPARENCY_DISABLED;
+}
+
+/*
+ * Indicates whether a draw call corresponds to an opaque object (lit or unlit)
+ */
+static inline bool r3d_draw_is_opaque(const r3d_draw_call_t* call)
+{
+    if (call->type != R3D_DRAW_CALL_MESH) return false;
+
+    if (call->mesh.material.blendMode != R3D_BLEND_MIX) {
+        return false;
+    }
+
+    return call->mesh.material.transparencyMode == R3D_TRANSPARENCY_DISABLED;
+}
+
+/*
+ * Indicates whether a draw call corresponds to an illuminated object rendered in multiple passes (deferred / forward)
+ */
+static inline bool r3d_draw_is_prepass(const r3d_draw_call_t* call)
+{
+    if (call->type != R3D_DRAW_CALL_MESH) return false;
+    if (call->mesh.material.unlit) return false;
+
+    return call->mesh.material.transparencyMode == R3D_TRANSPARENCY_PREPASS;
+}
+
+/*
+ * Indicates whether a draw call corresponds to an object rendered only in forward (unlit opaque / transparent)
+ */
+static inline bool r3d_draw_is_forward(const r3d_draw_call_t* call)
+{
+    if (call->type != R3D_DRAW_CALL_MESH) return false;
+    if (call->mesh.material.unlit) return true;
+
+    if (call->mesh.material.blendMode != R3D_BLEND_MIX) {
+        return true;
+    }
+
+    return call->mesh.material.transparencyMode == R3D_TRANSPARENCY_ALPHA;
+}
+
+/*
+ * Indicates whether a draw call corresponds to an object that should be rendered in a shadow map.
+ */
+static inline bool r3d_draw_should_cast_shadow(const r3d_draw_call_t* call)
+{
+    return (call->mesh.material.transparencyMode == R3D_TRANSPARENCY_DISABLED) ||
+           (call->mesh.material.transparencyMode == R3D_TRANSPARENCY_PREPASS);
 }
 
 #endif // R3D_MODULE_DRAW_H

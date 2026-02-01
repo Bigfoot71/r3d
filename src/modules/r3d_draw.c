@@ -28,28 +28,6 @@
 struct r3d_draw R3D_MOD_DRAW;
 
 // ========================================
-// HELPER MACROS
-// ========================================
-
-#define IS_CALL_DECAL(call) (                                               \
-    ((call)->type == R3D_DRAW_CALL_DECAL)                                   \
-)
-
-#define IS_CALL_PREPASS(call) (                                             \
-    ((call)->type == R3D_DRAW_CALL_MESH) &&                                 \
-    ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_PREPASS) && \
-    (!(call)->mesh.material.unlit)                                          \
-)
-
-#define IS_CALL_FORWARD(call) (                                             \
-    ((call)->type == R3D_DRAW_CALL_MESH) && (                               \
-        ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_ALPHA) || \
-        ((call)->mesh.material.blendMode != R3D_BLEND_MIX) ||               \
-        ((call)->mesh.material.unlit)                                       \
-    )                                                                       \
-)
-
-// ========================================
 // INTERNAL SHAPE FUNCTIONS
 // ========================================
 
@@ -581,9 +559,14 @@ void r3d_draw_clear(void)
     for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
         R3D_MOD_DRAW.list[i].numCalls = 0;
     }
+
     R3D_MOD_DRAW.numClusters = 0;
     R3D_MOD_DRAW.numGroups = 0;
     R3D_MOD_DRAW.numCalls = 0;
+
+    R3D_MOD_DRAW.hasDeferred = false;
+    R3D_MOD_DRAW.hasPrepass = false;
+    R3D_MOD_DRAW.hasForward = false;
 }
 
 bool r3d_draw_cluster_begin(BoundingBox aabb)
@@ -660,11 +643,14 @@ void r3d_draw_call_push(const r3d_draw_call_t* call)
     R3D_MOD_DRAW.groupIndices[callIndex] = groupIndex;
 
     // Determine the draw call list
-    r3d_draw_list_enum_t list = R3D_DRAW_LIST_DEFERRED;
-    if (IS_CALL_DECAL(call)) list = R3D_DRAW_LIST_DECAL;
-    else if (IS_CALL_PREPASS(call)) list = R3D_DRAW_LIST_PREPASS;
-    else if (IS_CALL_FORWARD(call)) list = R3D_DRAW_LIST_FORWARD;
-    if (r3d_draw_has_instances(group)) list += R3D_DRAW_LIST_NON_INST_COUNT;
+    r3d_draw_list_enum_t list = R3D_DRAW_LIST_OPAQUE;
+    if (r3d_draw_is_decal(call)) list = R3D_DRAW_LIST_DECAL;
+    else if (!r3d_draw_is_opaque(call)) list = R3D_DRAW_LIST_TRANSPARENT;
+
+    // Update internal flags
+    if (r3d_draw_is_deferred(call)) R3D_MOD_DRAW.hasDeferred = true;
+    else if (r3d_draw_is_prepass(call)) R3D_MOD_DRAW.hasPrepass = true;
+    else if (r3d_draw_is_forward(call)) R3D_MOD_DRAW.hasForward = true;
 
     // Push the draw call and its index to the list
     R3D_MOD_DRAW.calls[callIndex] = *call;
@@ -768,7 +754,12 @@ void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transpa
 {
     switch (blend) {
     case R3D_BLEND_MIX:
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (transparency == R3D_TRANSPARENCY_DISABLED) {
+            glBlendFunc(GL_ONE, GL_ZERO);
+        }
+        else {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
         break;
     case R3D_BLEND_ADDITIVE:
         if (transparency == R3D_TRANSPARENCY_DISABLED) {

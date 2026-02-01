@@ -129,14 +129,12 @@ void R3D_End(void)
 
     r3d_draw_compute_visible_groups(&R3D.viewState.frustum);
 
-    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED, R3D.viewState.position, R3D_DRAW_SORT_FRONT_TO_BACK);
-    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
-    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
+    r3d_draw_sort_list(R3D_DRAW_LIST_OPAQUE, R3D.viewState.position, R3D_DRAW_SORT_FRONT_TO_BACK);
+    r3d_draw_sort_list(R3D_DRAW_LIST_TRANSPARENT, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
     r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
 
-    r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_OPAQUE_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_draw_sort_list(R3D_DRAW_LIST_TRANSPARENT_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
     r3d_draw_sort_list(R3D_DRAW_LIST_DECAL_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
 
     /* --- Deferred path for opaques and decals --- */
@@ -1193,7 +1191,7 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(material->blendMode, R3D_TRANSPARENCY_ALPHA);
+    r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
     r3d_draw_apply_depth_mode(material->depthMode);
     r3d_draw_apply_cull_mode(material->cullMode);
 
@@ -1230,8 +1228,10 @@ void pass_scene_shadow(void)
                 r3d_draw_compute_visible_groups(frustum);
 
                 #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
-                R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_LIST_DEFERRED_INST, R3D_DRAW_LIST_DEFERRED, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS) {
-                    raster_depth_cube(call, &light->viewProj[iFace], light);
+                R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_PACKLIST_SHADOW) {
+                    if (r3d_draw_should_cast_shadow(call)) {
+                        raster_depth_cube(call, &light->viewProj[iFace], light);
+                    }
                 }
                 #undef COND
             }
@@ -1244,8 +1244,10 @@ void pass_scene_shadow(void)
             r3d_draw_compute_visible_groups(frustum);
 
             #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
-            R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_LIST_DEFERRED_INST, R3D_DRAW_LIST_DEFERRED, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS) {
-                raster_depth(call, &light->viewProj[0], light);
+            R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_PACKLIST_SHADOW) {
+                if (r3d_draw_should_cast_shadow(call)) {
+                    raster_depth(call, &light->viewProj[0], light);
+                }
             }
             #undef COND
         }
@@ -1254,14 +1256,6 @@ void pass_scene_shadow(void)
 
 void pass_scene_probes(void)
 {
-    #define PROBES_DRAW_LISTS        \
-        R3D_DRAW_LIST_DEFERRED_INST, \
-        R3D_DRAW_LIST_PREPASS_INST,  \
-        R3D_DRAW_LIST_FORWARD_INST,  \
-        R3D_DRAW_LIST_DEFERRED,      \
-        R3D_DRAW_LIST_PREPASS,       \
-        R3D_DRAW_LIST_FORWARD,
-
     R3D_ENV_PROBE_FOR_EACH_VALID(probe)
     {
         if (!r3d_env_probe_should_be_updated(probe, true)) {
@@ -1285,7 +1279,7 @@ void pass_scene_probes(void)
             r3d_env_capture_bind_fbo(iFace, 0);
             glClear(GL_DEPTH_BUFFER_BIT);
 
-            R3D_DRAW_FOR_EACH(call, true, frustum, PROBES_DRAW_LISTS) {
+            R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PACKLIST_PROBE) {
                 if (call->mesh.material.unlit) {
                     raster_unlit(call, &probe->invView[iFace], &probe->viewProj[iFace]);
                 }
@@ -1350,8 +1344,10 @@ void pass_scene_geometry(void)
     glDisable(GL_BLEND);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_DEFERRED_INST, R3D_DRAW_LIST_DEFERRED) {
-        raster_geometry(call, true);
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_OPAQUE_INST, R3D_DRAW_LIST_OPAQUE) {
+        if (!call->mesh.material.unlit) {
+            raster_geometry(call, true);
+        }
     }
 }
 
@@ -1365,8 +1361,10 @@ void pass_scene_prepass(void)
     glDepthMask(GL_TRUE);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS) {
-        raster_depth(call, &R3D.viewState.viewProj, NULL);
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
+        if (r3d_draw_is_prepass(call)) {
+            raster_depth(call, &R3D.viewState.viewProj, NULL);
+        }
     }
 
     /* --- Render opaque only with GL_EQUAL --- */
@@ -1376,9 +1374,12 @@ void pass_scene_prepass(void)
 
     glDepthFunc(GL_EQUAL);
     glDepthMask(GL_FALSE);
+    glDisable(GL_BLEND);
 
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS) {
-        raster_geometry(call, false);
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
+        if (r3d_draw_is_prepass(call)) {
+            raster_geometry(call, false);
+        }
     }
 }
 
@@ -1698,11 +1699,24 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     R3D_TARGET_BIND(true, sceneTarget);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
     glEnable(GL_BLEND);
 
+    /* --- Render unlit opaque --- */
+
+    glDepthMask(GL_TRUE);
+
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS, R3D_DRAW_LIST_FORWARD_INST, R3D_DRAW_LIST_FORWARD) {
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_OPAQUE_INST, R3D_DRAW_LIST_OPAQUE) {
+        if (call->mesh.material.unlit) {
+            raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
+        }
+    }
+
+    /* --- Render all transparent in order --- */
+
+    glDepthMask(GL_FALSE);
+
+    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
         if (call->mesh.material.unlit) {
             raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
         }
