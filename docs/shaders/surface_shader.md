@@ -374,9 +374,10 @@ Use `#pragma usage` to specify which variants should be pre-compiled:
 
 | Hint | Description |
 |------|-------------|
-| `opaque` | Opaque rendering (default if no pragma specified) |
-| `prepass` | Transparent pre-pass rendering |
-| `transparent` | Transparent rendering (alpha blending) |
+| `opaque` | Opaque rendering for **lit objects** (default if no pragma specified) |
+| `prepass` | Transparent pre-pass rendering for **lit objects** |
+| `transparent` | Transparent rendering (color/alpha blending) for **lit objects** |
+| `unlit` | Unlit rendering (handles both opaque and transparent **unlit objects**) |
 | `shadow` | Shadow map rendering |
 | `decal` | Decal rendering |
 | `probe` | Reflection probe rendering |
@@ -389,6 +390,7 @@ Use `#pragma usage` to specify which variants should be pre-compiled:
 
 void fragment() {
     ALBEDO = vec3(1.0, 0.0, 0.0);
+    ALPHA = 0.5; // Alpha cutoff
 }
 ```
 
@@ -398,7 +400,17 @@ void fragment() {
 
 void fragment() {
     ALBEDO = vec3(0.0, 0.5, 1.0);
-    ALPHA = 0.5;
+    ALPHA = 0.5; // Alpha blending
+}
+```
+
+**Unlit object:**
+```glsl
+#pragma usage unlit
+
+void fragment() {
+    ALBEDO = vec3(1.0, 1.0, 0.0);
+    ALPHA = 0.5; // Alpha cutoff or blending
 }
 ```
 
@@ -408,6 +420,7 @@ void fragment() {
 
 void fragment() {
     ALBEDO = vec3(1.0, 1.0, 0.0);
+    ALPHA = 0.5; // Alpha fading
 }
 ```
 
@@ -415,6 +428,7 @@ void fragment() {
 
 - Usage hints are **optional**; missing variants will still compile on-demand
 - Multiple hints can be specified: `#pragma usage opaque transparent shadow`
+- Rendering mode separation: `opaque`, `prepass`, and `transparent` apply to **lit objects** only, while `unlit` applies to **unlit objects** regardless of opacity
 - If no pragma is specified, only `opaque` is pre-compiled
 - Variants not in the pragma can still be used; they just compile lazily
 
