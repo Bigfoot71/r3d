@@ -648,6 +648,7 @@ void r3d_draw_call_push(const r3d_draw_call_t* call)
     r3d_draw_list_enum_t list = R3D_DRAW_LIST_OPAQUE;
     if (r3d_draw_is_decal(call)) list = R3D_DRAW_LIST_DECAL;
     else if (!r3d_draw_is_opaque(call)) list = R3D_DRAW_LIST_TRANSPARENT;
+    if (r3d_draw_has_instances(group)) list += R3D_DRAW_LIST_NON_INST_COUNT;
 
     // Update internal flags
     if (r3d_draw_is_deferred(call)) R3D_MOD_DRAW.hasDeferred = true;
