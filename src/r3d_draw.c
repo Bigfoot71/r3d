@@ -872,6 +872,7 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
+    r3d_draw_apply_depth_mode(material->depthMode);
     r3d_draw_apply_cull_mode(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
@@ -1272,7 +1273,6 @@ void pass_scene_probes(void)
             /* --- Render scene --- */
 
             glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_TRUE);
             glEnable(GL_BLEND);
 
@@ -1291,6 +1291,7 @@ void pass_scene_probes(void)
 
             /* --- Render background --- */
 
+            glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
             glDisable(GL_BLEND);
 
