@@ -754,6 +754,23 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
+    r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatNormal;
+    r3d_shader_uniform_col4_t uAlbedoColor;
+    r3d_shader_uniform_vec2_t uTexCoordOffset;
+    r3d_shader_uniform_vec2_t uTexCoordScale;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
+    r3d_shader_uniform_int_t uBillboard;
+    r3d_shader_uniform_mat4_t uMatInvView;
+    r3d_shader_uniform_mat4_t uMatViewProj;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
+    r3d_shader_uniform_float_t uAlphaCutoff;
+} r3d_shader_scene_unlit_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatViewProj;
@@ -965,6 +982,7 @@ typedef struct {
         struct {
             r3d_shader_scene_geometry_t geometry;
             r3d_shader_scene_forward_t forward;
+            r3d_shader_scene_unlit_t unlit;
             r3d_shader_scene_depth_t depth;
             r3d_shader_scene_depth_cube_t depthCube;
             r3d_shader_scene_probe_t probe;
@@ -1020,6 +1038,7 @@ extern struct r3d_mod_shader {
     struct {
         r3d_shader_scene_geometry_t geometry;
         r3d_shader_scene_forward_t forward;
+        r3d_shader_scene_unlit_t unlit;
         r3d_shader_scene_background_t background;
         r3d_shader_scene_skybox_t skybox;
         r3d_shader_scene_depth_t depth;
@@ -1070,6 +1089,7 @@ bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_unlit(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_background(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom);
@@ -1112,6 +1132,7 @@ static const struct r3d_shader_loader {
     struct {
         r3d_shader_loader_func geometry;
         r3d_shader_loader_func forward;
+        r3d_shader_loader_func unlit;
         r3d_shader_loader_func background;
         r3d_shader_loader_func skybox;
         r3d_shader_loader_func depth;
@@ -1161,6 +1182,7 @@ static const struct r3d_shader_loader {
     .scene = {
         .geometry = r3d_shader_load_scene_geometry,
         .forward = r3d_shader_load_scene_forward,
+        .unlit = r3d_shader_load_scene_unlit,
         .background = r3d_shader_load_scene_background,
         .skybox = r3d_shader_load_scene_skybox,
         .depth = r3d_shader_load_scene_depth,

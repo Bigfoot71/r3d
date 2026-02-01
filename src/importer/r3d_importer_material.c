@@ -132,6 +132,12 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
             material->cullMode = R3D_CULL_NONE;
         }
     }
+
+    // Handle shading mode
+    int shadingMode;
+    if (aiGetMaterialInteger(aiMat, AI_MATKEY_SHADING_MODEL, &shadingMode) == AI_SUCCESS) {
+        material->unlit = (shadingMode == aiShadingMode_Unlit);
+    }
 }
 
 // ========================================

@@ -26,9 +26,10 @@ typedef uint32_t usage_hint_t;
 #define USAGE_HINT_OPAQUE        (1 << 0)   //< Build: geometry
 #define USAGE_HINT_PREPASS       (1 << 1)   //< Build: geometry, forward, depth
 #define USAGE_HINT_TRANSPARENT   (1 << 2)   //< Build: forward
-#define USAGE_HINT_SHADOW        (1 << 3)   //< Build: depth, depthCube
-#define USAGE_HINT_DECAL         (1 << 4)   //< Build: decal
-#define USAGE_HINT_PROBE         (1 << 5)   //< Build: probe
+#define USAGE_HINT_UNLIT         (1 << 3)   //< Build: unlit
+#define USAGE_HINT_SHADOW        (1 << 4)   //< Build: depth, depthCube
+#define USAGE_HINT_DECAL         (1 << 5)   //< Build: decal
+#define USAGE_HINT_PROBE         (1 << 6)   //< Build: probe
 
 // ========================================
 // OPAQUE STRUCTS
@@ -278,6 +279,7 @@ usage_hint_t parse_pragma_usage(const char** ptr)
             {"opaque",      6,  USAGE_HINT_OPAQUE},
             {"prepass",     7,  USAGE_HINT_PREPASS},
             {"transparent", 11, USAGE_HINT_TRANSPARENT},
+            {"unlit",       5,  USAGE_HINT_UNLIT},
             {"shadow",      6,  USAGE_HINT_SHADOW},
             {"decal",       5,  USAGE_HINT_DECAL},
             {"probe",       5,  USAGE_HINT_PROBE}
@@ -325,6 +327,7 @@ bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
     } variants[] = {
         {"geometry",  USAGE_HINT_OPAQUE | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.geometry},
         {"forward",   USAGE_HINT_PREPASS | USAGE_HINT_TRANSPARENT, R3D_MOD_SHADER_LOADER.scene.forward},
+        {"unlit",     USAGE_HINT_UNLIT,                            R3D_MOD_SHADER_LOADER.scene.unlit},
         {"depth",     USAGE_HINT_SHADOW | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.depth},
         {"depthCube", USAGE_HINT_SHADOW,                           R3D_MOD_SHADER_LOADER.scene.depthCube},
         {"decal",     USAGE_HINT_DECAL,                            R3D_MOD_SHADER_LOADER.scene.decal},

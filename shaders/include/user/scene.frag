@@ -33,7 +33,7 @@ vec4 SampleAlbedo(vec2 texCoord)
 vec3 SampleEmission(vec2 texCoord)
 {
     vec3 emission = vec3(0.0);
-#if !defined(DEPTH) && !defined(DEPTH_CUBE)
+#if !defined(UNLIT) && !defined(DEPTH) && !defined(DEPTH_CUBE)
     emission = vEmission * texture(uEmissionMap, texCoord).rgb;
 #endif
     return emission;
@@ -42,7 +42,7 @@ vec3 SampleEmission(vec2 texCoord)
 vec3 SampleNormal(vec2 texCoord)
 {
     vec3 normal = vec3(0.0);
-#if !defined(DEPTH) && !defined(DEPTH_CUBE)
+#if !defined(UNLIT) && !defined(DEPTH) && !defined(DEPTH_CUBE)
     normal = texture(uNormalMap, texCoord).rgb;
 #endif
     return normal;
@@ -51,7 +51,7 @@ vec3 SampleNormal(vec2 texCoord)
 vec3 SampleOrm(vec2 texCoord)
 {
     vec3 ORM = vec3(0.0);
-#if !defined(DEPTH) && !defined(DEPTH_CUBE)
+#if !defined(UNLIT) && !defined(DEPTH) && !defined(DEPTH_CUBE)
     ORM = texture(uOrmMap, texCoord).rgb;
     ORM.x *= uOcclusion;
     ORM.y *= uRoughness;
@@ -66,7 +66,7 @@ void FetchMaterial(vec2 texCoord)
     ALBEDO = color.rgb;
     ALPHA = color.a;
 
-#if !defined(DEPTH) && !defined(DEPTH_CUBE)
+#if !defined(UNLIT) && !defined(DEPTH) && !defined(DEPTH_CUBE)
     EMISSION   = vEmission * texture(uEmissionMap, texCoord).rgb;
     NORMAL_MAP = texture(uNormalMap, texCoord).rgb;
     vec3 ORM   = texture(uOrmMap, texCoord).rgb;
@@ -97,7 +97,7 @@ void SceneFragment(vec2 texCoord, mat3 tbn, float alphaCutoff)
     ALBEDO = color.rgb;
     ALPHA = color.a;
 
-#if !defined(DEPTH) && !defined(DEPTH_CUBE)
+#if !defined(UNLIT) && !defined(DEPTH) && !defined(DEPTH_CUBE)
     EMISSION   = vEmission * texture(uEmissionMap, texCoord).rgb;
     NORMAL_MAP = texture(uNormalMap, texCoord).rgb;
     vec3 ORM   = texture(uOrmMap, texCoord).rgb;
@@ -105,7 +105,7 @@ void SceneFragment(vec2 texCoord, mat3 tbn, float alphaCutoff)
     ROUGHNESS  = uRoughness * ORM.y;
     METALNESS  = uMetalness * ORM.z;
 
-#endif // !R3D_NO_AUTO_FETCH && !DEPTH && !DEPTH_CUBE
+#endif // !R3D_NO_AUTO_FETCH && !UNLIT && !DEPTH && !DEPTH_CUBE
 #endif // !R3D_NO_AUTO_FETCH
 
     /* --- Execute user code --- */

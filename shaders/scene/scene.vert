@@ -53,10 +53,10 @@ uniform bool uInstancing;
 uniform bool uSkinning;
 uniform int uBillboard;
 
-#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 uniform mat4 uMatInvView;   // inv view only for billboard modes
 uniform mat4 uMatViewProj;
-#endif // DEPTH || DEPTH_CUBE
+#endif // UNLIT || DEPTH || DEPTH_CUBE || PROBE
 
 /* === Varyings === */
 
@@ -197,7 +197,7 @@ void main()
     #endif // DECAL
     }
 
-#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     if (uBillboard == BILLBOARD_FRONT) {
         BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
     }
@@ -229,7 +229,7 @@ void main()
     }
 #endif // FORWARD
 
-#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     gl_Position = uMatViewProj * vec4(vPosition, 1.0);
 #else
     gl_Position = uView.viewProj * vec4(vPosition, 1.0);
