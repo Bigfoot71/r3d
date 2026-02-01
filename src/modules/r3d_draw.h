@@ -115,9 +115,9 @@ typedef enum {
  */
 typedef enum {
 
-    R3D_DRAW_LIST_DEFERRED,          //< Fully opaque
-    R3D_DRAW_LIST_PREPASS,           //< Forward but with depth prepass
-    R3D_DRAW_LIST_FORWARD,           //< Forward only, without prepass
+    R3D_DRAW_LIST_DEFERRED,         //< Fully opaque lit
+    R3D_DRAW_LIST_PREPASS,          //< Lit forward but with opaque depth prepass
+    R3D_DRAW_LIST_FORWARD,          //< Lit and unlit forward, without prepass
     R3D_DRAW_LIST_DECAL,
 
     R3D_DRAW_LIST_NON_INST_COUNT,
@@ -228,6 +228,7 @@ typedef struct {
     float distance;
     struct {
         uintptr_t shader;
+        uint32_t unlit;
         uint32_t albedo;
         uint32_t normal;
         uint32_t orm;

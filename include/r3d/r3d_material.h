@@ -65,19 +65,6 @@
 // ========================================
 
 /**
- * @brief Billboard modes.
- *
- * This enumeration defines how a 3D object aligns itself relative to the camera.
- * It provides options to disable billboarding or to enable specific modes of alignment.
- */
-typedef enum R3D_BillboardMode {
-    R3D_BILLBOARD_DISABLED,         ///< Billboarding is disabled; the object retains its original orientation.
-    R3D_BILLBOARD_FRONT,            ///< Full billboarding; the object fully faces the camera, rotating on all axes.
-    R3D_BILLBOARD_Y_AXIS            /**< Y-axis constrained billboarding; the object rotates only around the Y-axis,
-                                         keeping its "up" orientation fixed. This is suitable for upright objects like characters or signs. */
-} R3D_BillboardMode;
-
-/**
  * @brief Transparency modes.
  *
  * This enumeration defines how a material handles transparency during rendering.
@@ -89,6 +76,19 @@ typedef enum R3D_TransparencyMode {
     R3D_TRANSPARENCY_PREPASS,       ///< Supports transparency with shadows. Writes shadows for alpha > 0.1 and depth for alpha > 0.99.
     R3D_TRANSPARENCY_ALPHA,         ///< Standard transparency without shadows or depth writes.
 } R3D_TransparencyMode;
+
+/**
+ * @brief Billboard modes.
+ *
+ * This enumeration defines how a 3D object aligns itself relative to the camera.
+ * It provides options to disable billboarding or to enable specific modes of alignment.
+ */
+typedef enum R3D_BillboardMode {
+    R3D_BILLBOARD_DISABLED,         ///< Billboarding is disabled; the object retains its original orientation.
+    R3D_BILLBOARD_FRONT,            ///< Full billboarding; the object fully faces the camera, rotating on all axes.
+    R3D_BILLBOARD_Y_AXIS            /**< Y-axis constrained billboarding; the object rotates only around the Y-axis,
+                                         keeping its "up" orientation fixed. This is suitable for upright objects like characters or signs. */
+} R3D_BillboardMode;
 
 /**
  * @brief Blend modes.
@@ -199,6 +199,8 @@ typedef struct R3D_Material {
     R3D_BlendMode blendMode;                ///< Blend mode (default: MIX)
     R3D_DepthMode depthMode;                ///< Depth mode (default: LESS)
     R3D_CullMode cullMode;                  ///< Face culling mode (default: BACK)
+
+    bool unlit;                             ///< If true, material does not participate in lighting (default: false)
 
     R3D_SurfaceShader* shader;              ///< Custom shader applied to the material (default: NULL)
 

@@ -37,13 +37,16 @@ struct r3d_draw R3D_MOD_DRAW;
 
 #define IS_CALL_PREPASS(call) (                                             \
     ((call)->type == R3D_DRAW_CALL_MESH) &&                                 \
-    ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_PREPASS)    \
+    ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_PREPASS) && \
+    (!(call)->mesh.material.unlit)                                          \
 )
 
 #define IS_CALL_FORWARD(call) (                                             \
-    ((call)->type == R3D_DRAW_CALL_MESH) &&                                 \
-    ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_ALPHA ||    \
-     (call)->mesh.material.blendMode != R3D_BLEND_MIX)                      \
+    ((call)->type == R3D_DRAW_CALL_MESH) && (                               \
+        ((call)->mesh.material.transparencyMode == R3D_TRANSPARENCY_ALPHA) || \
+        ((call)->mesh.material.blendMode != R3D_BLEND_MIX) ||               \
+        ((call)->mesh.material.unlit)                                       \
+    )                                                                       \
 )
 
 // ========================================
@@ -377,6 +380,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
     switch (call->type) {
     case R3D_DRAW_CALL_MESH:
         sortData->material.shader = (uintptr_t)call->mesh.material.shader;
+        sortData->material.unlit = call->mesh.material.unlit;
         sortData->material.albedo = call->mesh.material.albedo.texture.id;
         sortData->material.normal = call->mesh.material.normal.texture.id;
         sortData->material.orm = call->mesh.material.orm.texture.id;
@@ -389,6 +393,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
     
     case R3D_DRAW_CALL_DECAL:
         sortData->material.shader = (uintptr_t)call->decal.instance.shader;
+        sortData->material.unlit = false;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
         sortData->material.normal = call->decal.instance.normal.texture.id;
         sortData->material.orm = call->decal.instance.orm.texture.id;

@@ -41,6 +41,7 @@
 #include <shaders/scene.vert.h>
 #include <shaders/geometry.frag.h>
 #include <shaders/forward.frag.h>
+#include <shaders/unlit.frag.h>
 #include <shaders/depth.frag.h>
 #include <shaders/depth_cube.frag.h>
 #include <shaders/decal.frag.h>
@@ -548,7 +549,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
 
     const char* VS_DEFINES[] = {"STAGE_VERT", "FORWARD", defNumForwardLights};
-    const char* FS_DEFINES[] = {"STAGE_FRAG", defNumForwardLights, defNumProbes};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "FORWARD", defNumForwardLights, defNumProbes};
 
     char* vsCode = inject_defines(SCENE_VERT,   VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
     char* fsCode = inject_defines(FORWARD_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
@@ -604,6 +605,55 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 
     if (custom != NULL) {
         set_custom_samplers(forward->id, custom);
+    }
+
+    return true;
+}
+
+bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
+{
+    DECL_SHADER_OPT(r3d_shader_scene_unlit_t, scene, unlit, custom);
+
+    const char* VS_DEFINES[] = {"STAGE_VERT", "UNLIT"};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "UNLIT"};
+
+    char* vsCode = inject_defines(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
+    char* fsCode = inject_defines(UNLIT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    const char* userCode = custom ? custom->userCode : NULL;
+
+    if (userCode != NULL) {
+        inject_user_code(&vsCode, &fsCode, userCode);
+    }
+
+    LOAD_SHADER(unlit, vsCode, fsCode);
+
+    RL_FREE(vsCode);
+    RL_FREE(fsCode);
+
+    if (userCode && strstr(userCode, "UserBlock") != NULL) {
+        SET_UNIFORM_BUFFER(unlit, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
+    }
+
+    GET_LOCATION(unlit, uMatNormal);
+    GET_LOCATION(unlit, uMatModel);
+    GET_LOCATION(unlit, uAlbedoColor);
+    GET_LOCATION(unlit, uTexCoordOffset);
+    GET_LOCATION(unlit, uTexCoordScale);
+    GET_LOCATION(unlit, uInstancing);
+    GET_LOCATION(unlit, uSkinning);
+    GET_LOCATION(unlit, uBillboard);
+    GET_LOCATION(unlit, uMatInvView);
+    GET_LOCATION(unlit, uMatViewProj);
+    GET_LOCATION(unlit, uAlphaCutoff);
+
+    USE_SHADER(unlit);
+
+    SET_SAMPLER(unlit, uBoneMatricesTex, R3D_SHADER_SAMPLER_BONE_MATRICES);
+    SET_SAMPLER(unlit, uAlbedoMap, R3D_SHADER_SAMPLER_MAP_ALBEDO);
+
+    if (custom != NULL) {
+        set_custom_samplers(unlit->id, custom);
     }
 
     return true;
@@ -1123,6 +1173,7 @@ void r3d_shader_quit()
 
     UNLOAD_SHADER(scene.geometry);
     UNLOAD_SHADER(scene.forward);
+    UNLOAD_SHADER(scene.unlit);
     UNLOAD_SHADER(scene.background);
     UNLOAD_SHADER(scene.skybox);
     UNLOAD_SHADER(scene.depth);

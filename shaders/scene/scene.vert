@@ -53,10 +53,10 @@ uniform bool uInstancing;
 uniform bool uSkinning;
 uniform int uBillboard;
 
-#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 uniform mat4 uMatInvView;   // inv view only for billboard modes
 uniform mat4 uMatViewProj;
-#endif // DEPTH || DEPTH_CUBE
+#endif // UNLIT || DEPTH || DEPTH_CUBE || PROBE
 
 /* === Varyings === */
 

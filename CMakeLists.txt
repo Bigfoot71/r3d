@@ -306,6 +306,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/scene/scene.vert"
     "${R3D_ROOT_PATH}/shaders/scene/geometry.frag"
     "${R3D_ROOT_PATH}/shaders/scene/forward.frag"
+    "${R3D_ROOT_PATH}/shaders/scene/unlit.frag"
     "${R3D_ROOT_PATH}/shaders/scene/depth.frag"
     "${R3D_ROOT_PATH}/shaders/scene/depth_cube.frag"
     "${R3D_ROOT_PATH}/shaders/scene/decal.frag"

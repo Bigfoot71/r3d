@@ -57,6 +57,7 @@ static void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewPro
 static void raster_geometry(const r3d_draw_call_t* call, bool applyDepthMode);
 static void raster_decal(const r3d_draw_call_t* call);
 static void raster_forward(const r3d_draw_call_t* call);
+static void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj);
 
 static void pass_scene_shadow(void);
 static void pass_scene_probes(void);
@@ -129,9 +130,9 @@ void R3D_End(void)
     r3d_draw_compute_visible_groups(&R3D.viewState.frustum);
 
     r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED, R3D.viewState.position, R3D_DRAW_SORT_FRONT_TO_BACK);
-    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
     r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
     r3d_draw_sort_list(R3D_DRAW_LIST_FORWARD, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
+    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
 
     r3d_draw_sort_list(R3D_DRAW_LIST_DEFERRED_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
     r3d_draw_sort_list(R3D_DRAW_LIST_PREPASS_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
@@ -1136,6 +1137,78 @@ void raster_forward(const r3d_draw_call_t* call)
     }
 }
 
+void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj)
+{
+    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+
+    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const R3D_Material* material = &call->mesh.material;
+    const R3D_Mesh* mesh = &call->mesh.instance;
+
+    /* --- Use shader --- */
+
+    R3D_SurfaceShader* shader = call->mesh.material.shader;
+    R3D_SHADER_USE_OPT(scene.unlit, shader);
+
+    /* --- Send matrices --- */
+
+    Matrix matNormal = r3d_matrix_normal(&group->transform);
+
+    R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatNormal, matNormal);
+
+    R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatInvView, *invView);
+    R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatViewProj, *viewProj);
+
+    /* --- Send skinning related data --- */
+
+    if (group->texPose > 0) {
+        R3D_SHADER_BIND_SAMPLER_OPT(scene.unlit, shader, uBoneMatricesTex, group->texPose);
+        R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uSkinning, true);
+    }
+    else {
+        R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uSkinning, false);
+    }
+
+    /* --- Send billboard related data --- */
+
+    R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uBillboard, material->billboardMode);
+
+    /* --- Set misc material values --- */
+
+    R3D_SHADER_SET_FLOAT_OPT(scene.unlit, shader, uAlphaCutoff, material->alphaCutoff);
+
+    /* --- Set texcoord offset/scale --- */
+
+    R3D_SHADER_SET_VEC2_OPT(scene.unlit, shader, uTexCoordOffset, material->uvOffset);
+    R3D_SHADER_SET_VEC2_OPT(scene.unlit, shader, uTexCoordScale, material->uvScale);
+
+    /* --- Set color material maps --- */
+
+    R3D_SHADER_SET_COL4_OPT(scene.unlit, shader, uAlbedoColor, R3D.colorSpace, material->albedo.color);
+
+    /* --- Bind active texture maps --- */
+
+    R3D_SHADER_BIND_SAMPLER_OPT(scene.unlit, shader, uAlbedoMap, R3D_TEXTURE_SELECT(material->albedo.texture.id, WHITE));
+
+    /* --- Applying material parameters that are independent of shaders --- */
+
+    r3d_draw_apply_blend_mode(material->blendMode, R3D_TRANSPARENCY_ALPHA);
+    r3d_draw_apply_depth_mode(material->depthMode);
+    r3d_draw_apply_cull_mode(material->cullMode);
+
+    /* --- Rendering the object corresponding to the draw call --- */
+
+    if (r3d_draw_has_instances(group)) {
+        R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uInstancing, true);
+        r3d_draw_instanced(call);
+    }
+    else {
+        R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uInstancing, false);
+        r3d_draw(call);
+    }
+}
+
 void pass_scene_shadow(void)
 {
     glEnable(GL_DEPTH_TEST);
@@ -1213,8 +1286,13 @@ void pass_scene_probes(void)
             glClear(GL_DEPTH_BUFFER_BIT);
 
             R3D_DRAW_FOR_EACH(call, true, frustum, PROBES_DRAW_LISTS) {
-                upload_light_array_block_for_mesh(call, probe->shadows);
-                raster_probe(call, &probe->invView[iFace], &probe->viewProj[iFace], probe);
+                if (call->mesh.material.unlit) {
+                    raster_unlit(call, &probe->invView[iFace], &probe->viewProj[iFace]);
+                }
+                else {
+                    upload_light_array_block_for_mesh(call, probe->shadows);
+                    raster_probe(call, &probe->invView[iFace], &probe->viewProj[iFace], probe);
+                }
             }
 
             /* --- Render background --- */
@@ -1625,8 +1703,13 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_PREPASS_INST, R3D_DRAW_LIST_PREPASS, R3D_DRAW_LIST_FORWARD_INST, R3D_DRAW_LIST_FORWARD) {
-        upload_light_array_block_for_mesh(call, true);
-        raster_forward(call);
+        if (call->mesh.material.unlit) {
+            raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
+        }
+        else {
+            upload_light_array_block_for_mesh(call, true);
+            raster_forward(call);
+        }
     }
 }
 
