@@ -112,14 +112,15 @@ if(R3D_ASSIMP_VENDORED)
     set(ASSIMP_INSTALL                  OFF CACHE BOOL "")
 
     # Enabled importers
+    # Note: There may be conflicts between Assimp and raylib if both enable the M3D format
     set(_ASSIMP_ENABLED_IMPORTERS
-        COLLADA GLTF OBJ M3D FBX IQM
+        COLLADA GLTF OBJ FBX IQM
     )
 
     # Disabled importers
     set(_ASSIMP_DISABLED_IMPORTERS
         AMF BVH OFF COB STL 3DS AC ASE ASSBIN B3D DXF CSM HMP 
-        IRRMESH IRR LWO LWS MD2 MD3 MD5 MDC MDL NFF NDO OGRE 
+        IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OGRE 
         OPENGEX PLY MS3D BLEND IFC XGL Q3D Q3BSP RAW SIB SMD 
         TERRAGEN 3D X X3D 3MF MMD
     )
@@ -181,8 +182,9 @@ if(R3D_RAYLIB_VENDORED)
         HDR JPG
     )
 
-    # Disabled file formats (r3d provides its own model importers via Assimp)
-    # Note: M3D must be disabled to avoid symbol conflicts between raylib and Assimp
+    # Disabled file formats
+    # r3d provides its own model importers via Assimp
+    # Note: There may be conflicts between raylib and Assimp if both enable the M3D format
     set(_RAYLIB_DISABLED_FORMATS
         OBJ MTL IQM GLTF VOX M3D
     )
