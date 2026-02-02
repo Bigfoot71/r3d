@@ -134,7 +134,8 @@ if(R3D_ASSIMP_VENDORED)
 
     add_subdirectory("${R3D_ASSIMP_SUBMODULE_PATH}")
 
-    set(R3D_ASSIMP_INC_PATH "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "" FORCE)
+    set(R3D_ASSIMP_INC "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "" FORCE)
+    set(R3D_ASSIMP_LIB "assimp" CACHE STRING "" FORCE)
 
     set_target_properties(assimp PROPERTIES 
         RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
@@ -143,16 +144,16 @@ if(R3D_ASSIMP_VENDORED)
     )
 else()
     find_package(assimp QUIET)
-
-    if(NOT TARGET assimp)
-        message(FATAL_ERROR 
-            "System assimp not found.\n"
-            "Make sure assimp is installed and discoverable by CMake.")
+    if(assimp_FOUND)
+        message(STATUS "Using system-installed Assimp")
+        set(R3D_ASSIMP_INC "${ASSIMP_INCLUDE_DIRS}" CACHE STRING "" FORCE)
+        set(R3D_ASSIMP_LIB "${ASSIMP_LIBRARIES}" CACHE STRING "" FORCE)
+    else()
+        message(FATAL_ERROR
+            "System Assimp not found.\n"
+            "Please install Assimp development files for your platform, "
+            "or use the vendored version included with this project.")
     endif()
-
-    message(STATUS "Using system-installed assimp")
-    get_target_property(ASSIMP_INCLUDE_DIR assimp INTERFACE_INCLUDE_DIRECTORIES)
-    set(R3D_ASSIMP_INC_PATH "${ASSIMP_INCLUDE_DIR}" CACHE STRING "" FORCE)
 endif()
 
 # ========================================
@@ -196,7 +197,8 @@ if(R3D_RAYLIB_VENDORED)
 
     add_subdirectory("${R3D_RAYLIB_SUBMODULE_PATH}")
 
-    set(R3D_RAYLIB_INC_PATH "${R3D_RAYLIB_SUBMODULE_PATH}/src" CACHE STRING "" FORCE)
+    set(R3D_RAYLIB_INC "${R3D_RAYLIB_SUBMODULE_PATH}/src" CACHE STRING "" FORCE)
+    set(R3D_RAYLIB_LIB "raylib" CACHE STRING "" FORCE)
 
     set_target_properties(raylib PROPERTIES 
         RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
@@ -205,16 +207,16 @@ if(R3D_RAYLIB_VENDORED)
     )
 else()
     find_package(raylib QUIET)
-
-    if(NOT TARGET raylib)
-        message(FATAL_ERROR 
+    if(raylib_FOUND)
+        message(STATUS "Using system-installed raylib")
+        set(R3D_RAYLIB_INC "${RAYLIB_INCLUDE_DIRS}" CACHE STRING "" FORCE)
+        set(R3D_RAYLIB_LIB "${RAYLIB_LIBRARIES}" CACHE STRING "" FORCE)
+    else()
+        message(FATAL_ERROR
             "System raylib not found.\n"
-            "Make sure raylib is installed and discoverable by CMake.")
+            "Please install raylib development files for your platform, "
+            "or use the vendored version included with this project.")
     endif()
-
-    message(STATUS "Using system-installed raylib")
-    get_target_property(RAYLIB_INCLUDE_DIR raylib INTERFACE_INCLUDE_DIRECTORIES)
-    set(R3D_RAYLIB_INC_PATH "${RAYLIB_INCLUDE_DIR}" CACHE STRING "" FORCE)
 endif()
 
 # ========================================
@@ -341,8 +343,8 @@ target_include_directories(${PROJECT_NAME}
         "${R3D_ROOT_PATH}/external/glad"
         "${R3D_GENERATED_INCLUDE_DIR}"
         "${R3D_ROOT_PATH}/include"
-        "${R3D_RAYLIB_INC_PATH}"
-        "${R3D_ASSIMP_INC_PATH}"
+        "${R3D_RAYLIB_INC}"
+        "${R3D_ASSIMP_INC}"
 )
 
 # ========================================
@@ -350,7 +352,9 @@ target_include_directories(${PROJECT_NAME}
 # ========================================
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE raylib assimp
+    PRIVATE
+        "${R3D_RAYLIB_LIB}"
+        "${R3D_ASSIMP_LIB}"
 )
 
 check_library_exists(m cos "" HAVE_LIB_M)
