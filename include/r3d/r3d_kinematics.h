@@ -9,8 +9,8 @@
 #ifndef R3D_KINEMATICS_H
 #define R3D_KINEMATICS_H
 
-#include <r3d/r3d_mesh_data.h>
-#include <r3d/r3d_model.h>
+#include "./r3d_mesh_data.h"
+#include "./r3d_model.h"
 
 /**
  * @defgroup Kinematics
