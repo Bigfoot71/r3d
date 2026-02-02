@@ -1,7 +1,10 @@
-# Sample toolchain file for building for Windows from an Ubuntu Linux system.
+# Sample toolchain file for building for Windows from a Linux system.
 #
 # Typical usage:
-#    *) install cross compiler: `sudo apt-get install mingw-w64`
+#    On Ubuntu/Debian:
+#       *) install cross compiler: `sudo apt-get install mingw-w64`
+#    On Fedora:
+#       *) install cross compiler: `sudo dnf install mingw64-gcc mingw64-gcc-c++`
 #    *) cd build
 #    *) cmake -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64-x86_64.cmake ..
 # This is free and unencumbered software released into the public domain.
@@ -21,5 +24,3 @@ set(CMAKE_FIND_ROOT_PATH /usr/${TOOLCHAIN_PREFIX})
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
-
-
