@@ -283,6 +283,13 @@ GLuint r3d_target_get(r3d_target_t target);
 GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel);
 
 /*
+ * Returns the texture ID corresponding to the requested target all levels configured to be sampled.
+ * Asserts that the requested target has been created and if the target enum is valid.
+ * If not created yet, it means we never bound this target, so it would be empty.
+ */
+GLuint r3d_target_get_all_levels(r3d_target_t target);
+
+/*
  * Returns the texture ID corresponding to the requested target.
  * Or returns 0 if the target has not been created or if the enum is invalid.
  */

@@ -1902,7 +1902,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     R3D_SHADER_USE_BLT(post.bloom);
 
     R3D_SHADER_BIND_SAMPLER_BLT(post.bloom, uSceneTex, sceneSourceID);
-    R3D_SHADER_BIND_SAMPLER_BLT(post.bloom, uBloomTex, r3d_target_get(R3D_TARGET_BLOOM));
+    R3D_SHADER_BIND_SAMPLER_BLT(post.bloom, uBloomTex, r3d_target_get_all_levels(R3D_TARGET_BLOOM));
 
     R3D_SHADER_SET_INT_BLT(post.bloom, uBloomMode, R3D.environment.bloom.mode);
     R3D_SHADER_SET_FLOAT_BLT(post.bloom, uBloomIntensity, R3D.environment.bloom.intensity);
