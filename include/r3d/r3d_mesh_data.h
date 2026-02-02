@@ -1,6 +1,6 @@
 /* r3d_mesh_data.h -- R3D Mesh Data Module.
  *
- * Copyright (c) 2025 Le Juez Victor
+ * Copyright (c) 2025-2026 Le Juez Victor
  *
  * This software is provided 'as-is', without any express or implied warranty.
  * For conditions of distribution and use, see accompanying LICENSE file.
