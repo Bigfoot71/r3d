@@ -1,4 +1,4 @@
-/* r3d_culling.h -- R3D Culling Module.
+/* r3d_visibility.h -- R3D Visibility Module.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -12,22 +12,22 @@
 // PUBLIC API
 // ========================================
 
-bool R3D_IsPointInFrustum(Vector3 position)
+bool R3D_IsPointVisible(Vector3 position)
 {
 	return r3d_frustum_is_point_in(&R3D.viewState.frustum, &position);
 }
 
-bool R3D_IsSphereInFrustum(Vector3 position, float radius)
+bool R3D_IsSphereVisible(Vector3 position, float radius)
 {
 	return r3d_frustum_is_sphere_in(&R3D.viewState.frustum, &position, radius);
 }
 
-bool R3D_IsAABBInFrustum(BoundingBox aabb)
+bool R3D_IsBoundingBoxVisible(BoundingBox aabb)
 {
 	return r3d_frustum_is_aabb_in(&R3D.viewState.frustum, &aabb);
 }
 
-bool R3D_IsOBBInFrustum(BoundingBox aabb, Matrix transform)
+bool R3D_IsOrientedBoxVisible(BoundingBox aabb, Matrix transform)
 {
 	return r3d_frustum_is_obb_in(&R3D.viewState.frustum, &aabb, &transform);
 }

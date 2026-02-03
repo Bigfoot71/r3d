@@ -259,7 +259,6 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"
-    "${R3D_ROOT_PATH}/src/r3d_culling.c"
     "${R3D_ROOT_PATH}/src/r3d_draw.c"
     "${R3D_ROOT_PATH}/src/r3d_decal.c"
     "${R3D_ROOT_PATH}/src/r3d_ambient_map.c"
@@ -277,6 +276,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_probe.c"
     "${R3D_ROOT_PATH}/src/r3d_skeleton.c"
     "${R3D_ROOT_PATH}/src/r3d_utils.c"
+    "${R3D_ROOT_PATH}/src/r3d_visibility.c"
     # External
     "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
 )
