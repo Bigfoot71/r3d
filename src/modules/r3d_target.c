@@ -430,7 +430,7 @@ GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel)
 GLuint r3d_target_get_all_levels(r3d_target_t target)
 {
     assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
-    int maxLevel = r3d_target_get_num_levels(target);
+    int maxLevel = r3d_target_get_num_levels(target) - 1;
     r3d_target_set_read_levels(target, 0, maxLevel);
     return R3D_MOD_TARGET.targetTextures[target];
 }
