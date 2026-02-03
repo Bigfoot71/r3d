@@ -147,8 +147,10 @@ extern "C" {
  * 
  * @param resWidth Width of the internal resolution.
  * @param resHeight Height of the internal resolution.
+ *
+ * @return True if the initialization is successful.
  */
-R3DAPI void R3D_Init(int resWidth, int resHeight);
+R3DAPI bool R3D_Init(int resWidth, int resHeight);
 
 /**
  * @brief Closes the rendering engine and deallocates all resources.

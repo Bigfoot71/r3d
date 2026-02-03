@@ -35,7 +35,7 @@ struct r3d_core_state R3D;
 // PUBLIC API
 // ========================================
 
-void R3D_Init(int resWidth, int resHeight)
+bool R3D_Init(int resWidth, int resHeight)
 {
     memset(&R3D, 0, sizeof(R3D));
 
@@ -59,16 +59,42 @@ void R3D_Init(int resWidth, int resHeight)
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
     R3D.layers = R3D_LAYER_ALL;
 
-    r3d_texture_init();
-    r3d_target_init(resWidth, resHeight);
-    r3d_shader_init();
-    r3d_opengl_init();
-    r3d_light_init();
-    r3d_draw_init();
-    r3d_env_init();
+    if (!r3d_texture_init()) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init texture module");
+        return false;
+    }
 
-    // Defines suitable clipping plane distances for r3d
-    rlSetClipPlanes(0.05f, 4000.0f);
+    if (!r3d_target_init(resWidth, resHeight)) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init target module");
+        return false;
+    }
+
+    if (!r3d_shader_init()) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init shader module");
+        return false;
+    }
+
+    if (!r3d_opengl_init()) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init OpenGL module");
+        return false;
+    }
+
+    if (!r3d_light_init()) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init light module");
+        return false;
+    }
+
+    if (!r3d_draw_init()) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init draw module");
+        return false;
+    }
+
+    if (!r3d_env_init()) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to init env module");
+        return false;
+    }
+
+    return true;
 }
 
 void R3D_Close(void)
