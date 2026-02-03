@@ -92,15 +92,11 @@ static bool layer_pool_expand(r3d_env_layer_pool_t* pool, int addCount)
 // TEXTURE FUNCTIONS
 // ========================================
 
-static bool allocate_texture_depth(GLuint texture, int size)
+static bool allocate_renderbuffer_depth(GLuint renderbuffer, int size)
 {
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, size, size, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, NULL);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, size, size);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
     return true;
 }
 
@@ -321,9 +317,11 @@ bool r3d_env_init(void)
 
     glGenFramebuffers(1, &R3D_MOD_ENV.workFramebuffer);
     glGenFramebuffers(1, &R3D_MOD_ENV.captureFramebuffer);
+
     glGenTextures(1, &R3D_MOD_ENV.irradianceArray);
     glGenTextures(1, &R3D_MOD_ENV.prefilterArray);
-    glGenTextures(1, &R3D_MOD_ENV.captureDepth);
+
+    glGenRenderbuffers(1, &R3D_MOD_ENV.captureDepth);
     glGenTextures(1, &R3D_MOD_ENV.captureCube);
 
     // Initialize layer pools
@@ -365,8 +363,10 @@ void r3d_env_quit(void)
 {
     if (R3D_MOD_ENV.irradianceArray) glDeleteTextures(1, &R3D_MOD_ENV.irradianceArray);
     if (R3D_MOD_ENV.prefilterArray) glDeleteTextures(1, &R3D_MOD_ENV.prefilterArray);
-    if (R3D_MOD_ENV.captureDepth) glDeleteTextures(1, &R3D_MOD_ENV.captureDepth);
+
+    if (R3D_MOD_ENV.captureDepth) glDeleteRenderbuffers(1, &R3D_MOD_ENV.captureDepth);
     if (R3D_MOD_ENV.captureCube) glDeleteTextures(1, &R3D_MOD_ENV.captureCube);
+
     if (R3D_MOD_ENV.workFramebuffer) glDeleteFramebuffers(1, &R3D_MOD_ENV.workFramebuffer);
     if (R3D_MOD_ENV.captureFramebuffer) glDeleteFramebuffers(1, &R3D_MOD_ENV.captureFramebuffer);
 
@@ -596,14 +596,14 @@ void r3d_env_capture_bind_fbo(int face, int mipLevel)
     glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_ENV.captureFramebuffer);
 
     if (!R3D_MOD_ENV.captureCubeAllocated) {
+        allocate_renderbuffer_depth(R3D_MOD_ENV.captureDepth, R3D_PROBE_CAPTURE_SIZE);
         cubemap_spec_t spec = cubemap_spec(R3D_PROBE_CAPTURE_SIZE, 0, true);
         allocate_cubemap(R3D_MOD_ENV.captureCube, spec);
-        allocate_texture_depth(R3D_MOD_ENV.captureDepth, R3D_PROBE_CAPTURE_SIZE);
         R3D_MOD_ENV.captureCubeAllocated = true;
 
-        glFramebufferTexture2D(
+        glFramebufferRenderbuffer(
             GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-            GL_TEXTURE_2D, R3D_MOD_ENV.captureDepth, 0
+            GL_RENDERBUFFER, R3D_MOD_ENV.captureDepth
         );
     }
 
