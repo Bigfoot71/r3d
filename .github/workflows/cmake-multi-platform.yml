@@ -67,6 +67,10 @@ jobs:
           key: ${{ matrix.os }}-${{ matrix.c_compiler }}-${{ matrix.build_type }}
           max-size: 500M
 
+      - name: Install Ninja (Windows MSVC)
+        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
+        run: choco install ninja
+
       - name: Setup MinGW-w64
         if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
         uses: msys2/setup-msys2@v2
@@ -77,6 +81,7 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-python
             mingw-w64-x86_64-ccache
 
       - name: Install Linux dependencies
@@ -106,8 +111,25 @@ jobs:
             -DR3D_BUILD_EXAMPLES=ON \
             -DR3D_BUILD_DOCS=OFF
 
-      - name: Configure CMake
-        if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
+      - name: Configure CMake (Windows MSVC)
+        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cmake -B "${{ env.BUILD_DIR }}" -G "Ninja" ^
+            -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} ^
+            -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} ^
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ^
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache ^
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ^
+            -DBUILD_SHARED_LIBS=OFF ^
+            -DR3D_RAYLIB_VENDORED=ON ^
+            -DR3D_ASSIMP_VENDORED=ON ^
+            -DR3D_BUILD_EXAMPLES=ON ^
+            -DR3D_BUILD_DOCS=OFF
+
+      - name: Configure CMake (Linux)
+        if: runner.os == 'Linux'
         run: |
           cmake -B ${{ env.BUILD_DIR }} -G "Ninja" \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
@@ -126,8 +148,15 @@ jobs:
         shell: msys2 {0}
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ matrix.build_type }} --parallel
 
-      - name: Build
-        if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
+      - name: Build (Windows MSVC)
+        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cmake --build "${{ env.BUILD_DIR }}" --config ${{ matrix.build_type }} --parallel
+
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ matrix.build_type }} --parallel
 
       - name: Print ccache statistics
@@ -139,8 +168,14 @@ jobs:
         working-directory: ${{ env.BUILD_DIR }}
         run: ctest --build-config ${{ matrix.build_type }}
 
-      - name: Run tests
-        if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
+      - name: Run tests (Windows MSVC)
+        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
+        shell: cmd
+        working-directory: ${{ env.BUILD_DIR }}
+        run: ctest --build-config ${{ matrix.build_type }}
+
+      - name: Run tests (Linux)
+        if: runner.os == 'Linux'
         working-directory: ${{ env.BUILD_DIR }}
         run: ctest --build-config ${{ matrix.build_type }}
 
@@ -156,11 +191,9 @@ jobs:
             ${{ env.BUILD_DIR }}/**/*.dylib
           retention-days: 14
 
-  # Trigger binding generation only if all builds succeed
   trigger-bindings:
     needs: build
     runs-on: ubuntu-latest
-    # Only trigger on push to master (not on PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
 
     steps:
