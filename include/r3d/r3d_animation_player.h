@@ -33,10 +33,14 @@ typedef enum {
 } R3D_AnimationEvent;
 
 // ========================================
-// CALLBACKS TYPES
+// FORWARD DECLARATIONS
 // ========================================
 
 struct R3D_AnimationPlayer;
+
+// ========================================
+// CALLBACKS TYPES
+// ========================================
 
 /**
  * @brief Callback type for receiving animation events.
