@@ -176,6 +176,6 @@ jobs:
               "ref": "${{ github.ref }}",
               "sha": "${{ github.sha }}",
               "repository": "${{ github.repository }}",
-              "commit_message": "${{ github.event.head_commit.message }}",
+              "commit_message": ${{ toJSON(github.event.head_commit.message) }},
               "run_id": "${{ github.run_id }}"
             }
