@@ -104,6 +104,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+        -DBUILD_SHARED_LIBS=OFF \
         -DR3D_RAYLIB_VENDORED=ON \
         -DR3D_ASSIMP_VENDORED=ON \
         -DR3D_BUILD_EXAMPLES=ON \
@@ -117,6 +118,7 @@ jobs:
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DBUILD_SHARED_LIBS=OFF
         -DR3D_RAYLIB_VENDORED=ON
         -DR3D_ASSIMP_VENDORED=ON
         -DR3D_BUILD_EXAMPLES=ON
@@ -154,3 +156,26 @@ jobs:
           ${{ steps.strings.outputs.build-output-dir }}/**/*.lib
           ${{ steps.strings.outputs.build-output-dir }}/**/*.dylib
         retention-days: 14
+
+  # New job: Trigger binding generation only if all builds succeed
+  trigger-bindings:
+    needs: build
+    runs-on: ubuntu-latest
+    # Only trigger on push to master (not on PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Trigger binding generation workflow
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.BINDGEN_PAT }}
+          repository: Bigfoot71/r3d-odin-bindgen
+          event-type: r3d-updated
+          client-payload: |
+            {
+              "ref": "${{ github.ref }}",
+              "sha": "${{ github.sha }}",
+              "repository": "${{ github.repository }}",
+              "commit_message": "${{ github.event.head_commit.message }}",
+              "run_id": "${{ github.run_id }}"
+            }
