@@ -165,8 +165,9 @@ jobs:
       - name: Run tests (MinGW)
         if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
         shell: msys2 {0}
-        working-directory: ${{ env.BUILD_DIR }}
-        run: ctest --build-config ${{ matrix.build_type }}
+        run: |
+          cd $(cygpath -u "${{ env.BUILD_DIR }}")
+          ctest --build-config ${{ matrix.build_type }}
 
       - name: Run tests (Windows MSVC)
         if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
