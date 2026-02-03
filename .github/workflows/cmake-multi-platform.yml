@@ -54,7 +54,6 @@ jobs:
 
     env:
       BUILD_DIR: ${{ github.workspace }}/build
-      IS_MINGW: ${{ runner.os == 'Windows' && matrix.c_compiler == 'gcc' }}
 
     steps:
       - name: Checkout code
@@ -69,7 +68,7 @@ jobs:
           max-size: 500M
 
       - name: Setup MinGW-w64
-        if: env.IS_MINGW == 'true'
+        if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -85,13 +84,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
+            ninja-build \
             libglfw3 libglfw3-dev \
             libx11-dev libxcursor-dev libxrandr-dev \
             libxinerama-dev libxi-dev libxext-dev libxfixes-dev \
             libwayland-dev libwayland-bin libxkbcommon-dev
 
       - name: Configure CMake (MinGW)
-        if: env.IS_MINGW == 'true'
+        if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
         shell: msys2 {0}
         run: |
           cmake -B ${{ env.BUILD_DIR }} -G "Ninja" \
@@ -107,7 +107,7 @@ jobs:
             -DR3D_BUILD_DOCS=OFF
 
       - name: Configure CMake
-        if: env.IS_MINGW == 'false'
+        if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
         run: |
           cmake -B ${{ env.BUILD_DIR }} -G "Ninja" \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
@@ -122,25 +122,25 @@ jobs:
             -DR3D_BUILD_DOCS=OFF
 
       - name: Build (MinGW)
-        if: env.IS_MINGW == 'true'
+        if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
         shell: msys2 {0}
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ matrix.build_type }} --parallel
 
       - name: Build
-        if: env.IS_MINGW == 'false'
+        if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
         run: cmake --build ${{ env.BUILD_DIR }} --config ${{ matrix.build_type }} --parallel
 
       - name: Print ccache statistics
         run: ccache -s
 
       - name: Run tests (MinGW)
-        if: env.IS_MINGW == 'true'
+        if: runner.os == 'Windows' && matrix.c_compiler == 'gcc'
         shell: msys2 {0}
         working-directory: ${{ env.BUILD_DIR }}
         run: ctest --build-config ${{ matrix.build_type }}
 
       - name: Run tests
-        if: env.IS_MINGW == 'false'
+        if: runner.os != 'Windows' || matrix.c_compiler != 'gcc'
         working-directory: ${{ env.BUILD_DIR }}
         run: ctest --build-config ${{ matrix.build_type }}
 
