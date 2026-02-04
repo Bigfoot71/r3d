@@ -117,8 +117,13 @@ Licensed under the **Zlib License** - see [LICENSE](LICENSE) for details.
 
 ## Screenshots
 
-<img src="examples/screenshots/screenshot0.png" width="300">
-<img src="examples/screenshots/screenshot1.png" width="300">
-
-<img src="examples/screenshots/screenshot2.png" width="300">
-<img src="examples/screenshots/screenshot3.png" width="300">
+<table>
+  <tr>
+    <td><img src="examples/screenshots/screenshot0.png"></td>
+    <td><img src="examples/screenshots/screenshot1.png"></td>
+  </tr>
+  <tr>
+    <td><img src="examples/screenshots/screenshot2.png"></td>
+    <td><img src="examples/screenshots/screenshot3.png"></td>
+  </tr>
+</table>
