@@ -13,7 +13,6 @@
 #include <glad.h>
 
 #include "./importer/r3d_importer_internal.h"
-#include "raylib.h"
 
 // ========================================
 // PUBLIC API
