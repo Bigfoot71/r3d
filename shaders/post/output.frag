@@ -202,8 +202,10 @@ vec3 Adjustments(vec3 color, float brightness, float contrast, float saturation)
 
 vec3 Debanding(vec3 color)
 {
-    float ditherStrength = 255.0; // lower is stronger
-    return color + vec3((M_HashIGN(gl_FragCoord.xy) - 0.5) / ditherStrength);
+    const float ditherStrength = 1.0 / 255.0;
+    float n = M_HashIGN(gl_FragCoord.xy);
+    float d = (n - 0.5) * ditherStrength;
+    return color + d;
 }
 
 vec3 LinearToSRGB(vec3 color)
@@ -223,7 +225,7 @@ void main()
 
     color = Tonemapping(color, uTonemapExposure, uTonemapWhite);
     color = Adjustments(color, uBrightness, uContrast, uSaturation);
-    color = Debanding(color);
+    color = LinearToSRGB(color);
 
-    FragColor = vec4(LinearToSRGB(color), 1.0);
+    FragColor = vec4(Debanding(color), 1.0);
 }
