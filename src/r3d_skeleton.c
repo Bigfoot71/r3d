@@ -7,6 +7,7 @@
  */
 
 #include <r3d/r3d_skeleton.h>
+#include <r3d_config.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <glad.h>
@@ -24,7 +25,7 @@ R3D_Skeleton R3D_LoadSkeleton(const char* filePath)
     R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
     if (importer == NULL) return skeleton;
 
-    r3d_importer_load_skeleton(importer, &skeleton);
+    skeleton = R3D_LoadSkeletonFromImporter(importer);
     R3D_UnloadImporter(importer);
 
     return skeleton;
@@ -37,9 +38,25 @@ R3D_Skeleton R3D_LoadSkeletonFromMemory(const void* data, unsigned int size, con
     R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
     if (importer == NULL) return skeleton;
 
-    r3d_importer_load_skeleton(importer, &skeleton);
+    skeleton = R3D_LoadSkeletonFromImporter(importer);
     R3D_UnloadImporter(importer);
 
+    return skeleton;
+}
+
+R3D_Skeleton R3D_LoadSkeletonFromImporter(const R3D_Importer* importer)
+{
+    R3D_Skeleton skeleton = {0};
+    
+    if (!importer) {
+        R3D_TRACELOG(LOG_ERROR, "Cannot load skeleton from NULL importer");
+        return skeleton;
+    }
+    
+    r3d_importer_load_skeleton(importer, &skeleton);
+    
+    R3D_TRACELOG(LOG_INFO, "[%s] Skeleton loaded successfully (%u bones)", importer->name, skeleton.boneCount);
+    
     return skeleton;
 }
 
