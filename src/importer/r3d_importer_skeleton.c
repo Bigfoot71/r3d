@@ -161,7 +161,5 @@ bool r3d_importer_load_skeleton(const R3D_Importer* importer, R3D_Skeleton* skel
     build_skeleton_recursive(&ctx, r3d_importer_get_root(importer), R3D_MATRIX_IDENTITY, -1);
     upload_skeleton_bind_pose(skeleton);
 
-    R3D_TRACELOG(LOG_INFO, "Loaded skeleton with %d bones", boneCount);
-
     return true;
 }

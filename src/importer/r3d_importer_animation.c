@@ -244,7 +244,5 @@ bool r3d_importer_load_animations(const R3D_Importer* importer, R3D_AnimationLib
     animLib->animations = animations;
     animLib->count = successCount;
 
-    R3D_TRACELOG(LOG_INFO, "Loaded animation library with %d animations", successCount);
-
     return true;
 }

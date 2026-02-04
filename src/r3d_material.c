@@ -41,6 +41,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color)
 
     Image image = LoadImage(fileName);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load albedo image: '%s'", fileName);
         return map;
     }
 
@@ -48,6 +49,13 @@ R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color)
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_REPEAT, R3D.textureFilter, srgb);
     map.color = color;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "Albedo map loaded successfully: '%s'", fileName);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload albedo texture: '%s'", fileName);
+    }
 
     UnloadImage(image);
 
@@ -60,6 +68,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* file
 
     Image image = LoadImageFromMemory(fileType, fileData, dataSize);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load albedo image from memory (type: '%s')", fileType);
         return map;
     }
 
@@ -67,6 +76,13 @@ R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* file
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "Albedo map loaded successfully from memory (type: '%s')", fileType);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload albedo texture from memory (type: '%s')", fileType);
+    }
 
     UnloadImage(image);
 
@@ -88,6 +104,7 @@ R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float ene
 
     Image image = LoadImage(fileName);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load emission image: '%s'", fileName);
         return map;
     }
 
@@ -96,6 +113,13 @@ R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float ene
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
     map.energy = energy;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "Emission map loaded successfully: '%s'", fileName);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload emission texture: '%s'", fileName);
+    }
 
     UnloadImage(image);
 
@@ -108,6 +132,7 @@ R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* 
 
     Image image = LoadImageFromMemory(fileType, fileData, dataSize);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load emission image from memory (type: '%s')", fileType);
         return map;
     }
 
@@ -116,6 +141,13 @@ R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
     map.energy = energy;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "Emission map loaded successfully from memory (type: '%s')", fileType);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload emission texture from memory (type: '%s')", fileType);
+    }
 
     UnloadImage(image);
 
@@ -137,11 +169,19 @@ R3D_NormalMap R3D_LoadNormalMap(const char* fileName, float scale)
 
     Image image = LoadImage(fileName);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load normal map image: '%s'", fileName);
         return map;
     }
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, false);
     map.scale = scale;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "Normal map loaded successfully: '%s'", fileName);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload normal map texture: '%s'", fileName);
+    }
 
     UnloadImage(image);
 
@@ -154,11 +194,19 @@ R3D_NormalMap R3D_LoadNormalMapFromMemory(const char* fileType, const void* file
 
     Image image = LoadImageFromMemory(fileType, fileData, dataSize);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load normal map image from memory (type: '%s')", fileType);
         return map;
     }
 
     map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, false);
     map.scale = scale;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "Normal map loaded successfully from memory (type: '%s')", fileType);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload normal map texture from memory (type: '%s')", fileType);
+    }
 
     UnloadImage(image);
 
@@ -180,6 +228,7 @@ R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness
 
     Image image = LoadImage(fileName);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load ORM image: '%s'", fileName);
         return map;
     }
 
@@ -187,6 +236,13 @@ R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness
     map.occlusion = occlusion;
     map.roughness = roughness;
     map.metalness = metalness;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "ORM map loaded successfully: '%s'", fileName);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload ORM texture: '%s'", fileName);
+    }
 
     UnloadImage(image);
 
@@ -200,6 +256,7 @@ R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, 
 
     Image image = LoadImageFromMemory(fileType, fileData, dataSize);
     if (!IsImageValid(image)) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load ORM image from memory (type: '%s')", fileType);
         return map;
     }
 
@@ -207,6 +264,13 @@ R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, 
     map.occlusion = occlusion;
     map.roughness = roughness;
     map.metalness = metalness;
+
+    if (map.texture.id != 0) {
+        R3D_TRACELOG(LOG_INFO, "ORM map loaded successfully from memory (type: '%s')", fileType);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to upload ORM texture from memory (type: '%s')", fileType);
+    }
 
     UnloadImage(image);
 

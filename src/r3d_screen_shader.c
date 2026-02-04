@@ -151,6 +151,10 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
 
     r3d_rshade_init_ubo(&shader->program.uniforms, currentOffset);
 
+    R3D_TRACELOG(LOG_INFO, "Screen shader loaded successfully");
+    R3D_TRACELOG(LOG_INFO, "    > Sampler count: %i", samplerCount);
+    R3D_TRACELOG(LOG_INFO, "    > Uniform count: %i", uniformCount);
+
     return shader;
 }
 

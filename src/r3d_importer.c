@@ -43,6 +43,35 @@
 // PRIVATE FUNCTIONS
 // ========================================
 
+static void determine_importer_name(char* outName, size_t outSize, const struct aiScene* scene, const char* hint)
+{
+    if (!outName || outSize == 0) return;
+
+    if (scene && scene->mMetaData) {
+        struct aiMetadata* meta = scene->mMetaData;
+        for (unsigned int i = 0; i < meta->mNumProperties; i++) {
+            if ((strcmp(meta->mKeys[i].data, "SourceAsset_Filename") == 0 ||
+                 strcmp(meta->mKeys[i].data, "FileName") == 0) &&
+                meta->mValues[i].mType == AI_AISTRING)
+            {
+                struct aiString* str = meta->mValues[i].mData;
+                const char* filename = strrchr(str->data, '/');
+                if (!filename) filename = strrchr(str->data, '\\');
+                filename = filename ? filename + 1 : str->data;
+                snprintf(outName, outSize, "memory data (%s)", filename);
+                return;
+            }
+        }
+    }
+
+    if (hint && hint[0] != '\0') {
+        snprintf(outName, outSize, "memory data (%s)", hint);
+        return;
+    }
+
+    snprintf(outName, outSize, "memory data");
+}
+
 static void build_bone_mapping(R3D_Importer* importer)
 {
     int totalBones = 0;
@@ -52,15 +81,15 @@ static void build_bone_mapping(R3D_Importer* importer)
     }
 
     if (totalBones == 0) {
-        importer->boneMapArray = NULL;
-        importer->boneMapHead = NULL;
-        importer->boneCount = 0;
+        importer->bones.array = NULL;
+        importer->bones.head = NULL;
+        importer->bones.count = 0;
         return;
     }
 
-    importer->boneMapArray = RL_MALLOC(totalBones * sizeof(r3d_bone_map_entry_t));
-    importer->boneMapHead = NULL;
-    importer->boneCount = 0;
+    importer->bones.array = RL_MALLOC(totalBones * sizeof(r3d_importer_bone_entry_t));
+    importer->bones.head = NULL;
+    importer->bones.count = 0;
 
     for (uint32_t meshIdx = 0; meshIdx < importer->scene->mNumMeshes; meshIdx++)
     {
@@ -74,23 +103,23 @@ static void build_bone_mapping(R3D_Importer* importer)
 
             const char* boneName = bone->mName.data;
 
-            r3d_bone_map_entry_t* entry = NULL;
-            HASH_FIND_STR(importer->boneMapHead, boneName, entry);
+            r3d_importer_bone_entry_t* entry = NULL;
+            HASH_FIND_STR(importer->bones.head, boneName, entry);
             if (entry != NULL) continue;
 
-            entry = &importer->boneMapArray[importer->boneCount];
+            entry = &importer->bones.array[importer->bones.count];
 
             strncpy(entry->name, boneName, sizeof(entry->name) - 1);
             entry->name[sizeof(entry->name) - 1] = '\0';
-            entry->index = importer->boneCount;
+            entry->index = importer->bones.count;
 
-            HASH_ADD_STR(importer->boneMapHead, name, entry);
-            importer->boneCount++;
+            HASH_ADD_STR(importer->bones.head, name, entry);
+            importer->bones.count++;
         }
     }
 
-    if (importer->boneCount > 0) {
-        R3D_TRACELOG(LOG_DEBUG, "Built bone mapping with %d bones", importer->boneCount);
+    if (importer->bones.count > 0) {
+        R3D_TRACELOG(LOG_DEBUG, "Built bone mapping with %d bones", importer->bones.count);
     }
 }
 
@@ -107,7 +136,7 @@ R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
 
     const struct aiScene* scene = aiImportFile(filePath, aiFlags);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
+        R3D_TRACELOG(LOG_ERROR, "Assimp failed to load '%s': %s", filePath, aiGetErrorString());
         return NULL;
     }
 
@@ -115,7 +144,12 @@ R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
     importer->scene = scene;
     importer->flags = flags;
 
+    strncpy(importer->name, filePath, sizeof(importer->name) - 1);
+    importer->name[sizeof(importer->name) - 1] = '\0';
+
     build_bone_mapping(importer);
+
+    R3D_TRACELOG(LOG_INFO, "Importer loaded successfully: '%s'", filePath);
 
     return importer;
 }
@@ -129,7 +163,12 @@ R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, co
 
     const struct aiScene* scene = aiImportFileFromMemory(data, size, aiFlags, hint);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
+        if (hint && hint[0] != '\0') {
+            R3D_TRACELOG(LOG_ERROR, "Assimp failed to load memory asset '%s': %s", hint, aiGetErrorString());
+        }
+        else {
+            R3D_TRACELOG(LOG_ERROR, "Assimp failed to load memory asset: %s", aiGetErrorString());
+        }
         return NULL;
     }
 
@@ -137,7 +176,15 @@ R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, co
     importer->scene = scene;
     importer->flags = flags;
 
+    determine_importer_name(importer->name, sizeof(importer->name), scene, hint);
     build_bone_mapping(importer);
+
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_INFO, "Importer loaded successfully from memory: '%s'", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_INFO, "Importer loaded successfully from memory");
+    }
 
     return importer;
 }
@@ -146,10 +193,10 @@ void R3D_UnloadImporter(R3D_Importer* importer)
 {
     if (!importer) return;
 
-    HASH_CLEAR(hh, importer->boneMapHead);
+    HASH_CLEAR(hh, importer->bones.head);
 
-    if (importer->boneMapArray) {
-        RL_FREE(importer->boneMapArray);
+    if (importer->bones.array) {
+        RL_FREE(importer->bones.array);
     }
 
     aiReleaseImport(importer->scene);

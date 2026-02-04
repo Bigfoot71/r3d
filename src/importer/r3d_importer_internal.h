@@ -52,14 +52,19 @@ typedef struct {
     char name[128];          // Key
     int index;               // Value
     UT_hash_handle hh;       // Uthash handle
-} r3d_bone_map_entry_t;
+} r3d_importer_bone_entry_t;
+
+typedef struct {
+    r3d_importer_bone_entry_t* array;
+    r3d_importer_bone_entry_t* head;
+    int count;
+} r3d_importer_bone_map_t;
 
 struct R3D_Importer {
     const struct aiScene* scene;
-    r3d_bone_map_entry_t* boneMapArray;
-    r3d_bone_map_entry_t* boneMapHead;
-    int boneCount;
+    r3d_importer_bone_map_t bones;
     R3D_ImportFlags flags;
+    char name[256];
 };
 
 // ========================================
@@ -182,15 +187,15 @@ static inline int r3d_importer_get_mesh_count(const R3D_Importer* importer)
 
 static inline int r3d_importer_get_bone_count(const R3D_Importer* importer)
 {
-    return importer->boneCount;
+    return importer->bones.count;
 }
 
 static inline int r3d_importer_get_bone_index(const R3D_Importer* importer, const char* name)
 {
     if (!importer || !name) return -1;
 
-    r3d_bone_map_entry_t* entry = NULL;
-    HASH_FIND_STR(importer->boneMapHead, name, entry);
+    r3d_importer_bone_entry_t* entry = NULL;
+    HASH_FIND_STR(importer->bones.head, name, entry);
 
     return entry ? entry->index : -1;
 }
