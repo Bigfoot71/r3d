@@ -1,4 +1,4 @@
-# R3D – 3D Extensions Library for raylib
+# R3D – 3D Extension Library for raylib
 
 <img align="left" src="https://github.com/Bigfoot71/r3d/blob/master/logo.png" width="100" hspace="20">
 <br>
@@ -117,8 +117,8 @@ Licensed under the **Zlib License** - see [LICENSE](LICENSE) for details.
 
 ## Screenshots
 
-<img src="examples/screenshots/screenshot0.png" width="400">
-<img src="examples/screenshots/screenshot1.png" width="400">
+<img src="examples/screenshots/screenshot0.png" width="300">
+<img src="examples/screenshots/screenshot1.png" width="300">
 
-<img src="examples/screenshots/screenshot2.png" width="400">
-<img src="examples/screenshots/screenshot3.png" width="400">
+<img src="examples/screenshots/screenshot2.png" width="300">
+<img src="examples/screenshots/screenshot3.png" width="300">
