@@ -50,7 +50,7 @@ R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout
     );
 
     if (success) {
-        R3D_TRACELOG(LOG_INFO, "Ambient map loaded successfully (irradiance: %s, reflection: %s)",
+        R3D_TRACELOG(LOG_INFO, "Ambient map loaded successfully (irradiance: %s | reflection: %s)",
             (ambientMap.irradiance ? "yes" : "no"), (ambientMap.prefilter ? "yes" : "no")
         );
     }
