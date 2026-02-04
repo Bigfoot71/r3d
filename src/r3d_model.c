@@ -61,6 +61,11 @@ R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 {
     R3D_Model model = {0};
 
+    if (importer == NULL) {
+        R3D_TRACELOG(LOG_ERROR, "Cannot load model from NULL importer");
+        return model;
+    }
+
     if (!r3d_importer_load_meshes(importer, &model)) goto fail;
     if (!r3d_importer_load_skeleton(importer, &model.skeleton)) goto fail;
 
@@ -73,8 +78,9 @@ R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
     r3d_importer_unload_texture_cache(textureCache, false);
 
     R3D_TRACELOG(LOG_INFO, "[%s] Model loaded successfully", importer->name);
-    R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
     R3D_TRACELOG(LOG_INFO, "    > Materials count: %i", model.materialCount);
+    R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
+    R3D_TRACELOG(LOG_INFO, "    > Bones count: %i", model.skeleton.boneCount);
 
     return model;
 
