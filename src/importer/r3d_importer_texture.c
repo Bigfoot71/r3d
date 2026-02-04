@@ -516,7 +516,16 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
     }
     RL_FREE(arenaMemory);
 
-    R3D_TRACELOG(LOG_INFO, "Model textures loaded: %d / %d", uploadedCount, processedCount);
+    if (uploadedCount == processedCount) {
+        R3D_TRACELOG(LOG_INFO, "Model textures cached: %d/%d textures loaded successfully", 
+            uploadedCount, processedCount
+        );
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Model textures cached: %d/%d textures loaded (%d failed)", 
+            uploadedCount, processedCount, processedCount - uploadedCount
+        );
+    }
 
     return cache;
 }
