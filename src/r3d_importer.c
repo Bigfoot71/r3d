@@ -107,7 +107,7 @@ R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
 
     const struct aiScene* scene = aiImportFile(filePath, aiFlags);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
+        R3D_TRACELOG(LOG_ERROR, "Assimp failed to load '%s': %s", filePath, aiGetErrorString());
         return NULL;
     }
 
@@ -116,6 +116,8 @@ R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
     importer->flags = flags;
 
     build_bone_mapping(importer);
+
+    R3D_TRACELOG(LOG_INFO, "Importer loaded successfully: '%s'", filePath);
 
     return importer;
 }
@@ -129,7 +131,12 @@ R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, co
 
     const struct aiScene* scene = aiImportFileFromMemory(data, size, aiFlags, hint);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
-        R3D_TRACELOG(LOG_ERROR, "Assimp error; %s", aiGetErrorString());
+        if (hint && hint[0] != '\0') {
+            R3D_TRACELOG(LOG_ERROR, "Assimp failed to load memory asset '%s': %s", hint, aiGetErrorString());
+        }
+        else {
+            R3D_TRACELOG(LOG_ERROR, "Assimp failed to load memory asset: %s", aiGetErrorString());
+        }
         return NULL;
     }
 
@@ -138,6 +145,13 @@ R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, co
     importer->flags = flags;
 
     build_bone_mapping(importer);
+
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_INFO, "Importer loaded successfully from memory: '%s'", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_INFO, "Importer loaded successfully from memory");
+    }
 
     return importer;
 }
