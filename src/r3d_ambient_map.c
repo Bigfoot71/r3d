@@ -24,17 +24,37 @@
 
 R3D_AmbientMap R3D_LoadAmbientMap(const char* fileName, R3D_CubemapLayout layout, R3D_AmbientFlags flags)
 {
-    R3D_Cubemap cubemap = R3D_LoadCubemap(fileName, layout);
-    R3D_AmbientMap ambientMap = R3D_GenAmbientMap(cubemap, flags);
-    R3D_UnloadCubemap(cubemap);
+    Image image = LoadImage(fileName);
+    R3D_AmbientMap ambientMap = R3D_LoadAmbientMapFromImage(image, layout, flags);
+    UnloadImage(image);
+
     return ambientMap;
 }
 
 R3D_AmbientMap R3D_LoadAmbientMapFromImage(Image image, R3D_CubemapLayout layout, R3D_AmbientFlags flags)
 {
+    R3D_AmbientMap ambientMap = {0};
+
+    if (image.width <= 0 || image.height <= 0) {
+        R3D_TRACELOG(LOG_WARNING, "Invalid image for ambient map (width=%d, height=%d)", image.width, image.height);
+        return ambientMap;
+    }
+
     R3D_Cubemap cubemap = R3D_LoadCubemapFromImage(image, layout);
-    R3D_AmbientMap ambientMap = R3D_GenAmbientMap(cubemap, flags);
+    ambientMap = R3D_GenAmbientMap(cubemap, flags);
     R3D_UnloadCubemap(cubemap);
+
+    bool success = !(
+        ((flags & R3D_AMBIENT_ILLUMINATION) && !ambientMap.irradiance) ||
+        ((flags & R3D_AMBIENT_REFLECTION) && !ambientMap.prefilter)
+    );
+
+    if (success) {
+        R3D_TRACELOG(LOG_INFO, "Ambient map loaded successfully (irradiance: %s, reflection: %s)",
+            (ambientMap.irradiance ? "yes" : "no"), (ambientMap.prefilter ? "yes" : "no")
+        );
+    }
+
     return ambientMap;
 }
 
@@ -56,8 +76,8 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
     if (BIT_TEST(flags, R3D_AMBIENT_REFLECTION)) {
         prefilter = r3d_env_prefilter_reserve_layer();
         if (prefilter < 0) {
-            r3d_env_irradiance_release_layer(irradiance);
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
+            r3d_env_irradiance_release_layer(irradiance);
             return ambientMap;
         }
         r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size);
