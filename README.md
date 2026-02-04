@@ -48,7 +48,7 @@ Here is a list with all the ports available. Feel free to send a PR if you know 
 | Name | R3D Version | Language | License |
 | --- | :-: | :-: | :-: |
 | [r3d-odin](https://github.com/Bigfoot71/r3d-odin) | **0.8-dev** | [Odin](https://odin-lang.org/) | Zlib |
-| [ray4laz_r3d](https://github.com/GuvaCode/ray4laz_r3d) | **0.6** | [FreePascal](https://en.wikipedia.org/wiki/Free_Pascal) | MIT |
+| [ray4laz_r3d](https://github.com/GuvaCode/ray4laz_r3d) | **0.8-dev** | [FreePascal](https://en.wikipedia.org/wiki/Free_Pascal) | MIT |
 
 ## Installation
 
