@@ -1069,6 +1069,10 @@ bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom)
     SET_SAMPLER(screen, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(screen, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
+    if (custom != NULL) {
+        set_custom_samplers(screen->id, custom);
+    }
+
     return true;
 }
 
