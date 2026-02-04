@@ -77,7 +77,7 @@ R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 
     r3d_importer_unload_texture_cache(textureCache, false);
 
-    R3D_TRACELOG(LOG_INFO, "[%s] Model loaded successfully", importer->name);
+    R3D_TRACELOG(LOG_INFO, "Model loaded successfully: '%s'", importer->name);
     R3D_TRACELOG(LOG_INFO, "    > Materials count: %i", model.materialCount);
     R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
     R3D_TRACELOG(LOG_INFO, "    > Bones count: %i", model.skeleton.boneCount);
@@ -89,7 +89,7 @@ fail:
     R3D_UnloadModel(model, false);
     memset(&model, 0, sizeof(model));
 
-    R3D_TRACELOG(LOG_WARNING, "[%s] Failed to load model", importer->name);
+    R3D_TRACELOG(LOG_WARNING, "Failed to load model: '%s'", importer->name);
 
     return model;
 }

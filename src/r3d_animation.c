@@ -13,6 +13,7 @@
 #include <glad.h>
 
 #include "./importer/r3d_importer_internal.h"
+#include "raylib.h"
 
 // ========================================
 // PUBLIC API
@@ -43,8 +44,18 @@ R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int s
 R3D_AnimationLib R3D_LoadAnimationLibFromImporter(const R3D_Importer* importer)
 {
     R3D_AnimationLib animLib = {0};
-    r3d_importer_load_animations(importer, &animLib);
-    R3D_TRACELOG(LOG_INFO, "[%s] Animation library loaded successfully (%d animations)", importer->name, animLib.count);
+
+    if (!importer) {
+        R3D_TRACELOG(LOG_ERROR, "Cannot load animation library from NULL importer");
+        return animLib;
+    }
+
+    if (r3d_importer_load_animations(importer, &animLib)) {
+        R3D_TRACELOG(LOG_INFO, "Animation library loaded successfully (%d animations): '%s'", animLib.count, importer->name);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load animation library: '%s'", importer->name);
+    }
 
     return animLib;
 }

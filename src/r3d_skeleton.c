@@ -47,16 +47,19 @@ R3D_Skeleton R3D_LoadSkeletonFromMemory(const void* data, unsigned int size, con
 R3D_Skeleton R3D_LoadSkeletonFromImporter(const R3D_Importer* importer)
 {
     R3D_Skeleton skeleton = {0};
-    
+
     if (!importer) {
         R3D_TRACELOG(LOG_ERROR, "Cannot load skeleton from NULL importer");
         return skeleton;
     }
-    
-    r3d_importer_load_skeleton(importer, &skeleton);
-    
-    R3D_TRACELOG(LOG_INFO, "[%s] Skeleton loaded successfully (%u bones)", importer->name, skeleton.boneCount);
-    
+
+    if (r3d_importer_load_skeleton(importer, &skeleton)) {
+        R3D_TRACELOG(LOG_INFO, "Skeleton loaded successfully (%u bones): '%s'", importer->name, skeleton.boneCount);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Failed to load skeleton: '%s'", importer->name, skeleton.boneCount);
+    }
+
     return skeleton;
 }
 
