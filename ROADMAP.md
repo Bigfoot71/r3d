@@ -16,7 +16,7 @@
 * [x] **Add Support for Custom Material Shaders**
   Allow custom shaders per material. This will likely require a different approach for deferred vs. forward rendering. Deferred mode will probably offer fewer possibilities than forward mode for custom material shaders.
 
-* [ ] **Better logs**
+* [x] **Better logs**
   Add better logs for initialization, shutdown, loading operations, and failures.
 
 ## **Ideas (Not Planned Yet)**
