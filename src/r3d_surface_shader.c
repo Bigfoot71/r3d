@@ -47,6 +47,9 @@ struct R3D_SurfaceShader {
 /* Parse usage pragma to decide wich shader to pre-compile */
 static usage_hint_t parse_pragma_usage(const char** ptr);
 
+/* Returns a static string containing the list of usage hints */
+static const char* get_usage_hint_string(usage_hint_t hints);
+
 /* Compile all needed variants accordingly to the usage hints specified in pragma */
 static bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage);
 
@@ -203,6 +206,12 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
 
     r3d_rshade_init_ubo(&shader->program.uniforms, currentOffset);
 
+    R3D_TRACELOG(LOG_INFO, "Surface shader loaded successfully");
+    R3D_TRACELOG(LOG_INFO, "    > Usage hints: %s", get_usage_hint_string(usage));
+    R3D_TRACELOG(LOG_INFO, "    > Varying count: %i", varyingCount);
+    R3D_TRACELOG(LOG_INFO, "    > Sampler count: %i", samplerCount);
+    R3D_TRACELOG(LOG_INFO, "    > Uniform count: %i", uniformCount);
+
     return shader;
 }
 
@@ -305,6 +314,55 @@ usage_hint_t parse_pragma_usage(const char** ptr)
 
     r3d_rshade_skip_to_end_of_line(ptr);
     return result;
+}
+
+const char* get_usage_hint_string(usage_hint_t hints)
+{
+    static char buffer[128];
+
+    if (hints == 0) {
+        return "None";
+    }
+
+    buffer[0] = '\0';
+    int first = 1;
+
+    if (hints & USAGE_HINT_OPAQUE) {
+        strcat(buffer, "Opaque");
+        first = 0;
+    }
+    if (hints & USAGE_HINT_PREPASS) {
+        if (!first) strcat(buffer, ", ");
+        strcat(buffer, "Prepass");
+        first = 0;
+    }
+    if (hints & USAGE_HINT_TRANSPARENT) {
+        if (!first) strcat(buffer, ", ");
+        strcat(buffer, "Transparent");
+        first = 0;
+    }
+    if (hints & USAGE_HINT_UNLIT) {
+        if (!first) strcat(buffer, ", ");
+        strcat(buffer, "Unlit");
+        first = 0;
+    }
+    if (hints & USAGE_HINT_SHADOW) {
+        if (!first) strcat(buffer, ", ");
+        strcat(buffer, "Shadow");
+        first = 0;
+    }
+    if (hints & USAGE_HINT_DECAL) {
+        if (!first) strcat(buffer, ", ");
+        strcat(buffer, "Decal");
+        first = 0;
+    }
+    if (hints & USAGE_HINT_PROBE) {
+        if (!first) strcat(buffer, ", ");
+        strcat(buffer, "Probe");
+        first = 0;
+    }
+
+    return buffer;
 }
 
 bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
