@@ -71,13 +71,14 @@ R3DAPI Texture2D R3D_GetBufferNormal(void);
 /**
  * @brief Retrieves the final depth buffer.
  *
- * This texture contains the depth stored in 24 bits and a stencil buffer where each value is 0 or 1, indicating the presence of geometry.
- * It is useful for post-processing effects outside of R3D.
+ * This texture is an R16 texture containing a linear depth value
+ * normalized between the near and far clipping planes.
+ * It does not include a stencil buffer.
  *
- * @note If you modify the texture parameters to sample the stencil instead of the depth,
- * make sure to reset the parameters afterward.
+ * The texture is intended for post-processing effects outside of R3D
+ * that require access to linear depth information.
  *
- * @return The final depth buffer texture.
+ * @return The final depth buffer texture (R16, linear depth).
  */
 R3DAPI Texture2D R3D_GetBufferDepth(void);
 
