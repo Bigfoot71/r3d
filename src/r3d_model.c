@@ -13,6 +13,7 @@
 
 #include "./importer/r3d_importer_internal.h"
 #include "./r3d_core_state.h"
+#include "raylib.h"
 
 // ========================================
 // PUBLIC API
@@ -71,12 +72,19 @@ R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 
     r3d_importer_unload_texture_cache(textureCache, false);
 
+    R3D_TRACELOG(LOG_INFO, "[%s] Model loaded successfully", importer->name);
+    R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
+    R3D_TRACELOG(LOG_INFO, "    > Materials count: %i", model.materialCount);
+
     return model;
 
 fail:
     r3d_importer_unload_texture_cache(textureCache, true);
     R3D_UnloadModel(model, false);
     memset(&model, 0, sizeof(model));
+
+    R3D_TRACELOG(LOG_WARNING, "[%s] Failed to load model", importer->name);
+
     return model;
 }
 
