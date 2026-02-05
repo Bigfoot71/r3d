@@ -66,9 +66,13 @@ flat   out vec3 vEmission;
 smooth out vec4 vColor;
 smooth out mat3 vTBN;
 
+#if defined(GEOMETRY)
+smooth out float vLinearDepth;
+#endif // GEOMETRY
+
 #if defined(FORWARD) || defined(PROBE)
 smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
-#endif // FORWARD
+#endif // FORWARD || PROBE
 
 #if defined(DECAL)
 smooth out mat4 vDecalProjection;
@@ -223,11 +227,15 @@ void main()
     vColor = COLOR;
     vTBN = mat3(T, B, N);
 
+#if defined(GEOMETRY)
+    vLinearDepth = -(uView.view * vec4(vPosition, 1.0)).z;
+#endif // GEOMETRY
+
 #if defined(FORWARD) || defined(PROBE)
     for (int i = 0; i < uNumLights; i++) {
         vPosLightSpace[i] = uLights[i].viewProj * vec4(vPosition, 1.0);
     }
-#endif // FORWARD
+#endif // FORWARD || PROBE
 
 #if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
     gl_Position = uMatViewProj * vec4(vPosition, 1.0);

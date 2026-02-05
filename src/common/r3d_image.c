@@ -15,7 +15,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
-#include "../modules/r3d_opengl.h"
+#include "../modules/r3d_driver.h"
 
 // ========================================
 // IMAGE FUNCTIONS
@@ -269,7 +269,7 @@ static void set_texture_filter(TextureFilter filter)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, m->min);
         if (m->aniso > 0) {
             float maxAniso = 1.0f;
-            if (r3d_opengl_has_anisotropy(&maxAniso)) {
+            if (r3d_driver_has_anisotropy(&maxAniso)) {
                 glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fminf(m->aniso, maxAniso));
             }
         }

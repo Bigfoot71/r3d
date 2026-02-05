@@ -13,6 +13,7 @@
 #include <rlgl.h>
 #include <glad.h>
 
+#include "./modules/r3d_driver.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_draw.h"
 #include "./r3d_core_state.h"
@@ -105,13 +106,15 @@ void R3D_UnloadCubemap(R3D_Cubemap cubemap)
 
 void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
 {
+    r3d_driver_invalidate();
+
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, cubemap->fbo);
     glViewport(0, 0, cubemap->size, cubemap->size);
 
     R3D_SHADER_USE_BLT(prepare.cubemapSkybox);
-    glDisable(GL_CULL_FACE);
+    r3d_driver_disable(GL_CULL_FACE);
 
     R3D_SHADER_SET_MAT4_BLT(prepare.cubemapSkybox, uMatProj, matProj);
     R3D_SHADER_SET_COL3_BLT(prepare.cubemapSkybox, uSkyTopColor, R3D.colorSpace, params.skyTopColor);
@@ -140,7 +143,7 @@ void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
 
     glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glEnable(GL_CULL_FACE);
+    r3d_driver_enable(GL_CULL_FACE);
 }
 
 // ========================================
@@ -255,6 +258,8 @@ R3D_Cubemap allocate_cubemap(int size)
 
 R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 {
+    r3d_driver_invalidate();
+
     R3D_Cubemap cubemap = allocate_cubemap(size);
     Texture2D panorama = LoadTextureFromImage(image);
     SetTextureFilter(panorama, TEXTURE_FILTER_BILINEAR);
@@ -266,7 +271,7 @@ R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 
     glBindFramebuffer(GL_FRAMEBUFFER, cubemap.fbo);
     glViewport(0, 0, size, size);
-    glDisable(GL_CULL_FACE);
+    r3d_driver_disable(GL_CULL_FACE);
 
     for (int i = 0; i < 6; i++) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap.texture, 0);
@@ -280,7 +285,7 @@ R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
     UnloadTexture(panorama);
 
     glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
-    glEnable(GL_CULL_FACE);
+    r3d_driver_enable(GL_CULL_FACE);
 
     return cubemap;
 }

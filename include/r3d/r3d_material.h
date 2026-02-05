@@ -53,11 +53,13 @@
         .uvOffset = {0.0f, 0.0f},                       \
         .uvScale = {1.0f, 1.0f},                        \
         .alphaCutoff = 0.01f,                           \
-        .transparencyMode = R3D_TRANSPARENCY_DISABLED,  \
-        .billboardMode = R3D_BILLBOARD_DISABLED,        \
-        .blendMode = R3D_BLEND_MIX,                     \
-        .depthMode = R3D_COMPARE_LESS,                  \
-        .cullMode = R3D_CULL_BACK,                      \
+        .depth = {                                      \
+            .mode = R3D_COMPARE_LESS,                   \
+            .offsetFactor = 0.0f,                       \
+            .offsetUnits = 0.0f,                        \
+            .rangeNear = 0.0f,                          \
+            .rangeFar = 1.0f,                           \
+        },                                              \
         .stencil = {                                    \
             .mode = R3D_COMPARE_ALWAYS,                 \
             .ref = 0x00,                                \
@@ -66,6 +68,10 @@
             .opZFail = R3D_STENCIL_KEEP,                \
             .opPass = R3D_STENCIL_REPLACE,              \
         },                                              \
+        .transparencyMode = R3D_TRANSPARENCY_DISABLED,  \
+        .billboardMode = R3D_BILLBOARD_DISABLED,        \
+        .blendMode = R3D_BLEND_MIX,                     \
+        .cullMode = R3D_CULL_BACK,                      \
         .unlit = false,                                 \
         .shader = 0,                                    \
     }
@@ -202,6 +208,22 @@ typedef struct R3D_OrmMap {
 } R3D_OrmMap;
 
 /**
+ * @brief Depth buffer state configuration.
+ *
+ * Controls how fragments interact with the depth buffer during rendering..
+ *
+ * @note This structure does not directly control depth buffer writes for technical reasons.
+ *       To render objects without writing to the depth buffer, use alpha blending mode instead.
+ */
+typedef struct R3D_DepthState {
+    R3D_CompareMode mode;   ///< Comparison function for depth test (default: LESS)
+    float offsetFactor;     ///< Scales the maximum depth slope for polygon offset (default: 0.0f)
+    float offsetUnits;      ///< Constant depth offset value (default: 0.0f)
+    float rangeNear;        ///< Near clipping plane for depth range mapping (default: 0.0f)
+    float rangeFar;         ///< Far clipping plane for depth range mapping (default: 1.0f)
+} R3D_DepthState;
+
+/**
  * @brief Stencil buffer state configuration.
  *
  * Controls how fragments interact with the stencil buffer during rendering.
@@ -209,12 +231,12 @@ typedef struct R3D_OrmMap {
  * portals, and masking.
  */
 typedef struct R3D_StencilState {
-    R3D_CompareMode mode;   ///< Comparison function for stencil test
-    uint8_t ref;            ///< Reference value (0-255) for comparison and replace operations
+    R3D_CompareMode mode;   ///< Comparison function for stencil test (default: ALWAYS)
+    uint8_t ref;            ///< Reference value (0-255) for comparison and replace operations (default: 0x00)
     uint8_t mask;           ///< Bit mask applied to both reference and stencil values during comparison (default: 0xFF)
-    R3D_StencilOp opFail;   ///< Operation when stencil test fails
-    R3D_StencilOp opZFail;  ///< Operation when stencil test passes but depth test fails
-    R3D_StencilOp opPass;   ///< Operation when both stencil and depth tests pass
+    R3D_StencilOp opFail;   ///< Operation when stencil test fails (default: KEEP)
+    R3D_StencilOp opZFail;  ///< Operation when stencil test passes but depth test fails (default: KEEP)
+    R3D_StencilOp opPass;   ///< Operation when both stencil and depth tests pass (default: REPLACE)
 } R3D_StencilState;
 
 /**
@@ -233,13 +255,14 @@ typedef struct R3D_Material {
     Vector2 uvScale;                        ///< UV scale (default: {1.0f, 1.0f})
     float alphaCutoff;                      ///< Alpha cutoff threshold (default: 0.01f)
 
+    R3D_DepthState depth;                   ///< Depth test configuration (default: standard)
+    R3D_StencilState stencil;               ///< Stencil test configuration (default: disabled)
+
     R3D_TransparencyMode transparencyMode;  ///< Transparency mode (default: DISABLED)
     R3D_BillboardMode billboardMode;        ///< Billboard mode (default: DISABLED)
     R3D_BlendMode blendMode;                ///< Blend mode (default: MIX)
-    R3D_CompareMode depthMode;              ///< Depth mode (default: LESS)
     R3D_CullMode cullMode;                  ///< Face culling mode (default: BACK)
 
-    R3D_StencilState stencil;               ///< Stencil test configuration (default: disabled)
     bool unlit;                             ///< If true, material does not participate in lighting (default: false)
 
     R3D_SurfaceShader* shader;              ///< Custom shader applied to the material (default: NULL)
