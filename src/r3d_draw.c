@@ -1315,8 +1315,9 @@ void pass_scene_probes(void)
 
             /* --- Render background --- */
 
-            r3d_driver_disable(GL_BLEND);
             r3d_driver_disable(GL_STENCIL_TEST);
+            r3d_driver_disable(GL_CULL_FACE);
+            r3d_driver_disable(GL_BLEND);
 
             r3d_driver_set_depth_func(GL_LEQUAL);
             r3d_driver_set_depth_mask(GL_FALSE);
@@ -1430,7 +1431,7 @@ void pass_scene_decals(void)
     r3d_driver_enable(GL_CULL_FACE);
     r3d_driver_enable(GL_BLEND);
 
-    r3d_driver_set_cull_mode(GL_FRONT); // Only render back faces to avoid clipping issues
+    r3d_driver_set_cull_face(GL_FRONT); // Only render back faces to avoid clipping issues
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_DECAL_INST, R3D_DRAW_LIST_DECAL) {
@@ -1463,6 +1464,7 @@ r3d_target_t pass_prepare_ssao(void)
 
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSAO --- */
@@ -1520,6 +1522,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSIL (RAW) --- */
@@ -1577,6 +1580,7 @@ r3d_target_t pass_prepare_ssr(void)
 
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSR and downsample it --- */
@@ -1615,6 +1619,8 @@ void pass_deferred_lights(void)
     R3D_TARGET_BIND(true, R3D_TARGET_LIGHTING);
 
     r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
+
     r3d_driver_enable(GL_SCISSOR_TEST);
     r3d_driver_enable(GL_DEPTH_TEST);
     r3d_driver_enable(GL_BLEND);
@@ -1685,6 +1691,8 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     /* --- Setup OpenGL pipeline --- */
 
     r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
+
     r3d_driver_enable(GL_DEPTH_TEST);
     r3d_driver_enable(GL_BLEND);
 
@@ -1720,9 +1728,10 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
     R3D_TARGET_BIND(true, sceneTarget);
 
     r3d_driver_disable(GL_STENCIL_TEST);
-    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
+    r3d_driver_enable(GL_DEPTH_TEST);
     r3d_driver_set_depth_func(GL_GREATER);
     r3d_driver_set_depth_mask(GL_FALSE);
 
@@ -1778,9 +1787,10 @@ void pass_scene_background(r3d_target_t sceneTarget)
     R3D_TARGET_BIND(true, sceneTarget);
 
     r3d_driver_disable(GL_STENCIL_TEST);
-    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
+    r3d_driver_enable(GL_DEPTH_TEST);
     r3d_driver_set_depth_func(GL_LEQUAL);
     r3d_driver_set_depth_mask(GL_FALSE);
 
@@ -1810,6 +1820,7 @@ r3d_target_t pass_post_setup(r3d_target_t sceneTarget)
 {
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
     return r3d_target_swap_scene(sceneTarget);
@@ -2154,6 +2165,7 @@ void reset_raylib_state(void)
     r3d_driver_set_depth_range(0.0f, 1.0f);
     r3d_driver_set_depth_func(GL_LEQUAL);
     r3d_driver_set_depth_mask(GL_TRUE);
+    r3d_driver_set_cull_face(GL_BACK);
 
     // Here we re-define the blend mode via rlgl to ensure its internal state
     // matches what we've just set manually with OpenGL.
