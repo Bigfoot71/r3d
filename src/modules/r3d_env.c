@@ -92,10 +92,10 @@ static bool layer_pool_expand(r3d_env_layer_pool_t* pool, int addCount)
 // TEXTURE FUNCTIONS
 // ========================================
 
-static bool allocate_renderbuffer_depth(GLuint renderbuffer, int size)
+static bool alloc_depth_stencil_renderbuffer(GLuint renderbuffer, int size)
 {
     glBindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, size, size);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, size, size);
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
     return true;
 }
@@ -596,13 +596,13 @@ void r3d_env_capture_bind_fbo(int face, int mipLevel)
     glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_ENV.captureFramebuffer);
 
     if (!R3D_MOD_ENV.captureCubeAllocated) {
-        allocate_renderbuffer_depth(R3D_MOD_ENV.captureDepth, R3D_PROBE_CAPTURE_SIZE);
+        alloc_depth_stencil_renderbuffer(R3D_MOD_ENV.captureDepth, R3D_PROBE_CAPTURE_SIZE);
         cubemap_spec_t spec = cubemap_spec(R3D_PROBE_CAPTURE_SIZE, 0, true);
         allocate_cubemap(R3D_MOD_ENV.captureCube, spec);
         R3D_MOD_ENV.captureCubeAllocated = true;
 
         glFramebufferRenderbuffer(
-            GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+            GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
             GL_RENDERBUFFER, R3D_MOD_ENV.captureDepth
         );
     }

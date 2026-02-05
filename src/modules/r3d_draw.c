@@ -366,22 +366,23 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         sortData->material.transparency = sortData->material.transparency;
         sortData->material.blend = call->mesh.material.blendMode;
         sortData->material.cull = call->mesh.material.cullMode;
+        sortData->material.stencilFunc = call->mesh.material.stencil.mode;
+        sortData->material.stencilRef = call->mesh.material.stencil.ref;
+        sortData->material.stencilMask = call->mesh.material.stencil.mask;
+        sortData->material.stencilOpFail = call->mesh.material.stencil.opFail;
+        sortData->material.stencilOpZFail = call->mesh.material.stencil.opZFail;
+        sortData->material.stencilOpPass = call->mesh.material.stencil.opPass;
         sortData->material.depthFunc = call->mesh.material.depthMode;
         sortData->material.billboard = call->mesh.material.billboardMode;
         break;
-    
+
     case R3D_DRAW_CALL_DECAL:
+        memset(&sortData->material, 0, sizeof(sortData->material));
         sortData->material.shader = (uintptr_t)call->decal.instance.shader;
-        sortData->material.shading = 0;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
         sortData->material.normal = call->decal.instance.normal.texture.id;
         sortData->material.orm = call->decal.instance.orm.texture.id;
         sortData->material.emission = call->decal.instance.emission.texture.id;
-        sortData->material.transparency = R3D_TRANSPARENCY_ALPHA;
-        sortData->material.blend = R3D_BLEND_MIX;
-        sortData->material.cull = R3D_CULL_NONE;
-        sortData->material.depthFunc = R3D_DEPTH_ALWAYS;
-        sortData->material.billboard = R3D_BILLBOARD_DISABLED;
         break;
     }
 }
@@ -753,6 +754,54 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     );
 }
 
+void r3d_draw_apply_stencil_state(R3D_StencilState state)
+{
+    GLenum glFunc;
+    switch (state.mode) {
+        case R3D_COMPARE_LESS:     glFunc = GL_LESS; break;
+        case R3D_COMPARE_LEQUAL:   glFunc = GL_LEQUAL; break;
+        case R3D_COMPARE_EQUAL:    glFunc = GL_EQUAL; break;
+        case R3D_COMPARE_GREATER:  glFunc = GL_GREATER; break;
+        case R3D_COMPARE_GEQUAL:   glFunc = GL_GEQUAL; break;
+        case R3D_COMPARE_NOTEQUAL: glFunc = GL_NOTEQUAL; break;
+        case R3D_COMPARE_ALWAYS:   glFunc = GL_ALWAYS; break;
+        case R3D_COMPARE_NEVER:    glFunc = GL_NEVER; break;
+        default:                   glFunc = GL_ALWAYS; break;
+    }
+
+    GLenum glOpFail, glOpZFail, glOpPass;
+
+    switch (state.opFail) {
+        case R3D_STENCIL_KEEP:    glOpFail = GL_KEEP; break;
+        case R3D_STENCIL_ZERO:    glOpFail = GL_ZERO; break;
+        case R3D_STENCIL_REPLACE: glOpFail = GL_REPLACE; break;
+        case R3D_STENCIL_INCR:    glOpFail = GL_INCR; break;
+        case R3D_STENCIL_DECR:    glOpFail = GL_DECR; break;
+        default:                  glOpFail = GL_KEEP; break;
+    }
+
+    switch (state.opZFail) {
+        case R3D_STENCIL_KEEP:    glOpZFail = GL_KEEP; break;
+        case R3D_STENCIL_ZERO:    glOpZFail = GL_ZERO; break;
+        case R3D_STENCIL_REPLACE: glOpZFail = GL_REPLACE; break;
+        case R3D_STENCIL_INCR:    glOpZFail = GL_INCR; break;
+        case R3D_STENCIL_DECR:    glOpZFail = GL_DECR; break;
+        default:                  glOpZFail = GL_KEEP; break;
+    }
+
+    switch (state.opPass) {
+        case R3D_STENCIL_KEEP:    glOpPass = GL_KEEP; break;
+        case R3D_STENCIL_ZERO:    glOpPass = GL_ZERO; break;
+        case R3D_STENCIL_REPLACE: glOpPass = GL_REPLACE; break;
+        case R3D_STENCIL_INCR:    glOpPass = GL_INCR; break;
+        case R3D_STENCIL_DECR:    glOpPass = GL_DECR; break;
+        default:                  glOpPass = GL_KEEP; break;
+    }
+
+    glStencilFunc(glFunc, state.ref, state.mask);
+    glStencilOp(glOpFail, glOpZFail, glOpPass);
+}
+
 void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transparency)
 {
     switch (blend) {
@@ -783,17 +832,17 @@ void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transpa
     }
 }
 
-void r3d_draw_apply_depth_mode(R3D_DepthMode mode)
+void r3d_draw_apply_depth_mode(R3D_CompareMode mode)
 {
     switch (mode) {
-    case R3D_DEPTH_LESS: glDepthFunc(GL_LESS); break;
-    case R3D_DEPTH_LEQUAL: glDepthFunc(GL_LEQUAL); break;
-    case R3D_DEPTH_EQUAL: glDepthFunc(GL_EQUAL); break;
-    case R3D_DEPTH_GREATER: glDepthFunc(GL_GREATER); break;
-    case R3D_DEPTH_GEQUAL: glDepthFunc(GL_GEQUAL); break;
-    case R3D_DEPTH_NOTEQUAL: glDepthFunc(GL_NOTEQUAL); break;
-    case R3D_DEPTH_ALWAYS: glDepthFunc(GL_ALWAYS); break;
-    case R3D_DEPTH_NEVER: glDepthFunc(GL_NEVER); break;
+    case R3D_COMPARE_LESS: glDepthFunc(GL_LESS); break;
+    case R3D_COMPARE_LEQUAL: glDepthFunc(GL_LEQUAL); break;
+    case R3D_COMPARE_EQUAL: glDepthFunc(GL_EQUAL); break;
+    case R3D_COMPARE_GREATER: glDepthFunc(GL_GREATER); break;
+    case R3D_COMPARE_GEQUAL: glDepthFunc(GL_GEQUAL); break;
+    case R3D_COMPARE_NOTEQUAL: glDepthFunc(GL_NOTEQUAL); break;
+    case R3D_COMPARE_ALWAYS: glDepthFunc(GL_ALWAYS); break;
+    case R3D_COMPARE_NEVER: glDepthFunc(GL_NEVER); break;
     default: break;
     }
 }
