@@ -254,6 +254,12 @@ typedef struct {
         uint8_t transparency;
         uint8_t blend;
         uint8_t cull;
+        uint8_t stencilFunc;
+        uint8_t stencilRef;
+        uint8_t stencilMask;
+        uint8_t stencilOpFail;
+        uint8_t stencilOpZFail;
+        uint8_t stencilOpPass;
         uint8_t depthFunc;
         uint8_t billboard;
     } material;

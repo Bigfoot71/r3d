@@ -366,22 +366,23 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         sortData->material.transparency = sortData->material.transparency;
         sortData->material.blend = call->mesh.material.blendMode;
         sortData->material.cull = call->mesh.material.cullMode;
+        sortData->material.stencilFunc = call->mesh.material.stencil.mode;
+        sortData->material.stencilRef = call->mesh.material.stencil.ref;
+        sortData->material.stencilMask = call->mesh.material.stencil.mask;
+        sortData->material.stencilOpFail = call->mesh.material.stencil.opFail;
+        sortData->material.stencilOpZFail = call->mesh.material.stencil.opZFail;
+        sortData->material.stencilOpPass = call->mesh.material.stencil.opPass;
         sortData->material.depthFunc = call->mesh.material.depthMode;
         sortData->material.billboard = call->mesh.material.billboardMode;
         break;
-    
+
     case R3D_DRAW_CALL_DECAL:
+        memset(&sortData->material, 0, sizeof(sortData->material));
         sortData->material.shader = (uintptr_t)call->decal.instance.shader;
-        sortData->material.shading = 0;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
         sortData->material.normal = call->decal.instance.normal.texture.id;
         sortData->material.orm = call->decal.instance.orm.texture.id;
         sortData->material.emission = call->decal.instance.emission.texture.id;
-        sortData->material.transparency = R3D_TRANSPARENCY_ALPHA;
-        sortData->material.blend = R3D_BLEND_MIX;
-        sortData->material.cull = R3D_CULL_NONE;
-        sortData->material.depthFunc = R3D_COMPARE_ALWAYS;
-        sortData->material.billboard = R3D_BILLBOARD_DISABLED;
         break;
     }
 }
