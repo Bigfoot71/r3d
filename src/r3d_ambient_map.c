@@ -69,7 +69,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
             return ambientMap;
         }
-        r3d_pass_prepare_irradiance(irradiance, cubemap.texture, cubemap.size);
+        r3d_pass_prepare_irradiance(irradiance, cubemap.texture, cubemap.size, true);
     }
 
     int prefilter = -1;
@@ -80,7 +80,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
             r3d_env_irradiance_release_layer(irradiance);
             return ambientMap;
         }
-        r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size);
+        r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size, true);
     }
 
     ambientMap.irradiance = irradiance + 1;
@@ -104,10 +104,10 @@ void R3D_UnloadAmbientMap(R3D_AmbientMap ambientMap)
 void R3D_UpdateAmbientMap(R3D_AmbientMap ambientMap, R3D_Cubemap cubemap)
 {
     if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
-        r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size);
+        r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size, true);
     }
 
     if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_REFLECTION) && ambientMap.prefilter > 0) {
-        r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size);
+        r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size, true);
     }
 }

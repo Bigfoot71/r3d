@@ -16,6 +16,7 @@
 
 #include "../common/r3d_helper.h"
 
+#include "../modules/r3d_driver.h"
 #include "../modules/r3d_shader.h"
 #include "../modules/r3d_draw.h"
 #include "../modules/r3d_env.h"
@@ -24,13 +25,17 @@
 // COMMON ENVIRONMENT GENERATION
 // ========================================
 
-void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
+void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache)
 {
+    if (invalidateCache) {
+        r3d_driver_invalidate();
+    }
+
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     R3D_SHADER_USE_BLT(prepare.cubemapIrradiance);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
 
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.cubemapIrradiance, uSourceTex, srcCubemap);
     R3D_SHADER_SET_MAT4_BLT(prepare.cubemapIrradiance, uMatProj, matProj);
@@ -42,18 +47,21 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    r3d_driver_enable(GL_CULL_FACE);
 }
 
-void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
+void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache)
 {
+    if (invalidateCache) {
+        r3d_driver_invalidate();
+    }
+
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
     int srcNumLevels = r3d_get_mip_levels_1d(srcSize);
 
     R3D_SHADER_USE_BLT(prepare.cubemapPrefilter);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
 
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.cubemapPrefilter, uSourceTex, srcCubemap);
 
@@ -75,6 +83,5 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    r3d_driver_enable(GL_CULL_FACE);
 }

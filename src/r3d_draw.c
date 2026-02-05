@@ -23,6 +23,7 @@
 #include "./common/r3d_math.h"
 
 #include "./modules/r3d_texture.h"
+#include "./modules/r3d_driver.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_light.h"
@@ -109,6 +110,10 @@ void R3D_BeginEx(RenderTexture target, Camera3D camera)
 
 void R3D_End(void)
 {
+    /* --- Invalidates the OpenGL state cache --- */
+
+    r3d_driver_invalidate();
+
     /* --- Upload and bind uniform buffers --- */
 
     upload_view_block();
@@ -693,12 +698,12 @@ void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light
     /* --- Applying material parameters that are independent of shaders --- */
 
     if (light != NULL) {
-        r3d_draw_apply_shadow_cast_mode(mesh->shadowCastMode, material->cullMode);
+        r3d_driver_set_cull_shadow(mesh->shadowCastMode, material->cullMode);
     }
     else {
-        r3d_draw_apply_stencil_state(material->stencil);
-        r3d_draw_apply_depth_mode(material->depthMode);
-        r3d_draw_apply_cull_mode(material->cullMode);
+        r3d_driver_set_stencil(material->stencil);
+        r3d_driver_set_depth(material->depthMode);
+        r3d_driver_set_cull(material->cullMode);
     }
 
     /* --- Rendering the object corresponding to the draw call --- */
@@ -775,12 +780,12 @@ void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_
     /* --- Applying material parameters that are independent of shaders --- */
 
     if (light != NULL) {
-        r3d_draw_apply_shadow_cast_mode(mesh->shadowCastMode, material->cullMode);
+        r3d_driver_set_cull_shadow(mesh->shadowCastMode, material->cullMode);
     }
     else {
-        r3d_draw_apply_stencil_state(material->stencil);
-        r3d_draw_apply_depth_mode(material->depthMode);
-        r3d_draw_apply_cull_mode(material->cullMode);
+        r3d_driver_set_stencil(material->stencil);
+        r3d_driver_set_depth(material->depthMode);
+        r3d_driver_set_cull(material->cullMode);
     }
 
     /* --- Rendering the object corresponding to the draw call --- */
@@ -873,10 +878,10 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
-    r3d_draw_apply_stencil_state(material->stencil);
-    r3d_draw_apply_depth_mode(material->depthMode);
-    r3d_draw_apply_cull_mode(material->cullMode);
+    r3d_driver_set_blend(material->blendMode, material->transparencyMode);
+    r3d_driver_set_stencil(material->stencil);
+    r3d_driver_set_depth(material->depthMode);
+    r3d_driver_set_cull(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -956,10 +961,10 @@ void raster_geometry(const r3d_draw_call_t* call, bool applyMaterialDS)
     /* --- Applying material parameters that are independent of shaders --- */
 
     if (applyMaterialDS) {
-        r3d_draw_apply_stencil_state(material->stencil);
-        r3d_draw_apply_depth_mode(material->depthMode);
+        r3d_driver_set_stencil(material->stencil);
+        r3d_driver_set_depth(material->depthMode);
     }
-    r3d_draw_apply_cull_mode(material->cullMode);
+    r3d_driver_set_cull(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -1124,10 +1129,10 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
-    r3d_draw_apply_stencil_state(material->stencil);
-    r3d_draw_apply_depth_mode(material->depthMode);
-    r3d_draw_apply_cull_mode(material->cullMode);
+    r3d_driver_set_blend(material->blendMode, material->transparencyMode);
+    r3d_driver_set_stencil(material->stencil);
+    r3d_driver_set_depth(material->depthMode);
+    r3d_driver_set_cull(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -1197,10 +1202,10 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
-    r3d_draw_apply_stencil_state(material->stencil);
-    r3d_draw_apply_depth_mode(material->depthMode);
-    r3d_draw_apply_cull_mode(material->cullMode);
+    r3d_driver_set_blend(material->blendMode, material->transparencyMode);
+    r3d_driver_set_stencil(material->stencil);
+    r3d_driver_set_depth(material->depthMode);
+    r3d_driver_set_cull(material->cullMode);
 
     /* --- Rendering the object corresponding to the draw call --- */
 
@@ -1216,8 +1221,9 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
 void pass_scene_shadow(void)
 {
-    glDisable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
 
@@ -1279,10 +1285,10 @@ void pass_scene_probes(void)
 
             /* --- Render scene --- */
 
-            glEnable(GL_STENCIL_TEST);
-            glEnable(GL_DEPTH_TEST);
+            r3d_driver_enable(GL_STENCIL_TEST);
+            r3d_driver_enable(GL_DEPTH_TEST);
+            r3d_driver_enable(GL_BLEND);
             glDepthMask(GL_TRUE);
-            glEnable(GL_BLEND);
 
             r3d_env_capture_bind_fbo(iFace, 0);
             glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -1299,14 +1305,14 @@ void pass_scene_probes(void)
 
             /* --- Render background --- */
 
-            glDisable(GL_STENCIL_TEST);
+            r3d_driver_disable(GL_STENCIL_TEST);
             glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
-            glDisable(GL_BLEND);
+            r3d_driver_disable(GL_BLEND);
 
             if (!probe->interior && R3D.environment.background.sky.texture != 0) {
                 R3D_SHADER_USE_BLT(scene.skybox);
-                glDisable(GL_CULL_FACE);
+                r3d_driver_disable(GL_CULL_FACE);
 
                 float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
 
@@ -1334,11 +1340,11 @@ void pass_scene_probes(void)
         r3d_env_capture_gen_mipmaps();
 
         if (probe->irradiance >= 0) {
-            r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE);
+            r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE, false);
         }
 
         if (probe->prefilter >= 0) {
-            r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE);
+            r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE, false);
         }
 
         r3d_target_reset(); //< The IBL gen functions bind framebuffers; resetting them prevents any problems
@@ -1349,10 +1355,10 @@ void pass_scene_geometry(void)
 {
     R3D_TARGET_BIND(true, R3D_TARGET_GBUFFER);
 
-    glEnable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_BLEND);
     glDepthMask(GL_TRUE);
-    glDisable(GL_BLEND);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_OPAQUE_INST, R3D_DRAW_LIST_OPAQUE) {
@@ -1368,8 +1374,8 @@ void pass_scene_prepass(void)
 
     r3d_target_bind(NULL, 0, 0, true);
 
-    glEnable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
@@ -1384,10 +1390,10 @@ void pass_scene_prepass(void)
     // NOTE: The transparent part will be rendered in forward
     R3D_TARGET_BIND(true, R3D_TARGET_GBUFFER);
 
-    glDisable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_STENCIL_TEST);
     glDepthFunc(GL_EQUAL);
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
+    r3d_driver_disable(GL_BLEND);
 
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
         if (r3d_draw_is_prepass(call)) {
@@ -1400,12 +1406,12 @@ void pass_scene_decals(void)
 {
     R3D_TARGET_BIND(false, R3D_TARGET_DECAL);
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_FRONT); // Only render back faces to avoid clipping issues
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_CULL_FACE);
+    r3d_driver_enable(GL_BLEND);
 
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
+    glCullFace(GL_FRONT); // Only render back faces to avoid clipping issues
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_DECAL_INST, R3D_DRAW_LIST_DECAL) {
@@ -1420,10 +1426,10 @@ void pass_prepare_buffer_down(void)
     R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_ALBEDO, R3D_TARGET_NORMAL, R3D_TARGET_ORM, R3D_TARGET_DEPTH, R3D_TARGET_DIFFUSE);
     R3D_SHADER_USE_BLT(prepare.bufferDown);
 
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
+    r3d_driver_disable(GL_BLEND);
 
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uAlbedoTex, r3d_target_get_levels(R3D_TARGET_ALBEDO, 0, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 0, 0));
@@ -1438,10 +1444,10 @@ r3d_target_t pass_prepare_ssao(void)
 {
     /* --- Setup OpenGL pipeline --- */
 
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
+    r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSAO --- */
 
@@ -1496,10 +1502,10 @@ r3d_target_t pass_prepare_ssil(void)
 
     /* --- Setup OpenGL pipeline --- */
 
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
+    r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSIL (RAW) --- */
 
@@ -1554,10 +1560,10 @@ r3d_target_t pass_prepare_ssr(void)
 {
     /* --- Setup OpenGL pipeline --- */
 
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
+    r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSR and downsample it --- */
 
@@ -1594,16 +1600,17 @@ void pass_deferred_lights(void)
 
     R3D_TARGET_BIND(true, R3D_TARGET_LIGHTING);
 
-    glDisable(GL_STENCIL_TEST);
-    glEnable(GL_SCISSOR_TEST);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GREATER);
-    glDepthMask(GL_FALSE);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_SCISSOR_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_BLEND);
 
     // Set additive blending to accumulate light contributions
-    glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     glBlendEquation(GL_FUNC_ADD);
+
+    glDepthFunc(GL_GREATER);
+    glDepthMask(GL_FALSE);
 
     /* --- Enable shader and setup constant stuff --- */
 
@@ -1658,22 +1665,23 @@ void pass_deferred_lights(void)
 
     /* --- Reset undesired state --- */
 
-    glDisable(GL_SCISSOR_TEST);
+    r3d_driver_disable(GL_SCISSOR_TEST);
 }
 
 void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssrSource)
 {
     /* --- Setup OpenGL pipeline --- */
 
-    glDisable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_GREATER);
-    glDepthMask(GL_FALSE);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_BLEND);
 
     // Set additive blending to accumulate light contributions
-    glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
     glBlendEquation(GL_FUNC_ADD);
+
+    glDepthFunc(GL_GREATER);
+    glDepthMask(GL_FALSE);
 
     /* --- Calculation and composition of ambient/indirect lighting --- */
 
@@ -1701,11 +1709,12 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
-    glDisable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_BLEND);
+
     glDepthFunc(GL_GREATER);
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
 
     R3D_SHADER_USE_BLT(deferred.compose);
 
@@ -1719,9 +1728,9 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
-    glEnable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_BLEND);
+    r3d_driver_enable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_BLEND);
 
     /* --- Render unlit opaque --- */
 
@@ -1753,15 +1762,16 @@ void pass_scene_background(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
-    glDisable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_BLEND);
+
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
 
     if (R3D.environment.background.sky.texture != 0) {
         R3D_SHADER_USE_BLT(scene.skybox);
-        glDisable(GL_CULL_FACE);
+        r3d_driver_disable(GL_CULL_FACE);
 
         float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
 
@@ -1786,10 +1796,11 @@ void pass_scene_background(r3d_target_t sceneTarget)
 
 r3d_target_t pass_post_setup(r3d_target_t sceneTarget)
 {
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_BLEND);
+
     glDepthMask(GL_FALSE);
-    glDisable(GL_BLEND);
 
     return r3d_target_swap_scene(sceneTarget);
 }
@@ -1896,7 +1907,8 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE_BLT(prepare.bloomUp);
 
-    glEnable(GL_BLEND);
+    r3d_driver_enable(GL_BLEND);
+
     glBlendFunc(GL_ONE, GL_ONE);
     glBlendEquation(GL_FUNC_ADD);
 
@@ -1917,7 +1929,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
         R3D_DRAW_SCREEN();
     }
 
-    glDisable(GL_BLEND);
+    r3d_driver_disable(GL_BLEND);
 
     /* --- Apply bloom to the scene --- */
 
@@ -2124,13 +2136,14 @@ void reset_raylib_state(void)
 
     glViewport(0, 0, GetRenderWidth(), GetRenderHeight());
 
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_BLEND);
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_enable(GL_CULL_FACE);
+    r3d_driver_enable(GL_BLEND);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glBlendEquation(GL_FUNC_ADD);
+
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
 

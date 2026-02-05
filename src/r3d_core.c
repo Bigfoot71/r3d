@@ -19,7 +19,7 @@
 #include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
-#include "./modules/r3d_opengl.h"
+#include "./modules/r3d_driver.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
@@ -62,7 +62,7 @@ bool R3D_Init(int resWidth, int resHeight)
     if (!r3d_texture_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init texture module"); return false; }
     if (!r3d_target_init(resWidth, resHeight)) { R3D_TRACELOG(LOG_ERROR, "Failed to init target module"); return false; }
     if (!r3d_shader_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init shader module"); return false; }
-    if (!r3d_opengl_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init OpenGL module"); return false; }
+    if (!r3d_driver_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init OpenGL module"); return false; }
     if (!r3d_light_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init light module"); return false; }
     if (!r3d_draw_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init draw module"); return false; }
     if (!r3d_env_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init env module"); return false; }
@@ -77,7 +77,7 @@ void R3D_Close(void)
     r3d_texture_quit();
     r3d_target_quit();
     r3d_shader_quit();
-    r3d_opengl_quit();
+    r3d_driver_quit();
     r3d_light_quit();
     r3d_draw_quit();
     r3d_env_quit();
