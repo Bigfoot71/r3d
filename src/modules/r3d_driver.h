@@ -12,6 +12,7 @@
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_mesh.h>
 #include <raylib.h>
+#include <stdint.h>
 #include <glad.h>
 
 // ========================================
@@ -30,36 +31,50 @@ bool r3d_driver_check_error(const char* msg);
 void r3d_driver_enable(GLenum state);
 void r3d_driver_disable(GLenum state);
 
+void r3d_driver_set_cull_face(GLenum face);
+
+void r3d_driver_set_depth_func(GLenum func);
+void r3d_driver_set_depth_mask(GLboolean mask);
+void r3d_driver_set_depth_range(float near, float far);
+// Automatically enables or disables GL_POLYGON_OFFSET_XXX.
+void r3d_driver_set_depth_offset(float units, float factor);
+
+void r3d_driver_set_stencil_func(GLenum func, uint8_t ref, uint8_t mask);
+void r3d_driver_set_stencil_op(GLenum fail, GLenum zFail, GLenum zPass);
+
+void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFactor);
+
+/*
+ * Applies the given depth state.
+ * Assumes that GL_DEPTH_TEST is already enabled.
+ * Automatically enables or disables GL_POLYGON_OFFSET_XXX.
+ */
+void r3d_driver_set_depth_state(R3D_DepthState state);
+
 /*
  * Applies the given stencil state.
  * Assumes that GL_STENCIL_TEST is already enabled.
  */
-void r3d_driver_set_stencil(R3D_StencilState state);
+void r3d_driver_set_stencil_state(R3D_StencilState state);
 
 /*
  * Applies the given blend mode.
  * Assumes that GL_BLEND is already enabled.
  * Some modes like MIX or ADD behave differently depending on the transparency mode.
  */
-void r3d_driver_set_blend(R3D_BlendMode blend, R3D_TransparencyMode transparency);
-
-/*
- * Applies the given depth state.
- * Assumes that GL_DEPTH_TEST is already enabled.
- */
-void r3d_driver_set_depth(R3D_CompareMode mode);
+void r3d_driver_set_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transparency);
 
 /*
  * Applies the given cull mode.
  * Automatically enables or disables GL_CULL_FACE.
  */
-void r3d_driver_set_cull(R3D_CullMode mode);
+void r3d_driver_set_cull_mode(R3D_CullMode mode);
 
 /*
  * Applies the given cull mode depending on shadow casting mode.
  * Automatically enables or disables GL_CULL_FACE.
  */
-void r3d_driver_set_cull_shadow(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
+void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
 
 void r3d_driver_invalidate(void);
 

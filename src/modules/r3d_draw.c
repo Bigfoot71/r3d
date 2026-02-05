@@ -20,6 +20,7 @@
 
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
+#include "../common/r3d_hash.h"
 
 // ========================================
 // MODULE STATE
@@ -363,16 +364,11 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         sortData->material.normal = call->mesh.material.normal.texture.id;
         sortData->material.orm = call->mesh.material.orm.texture.id;
         sortData->material.emission = call->mesh.material.emission.texture.id;
-        sortData->material.transparency = sortData->material.transparency;
+        sortData->material.stencil = r3d_hash_fnv1a_32(&call->mesh.material.stencil, sizeof(call->mesh.material.stencil));
+        sortData->material.depth = r3d_hash_fnv1a_32(&call->mesh.material.depth, sizeof(call->mesh.material.depth));
         sortData->material.blend = call->mesh.material.blendMode;
         sortData->material.cull = call->mesh.material.cullMode;
-        sortData->material.stencilFunc = call->mesh.material.stencil.mode;
-        sortData->material.stencilRef = call->mesh.material.stencil.ref;
-        sortData->material.stencilMask = call->mesh.material.stencil.mask;
-        sortData->material.stencilOpFail = call->mesh.material.stencil.opFail;
-        sortData->material.stencilOpZFail = call->mesh.material.stencil.opZFail;
-        sortData->material.stencilOpPass = call->mesh.material.stencil.opPass;
-        sortData->material.depthFunc = call->mesh.material.depthMode;
+        sortData->material.transparency = sortData->material.transparency;
         sortData->material.billboard = call->mesh.material.billboardMode;
         break;
 
