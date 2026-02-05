@@ -19,29 +19,86 @@
 // MODULE FUNCTIONS
 // ========================================
 
+
+/* Initialize module (called once during R3D_Init) */
 bool r3d_driver_init(void);
+
+/* Deinitialize module (called once during R3D_Close) */
 void r3d_driver_quit(void);
 
+/*
+ * Checks if an OpenGL extension is supported. Results are cached.
+ */
 bool r3d_driver_check_ext(const char* name);
+
+/*
+ * Checks if anisotropic filtering is supported.
+ * Optionally returns the max level.
+ */
 bool r3d_driver_has_anisotropy(float* max);
 
+/*
+ * Clears all pending OpenGL errors.
+ */
 void r3d_driver_clear_errors(void);
+
+/*
+ * Checks for OpenGL errors and logs them if present.
+ * Returns true if an error occurred.
+ */
 bool r3d_driver_check_error(const char* msg);
 
+/*
+ * Enables an OpenGL capability.
+ * Cached to avoid redundant state changes.
+ */
 void r3d_driver_enable(GLenum state);
+
+/*
+ * Disables an OpenGL capability.
+ * Cached to avoid redundant state changes.
+ */
 void r3d_driver_disable(GLenum state);
 
+/*
+ * Sets which faces to cull (GL_FRONT, GL_BACK, GL_FRONT_AND_BACK).
+ */
 void r3d_driver_set_cull_face(GLenum face);
 
+/*
+ * Sets the depth comparison function.
+ */
 void r3d_driver_set_depth_func(GLenum func);
+
+/*
+ * Enables or disables writing to the depth buffer.
+ */
 void r3d_driver_set_depth_mask(GLboolean mask);
+
+/*
+ * Sets the depth range mapping.
+ */
 void r3d_driver_set_depth_range(float near, float far);
-// Automatically enables or disables GL_POLYGON_OFFSET_XXX.
+
+/*
+ * Sets the depth polygon offset.
+ * Automatically enables or disables GL_POLYGON_OFFSET_XXX.
+ */
 void r3d_driver_set_depth_offset(float units, float factor);
 
+/*
+ * Sets the stencil test function, reference value, and mask.
+ */
 void r3d_driver_set_stencil_func(GLenum func, uint8_t ref, uint8_t mask);
+
+/*
+ * Sets stencil operations for different test outcomes.
+ */
 void r3d_driver_set_stencil_op(GLenum fail, GLenum zFail, GLenum zPass);
 
+/*
+ * Sets the blend equation and blend factors.
+ */
 void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFactor);
 
 /*
@@ -76,6 +133,9 @@ void r3d_driver_set_cull_mode(R3D_CullMode mode);
  */
 void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
 
+/*
+ * Invalidates the entire pipeline cache.
+ */
 void r3d_driver_invalidate(void);
 
 #endif // R3D_MODULE_OPENGL_H
