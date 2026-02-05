@@ -54,7 +54,7 @@ static void upload_env_block(void);
 
 static void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light);
 static void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light);
-static void raster_geometry(const r3d_draw_call_t* call, bool applyDepthMode);
+static void raster_geometry(const r3d_draw_call_t* call, bool applyMaterialDS);
 static void raster_decal(const r3d_draw_call_t* call);
 static void raster_forward(const r3d_draw_call_t* call);
 static void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj);
@@ -696,6 +696,7 @@ void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light
         r3d_draw_apply_shadow_cast_mode(mesh->shadowCastMode, material->cullMode);
     }
     else {
+        r3d_draw_apply_stencil_state(material->stencil);
         r3d_draw_apply_depth_mode(material->depthMode);
         r3d_draw_apply_cull_mode(material->cullMode);
     }
@@ -777,6 +778,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_
         r3d_draw_apply_shadow_cast_mode(mesh->shadowCastMode, material->cullMode);
     }
     else {
+        r3d_draw_apply_stencil_state(material->stencil);
         r3d_draw_apply_depth_mode(material->depthMode);
         r3d_draw_apply_cull_mode(material->cullMode);
     }
@@ -872,6 +874,7 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
+    r3d_draw_apply_stencil_state(material->stencil);
     r3d_draw_apply_depth_mode(material->depthMode);
     r3d_draw_apply_cull_mode(material->cullMode);
 
@@ -887,7 +890,7 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     }
 }
 
-void raster_geometry(const r3d_draw_call_t* call, bool applyDepthMode)
+void raster_geometry(const r3d_draw_call_t* call, bool applyMaterialDS)
 {
     assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
 
@@ -952,7 +955,8 @@ void raster_geometry(const r3d_draw_call_t* call, bool applyDepthMode)
 
     /* --- Applying material parameters that are independent of shaders --- */
 
-    if (applyDepthMode) {
+    if (applyMaterialDS) {
+        r3d_draw_apply_stencil_state(material->stencil);
         r3d_draw_apply_depth_mode(material->depthMode);
     }
     r3d_draw_apply_cull_mode(material->cullMode);
@@ -1121,6 +1125,7 @@ void raster_forward(const r3d_draw_call_t* call)
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
+    r3d_draw_apply_stencil_state(material->stencil);
     r3d_draw_apply_depth_mode(material->depthMode);
     r3d_draw_apply_cull_mode(material->cullMode);
 
@@ -1193,6 +1198,7 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     /* --- Applying material parameters that are independent of shaders --- */
 
     r3d_draw_apply_blend_mode(material->blendMode, material->transparencyMode);
+    r3d_draw_apply_stencil_state(material->stencil);
     r3d_draw_apply_depth_mode(material->depthMode);
     r3d_draw_apply_cull_mode(material->cullMode);
 
@@ -1210,6 +1216,7 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
 void pass_scene_shadow(void)
 {
+    glDisable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_TRUE);
@@ -1272,12 +1279,13 @@ void pass_scene_probes(void)
 
             /* --- Render scene --- */
 
+            glEnable(GL_STENCIL_TEST);
             glEnable(GL_DEPTH_TEST);
             glDepthMask(GL_TRUE);
             glEnable(GL_BLEND);
 
             r3d_env_capture_bind_fbo(iFace, 0);
-            glClear(GL_DEPTH_BUFFER_BIT);
+            glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PACKLIST_PROBE) {
                 if (call->mesh.material.unlit) {
@@ -1291,6 +1299,7 @@ void pass_scene_probes(void)
 
             /* --- Render background --- */
 
+            glDisable(GL_STENCIL_TEST);
             glDepthFunc(GL_LEQUAL);
             glDepthMask(GL_FALSE);
             glDisable(GL_BLEND);
@@ -1340,6 +1349,7 @@ void pass_scene_geometry(void)
 {
     R3D_TARGET_BIND(true, R3D_TARGET_GBUFFER);
 
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
     glDisable(GL_BLEND);
@@ -1358,6 +1368,7 @@ void pass_scene_prepass(void)
 
     r3d_target_bind(NULL, 0, 0, true);
 
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
@@ -1373,6 +1384,7 @@ void pass_scene_prepass(void)
     // NOTE: The transparent part will be rendered in forward
     R3D_TARGET_BIND(true, R3D_TARGET_GBUFFER);
 
+    glDisable(GL_STENCIL_TEST);
     glDepthFunc(GL_EQUAL);
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
@@ -1391,6 +1403,7 @@ void pass_scene_decals(void)
     glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT); // Only render back faces to avoid clipping issues
 
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
@@ -1407,6 +1420,7 @@ void pass_prepare_buffer_down(void)
     R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_ALBEDO, R3D_TARGET_NORMAL, R3D_TARGET_ORM, R3D_TARGET_DEPTH, R3D_TARGET_DIFFUSE);
     R3D_SHADER_USE_BLT(prepare.bufferDown);
 
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
@@ -1424,6 +1438,7 @@ r3d_target_t pass_prepare_ssao(void)
 {
     /* --- Setup OpenGL pipeline --- */
 
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
@@ -1481,6 +1496,7 @@ r3d_target_t pass_prepare_ssil(void)
 
     /* --- Setup OpenGL pipeline --- */
 
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
@@ -1538,6 +1554,7 @@ r3d_target_t pass_prepare_ssr(void)
 {
     /* --- Setup OpenGL pipeline --- */
 
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
@@ -1577,6 +1594,7 @@ void pass_deferred_lights(void)
 
     R3D_TARGET_BIND(true, R3D_TARGET_LIGHTING);
 
+    glDisable(GL_STENCIL_TEST);
     glEnable(GL_SCISSOR_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GREATER);
@@ -1647,6 +1665,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
 {
     /* --- Setup OpenGL pipeline --- */
 
+    glDisable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GREATER);
     glDepthMask(GL_FALSE);
@@ -1682,6 +1701,7 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
+    glDisable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GREATER);
     glDepthMask(GL_FALSE);
@@ -1699,6 +1719,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
 
@@ -1732,6 +1753,7 @@ void pass_scene_background(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
+    glDisable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(GL_FALSE);
@@ -1764,6 +1786,7 @@ void pass_scene_background(r3d_target_t sceneTarget)
 
 r3d_target_t pass_post_setup(r3d_target_t sceneTarget)
 {
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
     glDisable(GL_BLEND);
@@ -2101,6 +2124,7 @@ void reset_raylib_state(void)
 
     glViewport(0, 0, GetRenderWidth(), GetRenderHeight());
 
+    glDisable(GL_STENCIL_TEST);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);

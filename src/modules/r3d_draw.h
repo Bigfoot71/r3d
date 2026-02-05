@@ -366,6 +366,12 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
 void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode);
 
 /*
+ * Applies the given stencil state.
+ * Assumes that GL_STENCIL_TEST is already enabled.
+ */
+void r3d_draw_apply_stencil_state(R3D_StencilState state);
+
+/*
  * Applies the OpenGL blend function for the current draw call.
  * Assumes GL_BLEND is already enabled and only sets the blend equations.
  * The MIX blend mode always uses standard alpha blending.
@@ -375,7 +381,7 @@ void r3d_draw_apply_blend_mode(R3D_BlendMode blend, R3D_TransparencyMode transpa
 /*
  * Applies the depth function corresponding to the material's depth mode.
  */
-void r3d_draw_apply_depth_mode(R3D_DepthMode mode);
+void r3d_draw_apply_depth_mode(R3D_CompareMode mode);
 
 /*
  * Apply the OpenGL face culling state for a draw call.
