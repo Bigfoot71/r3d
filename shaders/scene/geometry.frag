@@ -20,6 +20,8 @@ flat   in vec3 vEmission;
 smooth in vec4 vColor;
 smooth in mat3 vTBN;
 
+smooth in float vLinearDepth;
+
 /* === Uniforms === */
 
 uniform sampler2D uAlbedoMap;
@@ -64,5 +66,5 @@ void main()
     FragNormal     = M_EncodeOctahedral(N);
     FragGeomNormal = M_EncodeOctahedral(gN);
     FragORM        = vec3(OCCLUSION, ROUGHNESS, METALNESS);
-    FragDepth      = V_LinearizeDepth(gl_FragCoord.z);
+    FragDepth      = vLinearDepth;
 }
