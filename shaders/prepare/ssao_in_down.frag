@@ -1,4 +1,4 @@
-/* buffer_down.frag - G-Buffers downsampling fragment shader
+/* ssao_in_down.frag - G-Buffer downsampling for SSAO
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -14,19 +14,13 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uAlbedoTex;
 uniform sampler2D uNormalTex;
-uniform sampler2D uOrmTex;
 uniform sampler2D uDepthTex;
-uniform sampler2D uDiffuseTex;
 
 /* === Fragments === */
 
-layout(location = 0) out vec4 FragAlbedo;
-layout(location = 1) out vec4 FragNormal;
-layout(location = 2) out vec4 FragOrm;
-layout(location = 3) out vec4 FragDepth;
-layout(location = 4) out vec4 FragDiffuse;
+layout(location = 0) out vec2 FragNormal;
+layout(location = 1) out float FragDepth;
 
 /* === Main Program === */
 
@@ -51,9 +45,6 @@ void main()
     if (d2 < closestDepth) { selectedPixel = p2; closestDepth = d2; }
     if (d3 < closestDepth) { selectedPixel = p3; closestDepth = d3; }
 
-    FragNormal  = texelFetch(uNormalTex, selectedPixel, 0);
-    FragDepth   = vec4(closestDepth, 0.0, 0.0, 1.0);
-    FragAlbedo  = texelFetch(uAlbedoTex, selectedPixel, 0);
-    FragOrm     = texelFetch(uOrmTex, selectedPixel, 0);
-    FragDiffuse = texelFetch(uDiffuseTex, selectedPixel, 0);
+    FragNormal = texelFetch(uNormalTex, selectedPixel, 0).rg;
+    FragDepth = closestDepth;
 }

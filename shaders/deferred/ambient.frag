@@ -28,14 +28,12 @@ uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 uniform sampler2D uSsaoTex;
 uniform sampler2D uSsilTex;
-uniform sampler2D uSsrTex;
 uniform sampler2D uOrmTex;
 
 uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
 
-uniform float uSsrNumLevels;
 uniform float uSsilEnergy;
 
 /* === Blocks === */
@@ -54,30 +52,24 @@ void main()
 {
     vec3 albedo = texelFetch(uAlbedoTex, ivec2(gl_FragCoord.xy), 0).rgb;
     vec3 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0).rgb;
-
-    vec4 ssr = textureLod(uSsrTex, vTexCoord, orm.g * uSsrNumLevels);
     float ssao = texture(uSsaoTex, vTexCoord).r;
     vec4 ssil = texture(uSsilTex, vTexCoord);
 
-    orm.x *= ssao * ssil.w;
+    orm.x *= ssao * ssil.w; // occlusion, used during ibl
 
     vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
+    vec3 kD = albedo * (1.0 - orm.z);
+
     vec3 P = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
     vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
     vec3 V = normalize(uView.position - P);
     float NdotV = max(dot(N, V), 0.0);
-
-    vec3 kS_approx = F0 * (1.0 - orm.y * 0.5);
-    vec3 kD = albedo * (1.0 - orm.z);
 
     vec3 irradiance = vec3(0.0);
     vec3 radiance = vec3(0.0);
 
     E_ComputeAmbientAndProbes(irradiance, radiance, kD, orm, F0, P, N, V, NdotV);
 
-    irradiance += ssil.rgb * kD * uSsilEnergy;
-    radiance = mix(radiance, kS_approx * ssr.rgb, ssr.w);
-
-    FragDiffuse = vec4(irradiance, 1.0);
+    FragDiffuse = vec4(irradiance + ssil.rgb * kD * uSsilEnergy, 1.0);
     FragSpecular = vec4(radiance, 1.0);
 }
