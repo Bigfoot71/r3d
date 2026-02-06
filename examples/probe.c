@@ -17,13 +17,12 @@ int main(void)
     // Setup environment sky
     R3D_Cubemap cubemap = R3D_LoadCubemap(RESOURCES_PATH "panorama/indoor.hdr", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
     R3D_ENVIRONMENT_SET(background.skyBlur, 0.3f);
-    R3D_ENVIRONMENT_SET(background.energy, 0.6f);
     R3D_ENVIRONMENT_SET(background.sky, cubemap);
 
     // Setup environment ambient
     R3D_AmbientMap ambientMap = R3D_GenAmbientMap(cubemap, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
     R3D_ENVIRONMENT_SET(ambient.map, ambientMap);
-    R3D_ENVIRONMENT_SET(ambient.energy, 0.25f);
+    R3D_ENVIRONMENT_SET(ambient.energy, 0.2f);
 
     // Setup tonemapping
     R3D_ENVIRONMENT_SET(tonemap.mode, R3D_TONEMAP_FILMIC);
