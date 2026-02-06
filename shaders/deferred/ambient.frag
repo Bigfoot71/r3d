@@ -65,11 +65,10 @@ void main()
     vec3 V = normalize(uView.position - P);
     float NdotV = max(dot(N, V), 0.0);
 
-    vec3 irradiance = vec3(0.0);
-    vec3 radiance = vec3(0.0);
+    vec3 diffuse = vec3(0.0);
+    vec3 specular = vec3(0.0);
+    E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, P, N, V, NdotV);
 
-    E_ComputeAmbientAndProbes(irradiance, radiance, kD, orm, F0, P, N, V, NdotV);
-
-    FragDiffuse = vec4(irradiance + ssil.rgb * kD * uSsilEnergy, 1.0);
-    FragSpecular = vec4(radiance, 1.0);
+    FragDiffuse = vec4(diffuse + ssil.rgb * kD * uSsilEnergy, 1.0);
+    FragSpecular = vec4(specular, 1.0);
 }
