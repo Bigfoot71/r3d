@@ -612,7 +612,7 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler_t uLightingTex;
+    r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uHistoryTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;

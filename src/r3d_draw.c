@@ -1529,7 +1529,7 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_TARGET_BIND(false, SSIL_RAW);
     R3D_SHADER_USE_BLT(prepare.ssil);
 
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssil, uLightingTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 1, 1));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssil, uDiffuseTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 1, 1));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssil, uHistoryTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(SSIL_HISTORY), BLACK));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssil, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 1, 1));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssil, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 1, 1));

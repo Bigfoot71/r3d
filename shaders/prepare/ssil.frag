@@ -25,7 +25,7 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uLightingTex;
+uniform sampler2D uDiffuseTex;
 uniform sampler2D uHistoryTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
@@ -65,7 +65,7 @@ uint UpdateSectors(float minHorizon, float maxHorizon)
 vec3 SampleLight(vec2 texCoord)
 {
     vec3 indirect = texture(uHistoryTex, texCoord).rgb;
-    vec3 direct = texture(uLightingTex, texCoord).rgb;
+    vec3 direct = texture(uDiffuseTex, texCoord).rgb;
     return direct + uBounce * indirect;
 }
 

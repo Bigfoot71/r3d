@@ -332,9 +332,9 @@ bool r3d_shader_load_prepare_ssil_in_down(r3d_shader_custom_t* custom)
     LOAD_SHADER(ssilInDown, SCREEN_VERT, SSIL_IN_DOWN_FRAG);
 
     USE_SHADER(ssilInDown);
+    SET_SAMPLER(ssilInDown, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssilInDown, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssilInDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
-    SET_SAMPLER(ssilInDown, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
 
     return true;
 }
@@ -356,7 +356,7 @@ bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
 
     USE_SHADER(ssil);
 
-    SET_SAMPLER(ssil, uLightingTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
+    SET_SAMPLER(ssil, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssil, uHistoryTex, R3D_SHADER_SAMPLER_BUFFER_SSIL);
     SET_SAMPLER(ssil, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssil, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
