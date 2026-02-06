@@ -295,12 +295,12 @@ void r3d_driver_set_depth_mask(GLboolean mask)
     }
 }
 
-void r3d_driver_set_depth_range(float near, float far)
+void r3d_driver_set_depth_range(float dNear, float dFar)
 {
-    if (CHECK_PIPE(depthNear, float, near) || CHECK_PIPE(depthFar, float, far)) {
-        SET_PIPE(depthNear, float, near);
-        SET_PIPE(depthFar, float, far);
-        glDepthRange(near, far);
+    if (CHECK_PIPE(depthNear, float, dNear) || CHECK_PIPE(depthFar, float, dFar)) {
+        SET_PIPE(depthNear, float, dNear);
+        SET_PIPE(depthFar, float, dFar);
+        glDepthRange(dNear, dFar);
     }
 }
 

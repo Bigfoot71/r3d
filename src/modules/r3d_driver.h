@@ -78,7 +78,7 @@ void r3d_driver_set_depth_mask(GLboolean mask);
 /*
  * Sets the depth range mapping.
  */
-void r3d_driver_set_depth_range(float near, float far);
+void r3d_driver_set_depth_range(float dNear, float dFar);
 
 /*
  * Sets the depth polygon offset.
