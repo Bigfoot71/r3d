@@ -1,4 +1,4 @@
-/* ssr.frag -- Fragment shader for applying SSR to the scene
+/* ssr.frag -- Screen Space Reflections fragment shader
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -20,121 +20,111 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uLightingTex;
-uniform sampler2D uAlbedoTex;
+uniform sampler2D uDiffuseTex;
+uniform sampler2D uSpecularTex;
 uniform sampler2D uNormalTex;
-uniform sampler2D uOrmTex;
 uniform sampler2D uDepthTex;
 
 uniform int uMaxRaySteps;
-uniform int uBinarySearchSteps;
-uniform float uRayMarchLength;
-uniform float uDepthThickness;
-uniform float uDepthTolerance;
-uniform float uEdgeFadeStart;
-uniform float uEdgeFadeEnd;
-
-uniform vec3 uAmbientColor;
-uniform float uAmbientEnergy;
+uniform int uBinarySteps;
+uniform float uStepSize;
+uniform float uThickness;
+uniform float uMaxDistance;
+uniform float uEdgeFade;
 
 /* === Output === */
 
 out vec4 FragColor;
 
-/* === Helper Functions === */
-
-float ScreenEdgeFade(vec2 uv)
-{
-    vec2 fade = max(vec2(0.0), abs(uv - 0.5) * 2.0 - vec2(uEdgeFadeStart));
-    fade = fade / (uEdgeFadeEnd - uEdgeFadeStart);
-
-    return 1.0 - clamp(max(fade.x, fade.y), 0.0, 1.0);
-}
-
-vec4 SampleScene(vec2 texCoord)
-{
-    vec3 albedo = texture(uAlbedoTex, texCoord).rgb;
-    vec3 light = texture(uLightingTex, texCoord).rgb;
-    vec3 orm = texture(uOrmTex, texCoord).rgb;
-
-    vec3 ambient = uAmbientColor * uAmbientEnergy;
-    ambient *= albedo * (1.0 - orm.b);
-
-    float fade = ScreenEdgeFade(texCoord);
-    return vec4(light + ambient, fade);
-}
-
 /* === Raymarching === */
 
-vec3 BinarySearch(vec3 startPos, vec3 endPos)
+vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
 {
-    for (int i = 0; i < uBinarySearchSteps; i++)
+    vec3 dirStep = reflectionDir * uStepSize;
+    float stepDistanceSq = dot(dirStep, dirStep);
+    float maxDistanceSq = uMaxDistance * uMaxDistance;
+
+    vec3 currentPos = startViewPos + dirStep;
+    vec3 prevPos = startViewPos;
+    float rayDistanceSq = stepDistanceSq;
+
+    vec2 hitUV = vec2(0.0);
+    bool hit = false;
+
+    for (int i = 1; i < uMaxRaySteps; i++)
     {
-        vec3 midPos = (startPos + endPos) * 0.5;
-        vec2 uv = V_WorldToScreen(midPos);
-
-        vec3 sampledViewPos = V_GetViewPosition(uDepthTex, uv);
-        vec3 midViewPos = (uView.view * vec4(midPos, 1.0)).xyz;
-
-        float depthDiff = sampledViewPos.z - midViewPos.z;
-
-        if (depthDiff > -uDepthTolerance) {
-            endPos = midPos;    // surface in front of us
-        }
-        else {
-            startPos = midPos;  // surface behind
-        }
-    }
-
-    return endPos; // refined final position
-}
-
-vec4 TraceReflectionRay(vec3 startPos, vec3 reflectionDir)
-{
-    float minStep = uRayMarchLength / float(uMaxRaySteps);
-    float stepSize = minStep;
-
-    vec3 currentPos = startPos;
-
-    for (int i = 0; i < uMaxRaySteps; i++)
-    {
-        currentPos += reflectionDir * stepSize;
-
-        vec2 uv = V_WorldToScreen(currentPos);
+        if (rayDistanceSq > maxDistanceSq) break;
+        vec2 uv = V_ViewToScreen(currentPos);
         if (V_OffScreen(uv)) break;
 
-        vec3 sampledViewPos = V_GetViewPosition(uDepthTex, uv);
-        vec3 currentViewPos = (uView.view * vec4(currentPos, 1.0)).xyz;
+        float sampleZ = -textureLod(uDepthTex, uv, 0).r;
+        float depthDiff = sampleZ - currentPos.z;
 
-        float depthDiff = sampledViewPos.z - currentViewPos.z;
-
-        if (depthDiff > -uDepthTolerance && depthDiff < uDepthThickness) {
-            currentPos = BinarySearch(startPos, currentPos);
-            uv = V_WorldToScreen(currentPos);
-            return SampleScene(uv);
+        if (depthDiff > 0.0 && depthDiff < uThickness) {
+            hitUV = uv;
+            hit = true;
+            break;
         }
 
-        stepSize = max(depthDiff * 0.9, minStep);
+        prevPos = currentPos;
+        currentPos += dirStep;
+        rayDistanceSq += stepDistanceSq;
     }
 
-    return vec4(0.0);
+    if (!hit) return vec4(0.0);
+
+    vec3 start = prevPos;
+    vec3 end = currentPos;
+
+    for (int i = 0; i < uBinarySteps; i++)
+    {
+        vec3 mid = mix(start, end, 0.5);
+        vec2 uv = V_ViewToScreen(mid);
+        if (V_OffScreen(uv)) break;
+
+        float sampleZ = -textureLod(uDepthTex, uv, 0).r;
+        float depthDiff = sampleZ - mid.z;
+
+        if (depthDiff > 0.0 && depthDiff < uThickness) {
+            hitUV = uv;
+            end = mid;
+        }
+        else {
+            start = mid;
+        }
+    }
+
+    vec3 hitNormal = V_GetViewNormal(uNormalTex, hitUV);
+    float d = dot(reflectionDir, hitNormal);
+    if (d > 0.0) return vec4(0.0);
+
+    vec3 hitDiff = textureLod(uDiffuseTex, hitUV, 0).rgb;
+    vec3 hitSpec = textureLod(uSpecularTex, hitUV, 0).rgb;
+
+    vec2 distToBorder = min(hitUV, 1.0 - hitUV);
+    float edgeFade = smoothstep(0.0, uEdgeFade, min(distToBorder.x, distToBorder.y));
+    float distFade = 1.0 - smoothstep(0.0, uMaxDistance, sqrt(rayDistanceSq));
+
+    return vec4(hitDiff + hitSpec, edgeFade * distFade);
 }
 
 /* === Main Program === */
 
 void main()
 {
-    FragColor = vec4(0.0);
-
+    // Early depth rejection
     float linearDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    if (linearDepth >= uView.far) return;
+    if (linearDepth >= uView.far) {
+        FragColor = vec4(0.0);
+        return;
+    }
 
-    vec3 worldNormal = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
-    vec3 worldPos = V_GetWorldPosition(vTexCoord, linearDepth);
+    // Fetch view-space geometry
+    vec3 viewNormal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
+    vec3 viewPos = V_GetViewPosition(vTexCoord, linearDepth);
+    vec3 viewDir = normalize(viewPos);
+    vec3 reflectionDir = reflect(viewDir, viewNormal);
 
-    vec3 viewDir = normalize(worldPos - uView.position);
-    vec3 reflectionDir = reflect(viewDir, worldNormal);
-    if (dot(reflectionDir, worldNormal) < 0.0) return;
-
-    FragColor = TraceReflectionRay(worldPos, reflectionDir);
+    // Trace reflection ray
+    FragColor = TraceRay(viewPos, reflectionDir);
 }

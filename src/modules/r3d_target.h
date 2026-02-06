@@ -29,7 +29,7 @@ typedef enum {
     R3D_TARGET_ORM,             //< Full - Mip 2 - RGB[8|8|8]
     R3D_TARGET_DEPTH,           //< Full - Mip 2 - R[16]
     R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB[16|16|16]
-    R3D_TARGET_SPECULAR,        //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_SPECULAR,        //< Full - Mip 2 - RGB[16|16|16]
     R3D_TARGET_GEOM_NORMAL,     //< Full - Mip 1 - RG[16|16]
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]

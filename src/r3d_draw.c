@@ -66,14 +66,13 @@ static void pass_scene_geometry(void);
 static void pass_scene_prepass(void);
 static void pass_scene_decals(void);
 
-static void pass_prepare_buffer_down(void);
 static r3d_target_t pass_prepare_ssao(void);
 static r3d_target_t pass_prepare_ssil(void);
 static r3d_target_t pass_prepare_ssr(void);
 
 static void pass_deferred_lights(void);
-static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssrSource);
-static void pass_deferred_compose(r3d_target_t sceneTarget);
+static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource);
+static void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource);
 
 static void pass_scene_forward(r3d_target_t sceneTarget);
 static void pass_scene_background(r3d_target_t sceneTarget);
@@ -161,13 +160,12 @@ void R3D_End(void)
         bool ssil = R3D.environment.ssil.enabled;
         bool ssr = R3D.environment.ssr.enabled;
 
-        if (ssao || ssil || ssr) pass_prepare_buffer_down();
         if (ssao) ssaoSource = pass_prepare_ssao();
         if (ssil) ssilSource = pass_prepare_ssil();
-        if (ssr) ssrSource = pass_prepare_ssr();
+        pass_deferred_ambient(ssaoSource, ssilSource);
 
-        pass_deferred_ambient(ssaoSource, ssilSource, ssrSource);
-        pass_deferred_compose(sceneTarget);
+        if (ssr) ssrSource = pass_prepare_ssr();
+        pass_deferred_compose(sceneTarget, ssrSource);
     }
     else {
         r3d_target_clear(NULL, 0, 0, true);
@@ -1438,33 +1436,24 @@ void pass_scene_decals(void)
     }
 }
 
-void pass_prepare_buffer_down(void)
+r3d_target_t pass_prepare_ssao(void)
 {
-    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_ALBEDO, R3D_TARGET_NORMAL, R3D_TARGET_ORM, R3D_TARGET_DEPTH, R3D_TARGET_DIFFUSE);
-    R3D_SHADER_USE_BLT(prepare.bufferDown);
+    /* --- Setup OpenGL pipeline --- */
 
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);
     r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uAlbedoTex, r3d_target_get_levels(R3D_TARGET_ALBEDO, 0, 0));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 0, 0));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uOrmTex, r3d_target_get_levels(R3D_TARGET_ORM, 0, 0));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 0));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.bufferDown, uDiffuseTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 0, 0));
+    /* --- Downsample G-Buffer --- */
+
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_SHADER_USE_BLT(prepare.ssaoInDown);
+
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoInDown, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoInDown, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 0));
 
     R3D_DRAW_SCREEN();
-}
-
-r3d_target_t pass_prepare_ssao(void)
-{
-    /* --- Setup OpenGL pipeline --- */
-
-    r3d_driver_disable(GL_STENCIL_TEST);
-    r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
-    r3d_driver_disable(GL_CULL_FACE);
-    r3d_driver_disable(GL_BLEND);
 
     /* --- Calculate SSAO --- */
 
@@ -1520,9 +1509,20 @@ r3d_target_t pass_prepare_ssil(void)
     /* --- Setup OpenGL pipeline --- */
 
     r3d_driver_disable(GL_STENCIL_TEST);
-    r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_DEPTH_TEST);
     r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
+
+    /* --- Downsample G-Buffer --- */
+
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_SHADER_USE_BLT(prepare.ssilInDown);
+
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssilInDown, uDiffuseTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssilInDown, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssilInDown, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 0));
+
+    R3D_DRAW_SCREEN();
 
     /* --- Calculate SSIL (RAW) --- */
 
@@ -1578,35 +1578,67 @@ r3d_target_t pass_prepare_ssr(void)
     /* --- Setup OpenGL pipeline --- */
 
     r3d_driver_disable(GL_STENCIL_TEST);
-    r3d_driver_disable(GL_DEPTH_TEST);   //< Can't depth test to touch only the geometry, since the target is half res...
+    r3d_driver_disable(GL_DEPTH_TEST);
     r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
 
-    /* --- Calculate SSR and downsample it --- */
+    /* --- Downsample G-Buffer --- */
 
-    R3D_TARGET_BIND(false, R3D_TARGET_SSR);
-    R3D_SHADER_USE_BLT(prepare.ssr);
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_SPECULAR, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_SHADER_USE_BLT(prepare.ssrInDown);
 
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uLightingTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 1, 1));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uAlbedoTex, r3d_target_get_levels(R3D_TARGET_ALBEDO, 1, 1));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 1, 1));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uOrmTex, r3d_target_get_levels(R3D_TARGET_ORM, 1, 1));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 1, 1));
-
-    R3D_SHADER_SET_INT_BLT(prepare.ssr, uMaxRaySteps, R3D.environment.ssr.maxRaySteps);
-    R3D_SHADER_SET_INT_BLT(prepare.ssr, uBinarySearchSteps, R3D.environment.ssr.binarySearchSteps);
-    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uRayMarchLength, R3D.environment.ssr.rayMarchLength);
-    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uDepthThickness, R3D.environment.ssr.depthThickness);
-    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uDepthTolerance, R3D.environment.ssr.depthTolerance);
-    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uEdgeFadeStart, R3D.environment.ssr.edgeFadeStart);
-    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uEdgeFadeEnd, R3D.environment.ssr.edgeFadeEnd);
-
-    R3D_SHADER_SET_VEC3_BLT(prepare.ssr, uAmbientColor, r3d_color_to_vec3(R3D.environment.ambient.color));
-    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uAmbientEnergy, R3D.environment.ambient.energy);
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssrInDown, uDiffuseTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssrInDown, uSpecularTex, r3d_target_get_levels(R3D_TARGET_SPECULAR, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssrInDown, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssrInDown, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 0));
 
     R3D_DRAW_SCREEN();
 
-    r3d_target_gen_mipmap(R3D_TARGET_SSR);
+    /* --- Calculate SSR --- */
+
+    R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_SSR);
+    R3D_SHADER_USE_BLT(prepare.ssr);
+
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uDiffuseTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 1, 1));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uSpecularTex, r3d_target_get_levels(R3D_TARGET_SPECULAR, 1, 1));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uNormalTex, r3d_target_get_levels(R3D_TARGET_NORMAL, 1, 1));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssr, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 1, 1));
+
+    R3D_SHADER_SET_INT_BLT(prepare.ssr, uMaxRaySteps, R3D.environment.ssr.maxRaySteps);
+    R3D_SHADER_SET_INT_BLT(prepare.ssr, uBinarySteps, R3D.environment.ssr.binarySteps);
+    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uStepSize, R3D.environment.ssr.stepSize);
+    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uThickness, R3D.environment.ssr.thickness);
+    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uMaxDistance, R3D.environment.ssr.maxDistance);
+    R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uEdgeFade, R3D.environment.ssr.edgeFade);
+
+    R3D_DRAW_SCREEN();
+
+    /* --- Downsample SSR --- */
+
+    int numLevels = r3d_target_get_num_levels(R3D_TARGET_SSR);
+    r3d_target_set_read_levels(R3D_TARGET_SSR, 0, numLevels - 1);
+
+    R3D_SHADER_USE_BLT(prepare.blurDown);
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.blurDown, uSourceTex, r3d_target_get(R3D_TARGET_SSR));
+
+    for (int iDst = 1; iDst < numLevels; iDst++) {
+        r3d_target_set_write_level(0, iDst);
+        r3d_target_set_viewport(R3D_TARGET_SSR, iDst);
+        R3D_SHADER_SET_INT_BLT(prepare.blurDown, uSourceLod, iDst - 1);
+        R3D_DRAW_SCREEN();
+    }
+
+    /* --- Upsample only once for each level below zero --- */
+
+    R3D_SHADER_USE_BLT(prepare.blurUp);
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.blurUp, uSourceTex, r3d_target_get(R3D_TARGET_SSR));
+
+    for (int iDst = 1; iDst < numLevels - 1; iDst++) {
+        r3d_target_set_write_level(0, iDst);
+        r3d_target_set_viewport(R3D_TARGET_SSR, iDst);
+        R3D_SHADER_SET_INT_BLT(prepare.blurUp, uSourceLod, iDst + 1);
+        R3D_DRAW_SCREEN();
+    }
 
     return R3D_TARGET_SSR;
 }
@@ -1685,7 +1717,7 @@ void pass_deferred_lights(void)
     r3d_driver_disable(GL_SCISSOR_TEST);
 }
 
-void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssrSource)
+void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
 {
     /* --- Setup OpenGL pipeline --- */
 
@@ -1710,19 +1742,17 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uSsrTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssrSource), BLANK));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uOrmTex, r3d_target_get_levels(R3D_TARGET_ORM, 0, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uIrradianceTex, r3d_env_irradiance_get());
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uPrefilterTex, r3d_env_prefilter_get());
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
-    R3D_SHADER_SET_FLOAT_BLT(deferred.ambient, uSsrNumLevels, (float)r3d_target_get_num_levels(R3D_TARGET_SSR));
     R3D_SHADER_SET_FLOAT_BLT(deferred.ambient, uSsilEnergy, R3D.environment.ssil.energy);
 
     R3D_DRAW_SCREEN();
 }
 
-void pass_deferred_compose(r3d_target_t sceneTarget)
+void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
 {
     R3D_TARGET_BIND(true, sceneTarget);
 
@@ -1736,8 +1766,13 @@ void pass_deferred_compose(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE_BLT(deferred.compose);
 
+    R3D_SHADER_BIND_SAMPLER_BLT(deferred.compose, uAlbedoTex, r3d_target_get_levels(R3D_TARGET_ALBEDO, 0, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.compose, uDiffuseTex, r3d_target_get_levels(R3D_TARGET_DIFFUSE, 0, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.compose, uSpecularTex, r3d_target_get_levels(R3D_TARGET_SPECULAR, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(deferred.compose, uOrmTex, r3d_target_get_levels(R3D_TARGET_ORM, 0, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(deferred.compose, uSsrTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssrSource), BLANK));
+
+    R3D_SHADER_SET_FLOAT_BLT(deferred.compose, uSsrNumLevels, (float)r3d_target_get_num_levels(R3D_TARGET_SSR));
 
     R3D_DRAW_SCREEN();
 }

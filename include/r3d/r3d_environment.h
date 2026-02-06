@@ -86,12 +86,11 @@
         },                                              \
         .ssr = {                                        \
             .maxRaySteps = 32,                          \
-            .binarySearchSteps = 4,                     \
-            .rayMarchLength = 5.0f,                     \
-            .depthThickness = 0.5f,                     \
-            .depthTolerance = 0.01f,                    \
-            .edgeFadeStart = 0.75f,                     \
-            .edgeFadeEnd = 1.0f,                        \
+            .binarySteps = 4,                           \
+            .stepSize = 0.125f,                         \
+            .thickness = 0.2f,                          \
+            .maxDistance = 4.0f,                        \
+            .edgeFade = 0.25f,                          \
             .enabled = false,                           \
         },                                              \
         .bloom = {                                      \
@@ -250,14 +249,13 @@ typedef struct R3D_EnvSSIL {
  * Real-time reflections calculated in screen space.
  */
 typedef struct R3D_EnvSSR {
-    int maxRaySteps;            ///< Maximum ray marching iterations (default: 64)
-    int binarySearchSteps;      ///< Refinement steps for intersection (default: 8)
-    float rayMarchLength;       ///< Maximum ray distance in view space (default: 8.0)
-    float depthThickness;       ///< Depth tolerance for valid hits (default: 0.2)
-    float depthTolerance;       ///< Negative margin to prevent false negatives (default: 0.005)
-    float edgeFadeStart;        ///< Screen edge fade start [0-1] (default: 0.7)
-    float edgeFadeEnd;          ///< Screen edge fade end [0-1] (default: 1.0)
-    bool enabled;               ///< Enable/disable SSR (default: false)
+    int maxRaySteps;        ///< Maximum ray marching steps (default: 32)
+    int binarySteps;        ///< Binary search refinement steps (default: 4)
+    float stepSize;         ///< Ray step size (default: 0.125)
+    float thickness;        ///< Depth tolerance for valid hits (default: 0.2)
+    float maxDistance;      ///< Maximum ray distance (default: 4.0)
+    float edgeFade;         ///< Screen edge fade start [0,1] (default: 0.25)
+    bool enabled;           ///< Enable/disable SSR (default: false)
 } R3D_EnvSSR;
 
 /**
