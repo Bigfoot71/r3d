@@ -392,7 +392,9 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_SSIL           = 33,
     R3D_SHADER_SAMPLER_BUFFER_SSR            = 34,
     R3D_SHADER_SAMPLER_BUFFER_BLOOM          = 35,
-    R3D_SHADER_SAMPLER_BUFFER_SCENE          = 36,
+    R3D_SHADER_SAMPLER_BUFFER_DOF_COC        = 36,
+    R3D_SHADER_SAMPLER_BUFFER_DOF_BLUR       = 37,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE          = 38,
 
     // Unamed for special passes
     R3D_SHADER_SAMPLER_SOURCE_2D             = 40,
@@ -438,6 +440,8 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_SSIL]           = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSR]            = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_BLOOM]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_DOF_COC]        = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_DOF_BLUR]       = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SCENE]          = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_SOURCE_2D]             = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_SOURCE_CUBE]           = GL_TEXTURE_CUBE_MAP,
@@ -661,6 +665,27 @@ typedef struct {
     r3d_shader_uniform_vec2_t uFilterRadius;
     r3d_shader_uniform_float_t uSrcLevel;
 } r3d_shader_prepare_bloom_up_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_float_t uFocusPoint;
+    r3d_shader_uniform_float_t uFocusScale;
+} r3d_shader_prepare_dof_coc_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uCoCTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+} r3d_shader_prepare_dof_down_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uCoCTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_float_t uMaxBlurSize;
+} r3d_shader_prepare_dof_blur_t;
 
 typedef struct {
     unsigned int id;
@@ -943,11 +968,7 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_float_t uFocusPoint;
-    r3d_shader_uniform_float_t uFocusScale;
-    r3d_shader_uniform_float_t uMaxBlurSize;
-    r3d_shader_uniform_int_t uDebugMode;
+    r3d_shader_uniform_sampler_t uBlurTex;
 } r3d_shader_post_dof_t;
 
 typedef struct {
@@ -1040,6 +1061,9 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_ssr_t ssr;
         r3d_shader_prepare_bloom_down_t bloomDown;
         r3d_shader_prepare_bloom_up_t bloomUp;
+        r3d_shader_prepare_dof_coc_t dofCoc;
+        r3d_shader_prepare_dof_down_t dofDown;
+        r3d_shader_prepare_dof_blur_t dofBlur;
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
         r3d_shader_prepare_cubemap_irradiance_t cubemapIrradiance;
         r3d_shader_prepare_cubemap_prefilter_t cubemapPrefilter;
@@ -1097,6 +1121,9 @@ bool r3d_shader_load_prepare_ssr_in_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom);
@@ -1138,6 +1165,9 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func ssr;
         r3d_shader_loader_func bloomDown;
         r3d_shader_loader_func bloomUp;
+        r3d_shader_loader_func dofCoc;
+        r3d_shader_loader_func dofDown;
+        r3d_shader_loader_func dofBlur;
         r3d_shader_loader_func cubemapFromEquirectangular;
         r3d_shader_loader_func cubemapIrradiance;
         r3d_shader_loader_func cubemapPrefilter;
@@ -1191,6 +1221,9 @@ static const struct r3d_shader_loader {
         .ssr = r3d_shader_load_prepare_ssr,
         .bloomDown = r3d_shader_load_prepare_bloom_down,
         .bloomUp = r3d_shader_load_prepare_bloom_up,
+        .dofCoc = r3d_shader_load_prepare_dof_coc,
+        .dofDown = r3d_shader_load_prepare_dof_down,
+        .dofBlur = r3d_shader_load_prepare_dof_blur,
         .cubemapFromEquirectangular = r3d_shader_load_prepare_cubemap_from_equirectangular,
         .cubemapIrradiance = r3d_shader_load_prepare_cubemap_irradiance,
         .cubemapPrefilter = r3d_shader_load_prepare_cubemap_prefilter,

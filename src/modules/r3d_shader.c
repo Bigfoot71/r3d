@@ -36,6 +36,9 @@
 #include <shaders/ssr.frag.h>
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
+#include <shaders/dof_coc.frag.h>
+#include <shaders/dof_down.frag.h>
+#include <shaders/dof_blur.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap_irradiance.frag.h>
 #include <shaders/cubemap_prefilter.frag.h>
@@ -427,6 +430,47 @@ bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
 
     USE_SHADER(bloomUp);
     SET_SAMPLER(bloomUp, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER_BLT(r3d_shader_prepare_dof_coc_t, prepare, dofCoc);
+    LOAD_SHADER(dofCoc, SCREEN_VERT, DOF_COC_FRAG);
+
+    GET_LOCATION(dofCoc, uFocusPoint);
+    GET_LOCATION(dofCoc, uFocusScale);
+
+    USE_SHADER(dofCoc);
+    SET_SAMPLER(dofCoc, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+    SET_SAMPLER(dofCoc, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER_BLT(r3d_shader_prepare_dof_down_t, prepare, dofDown);
+    LOAD_SHADER(dofDown, SCREEN_VERT, DOF_DOWN_FRAG);
+
+    USE_SHADER(dofDown);
+    SET_SAMPLER(dofDown, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
+    SET_SAMPLER(dofDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER_BLT(r3d_shader_prepare_dof_blur_t, prepare, dofBlur);
+    LOAD_SHADER(dofBlur, SCREEN_VERT, DOF_BLUR_FRAG);
+
+    GET_LOCATION(dofBlur, uMaxBlurSize);
+
+    USE_SHADER(dofBlur);
+    SET_SAMPLER(dofBlur, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
+    SET_SAMPLER(dofBlur, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
 }
@@ -1060,15 +1104,9 @@ bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 
     SET_UNIFORM_BUFFER(dof, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
-    GET_LOCATION(dof, uFocusPoint);
-    GET_LOCATION(dof, uFocusScale);
-    GET_LOCATION(dof, uMaxBlurSize);
-    GET_LOCATION(dof, uDebugMode);
-
     USE_SHADER(dof);
-
     SET_SAMPLER(dof, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
-    SET_SAMPLER(dof, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+    SET_SAMPLER(dof, uBlurTex, R3D_SHADER_SAMPLER_BUFFER_DOF_BLUR);
 
     return true;
 }

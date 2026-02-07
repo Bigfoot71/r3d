@@ -37,6 +37,8 @@ typedef enum {
     R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_SSR,             //< Half - Mip N - RGBA[16|16|16|16]
+    R3D_TARGET_DOF_COC,         //< Full - Mip 2 - RGBA[16|16|16|16]
+    R3D_TARGET_DOF_BLUR,        //< Half - Mip 1 - RGBA[16|16|16|16]
     R3D_TARGET_BLOOM,           //< Half - Mip N - RGB[16|16|16]
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
     R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB[16|16|16]
@@ -256,6 +258,13 @@ void r3d_target_set_viewport(r3d_target_t target, int level);
 void r3d_target_set_write_level(int attachment, int level);
 
 /*
+ * Defines the sampling level of the target.
+ * This function locks the sampling to a single level.
+ * See `r3d_target_set_read_levels` for multi-level sampling.
+ */
+void r3d_target_set_read_level(r3d_target_t target, int level);
+
+/*
  * Defines the sampling levels of the target.
  * baseLevel defines the first level and maxLevel the last.
  * Asserts that the target has already been created/used and that the levels are valid.
@@ -274,6 +283,12 @@ void r3d_target_gen_mipmap(r3d_target_t target);
  * If not created yet, it means we never bound this target, so it would be empty.
  */
 GLuint r3d_target_get(r3d_target_t target);
+
+/*
+ * Returns the texture ID corresponding to the requested target and sampling level.
+ * Asserts that the requested target has been created and that the level is valid.
+ */
+GLuint r3d_target_get_level(r3d_target_t target, int level);
 
 /*
  * Returns the texture ID corresponding to the requested target with base and max levels configured.
