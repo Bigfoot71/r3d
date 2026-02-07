@@ -443,7 +443,6 @@ bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom)
     GET_LOCATION(dofCoc, uFocusScale);
 
     USE_SHADER(dofCoc);
-    SET_SAMPLER(dofCoc, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(dofCoc, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
@@ -455,8 +454,9 @@ bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom)
     LOAD_SHADER(dofDown, SCREEN_VERT, DOF_DOWN_FRAG);
 
     USE_SHADER(dofDown);
-    SET_SAMPLER(dofDown, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
+    SET_SAMPLER(dofDown, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(dofDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+    SET_SAMPLER(dofDown, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
 
     return true;
 }
@@ -469,7 +469,7 @@ bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom)
     GET_LOCATION(dofBlur, uMaxBlurSize);
 
     USE_SHADER(dofBlur);
-    SET_SAMPLER(dofBlur, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
+    SET_SAMPLER(dofBlur, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_DOF);     //< RGB: Color | A: CoC
     SET_SAMPLER(dofBlur, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
@@ -1106,7 +1106,7 @@ bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 
     USE_SHADER(dof);
     SET_SAMPLER(dof, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
-    SET_SAMPLER(dof, uBlurTex, R3D_SHADER_SAMPLER_BUFFER_DOF_BLUR);
+    SET_SAMPLER(dof, uBlurTex, R3D_SHADER_SAMPLER_BUFFER_DOF);
 
     return true;
 }

@@ -10,8 +10,9 @@
 
 noperspective in vec2 vTexCoord;
 
-uniform sampler2D uCoCTex;
+uniform sampler2D uSceneTex;
 uniform sampler2D uDepthTex;
+uniform sampler2D uCoCTex;
 
 out vec4 FragColor;
 out float FragDepth;
@@ -25,25 +26,25 @@ void main()
     ivec2 p2 = pixCoord + ivec2(0, 1);
     ivec2 p3 = pixCoord + ivec2(1, 1);
 
-    vec4 c0 = texelFetch(uCoCTex, p0, 0);
-    vec4 c1 = texelFetch(uCoCTex, p1, 0);
-    vec4 c2 = texelFetch(uCoCTex, p2, 0);
-    vec4 c3 = texelFetch(uCoCTex, p3, 0);
+    vec3 c0 = texelFetch(uSceneTex, p0, 0).rgb;
+    vec3 c1 = texelFetch(uSceneTex, p1, 0).rgb;
+    vec3 c2 = texelFetch(uSceneTex, p2, 0).rgb;
+    vec3 c3 = texelFetch(uSceneTex, p3, 0).rgb;
 
     float d0 = texelFetch(uDepthTex, p0, 0).r;
     float d1 = texelFetch(uDepthTex, p1, 0).r;
     float d2 = texelFetch(uDepthTex, p2, 0).r;
     float d3 = texelFetch(uDepthTex, p3, 0).r;
 
-    float selectedCoC = c0.w;
+    ivec2 selectedPixel = p0;
     float selectedDepth = d0;
 
-    if (d1 < selectedDepth) { selectedCoC = c1.w; selectedDepth = d1; }
-    if (d2 < selectedDepth) { selectedCoC = c2.w; selectedDepth = d2; }
-    if (d3 < selectedDepth) { selectedCoC = c3.w; selectedDepth = d3; }
+    if (d1 < selectedDepth) { selectedPixel = p1; selectedDepth = d1; }
+    if (d2 < selectedDepth) { selectedPixel = p2; selectedDepth = d2; }
+    if (d3 < selectedDepth) { selectedPixel = p3; selectedDepth = d3; }
 
-    vec3 color = (c0.rgb + c1.rgb + c2.rgb + c3.rgb) * 0.25;
+    float coc = texelFetch(uCoCTex, selectedPixel, 0).r;
 
-    FragColor = vec4(color, selectedCoC);
+    FragColor = vec4((c0 + c1 + c2 + c3) * 0.25, coc);
     FragDepth = selectedDepth;
 }

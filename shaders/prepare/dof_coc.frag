@@ -10,23 +10,15 @@
 
 noperspective in vec2 vTexCoord;
 
-uniform sampler2D uSceneTex;
 uniform sampler2D uDepthTex;
-
 uniform float uFocusPoint;
 uniform float uFocusScale;
 
-out vec4 FragColor;
-
-float CalculateCoC(float depth)
-{
-    return clamp((1.0 / uFocusPoint - 1.0 / depth) * uFocusScale, -1.0, 1.0);
-}
+out float FragCoC;
 
 void main()
 {
-    vec3 color = texture(uSceneTex, vTexCoord).rgb;
-    float depth = texture(uDepthTex, vTexCoord).r;
-    float coc = CalculateCoC(depth);
-    FragColor = vec4(color, coc);
+    float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
+    float coc = (1.0 / uFocusPoint - 1.0 / depth) * uFocusScale;
+    FragCoC = clamp(coc, -1.0, 1.0);
 }

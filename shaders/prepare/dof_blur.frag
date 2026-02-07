@@ -18,7 +18,7 @@
 
 noperspective in vec2 vTexCoord;
 
-uniform sampler2D uCoCTex;
+uniform sampler2D uSceneTex;    //< RGB: Color | A: CoC
 uniform sampler2D uDepthTex;
 uniform float uMaxBlurSize;
 
@@ -28,13 +28,13 @@ out vec4 FragColor;
 
 void main()
 {
-    vec2 texelSize = 1.0 / vec2(textureSize(uCoCTex, 0));
+    vec2 texelSize = 1.0 / vec2(textureSize(uSceneTex, 0));
 
-    vec4 centerData = texture(uCoCTex, vTexCoord);
+    vec4 centerScene = texture(uSceneTex, vTexCoord);
     float centerDepth = texture(uDepthTex, vTexCoord).r;
-    float centerSize = abs(centerData.a) * uMaxBlurSize;
+    float centerSize = abs(centerScene.a) * uMaxBlurSize;
 
-    vec3 color = centerData.rgb;
+    vec3 color = centerScene.rgb;
     float radius = RAD_SCALE;
     float tot = 1.0;
 
@@ -42,16 +42,16 @@ void main()
     {
         vec2 uv = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 
-        vec4 sampleData = texture(uCoCTex, uv);
+        vec4 sampleScene = texture(uSceneTex, uv);
         float sampleDepth = texture(uDepthTex, uv).r;
-        float sampleSize = abs(sampleData.a) * uMaxBlurSize;
+        float sampleSize = abs(sampleScene.a) * uMaxBlurSize;
 
         if (sampleDepth > centerDepth) {
             sampleSize = clamp(sampleSize, 0.0, centerSize * 2.0);
         }
 
         float w = smoothstep(radius - 0.5, radius + 0.5, sampleSize);
-        color += mix(color / tot, sampleData.rgb, w);
+        color += mix(color / tot, sampleScene.rgb, w);
 
         radius += RAD_SCALE / radius;
         tot += 1.0;
