@@ -55,8 +55,8 @@
 #include <shaders/ambient.frag.h>
 #include <shaders/lighting.frag.h>
 #include <shaders/compose.frag.h>
-#include <shaders/bloom.frag.h>
 #include <shaders/fog.frag.h>
+#include <shaders/bloom.frag.h>
 #include <shaders/dof.frag.h>
 #include <shaders/screen.frag.h>
 #include <shaders/output.frag.h>
@@ -1059,22 +1059,6 @@ bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER_BLT(r3d_shader_post_bloom_t, post, bloom);
-    LOAD_SHADER(bloom, SCREEN_VERT, BLOOM_FRAG);
-
-    GET_LOCATION(bloom, uBloomMode);
-    GET_LOCATION(bloom, uBloomIntensity);
-
-    USE_SHADER(bloom);
-
-    SET_SAMPLER(bloom, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
-    SET_SAMPLER(bloom, uBloomTex, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
-
-    return true;
-}
-
 bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_BLT(r3d_shader_post_fog_t, post, fog);
@@ -1093,6 +1077,22 @@ bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(fog, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(fog, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER_BLT(r3d_shader_post_bloom_t, post, bloom);
+    LOAD_SHADER(bloom, SCREEN_VERT, BLOOM_FRAG);
+
+    GET_LOCATION(bloom, uBloomMode);
+    GET_LOCATION(bloom, uBloomIntensity);
+
+    USE_SHADER(bloom);
+
+    SET_SAMPLER(bloom, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+    SET_SAMPLER(bloom, uBloomTex, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
 
     return true;
 }
@@ -1254,8 +1254,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(deferred.lighting);
     UNLOAD_SHADER(deferred.compose);
 
-    UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.fog);
+    UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.output);
     UNLOAD_SHADER(post.fxaa);

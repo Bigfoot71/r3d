@@ -948,14 +948,6 @@ typedef struct {
 typedef struct {
     unsigned int id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_sampler_t uBloomTex;
-    r3d_shader_uniform_int_t uBloomMode;
-    r3d_shader_uniform_float_t uBloomIntensity;
-} r3d_shader_post_bloom_t;
-
-typedef struct {
-    unsigned int id;
-    r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uFogMode;
     r3d_shader_uniform_col3_t uFogColor;
@@ -964,6 +956,14 @@ typedef struct {
     r3d_shader_uniform_float_t uFogDensity;
     r3d_shader_uniform_float_t uSkyAffect;
 } r3d_shader_post_fog_t;
+
+typedef struct {
+    unsigned int id;
+    r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_sampler_t uBloomTex;
+    r3d_shader_uniform_int_t uBloomMode;
+    r3d_shader_uniform_float_t uBloomIntensity;
+} r3d_shader_post_bloom_t;
 
 typedef struct {
     unsigned int id;
@@ -1092,8 +1092,8 @@ extern struct r3d_mod_shader {
 
     // Post shaders
     struct {
-        r3d_shader_post_bloom_t bloom;
         r3d_shader_post_fog_t fog;
+        r3d_shader_post_bloom_t bloom;
         r3d_shader_post_dof_t dof;
         r3d_shader_post_output_t output;
         r3d_shader_post_fxaa_t fxaa;
@@ -1140,8 +1140,8 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
-bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_output(r3d_shader_custom_t* custom);
@@ -1196,8 +1196,8 @@ static const struct r3d_shader_loader {
 
     // Post shaders
     struct {
-        r3d_shader_loader_func bloom;
         r3d_shader_loader_func fog;
+        r3d_shader_loader_func bloom;
         r3d_shader_loader_func dof;
         r3d_shader_loader_func screen;
         r3d_shader_loader_func output;
@@ -1249,8 +1249,8 @@ static const struct r3d_shader_loader {
     },
 
     .post = {
-        .bloom = r3d_shader_load_post_bloom,
         .fog = r3d_shader_load_post_fog,
+        .bloom = r3d_shader_load_post_bloom,
         .dof = r3d_shader_load_post_dof,
         .screen = r3d_shader_load_post_screen,
         .output = r3d_shader_load_post_output,
