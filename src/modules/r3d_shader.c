@@ -1235,6 +1235,9 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);
     UNLOAD_SHADER(prepare.bloomUp);
+    UNLOAD_SHADER(prepare.dofCoc);
+    UNLOAD_SHADER(prepare.dofDown);
+    UNLOAD_SHADER(prepare.dofBlur);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);
