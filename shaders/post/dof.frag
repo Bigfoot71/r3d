@@ -1,98 +1,44 @@
-/* dof.frag -- Fragment shader implementing a depth of field effect
+/* dof.frag -- Depth of Field composition shader
  *
- * Originally written by Dennis Gustafsson.
- * Feature adaptation and extension by Jens Roth.
- *
- * Provides a post-processing effect that simulates camera focus,
- * blending sharp and blurred regions according to scene depth.
- *
- * Copyright (c) 2025 Victor Le Juez, Jens Roth
+ * Copyright (c) 2025 Victor Le Juez
  *
  * This software is distributed under the terms of the accompanying LICENSE file.
  * It is provided "as-is", without any express or implied warranty.
  */
 
-// reference impl. from SmashHit iOS game dev blog
-// see: https://blog.voxagon.se/2018/05/04/bokeh-depth-of-field-in-single-pass.html
-
 #version 330 core
-
-/* === Includes === */
-
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
-
-/* === Varyings === */
 
 noperspective in vec2 vTexCoord;
 
-/* === Uniforms === */
-
 uniform sampler2D uSceneTex;
-uniform sampler2D uDepthTex;
-
-uniform float uFocusPoint;
-uniform float uFocusScale;
-uniform float uMaxBlurSize;
-
-uniform int uDebugMode;         //< 0 off, 1 green/black/blue
-
-/* === Output === */
+uniform sampler2D uBlurTex;
 
 out vec4 FragColor;
 
-const float RAD_SCALE = 0.5;            //< Smaller = nicer blur, larger = faster
-
-/* === Helpers === */
-
-float GetBlurSize(float depth)
+vec4 Upsample(sampler2D tex)
 {
-    float coc = clamp((1.0 / uFocusPoint - 1.0 / depth) * uFocusScale, -1.0, 1.0);
-    return abs(coc) * uMaxBlurSize;
-}
+    // There can be a tiny 1-pixel "bleeding" around sharp edges.
+    // This comes from the half-res linear filtering of sharp pixels during upsampling,
+    // not from the blur itself.
+    //
+    // One way to completely eliminate this bleeding is to use texelFetch:
+    // it samples exactly the center of the half-res pixel, but this creates a blocky pixelated look.
+    //
+    // The approach below uses a linear sample centered on the half-res pixel,
+    // which keeps the smoothness of the image but can leave a very subtle bleeding at edges.
 
-/* === Main === */
+    //ivec2 halfPix = ivec2(gl_FragCoord.xy * 0.5);
+    //return texelFetch(tex, halfPix, 0);
+
+    vec2 texel = 1.0 / vec2(textureSize(tex, 0));
+    vec2 uv = (gl_FragCoord.xy * 0.5 + 0.25) * texel;
+    return texture(tex, uv);
+}
 
 void main()
 {
-    vec3 color = texelFetch(uSceneTex, ivec2(gl_FragCoord.xy), 0).rgb;
-    vec2 texelSize = 1.0 / vec2(textureSize(uSceneTex, 0));
+    vec4 sharp = texelFetch(uSceneTex, ivec2(gl_FragCoord), 0);
+    vec4 blur = Upsample(uBlurTex);
 
-    // Center depth and CoC
-    float centerDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    float centerSize  = GetBlurSize(centerDepth);
-
-    //scatter as gather
-    float tot = 1.0;
-
-    float radius = RAD_SCALE;
-    for (float ang = 0.0; radius < uMaxBlurSize; ang += M_GOLDEN_ANGLE)
-    {
-        vec2 tc = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
-
-        vec3 sampleColor = texture(uSceneTex, tc).rgb;
-        float sampleDepth = texture(uDepthTex, tc).r;
-        float sampleSize  = GetBlurSize(sampleDepth);
-
-        if (sampleDepth > centerDepth) {
-            sampleSize = clamp(sampleSize, 0.0, centerSize * 2.0);
-        }
-
-        float m = smoothstep(radius - 0.5, radius + 0.5, sampleSize);
-        color += mix(color / tot, sampleColor, m);
-        radius += RAD_SCALE / max(radius, 0.001);
-        tot += 1.0;
-    }
-
-    FragColor = vec4(color / tot, 1.0);
-
-    /* --- Debug output --- */
-
-    if (uDebugMode == 1) {
-        float cocSigned = clamp((1.0 / uFocusPoint - 1.0 / centerDepth) * uFocusScale, -1.0, 1.0);
-        float front = clamp(-cocSigned, 0.0, 1.0); // in front of focus plane (near)
-        float back = clamp(cocSigned, 0.0, 1.0); // behind the focus plane (far)
-        vec3 tint = vec3(0.0, front, back); // green front, blue back, black at focus
-        FragColor = vec4(tint, 1.0);
-    }
+    FragColor = vec4(mix(sharp.rgb, blur.rgb, blur.a), 1.0);
 }

@@ -70,22 +70,25 @@ typedef struct {
 } target_config_t;
 
 static const target_config_t TARGET_CONFIG[] = {
-    [R3D_TARGET_ALBEDO]        = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_NORMAL]        = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_ORM]           = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_DEPTH]         = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
-    [R3D_TARGET_DIFFUSE]       = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_SPECULAR]      = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_GEOM_NORMAL]   = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
-    [R3D_TARGET_SSAO_0]        = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSAO_1]        = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSIL_0]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSIL_1]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSIL_2]        = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSR]           = { FORMAT_RGBA16F, 0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
-    [R3D_TARGET_BLOOM]         = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
-    [R3D_TARGET_SCENE_0]       = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SCENE_1]       = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_ALBEDO]      = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_NORMAL]      = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ORM]         = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_DEPTH]       = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
+    [R3D_TARGET_DIFFUSE]     = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_SPECULAR]    = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_GEOM_NORMAL] = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_SSAO_0]      = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSAO_1]      = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_0]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_1]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSIL_2]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSR]         = { FORMAT_RGBA16F, 0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_DOF_COC]     = { FORMAT_R16F,    1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_DOF_0]       = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_DOF_1]       = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_BLOOM]       = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_SCENE_0]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SCENE_1]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
 };
 
 static void alloc_target_texture(r3d_target_t target)
@@ -384,6 +387,11 @@ void r3d_target_set_write_level(int attachment, int level)
     }
 }
 
+void r3d_target_set_read_level(r3d_target_t target, int level)
+{
+    return r3d_target_set_read_levels(target, level, level);
+}
+
 void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel)
 {
     assert(R3D_MOD_TARGET.targetLoaded[target]);
@@ -418,6 +426,11 @@ GLuint r3d_target_get(r3d_target_t target)
     assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
     assert(R3D_MOD_TARGET.targetLoaded[target]);
     return R3D_MOD_TARGET.targetTextures[target];
+}
+
+GLuint r3d_target_get_level(r3d_target_t target, int level)
+{
+    return r3d_target_get_levels(target, level, level);
 }
 
 GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel)

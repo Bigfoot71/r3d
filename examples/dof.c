@@ -23,7 +23,6 @@ int main(void)
     R3D_ENVIRONMENT_SET(dof.focusPoint, 2.0f);
     R3D_ENVIRONMENT_SET(dof.focusScale, 3.0f);
     R3D_ENVIRONMENT_SET(dof.maxBlurSize, 20.0f);
-    R3D_ENVIRONMENT_SET(dof.debugMode, false);
 
     // Create directional light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
@@ -84,7 +83,7 @@ int main(void)
         }
 
         if (IsKeyPressed(KEY_F1)) {
-            R3D_ENVIRONMENT_SET(dof.debugMode, !R3D_ENVIRONMENT_GET(dof.debugMode));
+            R3D_SetOutputMode(R3D_GetOutputMode() == R3D_OUTPUT_SCENE ? R3D_OUTPUT_DOF : R3D_OUTPUT_SCENE);
         }
 
         BeginDrawing();
@@ -99,7 +98,7 @@ int main(void)
             char dofText[128];
             snprintf(dofText, sizeof(dofText), "Focus Point: %.2f\nFocus Scale: %.2f\nMax Blur Size: %.2f\nDebug Mode: %d",
                 R3D_ENVIRONMENT_GET(dof.focusPoint), R3D_ENVIRONMENT_GET(dof.focusScale),
-                R3D_ENVIRONMENT_GET(dof.maxBlurSize), R3D_ENVIRONMENT_GET(dof.debugMode));
+                R3D_ENVIRONMENT_GET(dof.maxBlurSize), (R3D_GetOutputMode() == R3D_OUTPUT_SCENE));
 
             DrawText(dofText, 10, 30, 20, (Color) {255, 255, 255, 127});
 
