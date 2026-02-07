@@ -79,8 +79,8 @@ static void pass_scene_background(r3d_target_t sceneTarget);
 
 static r3d_target_t pass_post_setup(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fog(r3d_target_t sceneTarget);
-static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
+static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
@@ -187,12 +187,12 @@ void R3D_End(void)
         sceneTarget = pass_post_fog(sceneTarget);
     }
 
-    if (R3D.environment.dof.mode != R3D_DOF_DISABLED) {
-        sceneTarget = pass_post_dof(sceneTarget);
-    }
-
     if (R3D.environment.bloom.mode != R3D_BLOOM_DISABLED) {
         sceneTarget = pass_post_bloom(sceneTarget);
+    }
+
+    if (R3D.environment.dof.mode != R3D_DOF_DISABLED) {
+        sceneTarget = pass_post_dof(sceneTarget);
     }
 
     sceneTarget = pass_post_screen(sceneTarget);
@@ -1881,55 +1881,6 @@ r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
     return sceneTarget;
 }
 
-r3d_target_t pass_post_dof(r3d_target_t sceneTarget)	
-{
-    /* === Calculate CoC === */
-
-    R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_DOF_COC);
-    R3D_SHADER_USE_BLT(prepare.dofCoc);
-
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofCoc, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
-    R3D_SHADER_SET_FLOAT_BLT(prepare.dofCoc, uFocusPoint, R3D.environment.dof.focusPoint);
-    R3D_SHADER_SET_FLOAT_BLT(prepare.dofCoc, uFocusScale, R3D.environment.dof.focusScale);
-
-    R3D_DRAW_SCREEN();
-
-    /* === Downsample CoC to half resolution === */
-
-    R3D_TARGET_BIND(false, R3D_TARGET_DOF_0, R3D_TARGET_DEPTH);
-    r3d_target_set_write_level(1, 1);
-
-    R3D_SHADER_USE_BLT(prepare.dofDown);
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uSceneTex, r3d_target_get(r3d_target_swap_scene(sceneTarget)));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uCoCTex, r3d_target_get(R3D_TARGET_DOF_COC));
-
-    R3D_DRAW_SCREEN();
-
-    /* === Calculate DoF in half resolution === */
-
-    R3D_TARGET_BIND(false, R3D_TARGET_DOF_1);
-
-    R3D_SHADER_USE_BLT(prepare.dofBlur);
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofBlur, uSceneTex, r3d_target_get(R3D_TARGET_DOF_0));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofBlur, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-    R3D_SHADER_SET_FLOAT_BLT(prepare.dofBlur, uMaxBlurSize, R3D.environment.dof.maxBlurSize * 0.5f);
-
-    R3D_DRAW_SCREEN();
-
-    /* === Compose DoF with the scene ===  */
-
-    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
-    R3D_SHADER_USE_BLT(post.dof);
-
-    R3D_SHADER_BIND_SAMPLER_BLT(post.dof, uSceneTex, r3d_target_get(sceneTarget));
-    R3D_SHADER_BIND_SAMPLER_BLT(post.dof, uBlurTex, r3d_target_get(R3D_TARGET_DOF_1));
-
-    R3D_DRAW_SCREEN();
-
-    return sceneTarget;
-}
-
 r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 {
     r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
@@ -2026,6 +1977,55 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_SET_INT_BLT(post.bloom, uBloomMode, R3D.environment.bloom.mode);
     R3D_SHADER_SET_FLOAT_BLT(post.bloom, uBloomIntensity, R3D.environment.bloom.intensity);
+
+    R3D_DRAW_SCREEN();
+
+    return sceneTarget;
+}
+
+r3d_target_t pass_post_dof(r3d_target_t sceneTarget)	
+{
+    /* === Calculate CoC === */
+
+    R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_DOF_COC);
+    R3D_SHADER_USE_BLT(prepare.dofCoc);
+
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofCoc, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
+    R3D_SHADER_SET_FLOAT_BLT(prepare.dofCoc, uFocusPoint, R3D.environment.dof.focusPoint);
+    R3D_SHADER_SET_FLOAT_BLT(prepare.dofCoc, uFocusScale, R3D.environment.dof.focusScale);
+
+    R3D_DRAW_SCREEN();
+
+    /* === Downsample CoC to half resolution === */
+
+    R3D_TARGET_BIND(false, R3D_TARGET_DOF_0, R3D_TARGET_DEPTH);
+    r3d_target_set_write_level(1, 1);
+
+    R3D_SHADER_USE_BLT(prepare.dofDown);
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uSceneTex, r3d_target_get(r3d_target_swap_scene(sceneTarget)));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uCoCTex, r3d_target_get(R3D_TARGET_DOF_COC));
+
+    R3D_DRAW_SCREEN();
+
+    /* === Calculate DoF in half resolution === */
+
+    R3D_TARGET_BIND(false, R3D_TARGET_DOF_1);
+
+    R3D_SHADER_USE_BLT(prepare.dofBlur);
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofBlur, uSceneTex, r3d_target_get(R3D_TARGET_DOF_0));
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofBlur, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
+    R3D_SHADER_SET_FLOAT_BLT(prepare.dofBlur, uMaxBlurSize, R3D.environment.dof.maxBlurSize * 0.5f);
+
+    R3D_DRAW_SCREEN();
+
+    /* === Compose DoF with the scene ===  */
+
+    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE_BLT(post.dof);
+
+    R3D_SHADER_BIND_SAMPLER_BLT(post.dof, uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER_BLT(post.dof, uBlurTex, r3d_target_get(R3D_TARGET_DOF_1));
 
     R3D_DRAW_SCREEN();
 
