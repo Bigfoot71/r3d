@@ -23,6 +23,7 @@
 #define OUTPUT_SSIL         7
 #define OUTPUT_SSR          8
 #define OUTPUT_BLOOM        9
+#define OUTPUT_DOF          10
 
 /* === Varyings === */
 
@@ -70,6 +71,12 @@ void main()
         break;
     case OUTPUT_BLOOM:
         FragColor = vec4(FragColor.rgb, 1.0);
+        break;
+    case OUTPUT_DOF:
+        float front = clamp(-FragColor.r, 0.0, 1.0);    // in front of focus plane (near)
+        float back = clamp(FragColor.r, 0.0, 1.0);      // behind the focus plane (far)
+        vec3 tint = vec3(0.0, front, back);             // green front, blue back, black at focus
+        FragColor = vec4(tint, 1.0);
         break;
     default:
         break;

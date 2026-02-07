@@ -213,6 +213,7 @@ void R3D_End(void)
     case R3D_OUTPUT_SSIL: visualize_to_screen(ssilSource); break;
     case R3D_OUTPUT_SSR: visualize_to_screen(ssrSource); break;
     case R3D_OUTPUT_BLOOM: visualize_to_screen(R3D_TARGET_BLOOM); break;
+    case R3D_OUTPUT_DOF: visualize_to_screen(R3D_TARGET_DOF_COC); break;
     }
 
     /* --- Reset states changed by R3D --- */

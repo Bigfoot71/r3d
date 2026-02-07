@@ -114,7 +114,6 @@
             .focusPoint = 10.0f,                        \
             .focusScale = 1.0f,                         \
             .maxBlurSize = 20.0f,                       \
-            .debugMode = false,                         \
         },                                              \
         .tonemap = {                                    \
             .mode = R3D_TONEMAP_LINEAR,                 \
@@ -294,7 +293,6 @@ typedef struct R3D_EnvDoF {
     float focusPoint;       ///< Focus distance in meters from camera (default: 10.0)
     float focusScale;       ///< Depth of field depth: lower = shallower (default: 1.0)
     float maxBlurSize;      ///< Maximum blur radius, similar to aperture (default: 20.0)
-    bool debugMode;         ///< Color-coded visualization: green=near, blue=far (default: false)
 } R3D_EnvDoF;
 
 /**

@@ -111,7 +111,8 @@ typedef enum R3D_OutputMode {
     R3D_OUTPUT_SSAO,
     R3D_OUTPUT_SSIL,
     R3D_OUTPUT_SSR,
-    R3D_OUTPUT_BLOOM
+    R3D_OUTPUT_BLOOM,
+    R3D_OUTPUT_DOF,
 } R3D_OutputMode;
 
 /**
