@@ -609,6 +609,13 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
+    r3d_shader_uniform_sampler_t uSsaoTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_vec2_t uDirection;
+} r3d_shader_prepare_ssao_blur_t;
+
+typedef struct {
+    unsigned int id;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
@@ -1055,6 +1062,7 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_blur_up_t blurUp;
         r3d_shader_prepare_ssao_in_down_t ssaoInDown;
         r3d_shader_prepare_ssao_t ssao;
+        r3d_shader_prepare_ssao_blur_t ssaoBlur;
         r3d_shader_prepare_ssil_in_down_t ssilInDown;
         r3d_shader_prepare_ssil_t ssil;
         r3d_shader_prepare_ssr_in_down_t ssrInDown;
@@ -1115,6 +1123,7 @@ bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssao_in_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_ssao_blur(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssil_in_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssr_in_down(r3d_shader_custom_t* custom);
@@ -1159,6 +1168,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func blurUp;
         r3d_shader_loader_func ssaoInDown;
         r3d_shader_loader_func ssao;
+        r3d_shader_loader_func ssaoBlur;
         r3d_shader_loader_func ssilInDown;
         r3d_shader_loader_func ssil;
         r3d_shader_loader_func ssrInDown;
@@ -1215,6 +1225,7 @@ static const struct r3d_shader_loader {
         .blurUp = r3d_shader_load_prepare_blur_up,
         .ssaoInDown = r3d_shader_load_prepare_ssao_in_down,
         .ssao = r3d_shader_load_prepare_ssao,
+        .ssaoBlur = r3d_shader_load_prepare_ssao_blur,
         .ssilInDown = r3d_shader_load_prepare_ssil_in_down,
         .ssil = r3d_shader_load_prepare_ssil,
         .ssrInDown = r3d_shader_load_prepare_ssr_in_down,

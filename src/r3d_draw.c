@@ -29,6 +29,7 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
+#include "raylib.h"
 
 // ========================================
 // HELPER MACROS
@@ -1458,9 +1459,7 @@ r3d_target_t pass_prepare_ssao(void)
 
     /* --- Calculate SSAO --- */
 
-    r3d_target_t ssaoTarget = R3D_TARGET_SSAO_0;
-    R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
-
+    R3D_TARGET_BIND(false, R3D_TARGET_SSAO_0);
     R3D_SHADER_USE_BLT(prepare.ssao);
 
     R3D_SHADER_SET_INT_BLT(prepare.ssao, uSampleCount,  R3D.environment.ssao.sampleCount);
@@ -1474,21 +1473,22 @@ r3d_target_t pass_prepare_ssao(void)
 
     R3D_DRAW_SCREEN();
 
-    /* --- Denoise SSAO --- */
+    /* --- Blur SSAO --- */
 
-    R3D_SHADER_USE_BLT(prepare.atrousWavelet);
+    R3D_SHADER_USE_BLT(prepare.ssaoBlur);
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoBlur, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
-    R3D_SHADER_BIND_SAMPLER_BLT(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
+    R3D_TARGET_BIND(false, R3D_TARGET_SSAO_1);
+    R3D_SHADER_SET_VEC2_BLT(prepare.ssaoBlur, uDirection, (Vector2){1,0});
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoBlur, uSsaoTex, r3d_target_get(R3D_TARGET_SSAO_0));
+    R3D_DRAW_SCREEN();
 
-    for (int i = 0; i < 3; i++) {
-        R3D_TARGET_BIND_AND_SWAP_SSAO(ssaoTarget);
-        R3D_SHADER_BIND_SAMPLER_BLT(prepare.atrousWavelet, uSourceTex, r3d_target_get(ssaoTarget));
-        R3D_SHADER_SET_INT_BLT(prepare.atrousWavelet, uStepSize, 1 << i);
-        R3D_DRAW_SCREEN();
-    }
+    R3D_TARGET_BIND(false, R3D_TARGET_SSAO_0);
+    R3D_SHADER_SET_VEC2_BLT(prepare.ssaoBlur, uDirection, (Vector2){0,1});
+    R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoBlur, uSsaoTex, r3d_target_get(R3D_TARGET_SSAO_1));
+    R3D_DRAW_SCREEN();
 
-    return r3d_target_swap_ssao(ssaoTarget);
+    return R3D_TARGET_SSAO_0;
 }
 
 r3d_target_t pass_prepare_ssil(void)

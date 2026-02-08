@@ -298,14 +298,6 @@ void r3d_target_get_texel_size(float* w, float* h, r3d_target_t target, int leve
     }
 }
 
-r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao)
-{
-    if (ssao == R3D_TARGET_SSAO_0) {
-        return R3D_TARGET_SSAO_1;
-    }
-    return R3D_TARGET_SSAO_0;
-}
-
 r3d_target_t r3d_target_swap_scene(r3d_target_t scene)
 {
     if (scene == R3D_TARGET_SCENE_0) {

@@ -298,6 +298,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/blur_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao_in_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/ssao_blur.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssil_in_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssil.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssr_in_down.frag"
