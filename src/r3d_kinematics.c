@@ -14,6 +14,95 @@
 #include "./common/r3d_math.h"
 
 // ========================================
+// INLINE FUNCTIONS
+// ========================================
+
+static inline bool raycast_triangle(
+    float* outT, Vector3* outEdge1,  Vector3* outEdge2,
+    Vector3 localOrigin, Vector3 localDirection,
+    Vector3 v0, Vector3 v1, Vector3 v2)
+{
+    // Möller-Trumbore ray triangle intersection algorithm
+    // See: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+
+    Vector3 edge1 = Vector3Subtract(v1, v0);
+    Vector3 edge2 = Vector3Subtract(v2, v0);
+
+    // If negative: it's a backface
+    // If zero: ray parallel to triangle
+    Vector3 h = Vector3CrossProduct(localDirection, edge2);
+    float a = Vector3DotProduct(edge1, h);
+    if (a < 1e-5f) return false;
+
+    float f = 1.0f / a;
+
+    Vector3 s = Vector3Subtract(localOrigin, v0);
+    float u = f * Vector3DotProduct(s, h);
+    if (u < 0.0f || u > 1.0f) return false;
+
+    Vector3 q = Vector3CrossProduct(s, edge1);
+    float v = f * Vector3DotProduct(localDirection, q);
+    if (v < 0.0f || u + v > 1.0f) return false;
+
+    float t = f * Vector3DotProduct(edge2, q);
+    if (t < 1e-5f) return false;
+
+    *outT = t;
+    *outEdge1 = edge1;
+    *outEdge2 = edge2;
+
+    return true;
+}
+
+static inline void raycast_mesh_vertices(
+    float* closestT, Vector3* closestEdge1,  Vector3* closestEdge2,
+    const R3D_Vertex* vertices, int triangleCount,
+    Vector3 localOrigin, Vector3 localDirection)
+{
+    for (int i = 0; i < triangleCount; i++)
+    {
+        int baseIdx = i * 3;
+        Vector3 v0 = vertices[baseIdx].position;
+        Vector3 v1 = vertices[baseIdx + 1].position;
+        Vector3 v2 = vertices[baseIdx + 2].position;
+
+        float t;
+        Vector3 edge1, edge2;
+        if (raycast_triangle(&t, &edge1, &edge2, localOrigin, localDirection, v0, v1, v2)) {
+            if (t < *closestT) {
+                *closestT = t;
+                *closestEdge1 = edge1;
+                *closestEdge2 = edge2;
+            }
+        }
+    }
+}
+
+static inline void raycast_mesh_indexed(
+    float* closestT, Vector3* closestEdge1,  Vector3* closestEdge2,
+    const R3D_Vertex* vertices, const uint32_t* indices, int triangleCount,
+    Vector3 localOrigin, Vector3 localDirection)
+{
+    for (int i = 0; i < triangleCount; i++)
+    {
+        int baseIdx = i * 3;
+        Vector3 v0 = vertices[indices[baseIdx]].position;
+        Vector3 v1 = vertices[indices[baseIdx + 1]].position;
+        Vector3 v2 = vertices[indices[baseIdx + 2]].position;
+
+        float t;
+        Vector3 edge1, edge2;
+        if (raycast_triangle(&t, &edge1, &edge2, localOrigin, localDirection, v0, v1, v2)) {
+            if (t < *closestT) {
+                *closestT = t;
+                *closestEdge1 = edge1;
+                *closestEdge2 = edge2;
+            }
+        }
+    }
+}
+
+// ========================================
 // PUBLIC API
 // ========================================
 
@@ -444,12 +533,7 @@ bool R3D_DepenetrateCapsuleBox(R3D_Capsule* capsule, BoundingBox box, float* out
 
 RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
 {
-    // Möller-Trumbore ray triangle intersection algorithm
-    // See: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-
     RayCollision collision = {0};
-
-    collision.hit = false;
     collision.distance = FLT_MAX;
 
     if (mesh.vertices == NULL) {
@@ -457,68 +541,40 @@ RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
     }
 
     Matrix invTransform = MatrixInvert(transform);
-    Matrix normalMatrix = MatrixTranspose(invTransform);
-
     Vector3 localOrigin = r3d_vector3_transform(ray.position, &invTransform);
     Vector3 localDirection = Vector3Normalize(r3d_vector3_transform_normal(ray.direction, &invTransform));
 
-    bool useIndices = (mesh.indices != NULL);
-    int triangleCount = useIndices ? (mesh.indexCount / 3) : (mesh.vertexCount / 3);
+    int triangleCount = mesh.indices ? (mesh.indexCount / 3) : (mesh.vertexCount / 3);
 
-    for (int i = 0; i < triangleCount; i++)
+    Vector3 closestEdge1 = {0};
+    Vector3 closestEdge2 = {0};
+    float closestT = FLT_MAX;
+
+    if (mesh.indices) {
+        raycast_mesh_indexed(
+            &closestT, &closestEdge1, &closestEdge2,
+            mesh.vertices, mesh.indices, triangleCount,
+            localOrigin, localDirection
+        );
+    }
+    else {
+        raycast_mesh_vertices(
+            &closestT, &closestEdge1, &closestEdge2,
+            mesh.vertices, triangleCount,
+            localOrigin, localDirection
+        );
+    }
+
+    if (closestT < FLT_MAX)
     {
-        // Get triangle vertex positions
-        Vector3 v0, v1, v2;
+        Vector3 closestHitLocal = Vector3Add(localOrigin, Vector3Scale(localDirection, closestT));
+        Vector3 normalLocal = Vector3Normalize(Vector3CrossProduct(closestEdge1, closestEdge2));
+        Matrix normalMatrix = r3d_matrix_transpose(&invTransform);
 
-        if (useIndices) {
-            v0 = mesh.vertices[mesh.indices[i*3    ]].position;
-            v1 = mesh.vertices[mesh.indices[i*3 + 1]].position;
-            v2 = mesh.vertices[mesh.indices[i*3 + 2]].position;
-        }
-        else {
-            v0 = mesh.vertices[i*3    ].position;
-            v1 = mesh.vertices[i*3 + 1].position;
-            v2 = mesh.vertices[i*3 + 2].position;
-        }
-
-        Vector3 edge1 = Vector3Subtract(v1, v0);
-        Vector3 edge2 = Vector3Subtract(v2, v0);
-        Vector3 h = Vector3CrossProduct(localDirection, edge2);
-        float a = Vector3DotProduct(edge1, h);
-
-        // Ray is parallel to triangle
-        if (fabsf(a) < 1e-5f) continue;
-
-        float f = 1.0f / a;
-
-        // Check if intersection point is outside triangle
-        Vector3 s = Vector3Subtract(localOrigin, v0);
-        float u = f * Vector3DotProduct(s, h);
-        if (u < 0.0f || u > 1.0f) continue;
-
-        // Check if intersection point is outside triangle
-        Vector3 q = Vector3CrossProduct(s, edge1);
-        float v = f * Vector3DotProduct(localDirection, q);
-        if (v < 0.0f || u + v > 1.0f) continue;
-
-        float t = f * Vector3DotProduct(edge2, q);
-
-        if (t > 1e-5f)
-        {
-            Vector3 hitLocal = Vector3Add(localOrigin, Vector3Scale(localDirection, t));
-            Vector3 hitWorld = r3d_vector3_transform(hitLocal, &transform);
-            float distance = Vector3Distance(ray.position, hitWorld);
-
-            if (distance < collision.distance)
-            {
-                collision.hit = true;
-                collision.distance = distance;
-                collision.point = hitWorld;
-
-                Vector3 normalLocal = Vector3Normalize(Vector3CrossProduct(edge1, edge2));
-                collision.normal = Vector3Normalize(r3d_vector3_transform_normal(normalLocal, &normalMatrix));
-            }
-        }
+        collision.hit = true;
+        collision.point = r3d_vector3_transform(closestHitLocal, &transform);
+        collision.distance = Vector3Distance(ray.position, collision.point);
+        collision.normal = Vector3Normalize(r3d_vector3_transform_normal(normalLocal, &normalMatrix));
     }
 
     return collision;
@@ -526,21 +582,62 @@ RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
 
 RayCollision R3D_RaycastModel(Ray ray, R3D_Model model, Matrix transform)
 {
-    RayCollision closestHit = {0};
-
-    closestHit.hit = false;
-    closestHit.distance = FLT_MAX;
+    RayCollision collision = {0};
+    collision.distance = FLT_MAX;
 
     if (model.meshData == NULL || model.meshCount <= 0) {
-        return closestHit;
+        return collision;
     }
 
-    for (int i = 0; i < model.meshCount; i++) {
-        RayCollision hit = R3D_RaycastMesh(ray, model.meshData[i], transform);
-        if (hit.hit && hit.distance < closestHit.distance) closestHit = hit;
+    Matrix invTransform = MatrixInvert(transform);
+    Vector3 localOrigin = r3d_vector3_transform(ray.position, &invTransform);
+    Vector3 localDirection = Vector3Normalize(r3d_vector3_transform_normal(ray.direction, &invTransform));
+
+    Vector3 closestEdge1 = {0};
+    Vector3 closestEdge2 = {0};
+    float closestT = FLT_MAX;
+
+    // Test each mesh
+    for (int meshIdx = 0; meshIdx < model.meshCount; meshIdx++)
+    {
+        R3D_MeshData mesh = model.meshData[meshIdx];
+        if (mesh.vertices == NULL) continue;
+
+        // Per-mesh AABB culling
+        RayCollision meshBoxCol = GetRayCollisionBox(ray, model.meshes[meshIdx].aabb);
+        if (!meshBoxCol.hit) continue;
+
+        int triangleCount = mesh.indices ? (mesh.indexCount / 3) : (mesh.vertexCount / 3);
+
+        if (mesh.indices) {
+            raycast_mesh_indexed(
+                &closestT, &closestEdge1, &closestEdge2,
+                mesh.vertices, mesh.indices, triangleCount,
+                localOrigin, localDirection
+            );
+        }
+        else {
+            raycast_mesh_vertices(
+                &closestT, &closestEdge1, &closestEdge2,
+                mesh.vertices, triangleCount,
+                localOrigin, localDirection
+            );
+        }
     }
 
-    return closestHit;
+    if (closestT < FLT_MAX)
+    {
+        Vector3 closestHitLocal = Vector3Add(localOrigin, Vector3Scale(localDirection, closestT));
+        Vector3 normalLocal = Vector3Normalize(Vector3CrossProduct(closestEdge1, closestEdge2));
+        Matrix normalMatrix = r3d_matrix_transpose(&invTransform);
+
+        collision.hit = true;
+        collision.point = r3d_vector3_transform(closestHitLocal, &transform);
+        collision.distance = Vector3Distance(ray.position, collision.point);
+        collision.normal = Vector3Normalize(r3d_vector3_transform_normal(normalLocal, &normalMatrix));
+    }
+
+    return collision;
 }
 
 R3D_SweepCollision R3D_SweepSpherePoint(Vector3 center, float radius, Vector3 velocity, Vector3 point)
