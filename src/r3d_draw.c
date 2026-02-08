@@ -29,7 +29,6 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
-#include "raylib.h"
 
 // ========================================
 // HELPER MACROS
