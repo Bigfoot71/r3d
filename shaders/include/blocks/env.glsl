@@ -79,7 +79,8 @@ void IBL_MultiScattering(inout vec3 irradiance, inout vec3 radiance, vec3 diffus
     float Ess = brdf.x + brdf.y;
     float Ems = 1.0 - Ess;
     vec3 Favg = F0 + (1.0 - F0) / 21.0;
-    vec3 Fms = FssEss * Favg / (1.0 - (1.0 - Ess) * Favg);
+    vec3 FmsD = max(1.0 - (1.0 - Ess) * Favg, vec3(1e-6));
+    vec3 Fms = FssEss * Favg / FmsD;
     vec3 kD = diffuse * (1.0 - FssEss);
 
     // Compute final irradiance / radiance
