@@ -22,7 +22,7 @@ uniform sampler2D uDepthTex;
 
 layout(location = 0) out vec3 FragDiffuse;
 layout(location = 1) out vec2 FragNormal;
-layout(location = 3) out float FragDepth;
+layout(location = 2) out float FragDepth;
 
 /* === Main Program === */
 
