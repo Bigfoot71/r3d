@@ -118,15 +118,28 @@ void R3D_End(void)
     upload_view_block();
     upload_env_block();
 
-    /* --- Update and collect all visible lights and probes and process them (shadows and probes) --- */
+    /* --- Update all visible lights and render their shadow maps --- */
 
-    // TODO: Add `r3d_light_has()` along with a list of lights that cast shadows
-    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.position);
-    pass_scene_shadow();
+    bool hasVisibleShadows = false;
+    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.position, &hasVisibleShadows);
 
-    if (r3d_env_probe_has(R3D_ENV_PROBE_ARRAY_VALID)) {
-        r3d_env_probe_update_and_cull(&R3D.viewState.frustum);
-        pass_scene_probes();
+    if (hasVisibleShadows) {
+        pass_scene_shadow();
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_SHADOW_DIR, r3d_light_shadow_get(R3D_LIGHT_DIR));
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_SHADOW_SPOT, r3d_light_shadow_get(R3D_LIGHT_SPOT));
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_SHADOW_OMNI, r3d_light_shadow_get(R3D_LIGHT_OMNI));
+    }
+
+    /* --- Update all visible environment probes and render their cubemaps --- */
+
+    bool hasVisibleProbes = false;
+    r3d_env_probe_update_and_cull(&R3D.viewState.frustum, &hasVisibleProbes);
+
+    if (hasVisibleProbes || R3D.environment.ambient.map.flags != 0) {
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_IRRADIANCE, r3d_env_irradiance_get());
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_PREFILTER, r3d_env_prefilter_get());
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_BRDF_LUT, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+        if (hasVisibleProbes) pass_scene_probes(); // Must have the IBL bind in case of ambient map
     }
 
     /* --- Cull groups and sort all draw calls before rendering --- */
@@ -812,16 +825,6 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
     R3D_SurfaceShader* shader = call->mesh.material.shader;
     R3D_SHADER_USE_OPT(scene.probe, shader);
 
-    /* --- Bind global textures --- */
-
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.probe, shader, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.probe, shader, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.probe, shader, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
-
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.probe, shader, uIrradianceTex, r3d_env_irradiance_get());
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.probe, shader, uPrefilterTex, r3d_env_prefilter_get());
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.probe, shader, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
-
     /* --- Set probe related data --- */
 
     R3D_SHADER_SET_VEC3_OPT(scene.probe, shader, uViewPosition, probe->position);
@@ -1069,16 +1072,6 @@ void raster_forward(const r3d_draw_call_t* call)
 
     R3D_SurfaceShader* shader = call->mesh.material.shader;
     R3D_SHADER_USE_OPT(scene.forward, shader);
-
-    /* --- Bind global textures --- */
-
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.forward, shader, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.forward, shader, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.forward, shader, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
-
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.forward, shader, uIrradianceTex, r3d_env_irradiance_get());
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.forward, shader, uPrefilterTex, r3d_env_prefilter_get());
-    R3D_SHADER_BIND_SAMPLER_OPT(scene.forward, shader, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
     /* --- Set view related data --- */
 
@@ -1670,10 +1663,6 @@ void pass_deferred_lights(void)
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.lighting, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.lighting, uOrmTex, r3d_target_get_level(R3D_TARGET_ORM, 0));
 
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.lighting, uShadowDirTex, r3d_light_shadow_get(R3D_LIGHT_DIR));
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.lighting, uShadowSpotTex, r3d_light_shadow_get(R3D_LIGHT_SPOT));
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.lighting, uShadowOmniTex, r3d_light_shadow_get(R3D_LIGHT_OMNI));
-
     /* --- Calculate lighting contributions --- */
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
@@ -1743,9 +1732,6 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
     R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uOrmTex, r3d_target_get_level(R3D_TARGET_ORM, 0));
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uIrradianceTex, r3d_env_irradiance_get());
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uPrefilterTex, r3d_env_prefilter_get());
-    R3D_SHADER_BIND_SAMPLER_BLT(deferred.ambient, uBrdfLutTex, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
 
     R3D_SHADER_SET_FLOAT_BLT(deferred.ambient, uSsilEnergy, R3D.environment.ssil.energy);
 

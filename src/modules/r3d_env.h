@@ -128,8 +128,8 @@ bool r3d_env_probe_has(r3d_env_probe_array_enum_t array);
 /* Iterator for probes by category (stateful, not thread-safe) */
 bool r3d_env_probe_iter(r3d_env_probe_t** probe, r3d_env_probe_array_enum_t array);
 
-/* Update all probes and collect visible ones */
-void r3d_env_probe_update_and_cull(const r3d_frustum_t* viewFrustum);
+/* Update probe states and collect visible ones (can indicate if probes influcences are visible) */
+void r3d_env_probe_update_and_cull(const r3d_frustum_t* viewFrustum, bool* hasVisibleProbes);
 
 /* Check if probe should be rendered (updates state if willBeUpdated is true) */
 bool r3d_env_probe_should_be_updated(r3d_env_probe_t* probe, bool willBeUpdated);

@@ -151,8 +151,8 @@ bool r3d_light_enable_shadows(r3d_light_t* light);
 /* Disable shadows for a light */
 void r3d_light_disable_shadows(r3d_light_t* light);
 
-/* Update all lights and collect visible ones */
-void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPosition);
+/* Update light states and collect visible ones (can indicate if shadows are visible) */
+void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPosition, bool* hasVisibleShadows);
 
 /* Check if shadow map should be rendered (updates state if willBeUpdated is true) */
 bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated);

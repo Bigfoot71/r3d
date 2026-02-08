@@ -632,7 +632,7 @@ void r3d_light_disable_shadows(r3d_light_t* light)
     }
 }
 
-void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPosition)
+void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPosition, bool* hasVisibleShadows)
 {
     r3d_light_array_t* visibleLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VISIBLE];
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
@@ -664,6 +664,7 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
         }
 
         if (r3d_frustum_is_aabb_in(viewFrustum, &light->aabb)) {
+            if (hasVisibleShadows) *hasVisibleShadows |= (light->shadowLayer >= 0);
             visibleLights->lights[visibleLights->count++] = index;
         }
     }
