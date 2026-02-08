@@ -102,7 +102,6 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 
 #define SET_SAMPLER(shader_name, uniform, value) do {                           \
     GLint loc = glGetUniformLocation(shader_name->id, #uniform);                \
-    assert(loc >= 0);                                                           \
     glUniform1i(loc, (int)(value));                                             \
     shader_name->uniform.slot = (int)(value);                                   \
 } while(0)
