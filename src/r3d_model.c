@@ -65,11 +65,12 @@ R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
         return model;
     }
 
+    r3d_importer_texture_cache_t* textureCache = NULL;
+
     if (!r3d_importer_load_meshes(importer, &model)) goto fail;
     if (!r3d_importer_load_skeleton(importer, &model.skeleton)) goto fail;
 
-    r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
-        importer, R3D.colorSpace, R3D.textureFilter);
+    textureCache = r3d_importer_load_texture_cache(importer, R3D.colorSpace, R3D.textureFilter);
     if (textureCache == NULL) goto fail;
 
     if (!r3d_importer_load_materials(importer, &model, textureCache)) goto fail;
