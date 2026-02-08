@@ -1120,8 +1120,6 @@ bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
     DECL_SHADER_BLT(r3d_shader_post_dof_t, post, dof);
     LOAD_SHADER(dof, SCREEN_VERT, DOF_FRAG);
 
-    SET_UNIFORM_BUFFER(dof, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
-
     USE_SHADER(dof);
     SET_SAMPLER(dof, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(dof, uBlurTex, R3D_SHADER_SAMPLER_BUFFER_DOF);
