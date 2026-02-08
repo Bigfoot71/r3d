@@ -111,15 +111,6 @@ typedef enum {
     )
 
 /*
- * Binds the target, then swaps to the alternate SSAO target.
- * Modifies the target parameter to point to the other buffer.
- */
-#define R3D_TARGET_BIND_AND_SWAP_SSAO(target) do {                      \
-    R3D_TARGET_BIND(false, target);                                     \
-    target = r3d_target_swap_ssao(target);                              \
-} while(0)
-
-/*
  * Binds the target, then swaps to the alternate scene target.
  * Modifies the target parameter to point to the other buffer.
  */
@@ -214,11 +205,6 @@ void r3d_target_get_resolution(int* w, int* h, r3d_target_t target, int level);
  * Returns the texel size for the specified mip level.
  */
 void r3d_target_get_texel_size(float* w, float* h, r3d_target_t target, int level);
-
-/*
- * Returns target '1' if target '0' is provided, otherwise returns target '0'.
- */
-r3d_target_t r3d_target_swap_ssao(r3d_target_t ssao);
 
 /*
  * Returns target '1' if target '0' is provided, otherwise returns target '0'.

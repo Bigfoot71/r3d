@@ -30,6 +30,7 @@
 #include <shaders/blur_up.frag.h>
 #include <shaders/ssao_in_down.frag.h>
 #include <shaders/ssao.frag.h>
+#include <shaders/ssao_blur.frag.h>
 #include <shaders/ssil_in_down.frag.h>
 #include <shaders/ssil.frag.h>
 #include <shaders/ssr_in_down.frag.h>
@@ -325,6 +326,23 @@ bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(ssao, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssao, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_ssao_blur(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER_BLT(r3d_shader_prepare_ssao_blur_t, prepare, ssaoBlur);
+    LOAD_SHADER(ssaoBlur, SCREEN_VERT, SSAO_BLUR_FRAG);
+
+    SET_UNIFORM_BUFFER(ssaoBlur, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
+
+    GET_LOCATION(ssaoBlur, uDirection);
+
+    USE_SHADER(ssaoBlur);
+
+    SET_SAMPLER(ssaoBlur, uSsaoTex, R3D_SHADER_SAMPLER_BUFFER_SSAO);
+    SET_SAMPLER(ssaoBlur, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
 }
@@ -1229,6 +1247,7 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.blurUp);
     UNLOAD_SHADER(prepare.ssaoInDown);
     UNLOAD_SHADER(prepare.ssao);
+    UNLOAD_SHADER(prepare.ssaoBlur);
     UNLOAD_SHADER(prepare.ssilInDown);
     UNLOAD_SHADER(prepare.ssil);
     UNLOAD_SHADER(prepare.ssrInDown);

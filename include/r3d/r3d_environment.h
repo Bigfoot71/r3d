@@ -67,10 +67,10 @@
         },                                              \
         .ssao = {                                       \
             .sampleCount = 16,                          \
-            .intensity = 1.0f,                          \
+            .intensity = 0.5f,                          \
             .power = 1.5f,                              \
-            .radius = 0.35f,                            \
-            .bias = 0.007f,                             \
+            .radius = 0.5f,                             \
+            .bias = 0.02f,                              \
             .enabled = false,                           \
         },                                              \
         .ssil = {                                       \
