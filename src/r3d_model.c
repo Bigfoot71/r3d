@@ -39,7 +39,7 @@ R3D_Model R3D_LoadModelEx(const char* filePath, R3D_ImportFlags flags)
 
 R3D_Model R3D_LoadModelFromMemory(const void* data, unsigned int size, const char* hint)
 {
-    return R3D_LoadModelFromMemory(data, size, hint);
+    return R3D_LoadModelFromMemoryEx(data, size, hint, 0);
 }
 
 R3D_Model R3D_LoadModelFromMemoryEx(const void* data, unsigned int size, const char* hint, R3D_ImportFlags flags)
