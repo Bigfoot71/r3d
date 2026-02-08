@@ -235,7 +235,6 @@ bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
     DECL_SHADER_BLT(r3d_shader_prepare_atrous_wavelet_t, prepare, atrousWavelet);
     LOAD_SHADER(atrousWavelet, SCREEN_VERT, ATROUS_WAVELET_FRAG);
 
-    SET_UNIFORM_BUFFER(atrousWavelet, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     GET_LOCATION(atrousWavelet, uStepSize);
 
     USE_SHADER(atrousWavelet);
@@ -335,8 +334,6 @@ bool r3d_shader_load_prepare_ssao_blur(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_BLT(r3d_shader_prepare_ssao_blur_t, prepare, ssaoBlur);
     LOAD_SHADER(ssaoBlur, SCREEN_VERT, SSAO_BLUR_FRAG);
-
-    SET_UNIFORM_BUFFER(ssaoBlur, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
     GET_LOCATION(ssaoBlur, uDirection);
 
