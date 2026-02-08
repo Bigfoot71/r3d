@@ -7,7 +7,7 @@
  */
 
 // Adapted from the method proposed by Morgan McGuire et al. in "Scalable Ambient Obscurance"
-// SEE SAO: https://research.nvidia.com/sites/default/files/pubs/2012-06_Scalable-Ambient-Obscurance/McGuire12SAO.pdf
+// SEE: https://research.nvidia.com/publication/2012-06_scalable-ambient-obscurance
 
 #version 330 core
 
