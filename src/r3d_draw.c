@@ -1267,7 +1267,7 @@ void pass_scene_shadow(void)
 
 void pass_scene_probes(void)
 {
-    R3D_ENV_PROBE_FOR_EACH_VALID(probe)
+    R3D_ENV_PROBE_FOR_EACH_VISIBLE(probe)
     {
         if (!r3d_env_probe_should_be_updated(probe, true)) {
             continue;
