@@ -106,7 +106,7 @@ void R3D_UnloadCubemap(R3D_Cubemap cubemap)
 
 void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
 {
-    r3d_driver_invalidate();
+    r3d_driver_invalidate_cache();
 
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
@@ -258,7 +258,7 @@ R3D_Cubemap allocate_cubemap(int size)
 
 R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 {
-    r3d_driver_invalidate();
+    r3d_driver_invalidate_cache();
 
     R3D_Cubemap cubemap = allocate_cubemap(size);
     Texture2D panorama = LoadTextureFromImage(image);

@@ -88,7 +88,7 @@ static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
 static void blit_to_screen(r3d_target_t source);
 static void visualize_to_screen(r3d_target_t source);
 
-static void reset_raylib_state(void);
+static void cleanup_after_render(void);
 
 // ========================================
 // PUBLIC API
@@ -111,7 +111,7 @@ void R3D_End(void)
 {
     /* --- Invalidates the OpenGL state cache --- */
 
-    r3d_driver_invalidate();
+    r3d_driver_invalidate_cache();
 
     /* --- Upload and bind uniform buffers --- */
 
@@ -231,7 +231,7 @@ void R3D_End(void)
 
     /* --- Reset states changed by R3D --- */
 
-    reset_raylib_state();
+    cleanup_after_render();
 }
 
 void R3D_BeginCluster(BoundingBox aabb)
@@ -1357,7 +1357,7 @@ void pass_scene_probes(void)
             r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE, false);
         }
 
-        r3d_target_reset(); //< The IBL gen functions bind framebuffers; resetting them prevents any problems
+        r3d_target_invalidate_cache(); //< The IBL gen functions bind framebuffers; resetting them prevents any problems
     }
 }
 
@@ -2206,10 +2206,10 @@ void visualize_to_screen(r3d_target_t source)
     r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
 }
 
-void reset_raylib_state(void)
+void cleanup_after_render(void)
 {
-    r3d_shader_reset();
-    r3d_target_reset();
+    r3d_shader_invalidate_cache();
+    r3d_target_invalidate_cache();
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);

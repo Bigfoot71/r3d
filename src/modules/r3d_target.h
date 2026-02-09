@@ -154,7 +154,7 @@ typedef struct {
 extern struct r3d_mod_target {
 
     r3d_target_fbo_t fbo[R3D_TARGET_MAX_FRAMEBUFFERS];  //< FBO combination cache. FBOs are automatically generated as needed during bind
-    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Reset via `r3d_target_reset()`
+    int currentFbo;                                     //< Cache index of currently bound FBO, -1 if none bound. Reset via `r3d_target_invalidate_cache()`
     int fboCount;                                       //< Number of FBOs created
 
     r3d_target_state_t targetStates[R3D_TARGET_COUNT];  //< Array of target states
@@ -304,8 +304,8 @@ GLuint r3d_target_get_or_null(r3d_target_t target);
 void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear);
 
 /*
- * Reset the internal state cache as the FBO target currently binds.
+ * Invalidate the internal state cache as the FBO target currently binds.
  */
-void r3d_target_reset(void);
+void r3d_target_invalidate_cache(void);
 
 #endif // R3D_MODULE_TARGET_H

@@ -136,6 +136,6 @@ void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode c
 /*
  * Invalidates the entire pipeline cache.
  */
-void r3d_driver_invalidate(void);
+void r3d_driver_invalidate_cache(void);
 
 #endif // R3D_MODULE_OPENGL_H

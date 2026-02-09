@@ -28,7 +28,7 @@
 void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache)
 {
     if (invalidateCache) {
-        r3d_driver_invalidate();
+        r3d_driver_invalidate_cache();
     }
 
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
@@ -53,7 +53,7 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, b
 void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache)
 {
     if (invalidateCache) {
-        r3d_driver_invalidate();
+        r3d_driver_invalidate_cache();
     }
 
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);

@@ -1321,8 +1321,9 @@ void r3d_shader_bind_custom_uniforms(r3d_shader_custom_t* shader);
 void r3d_shader_bind_custom_samplers(r3d_shader_custom_t* shader);
 
 /*
- * Reset the internal state cache, use program zero, and unbind all textures.
+ * Invalidate the internal state cache.
+ * Use program zero, and unbind all textures.
  */
-void r3d_shader_reset(void);
+void r3d_shader_invalidate_cache(void);
 
 #endif // R3D_MODULE_SHADER_H

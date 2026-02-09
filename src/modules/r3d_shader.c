@@ -1398,7 +1398,7 @@ void r3d_shader_bind_custom_samplers(r3d_shader_custom_t* shader)
     }
 }
 
-void r3d_shader_reset(void)
+void r3d_shader_invalidate_cache(void)
 {
     R3D_MOD_SHADER.currentProgram = 0;
     glUseProgram(0);

@@ -482,7 +482,7 @@ void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, i
     }
 }
 
-void r3d_target_reset(void)
+void r3d_target_invalidate_cache(void)
 {
     R3D_MOD_TARGET.currentFbo = -1;
 }

@@ -506,7 +506,7 @@ void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode c
     }
 }
 
-void r3d_driver_invalidate(void)
+void r3d_driver_invalidate_cache(void)
 {
     memset(&R3D_MOD_DRIVER.pipeCache, 0, sizeof(R3D_MOD_DRIVER.pipeCache));
 }
