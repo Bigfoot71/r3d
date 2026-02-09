@@ -99,18 +99,68 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `POSITION` | `vec3` | Vertex position |
+| `POSITION` | `vec3` | Vertex position (local space) |
 | `TEXCOORD` | `vec2` | Texture coordinates |
-| `NORMAL` | `vec3` | Vertex normal |
+| `NORMAL` | `vec3` | Vertex normal (local space) |
 | `TANGENT` | `vec4` | Vertex tangent (w = handedness) |
 | `COLOR` | `vec4` | Vertex color |
 | `EMISSION` | `vec3` | Vertex emission |
+| `INSTANCE_POSITION` | `vec3` | Instance position (world space) |
+| `INSTANCE_ROTATION` | `vec4` | Instance rotation (quaternion: x, y, z, w) |
+| `INSTANCE_SCALE` | `vec3` | Instance scale |
+| `INSTANCE_COLOR` | `vec4` | Instance color |
+| `INSTANCE_CUSTOM` | `vec4` | Custom user-defined instance data |
+
+**Instance Variables:**
+
+The `INSTANCE_*` variables are always available, even for non-instanced rendering.
+When instancing is not used or when an instance buffer doesn't define certain attributes, they default to:
+
+```glsl
+INSTANCE_POSITION = vec3(0.0);
+INSTANCE_ROTATION = vec4(0.0, 0.0, 0.0, 1.0);  // Identity quaternion
+INSTANCE_SCALE = vec3(1.0);
+INSTANCE_COLOR = vec4(1.0);
+INSTANCE_CUSTOM = vec4(0.0);
+```
+
+You can modify mesh-local attributes (`POSITION`, `NORMAL`, etc.) and instance attributes (`INSTANCE_*`) independently.
+R3D automatically composes them internally, so you don't need to manually combine them.
+
+**Custom Instance Data:**
+
+`INSTANCE_CUSTOM` is reserved for user-defined data. Unlike other instance attributes, it has no predefined meaning and can store any data you need.
+If you want to use it in the fragment stage, pass it through a varying:
+
+```glsl
+varying vec4 v_custom_data;
+
+void vertex() {
+    // Use custom data however you want
+    v_custom_data = INSTANCE_CUSTOM;
+    
+    // Example: use as animation offset
+    POSITION.y += INSTANCE_CUSTOM.x * sin(INSTANCE_CUSTOM.y);
+}
+
+void fragment() {
+    // Access custom data passed from vertex stage
+    ALBEDO *= v_custom_data.rgb;
+}
+```
 
 **Example:**
 ```glsl
 void vertex() {
+    // Modify local mesh attributes
     POSITION *= 1.5; // Scale vertex position
     COLOR.rgb *= 0.5; // Darken vertex color
+    
+    // Modify instance attributes separately
+    INSTANCE_SCALE *= 2.0; // Double instance scale
+    INSTANCE_COLOR.a *= 0.8; // Make instance more transparent
+    
+    // R3D will compose these automatically
 }
 ```
 

@@ -21,7 +21,7 @@
 // CONSTANTS
 // ========================================
 
-#define R3D_INSTANCE_ATTRIBUTE_COUNT 4
+#define R3D_INSTANCE_ATTRIBUTE_COUNT 5
 
 // ========================================
 // ENUM / FLAGS
@@ -36,6 +36,7 @@ typedef int R3D_InstanceFlags;
 #define R3D_INSTANCE_ROTATION   (1 << 1)    /*< Quaternion  */
 #define R3D_INSTANCE_SCALE      (1 << 2)    /*< Vector3     */
 #define R3D_INSTANCE_COLOR      (1 << 3)    /*< Color       */
+#define R3D_INSTANCE_CUSTOM     (1 << 4)    /*< Vector4     */
 
 // ========================================
 // STRUCT TYPES

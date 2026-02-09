@@ -13,14 +13,26 @@ vec4 COLOR;
 vec4 TANGENT;
 vec3 NORMAL;
 
+vec3 INSTANCE_POSITION;
+vec4 INSTANCE_ROTATION;
+vec3 INSTANCE_SCALE;
+vec4 INSTANCE_COLOR;
+vec4 INSTANCE_CUSTOM;
+
 #define vertex()
 
 void SceneVertex()
 {
+    INSTANCE_POSITION = iPosition;
+    INSTANCE_ROTATION = iRotation;
+    INSTANCE_SCALE = iScale;
+    INSTANCE_COLOR = iColor;
+    INSTANCE_CUSTOM = iCustom;
+
     POSITION = aPosition;
     TEXCOORD = uTexCoordOffset + aTexCoord * uTexCoordScale;
     EMISSION = uEmissionColor * uEmissionEnergy;
-    COLOR = aColor * iColor * uAlbedoColor;
+    COLOR = aColor * uAlbedoColor;
     TANGENT = aTangent;
     NORMAL = aNormal;
 
