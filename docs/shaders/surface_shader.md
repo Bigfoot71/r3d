@@ -109,6 +109,7 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 | `INSTANCE_ROTATION` | `vec4` | Instance rotation (quaternion: x, y, z, w) |
 | `INSTANCE_SCALE` | `vec3` | Instance scale |
 | `INSTANCE_COLOR` | `vec4` | Instance color |
+| `INSTANCE_CUSTOM` | `vec4` | Custom user-defined instance data |
 
 **Example:**
 ```glsl
@@ -128,10 +129,33 @@ INSTANCE_POSITION = vec3(0.0);
 INSTANCE_ROTATION = vec4(0.0, 0.0, 0.0, 1.0);  // Identity quaternion
 INSTANCE_SCALE = vec3(1.0);
 INSTANCE_COLOR = vec4(1.0);
+INSTANCE_CUSTOM = vec4(0.0);
 ```
 
 You can modify mesh-local attributes (`POSITION`, `NORMAL`, etc.) and instance attributes (`INSTANCE_*`) independently.
 R3D automatically composes them internally, so you don't need to manually combine them.
+
+**Custom Instance Data:**
+
+`INSTANCE_CUSTOM` is reserved for user-defined data. Unlike other instance attributes, it has no predefined meaning and can store any data you need.
+If you want to use it in the fragment stage, pass it through a varying:
+
+```glsl
+varying vec4 v_custom_data;
+
+void vertex() {
+    // Use custom data however you want
+    v_custom_data = INSTANCE_CUSTOM;
+    
+    // Example: use as animation offset
+    POSITION.y += INSTANCE_CUSTOM.x * sin(INSTANCE_CUSTOM.y);
+}
+
+void fragment() {
+    // Access custom data passed from vertex stage
+    ALBEDO *= v_custom_data.rgb;
+}
+```
 
 **Example:**
 ```glsl
