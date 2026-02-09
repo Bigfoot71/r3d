@@ -60,8 +60,14 @@ static bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usag
 R3D_SurfaceShader* R3D_LoadSurfaceShader(const char* filePath)
 {
     char* code = LoadFileText(filePath);
+    if (code == NULL) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to load surface shader; Unable to load shader file");
+        return NULL;
+    }
+
     R3D_SurfaceShader* shader = R3D_LoadSurfaceShaderFromMemory(code);
     UnloadFileText(code);
+
     return shader;
 }
 
@@ -240,6 +246,11 @@ void R3D_UnloadSurfaceShader(R3D_SurfaceShader* shader)
 
 void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* name, const void* value)
 {
+    if (!shader) {
+        R3D_TRACELOG(LOG_WARNING, "Cannot set uniform '%s' on NULL surface shader", name);
+        return;
+    }
+
     if (!r3d_shader_set_custom_uniform(&shader->program, name, value)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom uniform '%s'", name);
     }
@@ -247,6 +258,11 @@ void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* name, co
 
 void R3D_SetSurfaceShaderSampler(R3D_SurfaceShader* shader, const char* name, Texture texture)
 {
+    if (!shader) {
+        R3D_TRACELOG(LOG_WARNING, "Cannot set sampler '%s' on NULL surface shader", name);
+        return;
+    }
+
     if (!r3d_shader_set_custom_sampler(&shader->program, name, texture)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom sampler '%s'", name);
     }

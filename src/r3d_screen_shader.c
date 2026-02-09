@@ -39,8 +39,14 @@ static bool compile_shader(R3D_ScreenShader* shader);
 R3D_ScreenShader* R3D_LoadScreenShader(const char* filePath)
 {
     char* code = LoadFileText(filePath);
+    if (code == NULL) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to load screen shader; Unable to load shader file");
+        return NULL;
+    }
+
     R3D_ScreenShader* shader = R3D_LoadScreenShaderFromMemory(code);
     UnloadFileText(code);
+
     return shader;
 }
 
@@ -175,6 +181,11 @@ void R3D_UnloadScreenShader(R3D_ScreenShader* shader)
 
 void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* name, const void* value)
 {
+    if (!shader) {
+        R3D_TRACELOG(LOG_WARNING, "Cannot set uniform '%s' on NULL screen shader", name);
+        return;
+    }
+
     if (!r3d_shader_set_custom_uniform(&shader->program, name, value)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom uniform '%s'", name);
     }
@@ -182,6 +193,11 @@ void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* name, cons
 
 void R3D_SetScreenShaderSampler(R3D_ScreenShader* shader, const char* name, Texture texture)
 {
+    if (!shader) {
+        R3D_TRACELOG(LOG_WARNING, "Cannot set sampler '%s' on NULL screen shader", name);
+        return;
+    }
+
     if (!r3d_shader_set_custom_sampler(&shader->program, name, texture)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom sampler '%s'", name);
     }

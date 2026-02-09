@@ -78,8 +78,10 @@ R3DAPI void R3D_UnloadScreenShader(R3D_ScreenShader* shader);
  * @warning Boolean values are read as 4 bytes.
  *
  * @param shader Target screen shader.
- * @param name Name of the uniform.
- * @param value Pointer to the uniform value.
+ *               May be NULL. In that case, the call is ignored
+ *               and a warning is logged.
+ * @param name   Name of the uniform. Must not be NULL.
+ * @param value  Pointer to the uniform value. Must not be NULL.
  */
 R3DAPI void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* name, const void* value);
 
@@ -93,8 +95,10 @@ R3DAPI void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* nam
  * Supported samplers:
  * sampler1D, sampler2D, sampler3D, samplerCube
  *
- * @param shader Target screen shader.
- * @param name Name of the sampler uniform.
+ * @param shader  Target screen shader.
+ *                May be NULL. In that case, the call is ignored
+ *                and a warning is logged.
+ * @param name    Name of the sampler uniform. Must not be NULL.
  * @param texture Texture to bind to the sampler.
  */
 R3DAPI void R3D_SetScreenShaderSampler(R3D_ScreenShader* shader, const char* name, Texture texture);

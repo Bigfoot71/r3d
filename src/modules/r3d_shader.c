@@ -1326,6 +1326,8 @@ void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data)
 
 bool r3d_shader_set_custom_uniform(r3d_shader_custom_t* shader, const char* name, const void* value)
 {
+    assert(shader != NULL);
+
     for (int i = 0; i < R3D_MAX_SHADER_UNIFORMS && shader->uniforms.entries[i].name[0] != '\0'; i++) {
         if (strcmp(shader->uniforms.entries[i].name, name) == 0) {
             int offset = shader->uniforms.entries[i].offset;
@@ -1340,6 +1342,8 @@ bool r3d_shader_set_custom_uniform(r3d_shader_custom_t* shader, const char* name
 
 bool r3d_shader_set_custom_sampler(r3d_shader_custom_t* shader, const char* name, Texture texture)
 {
+    assert(shader != NULL);
+
     for (int i = 0; i < R3D_MAX_SHADER_SAMPLERS && shader->samplers[i].name[0] != '\0'; i++) {
         if (strcmp(shader->samplers[i].name, name) == 0) {
             shader->samplers->texture = texture.id;
@@ -1351,6 +1355,8 @@ bool r3d_shader_set_custom_sampler(r3d_shader_custom_t* shader, const char* name
 
 void r3d_shader_bind_custom_uniforms(r3d_shader_custom_t* shader)
 {
+    assert(shader != NULL);
+
     if (shader->uniforms.bufferId == 0) return;
 
     if (shader->uniforms.dirty) {
@@ -1364,6 +1370,8 @@ void r3d_shader_bind_custom_uniforms(r3d_shader_custom_t* shader)
 
 void r3d_shader_bind_custom_samplers(r3d_shader_custom_t* shader)
 {
+    assert(shader != NULL);
+
     for (int i = 0; i < R3D_MAX_SHADER_SAMPLERS && shader->samplers[i].name[0] != '\0'; i++)
     {
         r3d_shader_sampler_t sampler = R3D_SHADER_SAMPLER_CUSTOM_2D;
