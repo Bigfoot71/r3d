@@ -188,15 +188,15 @@ void main()
     vec3 finalTangent = mat3(uMatNormal) * localTangent;
 
     if (uInstancing) {
-        billboardCenter += iPosition;
-        finalPosition = finalPosition * iScale;
-        finalPosition = M_Rotate3D(finalPosition, iRotation);
-        finalPosition = finalPosition + iPosition;
-        finalNormal = M_Rotate3D(finalNormal, iRotation);
-        finalTangent = M_Rotate3D(finalTangent, iRotation);
+        billboardCenter += INSTANCE_POSITION;
+        finalPosition = finalPosition * INSTANCE_SCALE;
+        finalPosition = M_Rotate3D(finalPosition, INSTANCE_ROTATION);
+        finalPosition = finalPosition + INSTANCE_POSITION;
+        finalNormal = M_Rotate3D(finalNormal, INSTANCE_ROTATION);
+        finalTangent = M_Rotate3D(finalTangent, INSTANCE_ROTATION);
 
     #if defined(DECAL)
-        mat4 iMatModel = MatrixTransform(iPosition, iRotation, iScale);
+        mat4 iMatModel = MatrixTransform(INSTANCE_POSITION, INSTANCE_ROTATION, INSTANCE_SCALE);
         finalMatModel = iMatModel * finalMatModel;
     #endif // DECAL
     }
@@ -224,7 +224,7 @@ void main()
     vPosition = finalPosition;
     vTexCoord = TEXCOORD;
     vEmission = EMISSION;
-    vColor = COLOR;
+    vColor = COLOR * INSTANCE_COLOR;
     vTBN = mat3(T, B, N);
 
 #if defined(GEOMETRY)
