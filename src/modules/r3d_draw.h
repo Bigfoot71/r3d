@@ -62,9 +62,8 @@
              _i++, _keep = 1)                                                   \
             for (const r3d_draw_call_t* call =                                  \
                  &R3D_MOD_DRAW.calls[R3D_MOD_DRAW.list[_lists[_list_idx]].calls[_i]]; \
-                 _keep && (cond) && (!frustum || r3d_draw_call_is_visible(call, frustum)); \
+                 _keep && (cond) && (!(frustum) || r3d_draw_call_is_visible(call, (frustum))); \
                  _keep = 0)
-
 
 /*
  * glDrawArrays call on the 3-vertcies dummy VAO for screen-space rendering.
