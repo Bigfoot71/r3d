@@ -15,6 +15,36 @@
 #include "./r3d_core_state.h"
 
 // ========================================
+// INTERNAL FUNCTIONS
+// ========================================
+
+static bool r3d_load_model_components(R3D_Model* model, const R3D_Importer* importer)
+{
+    if (!r3d_importer_load_meshes(importer, model)) {
+        return false;
+    }
+
+    if (!r3d_importer_load_skeleton(importer, &model->skeleton)) {
+        return false;
+    }
+
+    r3d_importer_texture_cache_t* textureCache = NULL;
+    textureCache = r3d_importer_load_texture_cache(importer, R3D.colorSpace, R3D.textureFilter);
+    if (textureCache == NULL) {
+        return false;
+    }
+
+    if (!r3d_importer_load_materials(importer, model, textureCache)) {
+        r3d_importer_unload_texture_cache(textureCache, true);
+        return false;
+    }
+
+    r3d_importer_unload_texture_cache(textureCache, false);
+
+    return true;
+}
+
+// ========================================
 // PUBLIC API
 // ========================================
 
@@ -56,7 +86,7 @@ R3D_Model R3D_LoadModelFromMemoryEx(const void* data, unsigned int size, const c
     return model;
 }
 
-R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
+R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 {
     R3D_Model model = {0};
 
@@ -65,31 +95,18 @@ R3DAPI R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
         return model;
     }
 
-    r3d_importer_texture_cache_t* textureCache = NULL;
+    if (r3d_load_model_components(&model, importer)) {
+        R3D_TRACELOG(LOG_INFO, "Model loaded successfully: '%s'", importer->name);
+        R3D_TRACELOG(LOG_INFO, "    > Materials count: %i", model.materialCount);
+        R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
+        R3D_TRACELOG(LOG_INFO, "    > Bones count: %i", model.skeleton.boneCount);
+    }
+    else {
+        R3D_UnloadModel(model, false);
+        memset(&model, 0, sizeof(model));
 
-    if (!r3d_importer_load_meshes(importer, &model)) goto fail;
-    if (!r3d_importer_load_skeleton(importer, &model.skeleton)) goto fail;
-
-    textureCache = r3d_importer_load_texture_cache(importer, R3D.colorSpace, R3D.textureFilter);
-    if (textureCache == NULL) goto fail;
-
-    if (!r3d_importer_load_materials(importer, &model, textureCache)) goto fail;
-
-    r3d_importer_unload_texture_cache(textureCache, false);
-
-    R3D_TRACELOG(LOG_INFO, "Model loaded successfully: '%s'", importer->name);
-    R3D_TRACELOG(LOG_INFO, "    > Materials count: %i", model.materialCount);
-    R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
-    R3D_TRACELOG(LOG_INFO, "    > Bones count: %i", model.skeleton.boneCount);
-
-    return model;
-
-fail:
-    r3d_importer_unload_texture_cache(textureCache, true);
-    R3D_UnloadModel(model, false);
-    memset(&model, 0, sizeof(model));
-
-    R3D_TRACELOG(LOG_WARNING, "Failed to load model: '%s'", importer->name);
+        R3D_TRACELOG(LOG_WARNING, "Failed to load model: '%s'", importer->name);
+    }
 
     return model;
 }
