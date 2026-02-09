@@ -111,14 +111,6 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 | `INSTANCE_COLOR` | `vec4` | Instance color |
 | `INSTANCE_CUSTOM` | `vec4` | Custom user-defined instance data |
 
-**Example:**
-```glsl
-void vertex() {
-    POSITION *= 1.5; // Scale vertex position
-    COLOR.rgb *= 0.5; // Darken vertex color
-}
-```
-
 **Instance Variables:**
 
 The `INSTANCE_*` variables are always available, even for non-instanced rendering.
