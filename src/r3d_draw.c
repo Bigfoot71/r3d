@@ -267,6 +267,7 @@ void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
     }
 
     r3d_draw_group_t drawGroup = {0};
+    drawGroup.aabb = mesh.aabb;
     drawGroup.transform = transform;
 
     r3d_draw_group_push(&drawGroup);
@@ -474,6 +475,10 @@ void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform)
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
     r3d_draw_group_t drawGroup = {0};
+    drawGroup.aabb = (BoundingBox) {
+        .min = {-0.5f, -0.5f, -0.5f},
+        .max = { 0.5f,  0.5f,  0.5f}
+    };
     drawGroup.transform = transform;
 
     r3d_draw_group_push(&drawGroup);
