@@ -17,6 +17,7 @@ vec3 INSTANCE_POSITION;
 vec4 INSTANCE_ROTATION;
 vec3 INSTANCE_SCALE;
 vec4 INSTANCE_COLOR;
+vec4 INSTANCE_CUSTOM;
 
 #define vertex()
 
@@ -26,6 +27,7 @@ void SceneVertex()
     INSTANCE_ROTATION = iRotation;
     INSTANCE_SCALE = iScale;
     INSTANCE_COLOR = iColor;
+    INSTANCE_CUSTOM = iCustom;
 
     POSITION = aPosition;
     TEXCOORD = uTexCoordOffset + aTexCoord * uTexCoordScale;

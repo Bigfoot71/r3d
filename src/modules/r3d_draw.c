@@ -73,6 +73,10 @@ static void setup_shape_vertex_attribs(void)
     // instance color (vec4) (disabled)
     glVertexAttribDivisor(13, 1);
     glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
+
+    // instance custom (vec4) (disabled)
+    glVertexAttribDivisor(14, 1);
+    glVertexAttrib4f(14, 0.0f, 0.0f, 0.0f, 0.0f);
 }
 
 static void load_shape(r3d_draw_shape_t* shape, const R3D_Vertex* verts, int vertCount, const GLubyte* indices, int idxCount)
@@ -805,6 +809,15 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     }
     else {
         glDisableVertexAttribArray(13);
+    }
+
+    if (BIT_TEST(instances->flags, R3D_INSTANCE_CUSTOM)) {
+        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[4]);
+        glEnableVertexAttribArray(14);
+        glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), 0);
+    }
+    else {
+        glDisableVertexAttribArray(14);
     }
 
     if (elemCount == 0) {

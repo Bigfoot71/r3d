@@ -22,7 +22,8 @@ static const size_t INSTANCE_ATTRIBUTE_SIZE[R3D_INSTANCE_ATTRIBUTE_COUNT] = {
     /* POSITION */  sizeof(Vector3),
     /* ROTATION */  sizeof(Quaternion),
     /* SCALE    */  sizeof(Vector3),
-    /* COLOR    */  sizeof(Color)
+    /* COLOR    */  sizeof(Color),
+    /* CUSTOM   */  sizeof(Vector4),
 };
 
 // ========================================

@@ -91,6 +91,10 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
     glVertexAttribDivisor(13, 1);
     glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
 
+    // instance color (vec4) (disabled)
+    glVertexAttribDivisor(14, 1);
+    glVertexAttrib4f(14, 0.0f, 0.0f, 0.0f, 0.0f);
+
     // EBO if indices present
     if (data.indexCount > 0 && data.indices) {
         glGenBuffers(1, &mesh.ebo);

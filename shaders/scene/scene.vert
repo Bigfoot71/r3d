@@ -34,6 +34,7 @@ layout(location = 10) in vec3 iPosition;
 layout(location = 11) in vec4 iRotation;
 layout(location = 12) in vec3 iScale;
 layout(location = 13) in vec4 iColor;
+layout(location = 14) in vec4 iCustom;
 
 /* === Uniforms === */
 
