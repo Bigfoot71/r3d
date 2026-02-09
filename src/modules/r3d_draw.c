@@ -709,18 +709,38 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
 
 bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
 {
-    // If the parent group is not visible, discard this call immediately
-    // Then, if the call count for the group is one, it means it has already been tested
-    // Finally, if the group represents instances or a skinned model, rely only on the group's visibility
-
+    // Get the draw call's parent group and its visibility state
     int callIndex = get_draw_call_index(call);
     int groupIndex = R3D_MOD_DRAW.groupIndices[callIndex];
     const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
+    r3d_draw_visibility_enum_t groupVisibility = R3D_MOD_DRAW.groupVisibility[groupIndex].visible;
 
-    if (!R3D_MOD_DRAW.groupVisibility[groupIndex].visible) return false;
-    if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) return true;
-    if (r3d_draw_has_instances(group) || group->texPose > 0) return true;
+    // If the group was already culled, reject immediately
+    if (groupVisibility == R3D_DRAW_VISBILITY_FALSE) {
+        return false;
+    }
 
+    // If the group passed culling, check if we can skip per-call testing
+    if (groupVisibility == R3D_DRAW_VISBILITY_TRUE) {
+        // Single-call groups were already tested at the group level
+        if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) {
+            return true;
+        }
+        // Instanced/skinned groups: trust the group-level test
+        if (r3d_draw_has_instances(group) || group->texPose > 0) {
+            return true;
+        }
+        // Multi-call group: fall through to individual call testing
+    }
+    // If the group hasn't been tested yet, check instanced/skinned groups now
+    else if (groupVisibility == R3D_DRAW_VISBILITY_UNKNOWN) {
+        if (r3d_draw_has_instances(group) || group->texPose > 0) {
+            return frustum_test_aabb(frustum, &group->aabb, &group->transform);
+        }
+        // Regular multi-call group: fall through to individual call testing
+    }
+
+    // Test this specific draw call against the frustum
     return frustum_test_draw_call(frustum, call, &group->transform);
 }
 
