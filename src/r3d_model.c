@@ -18,7 +18,7 @@
 // INTERNAL FUNCTIONS
 // ========================================
 
-static bool r3d_load_model_components(R3D_Model* model, const R3D_Importer* importer)
+static bool load_model_components(R3D_Model* model, const R3D_Importer* importer)
 {
     if (!r3d_importer_load_meshes(importer, model)) {
         return false;
@@ -95,7 +95,7 @@ R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
         return model;
     }
 
-    if (r3d_load_model_components(&model, importer)) {
+    if (load_model_components(&model, importer)) {
         R3D_TRACELOG(LOG_INFO, "Model loaded successfully: '%s'", importer->name);
         R3D_TRACELOG(LOG_INFO, "    > Materials count: %i", model.materialCount);
         R3D_TRACELOG(LOG_INFO, "    > Meshes count: %i", model.meshCount);
