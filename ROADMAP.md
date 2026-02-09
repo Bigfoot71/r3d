@@ -2,6 +2,12 @@
 
 ## **v0.9**
 
+* [ ] **Refactor internal `r3d_draw` module**
+  Centralize all drawing-related functionality and drawable objects, including VAO management, which is currently scattered.
+
+* [ ] **Redesign internal shader macro system**
+  Rethink the current macro-based approach for managing shaders to improve clarity and maintainability.
+
 * [ ] **Explore alternative SSGI approaches**
   The current SSIL-VB used as a cheap SSGI solution is far from ideal and difficult to tune.
   Investigating more stable and production-ready SSGI techniques would be beneficial.
@@ -14,6 +20,9 @@
 * [ ] **Material loading/import helpers**
   Similar to existing skeleton and animation loading utilities, it would be useful to provide
   helper functions to import materials from files when needed.
+
+* [ ] **Consider `R3D_Camera` type (maybe)**
+  Think about introducing a dedicated camera type that handles `cullMask` per camera (instead of using global state) and manages `near/far` parameters directly, removing the last dependency on `rlgl`.
 
 ## **Ideas (Not Planned Yet)**
 
