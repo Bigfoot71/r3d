@@ -402,7 +402,7 @@ static void sort_fill_cache_front_to_back(r3d_draw_list_enum_t list)
         r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
 
         sortData->distance = calculate_center_distance_to_camera(
-            &call->mesh.instance.aabb, &group->transform
+            &call->mesh.instance.aabb, &group->aabbMatrix
         );
         
         sort_fill_material_data(sortData, call);
@@ -424,7 +424,7 @@ static void sort_fill_cache_back_to_front(r3d_draw_list_enum_t list)
         r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
 
         sortData->distance = calculate_max_distance_to_camera(
-            &call->mesh.instance.aabb, &group->transform
+            &call->mesh.instance.aabb, &group->aabbMatrix
         );
 
         // For back-to-front (transparency), we don't sort by material.
@@ -702,11 +702,10 @@ void r3d_draw_cull_groups(const r3d_frustum_t* frustum)
 
             // If cluster is visible, test the group
             if (cluster->visible == R3D_DRAW_VISBILITY_TRUE) {
-                // For instanced/skinned: trust cluster visibility
+                // For instanced: trust cluster visibility
                 // For others: test group AABB individually
-                visibility->visible =
-                    r3d_draw_has_instances(group) || (group->texPose > 0) ||
-                    frustum_test_aabb(frustum, &group->aabb, &group->transform);
+                if (r3d_draw_has_instances(group)) visibility->visible = R3D_DRAW_VISBILITY_TRUE;
+                else visibility->visible = frustum_test_aabb(frustum, &group->aabb, &group->aabbMatrix);
             }
             else {
                 visibility->visible = R3D_DRAW_VISBILITY_FALSE;
@@ -714,11 +713,10 @@ void r3d_draw_cull_groups(const r3d_frustum_t* frustum)
         }
         // Branch 2: Group without cluster
         else {
-            // For instanced/skinned: always visible (TODO: improve skinned case)
+            // For instanced: always visible
             // For others: test group AABB
-            visibility->visible =
-                r3d_draw_has_instances(group) || (group->texPose > 0) ||
-                frustum_test_aabb(frustum, &group->aabb, &group->transform);
+            if (r3d_draw_has_instances(group)) visibility->visible = R3D_DRAW_VISBILITY_TRUE;
+            else visibility->visible = frustum_test_aabb(frustum, &group->aabb, &group->aabbMatrix);
         }
     }
 }
@@ -751,13 +749,13 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
     // If the group hasn't been tested yet, check instanced/skinned groups now
     else if (groupVisibility == R3D_DRAW_VISBILITY_UNKNOWN) {
         if (r3d_draw_has_instances(group) || group->texPose > 0) {
-            return frustum_test_aabb(frustum, &group->aabb, &group->transform);
+            return frustum_test_aabb(frustum, &group->aabb, &group->aabbMatrix);
         }
         // Regular multi-call group: fall through to individual call testing
     }
 
     // Test this specific draw call against the frustum
-    return frustum_test_draw_call(frustum, call, &group->transform);
+    return frustum_test_draw_call(frustum, call, &group->aabbMatrix);
 }
 
 void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode)

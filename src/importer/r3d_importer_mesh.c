@@ -385,6 +385,15 @@ bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model)
         model->aabb.max = Vector3Max(model->aabb.max, model->meshes[i].aabb.max);
     }
 
+    // Slightly expands the bounding box of skinned models
+    if (scene->mNumSkeletons > 0) {
+        Vector3 center = Vector3Scale(Vector3Add(model->aabb.min, model->aabb.max), 0.5f);
+        Vector3 halfSz = Vector3Scale(Vector3Subtract(model->aabb.max, model->aabb.min), 0.5f);
+        halfSz = Vector3Multiply(halfSz, (Vector3) {1.4f, 1.2f, 1.4f});
+        model->aabb.min = Vector3Subtract(center, halfSz);
+        model->aabb.max = Vector3Add(center, halfSz);
+    }
+
     return true;
 
 cleanup_and_fail:

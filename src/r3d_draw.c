@@ -256,8 +256,8 @@ void R3D_DrawMesh(R3D_Mesh mesh, R3D_Material material, Vector3 position, float 
 
 void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    Matrix tranform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
-    R3D_DrawMeshPro(mesh, material, tranform);
+    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    R3D_DrawMeshPro(mesh, material, transform);
 }
 
 void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
@@ -267,8 +267,9 @@ void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
     }
 
     r3d_draw_group_t drawGroup = {0};
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.aabb = mesh.aabb;
-    drawGroup.transform = transform;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -292,7 +293,8 @@ void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceB
     }
 
     r3d_draw_group_t drawGroup = {0};
-    drawGroup.transform = transform;
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
@@ -321,8 +323,9 @@ void R3D_DrawModelEx(R3D_Model model, Vector3 position, Quaternion rotation, Vec
 void R3D_DrawModelPro(R3D_Model model, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.aabb = model.aabb;
-    drawGroup.transform = transform;
     drawGroup.texPose = model.skeleton.skinTexture;
 
     r3d_draw_group_push(&drawGroup);
@@ -332,7 +335,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
         const R3D_Mesh* mesh = &model.meshes[i];
 
         if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
-            return;
+            continue;
         }
 
         r3d_draw_call_t drawCall = {0};
@@ -352,12 +355,9 @@ void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int c
 void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
-
-    drawGroup.aabb = model.aabb;
-    drawGroup.transform = transform;
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.texPose = model.skeleton.skinTexture;
-
-    drawGroup.transform = transform;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
@@ -368,7 +368,7 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
         const R3D_Mesh* mesh = &model.meshes[i];
 
         if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
-            return;
+            continue;
         }
 
         r3d_draw_call_t drawCall = {0};
@@ -395,11 +395,17 @@ void R3D_DrawAnimatedModelEx(R3D_Model model, R3D_AnimationPlayer player, Vector
 void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
-
+    drawGroup.modelMatrix = transform;
     drawGroup.aabb = model.aabb;
-    drawGroup.transform = transform;
-    drawGroup.texPose = (player.skinTexture > 0)
-        ? player.skinTexture : model.skeleton.skinTexture;
+
+    if (player.skinTexture) {
+        drawGroup.aabbMatrix = r3d_matrix_multiply(&player.modelPose[0], &transform);
+        drawGroup.texPose = player.skinTexture;
+    }
+    else {
+        drawGroup.aabbMatrix = transform;
+        drawGroup.texPose = model.skeleton.skinTexture;
+    }
 
     r3d_draw_group_push(&drawGroup);
 
@@ -408,7 +414,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
         const R3D_Mesh* mesh = &model.meshes[i];
 
         if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
-            return;
+            continue;
         }
 
         r3d_draw_call_t drawCall = {0};
@@ -428,13 +434,10 @@ void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player,
 void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
     r3d_draw_group_t drawGroup = {0};
-
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.aabb = model.aabb;
-    drawGroup.transform = transform;
-    drawGroup.texPose = (player.skinTexture > 0)
-        ? player.skinTexture : model.skeleton.skinTexture;
-
-    drawGroup.transform = transform;
+    drawGroup.texPose = (player.skinTexture > 0) ? player.skinTexture : model.skeleton.skinTexture;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
@@ -445,7 +448,7 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
         const R3D_Mesh* mesh = &model.meshes[i];
 
         if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
-            return;
+            continue;
         }
 
         r3d_draw_call_t drawCall = {0};
@@ -459,7 +462,7 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
 
 void R3D_DrawDecal(R3D_Decal decal, Vector3 position, float scale)
 {
-    Matrix transform = r3d_matrix_scale_translate((Vector3) { scale, scale, scale }, position);
+    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
     R3D_DrawDecalPro(decal, transform);
 }
 
@@ -475,11 +478,12 @@ void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform)
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
     r3d_draw_group_t drawGroup = {0};
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.aabb = (BoundingBox) {
         .min = {-0.5f, -0.5f, -0.5f},
         .max = { 0.5f,  0.5f,  0.5f}
     };
-    drawGroup.transform = transform;
 
     r3d_draw_group_push(&drawGroup);
 
@@ -501,7 +505,8 @@ void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
     r3d_draw_group_t drawGroup = {0};
-    drawGroup.transform = transform;
+    drawGroup.modelMatrix = transform;
+    drawGroup.aabbMatrix = transform;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
@@ -675,7 +680,7 @@ void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light
 
     /* --- Send matrices --- */
 
-    R3D_SHADER_SET_MAT4_OPT(scene.depth, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.depth, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.depth, shader, uMatViewProj, *viewProj);
 
     /* --- Send skinning related data --- */
@@ -757,7 +762,7 @@ void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_
 
     /* --- Send matrices --- */
 
-    R3D_SHADER_SET_MAT4_OPT(scene.depthCube, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.depthCube, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.depthCube, shader, uMatViewProj, *viewProj);
 
     /* --- Send skinning related data --- */
@@ -837,10 +842,10 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Send matrices --- */
 
-    Matrix matNormal = r3d_matrix_normal(&group->transform);
+    Matrix matNormal = r3d_matrix_normal(&group->modelMatrix);
 
     R3D_SHADER_SET_MAT4_OPT(scene.probe, shader, uMatInvView, *invView);
-    R3D_SHADER_SET_MAT4_OPT(scene.probe, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.probe, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.probe, shader, uMatNormal, matNormal);
     R3D_SHADER_SET_MAT4_OPT(scene.probe, shader, uMatViewProj, *viewProj);
 
@@ -917,9 +922,9 @@ void raster_geometry(const r3d_draw_call_t* call, bool matchPrepass)
 
     /* --- Send matrices --- */
 
-    Matrix matNormal = r3d_matrix_normal(&group->transform);
+    Matrix matNormal = r3d_matrix_normal(&group->modelMatrix);
 
-    R3D_SHADER_SET_MAT4_OPT(scene.geometry, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.geometry, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.geometry, shader, uMatNormal, matNormal);
 
     /* --- Send skinning related data --- */
@@ -1009,9 +1014,9 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Set additional matrix uniforms --- */
 
-    Matrix matNormal = r3d_matrix_normal(&group->transform);
+    Matrix matNormal = r3d_matrix_normal(&group->modelMatrix);
 
-    R3D_SHADER_SET_MAT4_OPT(scene.decal, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.decal, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.decal, shader, uMatNormal, matNormal);
 
     /* --- Skinning is never used for decals --- */
@@ -1085,9 +1090,9 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Send matrices --- */
 
-    Matrix matNormal = r3d_matrix_normal(&group->transform);
+    Matrix matNormal = r3d_matrix_normal(&group->modelMatrix);
 
-    R3D_SHADER_SET_MAT4_OPT(scene.forward, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.forward, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.forward, shader, uMatNormal, matNormal);
 
     /* --- Send skinning related data --- */
@@ -1163,9 +1168,9 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Send matrices --- */
 
-    Matrix matNormal = r3d_matrix_normal(&group->transform);
+    Matrix matNormal = r3d_matrix_normal(&group->modelMatrix);
 
-    R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatModel, group->modelMatrix);
     R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatNormal, matNormal);
 
     R3D_SHADER_SET_MAT4_OPT(scene.unlit, shader, uMatInvView, *invView);
