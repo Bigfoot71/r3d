@@ -567,6 +567,7 @@ void r3d_draw_clear(void)
     R3D_MOD_DRAW.numGroups = 0;
     R3D_MOD_DRAW.numCalls = 0;
 
+    R3D_MOD_DRAW.groupCulled = false;
     R3D_MOD_DRAW.hasDeferred = false;
     R3D_MOD_DRAW.hasPrepass = false;
     R3D_MOD_DRAW.hasForward = false;
@@ -671,24 +672,38 @@ r3d_draw_group_t* r3d_draw_get_call_group(const r3d_draw_call_t* call)
     return group;
 }
 
-void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
+void r3d_draw_cull_groups(const r3d_frustum_t* frustum)
 {
+    // Reset visibility states if groups were already culled in a previous pass
+    if (R3D_MOD_DRAW.groupCulled) {
+        for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++) {
+            R3D_MOD_DRAW.groupVisibility[i].visible = R3D_DRAW_VISBILITY_UNKNOWN;
+        }
+        for (int i = 0; i < R3D_MOD_DRAW.numClusters; i++) {
+            R3D_MOD_DRAW.clusters[i].visible = R3D_DRAW_VISBILITY_UNKNOWN;
+        }
+    }
+    R3D_MOD_DRAW.groupCulled = true;
+
+    // Perform frustum culling for each group
     for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++)
     {
         r3d_draw_group_visibility_t* visibility = &R3D_MOD_DRAW.groupVisibility[i];
         const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[i];
-        const BoundingBox* aabb = &group->aabb;
 
+        // Branch 1: Group belongs to a cluster
         if (visibility->clusterIndex >= 0) {
             r3d_draw_cluster_t* cluster = &R3D_MOD_DRAW.clusters[visibility->clusterIndex];
 
+            // Test cluster once (shared by multiple groups)
             if (cluster->visible == R3D_DRAW_VISBILITY_UNKNOWN) {
                 cluster->visible = frustum_test_aabb(frustum, &cluster->aabb, NULL);
             }
 
+            // If cluster is visible, test the group
             if (cluster->visible == R3D_DRAW_VISBILITY_TRUE) {
-                // If the group represents multiple instances or a skinned model, rely only on the cluster visibility
-                // TODO: It would be better to find an improved method for skinned models
+                // For instanced/skinned: trust cluster visibility
+                // For others: test group AABB individually
                 visibility->visible =
                     r3d_draw_has_instances(group) || (group->texPose > 0) ||
                     frustum_test_aabb(frustum, &group->aabb, &group->transform);
@@ -697,9 +712,10 @@ void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum)
                 visibility->visible = R3D_DRAW_VISBILITY_FALSE;
             }
         }
+        // Branch 2: Group without cluster
         else {
-            // If the group represents multiple instances or a skinned model, consider to be always visible
-            // TODO: It would be better to find an improved method for skinned models
+            // For instanced/skinned: always visible (TODO: improve skinned case)
+            // For others: test group AABB
             visibility->visible =
                 r3d_draw_has_instances(group) || (group->texPose > 0) ||
                 frustum_test_aabb(frustum, &group->aabb, &group->transform);

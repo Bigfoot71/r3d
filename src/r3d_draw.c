@@ -144,7 +144,7 @@ void R3D_End(void)
 
     /* --- Cull groups and sort all draw calls before rendering --- */
 
-    r3d_draw_compute_visible_groups(&R3D.viewState.frustum);
+    r3d_draw_cull_groups(&R3D.viewState.frustum);
 
     r3d_draw_sort_list(R3D_DRAW_LIST_OPAQUE, R3D.viewState.position, R3D_DRAW_SORT_FRONT_TO_BACK);
     r3d_draw_sort_list(R3D_DRAW_LIST_TRANSPARENT, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
@@ -1241,7 +1241,7 @@ void pass_scene_shadow(void)
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 const r3d_frustum_t* frustum = &light->frustum[iFace];
-                r3d_draw_compute_visible_groups(frustum);
+                r3d_draw_cull_groups(frustum);
 
                 #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
                 R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_PACKLIST_SHADOW) {
@@ -1257,7 +1257,7 @@ void pass_scene_shadow(void)
             glClear(GL_DEPTH_BUFFER_BIT);
 
             const r3d_frustum_t* frustum = &light->frustum[0];
-            r3d_draw_compute_visible_groups(frustum);
+            r3d_draw_cull_groups(frustum);
 
             #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
             R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_PACKLIST_SHADOW) {
@@ -1283,7 +1283,7 @@ void pass_scene_probes(void)
             /* --- Generates the list of visible groups for the current face of the capture --- */
 
             const r3d_frustum_t* frustum = &probe->frustum[iFace];
-            r3d_draw_compute_visible_groups(frustum);
+            r3d_draw_cull_groups(frustum);
 
             /* --- Render scene --- */
 

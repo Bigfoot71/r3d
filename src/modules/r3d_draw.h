@@ -288,6 +288,7 @@ extern struct r3d_draw {
     int numCalls;                                   //< Number of active draw calls
     int capacity;                                   //< Allocated capacity for all arrays (in number of elements)
 
+    bool groupCulled;                               // Indicates if groups already culled (controls visibility reset)
     bool hasDeferred;                               //< If there are any deferred calls (lit opaque)
     bool hasPrepass;                                //< If there are any prepass calls (lit opaque / lit transparent)
     bool hasForward;                                //< If there are any forward calls (unlit opaque / transparent)
@@ -351,11 +352,11 @@ r3d_draw_group_t* r3d_draw_get_call_group(const r3d_draw_call_t* call);
  * Builds the list of groups that are visible inside the given frustum.
  * Must be called before issuing visibility tests with the same frustum.
  */
-void r3d_draw_compute_visible_groups(const r3d_frustum_t* frustum);
+void r3d_draw_cull_groups(const r3d_frustum_t* frustum);
 
 /*
  * Returns true if the draw call is visible within the given frustum.
- * Uses both per-call culling and the results produced by `r3d_draw_compute_visible_groups()`
+ * Uses both per-call culling and the results produced by `r3d_draw_cull_groups()`
  * Make sure to compute visible groups with the same frustum before calling this function.
  */
 bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum);
