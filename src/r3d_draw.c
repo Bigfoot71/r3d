@@ -161,6 +161,9 @@ void R3D_End(void)
     r3d_target_t ssilSource = R3D_TARGET_INVALID;
     r3d_target_t ssrSource = R3D_TARGET_INVALID;
 
+    r3d_driver_set_depth_mask(GL_TRUE);
+    r3d_driver_set_stencil_mask(0xFF);
+
     if (r3d_draw_has_deferred() || r3d_draw_has_prepass()) {
         R3D_TARGET_CLEAR(true, R3D_TARGET_ALL_DEFERRED);
 

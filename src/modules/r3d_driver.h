@@ -97,6 +97,11 @@ void r3d_driver_set_stencil_func(GLenum func, uint8_t ref, uint8_t mask);
 void r3d_driver_set_stencil_op(GLenum fail, GLenum zFail, GLenum zPass);
 
 /*
+ * Sets the stencil mask.
+ */
+void r3d_driver_set_stencil_mask(uint8_t mask);
+
+/*
  * Sets the blend equation and blend factors.
  */
 void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFactor);

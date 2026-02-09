@@ -345,6 +345,14 @@ void r3d_driver_set_stencil_op(GLenum fail, GLenum zFail, GLenum zPass)
     }
 }
 
+void r3d_driver_set_stencil_mask(uint8_t mask)
+{
+    if (CHECK_PIPE(stencilMask, byte, mask)) {
+        SET_PIPE(stencilMask, byte, mask);
+        glStencilMask(mask);
+    }
+}
+
 void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFactor)
 {
     if (CHECK_PIPE(blendEquation, enum, equation)) {
