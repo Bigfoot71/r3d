@@ -672,6 +672,8 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
 
 bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated)
 {
+    if (light->shadowLayer < 0) return false;
+
     bool shouldUpdate = light->state.shadowShouldBeUpdated;
 
     if (willBeUpdated) {
