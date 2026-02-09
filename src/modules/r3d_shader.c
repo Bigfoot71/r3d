@@ -817,7 +817,7 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_BLT(r3d_shader_scene_depth_cube_t, scene, depthCube);
+    DECL_SHADER_OPT(r3d_shader_scene_depth_cube_t, scene, depthCube, custom);
 
     const char* VS_DEFINES[] = {"STAGE_VERT", "DEPTH_CUBE"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DEPTH_CUBE"};
