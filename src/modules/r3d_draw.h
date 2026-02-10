@@ -195,10 +195,9 @@ typedef struct {
  * All draw calls pushed after a group inherit its transform, skeleton, and instancing data.
  */
 typedef struct {
-    Matrix modelMatrix;             //< Model transformation matrix
-    Matrix aabbMatrix;              //< AABB transformation matrix for culling
+    Matrix transform;               //< Model transformation matrix
     BoundingBox aabb;               //< AABB of all drawables contained in the group
-    GLuint texPose;                 //< Texture that contains the bone matrices (can be 0 for non-skinned)
+    GLuint skinTexture;             //< Texture that contains the bone matrices (can be 0 for non-skinned)
     R3D_InstanceBuffer instances;   //< Instance buffer to use
     int instanceCount;              //< Number of instances
 } r3d_draw_group_t;
