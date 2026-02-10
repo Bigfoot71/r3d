@@ -335,49 +335,30 @@ usage_hint_t parse_pragma_usage(const char** ptr)
 const char* get_usage_hint_string(usage_hint_t hints)
 {
     static char buffer[128];
-
+    char *p = buffer;
+    
     if (hints == 0) {
         return "None";
     }
 
-    buffer[0] = '\0';
-    int first = 1;
+    *p = '\0';
+    
+    #define APPEND(str) do { \
+        if (p != buffer) { *p++ = ','; *p++ = ' '; } \
+        const char *s = str; \
+        while (*s) *p++ = *s++; \
+    } while(0)
 
-    if (hints & USAGE_HINT_OPAQUE) {
-        strcat(buffer, "Opaque");
-        first = 0;
-    }
-    if (hints & USAGE_HINT_PREPASS) {
-        if (!first) strcat(buffer, ", ");
-        strcat(buffer, "Prepass");
-        first = 0;
-    }
-    if (hints & USAGE_HINT_TRANSPARENT) {
-        if (!first) strcat(buffer, ", ");
-        strcat(buffer, "Transparent");
-        first = 0;
-    }
-    if (hints & USAGE_HINT_UNLIT) {
-        if (!first) strcat(buffer, ", ");
-        strcat(buffer, "Unlit");
-        first = 0;
-    }
-    if (hints & USAGE_HINT_SHADOW) {
-        if (!first) strcat(buffer, ", ");
-        strcat(buffer, "Shadow");
-        first = 0;
-    }
-    if (hints & USAGE_HINT_DECAL) {
-        if (!first) strcat(buffer, ", ");
-        strcat(buffer, "Decal");
-        first = 0;
-    }
-    if (hints & USAGE_HINT_PROBE) {
-        if (!first) strcat(buffer, ", ");
-        strcat(buffer, "Probe");
-        first = 0;
-    }
+    if (hints & USAGE_HINT_OPAQUE) APPEND("Opaque");
+    if (hints & USAGE_HINT_PREPASS) APPEND("Prepass");
+    if (hints & USAGE_HINT_TRANSPARENT) APPEND("Transparent");
+    if (hints & USAGE_HINT_UNLIT) APPEND("Unlit");
+    if (hints & USAGE_HINT_SHADOW) APPEND("Shadow");
+    if (hints & USAGE_HINT_DECAL) APPEND("Decal");
+    if (hints & USAGE_HINT_PROBE) APPEND("Probe");
 
+    #undef APPEND
+    *p = '\0';
     return buffer;
 }
 
