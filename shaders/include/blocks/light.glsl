@@ -68,7 +68,7 @@ vec3 L_Diffuse(float cLdotH, float cNdotV, float cNdotL, float roughness)
 
 vec3 L_Specular(vec3 F0, float cLdotH, float cNdotH, float cNdotV, float cNdotL, float roughness)
 {
-    roughness = max(roughness, 1e-3);
+    roughness = max(roughness, 0.02); // >0.01 to avoid FP16 overflow after GGX distribution
 
     float alphaGGX = roughness * roughness;
     float D = PBR_DistributionGGX(cNdotH, alphaGGX);
