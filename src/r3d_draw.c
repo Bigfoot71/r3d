@@ -1943,7 +1943,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
         r3d_target_set_write_level(0, dstLevel);
 
         r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_BLOOM, dstLevel + 1);
-        R3D_SHADER_SET_FLOAT_BLT(prepare.bloomUp, uSrcLevel, dstLevel + 1);
+        R3D_SHADER_SET_FLOAT_BLT(prepare.bloomUp, uSrcLevel, (float)(dstLevel + 1));
         R3D_SHADER_SET_VEC2_BLT(prepare.bloomUp, uFilterRadius, (Vector2) {
             R3D.environment.bloom.filterRadius * txSrcW,
             R3D.environment.bloom.filterRadius * txSrcH
@@ -2033,8 +2033,8 @@ r3d_target_t pass_post_screen(r3d_target_t sceneTarget)
         R3D_SHADER_BIND_SAMPLER_OVR(shader, post.screen, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
         R3D_SHADER_BIND_SAMPLER_OVR(shader, post.screen, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
-        R3D_SHADER_SET_VEC2_OVR(shader, post.screen, uResolution, (Vector2) {R3D_TARGET_RESOLUTION});
-        R3D_SHADER_SET_VEC2_OVR(shader, post.screen, uTexelSize, (Vector2) {R3D_TARGET_TEXEL_SIZE});
+        R3D_SHADER_SET_VEC2_OVR(shader, post.screen, uResolution, (Vector2) {(float)R3D_TARGET_WIDTH, (float)R3D_TARGET_HEIGHT});
+        R3D_SHADER_SET_VEC2_OVR(shader, post.screen, uTexelSize, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
 
         R3D_DRAW_SCREEN();
     }
@@ -2067,8 +2067,8 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
     R3D_SHADER_USE_BLT(post.fxaa);
 
     R3D_SHADER_BIND_SAMPLER_BLT(post.fxaa, uSourceTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_SET_VEC2_BLT(post.fxaa, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
 
-    R3D_SHADER_SET_VEC2_BLT(post.fxaa, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_SIZE});
     R3D_DRAW_SCREEN();
 
     return sceneTarget;

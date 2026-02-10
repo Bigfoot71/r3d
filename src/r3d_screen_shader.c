@@ -52,7 +52,7 @@ R3D_ScreenShader* R3D_LoadScreenShader(const char* filePath)
 
 R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
 {
-    int userCodeLen = strlen(code);
+    size_t userCodeLen = strlen(code);
     if (userCodeLen > R3D_MAX_SHADER_CODE_LENGTH) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load screen shader; User code too long");
         return NULL;
@@ -135,7 +135,7 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
     *outPtr = '\0';
 
     // Copy transformed code to shader structure
-    int finalLen = strlen(output);
+    size_t finalLen = strlen(output);
     if (finalLen > R3D_MAX_SHADER_CODE_LENGTH) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load screen shader; Transformed code too long");
         RL_FREE(output);

@@ -76,7 +76,7 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int 
         return;
     }
 
-    int attrSize = INSTANCE_ATTRIBUTE_SIZE[index];
+    int attrSize = (int)INSTANCE_ATTRIBUTE_SIZE[index];
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.buffers[index]);
     glBufferSubData(GL_ARRAY_BUFFER, offset * attrSize, count * attrSize, data);

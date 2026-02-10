@@ -83,11 +83,9 @@ typedef enum {
 
 #define R3D_TARGET_WIDTH        R3D_MOD_TARGET.resW
 #define R3D_TARGET_HEIGHT       R3D_MOD_TARGET.resH
-#define R3D_TARGET_RESOLUTION   R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH
 
 #define R3D_TARGET_TEXEL_WIDTH  R3D_MOD_TARGET.txlW
 #define R3D_TARGET_TEXEL_HEIGHT R3D_MOD_TARGET.txlH
-#define R3D_TARGET_TEXEL_SIZE   R3D_MOD_TARGET.txlW, R3D_MOD_TARGET.txlH
 
 #define R3D_TARGET_CLEAR(depth, ...)                                    \
     r3d_target_clear(                                                   \
