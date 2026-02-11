@@ -66,6 +66,9 @@ void load_shape_quad(r3d_render_shape_t* shape)
         VERTS, 4, INDICES, 6, (int)sizeof(uint8_t),
         GL_STATIC_DRAW
     );
+
+    shape->vertexCount = 4;
+    shape->indexCount = 6;
 }
 
 void load_shape_cube(r3d_render_shape_t* shape)
@@ -112,6 +115,9 @@ void load_shape_cube(r3d_render_shape_t* shape)
         VERTS, 24, INDICES, 36, (int)sizeof(uint8_t),
         GL_STATIC_DRAW
     );
+
+    shape->vertexCount = 24;
+    shape->indexCount = 36;
 }
 
 // ========================================
