@@ -14,6 +14,7 @@
 #include <glad.h>
 
 #include "./common/r3d_helper.h"
+#include "./modules/r3d_draw.h"
 
 // ========================================
 // PUBLIC API
@@ -38,76 +39,14 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
         break;
     }
 
-    // Creation of the VAO
-    glGenVertexArrays(1, &mesh.vao);
-    glBindVertexArray(mesh.vao);
+    r3d_draw_create_vertex_array(
+        &mesh.vao, &mesh.vbo, &mesh.ebo,
+        data.vertices, data.vertexCount,
+        data.indices, data.indexCount,
+        (int)sizeof(uint32_t),
+        GL_STATIC_DRAW
+    );
 
-    // Creation of the VBO
-    glGenBuffers(1, &mesh.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER, data.vertexCount * sizeof(R3D_Vertex), data.vertices, glUsage);
-
-    // position (vec3)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
-
-    // texcoord (vec2)
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
-
-    // normal (vec3)
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
-
-    // color (vec4)
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
-
-    // tangent (vec4)
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
-
-    // boneIds (ivec4)
-    glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
-
-    // weights (vec4)
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
-
-    // instance position (vec3) (disabled)
-    glVertexAttribDivisor(10, 1);
-    glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
-
-    // instance rotation (vec4) (disabled)
-    glVertexAttribDivisor(11, 1);
-    glVertexAttrib4f(11, 0.0f, 0.0f, 0.0f, 1.0f);
-
-    // instance scale (vec3) (disabled)
-    glVertexAttribDivisor(12, 1);
-    glVertexAttrib3f(12, 1.0f, 1.0f, 1.0f);
-
-    // instance color (vec4) (disabled)
-    glVertexAttribDivisor(13, 1);
-    glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
-
-    // instance color (vec4) (disabled)
-    glVertexAttribDivisor(14, 1);
-    glVertexAttrib4f(14, 0.0f, 0.0f, 0.0f, 0.0f);
-
-    // EBO if indices present
-    if (data.indexCount > 0 && data.indices) {
-        glGenBuffers(1, &mesh.ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indexCount * sizeof(uint32_t), data.indices, glUsage);
-    }
-
-    // Cleaning
-    glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    // Fill mesh infos
     mesh.vertexCount = mesh.allocVertexCount = data.vertexCount;
     mesh.indexCount = mesh.allocIndexCount = data.indexCount;
     mesh.shadowCastMode = R3D_SHADOW_CAST_ON_AUTO;

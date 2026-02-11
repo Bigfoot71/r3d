@@ -32,73 +32,6 @@ struct r3d_draw R3D_MOD_DRAW;
 // INTERNAL SHAPE FUNCTIONS
 // ========================================
 
-static void setup_shape_vertex_attribs(void)
-{
-    // position (vec3)
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
-
-    // texcoord (vec2)
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
-
-    // normal (vec3)
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
-
-    // color (vec4)
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
-
-    // tangent (vec4)
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
-
-    // boneIds (ivec4) / weights (vec4) - (disabled)
-    glVertexAttrib4iv(5, (int[4]){0, 0, 0, 0});
-    glVertexAttrib4f(6, 0.0f, 0.0f, 0.0f, 0.0f);
-
-    // instance position (vec3) (disabled)
-    glVertexAttribDivisor(10, 1);
-    glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
-
-    // instance rotation (vec4) (disabled)
-    glVertexAttribDivisor(11, 1);
-    glVertexAttrib4f(11, 0.0f, 0.0f, 0.0f, 1.0f);
-
-    // instance scale (vec3) (disabled)
-    glVertexAttribDivisor(12, 1);
-    glVertexAttrib3f(12, 1.0f, 1.0f, 1.0f);
-
-    // instance color (vec4) (disabled)
-    glVertexAttribDivisor(13, 1);
-    glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
-
-    // instance custom (vec4) (disabled)
-    glVertexAttribDivisor(14, 1);
-    glVertexAttrib4f(14, 0.0f, 0.0f, 0.0f, 0.0f);
-}
-
-static void load_shape(r3d_draw_shape_t* shape, const R3D_Vertex* verts, int vertCount, const GLubyte* indices, int idxCount)
-{
-    glGenVertexArrays(1, &shape->vao);
-    glGenBuffers(1, &shape->vbo);
-    glGenBuffers(1, &shape->ebo);
-
-    glBindVertexArray(shape->vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, shape->vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertCount * sizeof(R3D_Vertex), verts, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, shape->ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, idxCount * sizeof(GLubyte), indices, GL_STATIC_DRAW);
-
-    shape->vertexCount = vertCount;
-    shape->indexCount = idxCount;
-
-    setup_shape_vertex_attribs();
-}
-
 typedef void (*draw_shape_loader_func)(r3d_draw_shape_t*);
 
 static void load_shape_dummy(r3d_draw_shape_t* dummy);
@@ -114,7 +47,6 @@ static const draw_shape_loader_func SHAPE_LOADERS[] = {
 void load_shape_dummy(r3d_draw_shape_t* shape)
 {
     glGenVertexArrays(1, &shape->vao);
-    glBindVertexArray(shape->vao);
     shape->vertexCount = 3;
     shape->indexCount = 0;
 }
@@ -128,8 +60,12 @@ void load_shape_quad(r3d_draw_shape_t* shape)
         {{ 0.5f,-0.5f, 0}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
     };
     static const GLubyte INDICES[] = {0, 1, 2, 1, 3, 2};
-    
-    load_shape(shape, VERTS, 4, INDICES, 6);
+
+    r3d_draw_create_vertex_array(
+        &shape->vao, &shape->vbo, &shape->ebo,
+        VERTS, 4, INDICES, 6, (int)sizeof(uint8_t),
+        GL_STATIC_DRAW
+    );
 }
 
 void load_shape_cube(r3d_draw_shape_t* shape)
@@ -170,8 +106,92 @@ void load_shape_cube(r3d_draw_shape_t* shape)
         0,1,2, 2,1,3,   6,5,4, 7,5,6,   8,9,10, 10,9,11,
         12,13,14, 14,13,15,   16,17,18, 18,17,19,   20,21,22, 22,21,23
     };
-    
-    load_shape(shape, VERTS, 24, INDICES, 36);
+
+    r3d_draw_create_vertex_array(
+        &shape->vao, &shape->vbo, &shape->ebo,
+        VERTS, 24, INDICES, 36, (int)sizeof(uint8_t),
+        GL_STATIC_DRAW
+    );
+}
+
+// ========================================
+// INTERNAL INSTANCES FUNCTIONS
+// ========================================
+
+static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT], R3D_InstanceFlags flags)
+{
+    if (BIT_TEST(flags, R3D_INSTANCE_POSITION)) {
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+        glEnableVertexAttribArray(10);
+        glVertexAttribDivisor(10, 1);
+        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+    }
+    else {
+        glDisableVertexAttribArray(10);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_ROTATION)) {
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+        glEnableVertexAttribArray(11);
+        glVertexAttribDivisor(11, 1);
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), 0);
+    }
+    else {
+        glDisableVertexAttribArray(11);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_SCALE)) {
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+        glEnableVertexAttribArray(12);
+        glVertexAttribDivisor(12, 1);
+        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+    }
+    else {
+        glDisableVertexAttribArray(12);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_COLOR)) {
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[3]);
+        glEnableVertexAttribArray(13);
+        glVertexAttribDivisor(13, 1);
+        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), 0);
+    }
+    else {
+        glDisableVertexAttribArray(13);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_CUSTOM)) {
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[4]);
+        glEnableVertexAttribArray(14);
+        glVertexAttribDivisor(14, 1);
+        glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), 0);
+    }
+    else {
+        glDisableVertexAttribArray(14);
+    }
+}
+
+static void disable_instances(R3D_InstanceFlags flags)
+{
+    if (BIT_TEST(flags, R3D_INSTANCE_POSITION)) {
+        glDisableVertexAttribArray(10);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_ROTATION)) {
+        glDisableVertexAttribArray(11);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_SCALE)) {
+        glDisableVertexAttribArray(12);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_COLOR)) {
+        glDisableVertexAttribArray(13);
+    }
+
+    if (BIT_TEST(flags, R3D_INSTANCE_CUSTOM)) {
+        glDisableVertexAttribArray(14);
+    }
 }
 
 // ========================================
@@ -809,50 +829,7 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
     const R3D_InstanceBuffer* instances = &group->instances;
 
-    if (BIT_TEST(instances->flags, R3D_INSTANCE_POSITION)) {
-        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[0]);
-        glEnableVertexAttribArray(10);
-        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
-    }
-    else {
-        glDisableVertexAttribArray(10);
-    }
-
-    if (BIT_TEST(instances->flags, R3D_INSTANCE_ROTATION)) {
-        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[1]);
-        glEnableVertexAttribArray(11);
-        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), 0);
-    }
-    else {
-        glDisableVertexAttribArray(11);
-    }
-
-    if (BIT_TEST(instances->flags, R3D_INSTANCE_SCALE)) {
-        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[2]);
-        glEnableVertexAttribArray(12);
-        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
-    }
-    else {
-        glDisableVertexAttribArray(12);
-    }
-
-    if (BIT_TEST(instances->flags, R3D_INSTANCE_COLOR)) {
-        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[3]);
-        glEnableVertexAttribArray(13);
-        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), 0);
-    }
-    else {
-        glDisableVertexAttribArray(13);
-    }
-
-    if (BIT_TEST(instances->flags, R3D_INSTANCE_CUSTOM)) {
-        glBindBuffer(GL_ARRAY_BUFFER, instances->buffers[4]);
-        glEnableVertexAttribArray(14);
-        glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), 0);
-    }
-    else {
-        glDisableVertexAttribArray(14);
-    }
+    enable_instances(group->instances.buffers, group->instances.flags);
 
     if (elemCount == 0) {
         glDrawArraysInstanced(primitive, 0, vertCount, group->instanceCount);
@@ -860,15 +837,19 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     else {
         glDrawElementsInstanced(primitive, elemCount, elemType, NULL, group->instanceCount);
     }
+
+    disable_instances(group->instances.flags);
 }
 
 void r3d_draw_shape(r3d_draw_shape_enum_t shape)
 {
     r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[shape];
 
-    // NOTE: The loader leaves the vao bound
-    if (buffer->vao == 0) SHAPE_LOADERS[shape](buffer);
-    else glBindVertexArray(buffer->vao);
+    if (buffer->vao == 0) {
+        SHAPE_LOADERS[shape](buffer);
+    }
+
+    glBindVertexArray(buffer->vao);
 
     if (buffer->indexCount > 0) {
         glDrawElements(GL_TRIANGLES, buffer->indexCount, GL_UNSIGNED_BYTE, 0);
@@ -876,4 +857,74 @@ void r3d_draw_shape(r3d_draw_shape_enum_t shape)
     else {
         glDrawArrays(GL_TRIANGLES, 0, buffer->vertexCount);
     }
+}
+
+void r3d_draw_create_vertex_array(
+    GLuint* vao, GLuint* vbo, GLuint* ebo,
+    const R3D_Vertex* vertices, int vertexCount,
+    const void* indices, int indexCount, int indexStride,
+    GLenum usage)
+{
+    glGenVertexArrays(1, vao);
+    glBindVertexArray(*vao);
+
+    glGenBuffers(1, vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        vertexCount * sizeof(R3D_Vertex),
+        vertices,
+        usage
+    );
+
+    // position (vec3)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
+
+    // texcoord (vec2)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
+
+    // normal (vec3)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
+
+    // tangent (vec4)
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
+
+    // color (vec4)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
+
+    // boneIds (ivec4)
+    glEnableVertexAttribArray(5);
+    glVertexAttribIPointer(5, 4, GL_INT, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
+
+    // weights (vec4)
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
+
+    // Instance attributes (disabled)
+    glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
+    glVertexAttrib4f(11, 0.0f, 0.0f, 0.0f, 1.0f);
+    glVertexAttrib3f(12, 1.0f, 1.0f, 1.0f);
+    glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
+    glVertexAttrib4f(14, 0.0f, 0.0f, 0.0f, 0.0f);
+
+    if (indexCount > 0) {
+        glGenBuffers(1, ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            indexCount * indexStride,
+            indices,
+            usage
+        );
+    }
+    else {
+        *ebo = 0;
+    }
+
+    glBindVertexArray(0);
 }

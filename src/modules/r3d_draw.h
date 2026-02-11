@@ -382,6 +382,12 @@ void r3d_draw_instanced(const r3d_draw_call_t* call);
  */
 void r3d_draw_shape(r3d_draw_shape_enum_t shape);
 
+void r3d_draw_create_vertex_array(
+    GLuint* vao, GLuint* vbo, GLuint* ebo,
+    const R3D_Vertex* vertices, int vertexCount,
+    const void* indices, int indexCount, int indexStride,
+    GLenum usage);
+
 // ----------------------------------------
 // INLINE QUERIES
 // ----------------------------------------
