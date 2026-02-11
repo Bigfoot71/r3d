@@ -21,6 +21,9 @@
   Similar to existing skeleton and animation loading utilities, it would be useful to provide
   helper functions to import materials from files when needed.
 
+* [ ] **Review skybox generation**
+  Improve parameter structure and naming, add an optional debanding setting, and support shaders for skyboxes.
+
 * [ ] **Consider `R3D_Camera` type (maybe)**
   Think about introducing a dedicated camera type that handles `cullMask` per camera (instead of using global state) and manages `near/far` parameters directly, removing the last dependency on `rlgl`.
 
