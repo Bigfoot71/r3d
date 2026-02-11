@@ -1980,7 +1980,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
 r3d_target_t pass_post_dof(r3d_target_t sceneTarget)	
 {
-    /* === Calculate CoC === */
+    /* --- Calculate CoC --- */
 
     R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_DOF_COC);
     R3D_SHADER_USE_BLT(prepare.dofCoc);
@@ -1991,7 +1991,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
 
     R3D_DRAW_SCREEN();
 
-    /* === Downsample CoC to half resolution === */
+    /* --- Downsample CoC to half resolution --- */
 
     R3D_TARGET_BIND(false, R3D_TARGET_DOF_0, R3D_TARGET_DEPTH);
     r3d_target_set_write_level(1, 1);
@@ -2003,7 +2003,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
 
     R3D_DRAW_SCREEN();
 
-    /* === Calculate DoF in half resolution === */
+    /* --- Calculate DoF in half resolution --- */
 
     R3D_TARGET_BIND(false, R3D_TARGET_DOF_1);
 
@@ -2014,7 +2014,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
 
     R3D_DRAW_SCREEN();
 
-    /* === Compose DoF with the scene ===  */
+    /* --- Compose DoF with the scene ---  */
 
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE_BLT(post.dof);
