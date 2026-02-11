@@ -252,7 +252,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_shader.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_driver.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_light.c"
-    "${R3D_ROOT_PATH}/src/modules/r3d_draw.c"
+    "${R3D_ROOT_PATH}/src/modules/r3d_render.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_env.c"
     # Core
     "${R3D_ROOT_PATH}/src/r3d_animation_player.c"

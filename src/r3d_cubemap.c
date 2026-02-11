@@ -15,7 +15,7 @@
 
 #include "./modules/r3d_driver.h"
 #include "./modules/r3d_shader.h"
-#include "./modules/r3d_draw.h"
+#include "./modules/r3d_render.h"
 #include "./r3d_core_state.h"
 
 // ========================================
@@ -136,7 +136,7 @@ void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
         glClear(GL_DEPTH_BUFFER_BIT);
 
         R3D_SHADER_SET_MAT4_BLT(prepare.cubemapSkybox, uMatView, R3D.matCubeViews[i]);
-        R3D_DRAW_CUBE();
+        R3D_RENDER_CUBE();
     }
 
     generate_mipmap(cubemap);
@@ -278,7 +278,7 @@ R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
         glClear(GL_DEPTH_BUFFER_BIT);
 
         R3D_SHADER_SET_MAT4_BLT(prepare.cubemapFromEquirectangular, uMatView, R3D.matCubeViews[i]);
-        R3D_DRAW_CUBE();
+        R3D_RENDER_CUBE();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

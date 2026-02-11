@@ -18,7 +18,7 @@
 
 #include "../modules/r3d_driver.h"
 #include "../modules/r3d_shader.h"
-#include "../modules/r3d_draw.h"
+#include "../modules/r3d_render.h"
 #include "../modules/r3d_env.h"
 
 // ========================================
@@ -43,7 +43,7 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, b
     for (int i = 0; i < 6; i++) {
         r3d_env_irradiance_bind_fbo(layerMap, i);
         R3D_SHADER_SET_MAT4_BLT(prepare.cubemapIrradiance, uMatView, R3D.matCubeViews[i]);
-        R3D_DRAW_CUBE();
+        R3D_RENDER_CUBE();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -78,7 +78,7 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize, bo
         for (int i = 0; i < 6; i++) {
             r3d_env_prefilter_bind_fbo(layerMap, i, mip);
             R3D_SHADER_SET_MAT4_BLT(prepare.cubemapPrefilter, uMatView, R3D.matCubeViews[i]);
-            R3D_DRAW_CUBE();
+            R3D_RENDER_CUBE();
         }
     }
 

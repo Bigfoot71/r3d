@@ -20,8 +20,8 @@
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
 #include "./modules/r3d_driver.h"
+#include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
-#include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
 #include "common/r3d_helper.h"
 
@@ -63,8 +63,8 @@ bool R3D_Init(int resWidth, int resHeight)
     if (!r3d_target_init(resWidth, resHeight)) { R3D_TRACELOG(LOG_ERROR, "Failed to init target module"); return false; }
     if (!r3d_shader_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init shader module"); return false; }
     if (!r3d_driver_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init driver module"); return false; }
+    if (!r3d_render_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init render module"); return false; }
     if (!r3d_light_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init light module"); return false; }
-    if (!r3d_draw_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init draw module"); return false; }
     if (!r3d_env_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init env module"); return false; }
 
     R3D_TRACELOG(LOG_INFO, "Initialized successfully (%dx%d)", resWidth, resHeight);
@@ -78,8 +78,8 @@ void R3D_Close(void)
     r3d_target_quit();
     r3d_shader_quit();
     r3d_driver_quit();
+    r3d_render_quit();
     r3d_light_quit();
-    r3d_draw_quit();
     r3d_env_quit();
 }
 
