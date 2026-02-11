@@ -124,15 +124,15 @@ static struct r3d_driver {
 static int get_capability_index(GLenum cap)
 {
     switch (cap) {
-        case GL_BLEND: return CAP_INDEX_BLEND;
-        case GL_CULL_FACE: return CAP_INDEX_CULL_FACE;
-        case GL_DEPTH_TEST: return CAP_INDEX_DEPTH_TEST;
-        case GL_SCISSOR_TEST: return CAP_INDEX_SCISSOR_TEST;
-        case GL_STENCIL_TEST: return CAP_INDEX_STENCIL_TEST;
-        case GL_POLYGON_OFFSET_FILL: return CAP_INDEX_POLYGON_OFFSET_FILL;
-        case GL_POLYGON_OFFSET_LINE: return CAP_INDEX_POLYGON_OFFSET_LINE;
-        case GL_POLYGON_OFFSET_POINT: return CAP_INDEX_POLYGON_OFFSET_POINT;
-        default: break;
+    case GL_BLEND: return CAP_INDEX_BLEND;
+    case GL_CULL_FACE: return CAP_INDEX_CULL_FACE;
+    case GL_DEPTH_TEST: return CAP_INDEX_DEPTH_TEST;
+    case GL_SCISSOR_TEST: return CAP_INDEX_SCISSOR_TEST;
+    case GL_STENCIL_TEST: return CAP_INDEX_STENCIL_TEST;
+    case GL_POLYGON_OFFSET_FILL: return CAP_INDEX_POLYGON_OFFSET_FILL;
+    case GL_POLYGON_OFFSET_LINE: return CAP_INDEX_POLYGON_OFFSET_LINE;
+    case GL_POLYGON_OFFSET_POINT: return CAP_INDEX_POLYGON_OFFSET_POINT;
+    default: break;
     }
     return -1;
 }
@@ -371,15 +371,15 @@ void r3d_driver_set_depth_state(R3D_DepthState state)
 {
     GLenum glFunc;
     switch (state.mode) {
-        case R3D_COMPARE_LESS:     glFunc = GL_LESS; break;
-        case R3D_COMPARE_LEQUAL:   glFunc = GL_LEQUAL; break;
-        case R3D_COMPARE_EQUAL:    glFunc = GL_EQUAL; break;
-        case R3D_COMPARE_GREATER:  glFunc = GL_GREATER; break;
-        case R3D_COMPARE_GEQUAL:   glFunc = GL_GEQUAL; break;
-        case R3D_COMPARE_NOTEQUAL: glFunc = GL_NOTEQUAL; break;
-        case R3D_COMPARE_ALWAYS:   glFunc = GL_ALWAYS; break;
-        case R3D_COMPARE_NEVER:    glFunc = GL_NEVER; break;
-        default:                   glFunc = GL_ALWAYS; break;
+    case R3D_COMPARE_LESS:     glFunc = GL_LESS; break;
+    case R3D_COMPARE_LEQUAL:   glFunc = GL_LEQUAL; break;
+    case R3D_COMPARE_EQUAL:    glFunc = GL_EQUAL; break;
+    case R3D_COMPARE_GREATER:  glFunc = GL_GREATER; break;
+    case R3D_COMPARE_GEQUAL:   glFunc = GL_GEQUAL; break;
+    case R3D_COMPARE_NOTEQUAL: glFunc = GL_NOTEQUAL; break;
+    case R3D_COMPARE_ALWAYS:   glFunc = GL_ALWAYS; break;
+    case R3D_COMPARE_NEVER:    glFunc = GL_NEVER; break;
+    default:                   glFunc = GL_ALWAYS; break;
     }
 
     r3d_driver_set_depth_func(glFunc);
@@ -391,44 +391,44 @@ void r3d_driver_set_stencil_state(R3D_StencilState state)
 {
     GLenum glFunc;
     switch (state.mode) {
-        case R3D_COMPARE_LESS:     glFunc = GL_LESS; break;
-        case R3D_COMPARE_LEQUAL:   glFunc = GL_LEQUAL; break;
-        case R3D_COMPARE_EQUAL:    glFunc = GL_EQUAL; break;
-        case R3D_COMPARE_GREATER:  glFunc = GL_GREATER; break;
-        case R3D_COMPARE_GEQUAL:   glFunc = GL_GEQUAL; break;
-        case R3D_COMPARE_NOTEQUAL: glFunc = GL_NOTEQUAL; break;
-        case R3D_COMPARE_ALWAYS:   glFunc = GL_ALWAYS; break;
-        case R3D_COMPARE_NEVER:    glFunc = GL_NEVER; break;
-        default:                   glFunc = GL_ALWAYS; break;
+    case R3D_COMPARE_LESS:     glFunc = GL_LESS; break;
+    case R3D_COMPARE_LEQUAL:   glFunc = GL_LEQUAL; break;
+    case R3D_COMPARE_EQUAL:    glFunc = GL_EQUAL; break;
+    case R3D_COMPARE_GREATER:  glFunc = GL_GREATER; break;
+    case R3D_COMPARE_GEQUAL:   glFunc = GL_GEQUAL; break;
+    case R3D_COMPARE_NOTEQUAL: glFunc = GL_NOTEQUAL; break;
+    case R3D_COMPARE_ALWAYS:   glFunc = GL_ALWAYS; break;
+    case R3D_COMPARE_NEVER:    glFunc = GL_NEVER; break;
+    default:                   glFunc = GL_ALWAYS; break;
     }
 
     GLenum glOpFail, glOpZFail, glOpPass;
 
     switch (state.opFail) {
-        case R3D_STENCIL_KEEP:    glOpFail = GL_KEEP; break;
-        case R3D_STENCIL_ZERO:    glOpFail = GL_ZERO; break;
-        case R3D_STENCIL_REPLACE: glOpFail = GL_REPLACE; break;
-        case R3D_STENCIL_INCR:    glOpFail = GL_INCR; break;
-        case R3D_STENCIL_DECR:    glOpFail = GL_DECR; break;
-        default:                  glOpFail = GL_KEEP; break;
+    case R3D_STENCIL_KEEP:    glOpFail = GL_KEEP; break;
+    case R3D_STENCIL_ZERO:    glOpFail = GL_ZERO; break;
+    case R3D_STENCIL_REPLACE: glOpFail = GL_REPLACE; break;
+    case R3D_STENCIL_INCR:    glOpFail = GL_INCR; break;
+    case R3D_STENCIL_DECR:    glOpFail = GL_DECR; break;
+    default:                  glOpFail = GL_KEEP; break;
     }
 
     switch (state.opZFail) {
-        case R3D_STENCIL_KEEP:    glOpZFail = GL_KEEP; break;
-        case R3D_STENCIL_ZERO:    glOpZFail = GL_ZERO; break;
-        case R3D_STENCIL_REPLACE: glOpZFail = GL_REPLACE; break;
-        case R3D_STENCIL_INCR:    glOpZFail = GL_INCR; break;
-        case R3D_STENCIL_DECR:    glOpZFail = GL_DECR; break;
-        default:                  glOpZFail = GL_KEEP; break;
+    case R3D_STENCIL_KEEP:    glOpZFail = GL_KEEP; break;
+    case R3D_STENCIL_ZERO:    glOpZFail = GL_ZERO; break;
+    case R3D_STENCIL_REPLACE: glOpZFail = GL_REPLACE; break;
+    case R3D_STENCIL_INCR:    glOpZFail = GL_INCR; break;
+    case R3D_STENCIL_DECR:    glOpZFail = GL_DECR; break;
+    default:                  glOpZFail = GL_KEEP; break;
     }
 
     switch (state.opPass) {
-        case R3D_STENCIL_KEEP:    glOpPass = GL_KEEP; break;
-        case R3D_STENCIL_ZERO:    glOpPass = GL_ZERO; break;
-        case R3D_STENCIL_REPLACE: glOpPass = GL_REPLACE; break;
-        case R3D_STENCIL_INCR:    glOpPass = GL_INCR; break;
-        case R3D_STENCIL_DECR:    glOpPass = GL_DECR; break;
-        default:                  glOpPass = GL_KEEP; break;
+    case R3D_STENCIL_KEEP:    glOpPass = GL_KEEP; break;
+    case R3D_STENCIL_ZERO:    glOpPass = GL_ZERO; break;
+    case R3D_STENCIL_REPLACE: glOpPass = GL_REPLACE; break;
+    case R3D_STENCIL_INCR:    glOpPass = GL_INCR; break;
+    case R3D_STENCIL_DECR:    glOpPass = GL_DECR; break;
+    default:                  glOpPass = GL_KEEP; break;
     }
 
     r3d_driver_set_stencil_func(glFunc, state.ref, state.mask);
