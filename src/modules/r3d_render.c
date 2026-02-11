@@ -63,7 +63,7 @@ void load_shape_quad(r3d_render_shape_t* shape)
 
     r3d_render_create_vertex_array(
         &shape->vao, &shape->vbo, &shape->ebo,
-        VERTS, 4, INDICES, 6, (int)sizeof(uint8_t),
+        VERTS, 4, INDICES, 6, (int)sizeof(*INDICES),
         GL_STATIC_DRAW
     );
 
@@ -112,7 +112,7 @@ void load_shape_cube(r3d_render_shape_t* shape)
 
     r3d_render_create_vertex_array(
         &shape->vao, &shape->vbo, &shape->ebo,
-        VERTS, 24, INDICES, 36, (int)sizeof(uint8_t),
+        VERTS, 24, INDICES, 36, (int)sizeof(*INDICES),
         GL_STATIC_DRAW
     );
 

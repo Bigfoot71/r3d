@@ -43,7 +43,7 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
         &mesh.vao, &mesh.vbo, &mesh.ebo,
         data.vertices, data.vertexCount,
         data.indices, data.indexCount,
-        (int)sizeof(uint32_t),
+        (int)sizeof(*data.indices),
         GL_STATIC_DRAW
     );
 
