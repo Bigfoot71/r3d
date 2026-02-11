@@ -5,8 +5,9 @@
 * [x] **Refactor internal `r3d_draw` module**
   Centralize all drawing-related functionality and drawable objects, including VAO management, which is currently scattered.
 
-* [ ] **Redesign internal shader macro system**
-  Rethink the current macro-based approach for managing shaders to improve clarity and maintainability.
+* [x] **Redesign internal shader macro system**
+  ~~Rethink the current macro-based approach for managing shaders to improve clarity and maintainability.~~
+  The subject involves much more complexity than expected, it will probably remain as it is, the naming has at least been made clearer.
 
 * [ ] **Explore alternative SSGI approaches**
   The current SSIL-VB used as a cheap SSGI solution is far from ideal and difficult to tune.

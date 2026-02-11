@@ -39,7 +39,7 @@
         ? &((r3d_shader_custom_t*)(custom))->shader_name                        \
         : &R3D_MOD_SHADER.shader_name)
 
-#define R3D_SHADER_USE_BLT(shader_name) do {                                    \
+#define R3D_SHADER_USE(shader_name) do {                                        \
     if (R3D_MOD_SHADER.shader_name.id == 0) {                                   \
         bool ok = R3D_MOD_SHADER_LOADER.shader_name(NULL);                      \
         assert(ok);                                                             \
@@ -50,7 +50,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_USE_OVR(custom, shader_name) do {                            \
+#define R3D_SHADER_USE_CUSTOM(custom, shader_name) do {                         \
     r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
     assert(c_shader != NULL);                                                   \
     if (c_shader->shader_name.id == 0) {                                        \
@@ -65,22 +65,22 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_USE_OPT(shader_name, custom) do {                            \
+#define R3D_SHADER_USE_SELECT(shader_name, custom) do {                         \
     r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
-    if (c_shader == NULL) R3D_SHADER_USE_BLT(shader_name);                      \
-    else R3D_SHADER_USE_OVR(custom, shader_name);                               \
+    if (c_shader == NULL) R3D_SHADER_USE(shader_name);                          \
+    else R3D_SHADER_USE_CUSTOM(custom, shader_name);                            \
 } while(0)
 
-#define R3D_SHADER_BIND_SAMPLER_BLT(shader_name, uniform, texId) do {           \
+#define R3D_SHADER_BIND_SAMPLER(shader_name, uniform, texId) do {               \
     r3d_shader_bind_sampler(R3D_MOD_SHADER.shader_name.uniform.slot, (texId));  \
 } while(0)
 
-#define R3D_SHADER_BIND_SAMPLER_OVR(custom, shader_name, uniform, texId) do {   \
+#define R3D_SHADER_BIND_SAMPLER_CUSTOM(custom, shader_name, uniform, texId) do {\
     r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
     r3d_shader_bind_sampler(c_shader->shader_name.uniform.slot, (texId));       \
 } while(0)
 
-#define R3D_SHADER_BIND_SAMPLER_OPT(shader_name, custom, uniform, texId) do {   \
+#define R3D_SHADER_BIND_SAMPLER_SELECT(shader_name, custom, uniform, texId) do {\
     r3d_shader_custom_t* c_shader = (r3d_shader_custom_t*)(custom);             \
     r3d_shader_bind_sampler((c_shader != NULL)                                  \
         ? c_shader->shader_name.uniform.slot                                    \
@@ -88,7 +88,7 @@
         (texId));                                                               \
 } while(0)
 
-#define R3D_SHADER_SET_INT_BLT(shader_name, uniform, value) do {                \
+#define R3D_SHADER_SET_INT(shader_name, uniform, value) do {                    \
     if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                    \
         R3D_MOD_SHADER.shader_name.uniform.val = (value);                       \
         glUniform1i(                                                            \
@@ -98,21 +98,21 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_INT_OVR(custom, shader_name, uniform, value) do {        \
+#define R3D_SHADER_SET_INT_CUSTOM(custom, shader_name, uniform, value) do {     \
     if (((r3d_shader_custom_t*)(custom))->shader_name.uniform.val != (value)) { \
         ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = (value);    \
         glUniform1i(((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc, (value)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_INT_OPT(shader_name, custom, uniform, value) do {        \
+#define R3D_SHADER_SET_INT_SELECT(shader_name, custom, uniform, value) do {     \
     if (R3D_SHADER_GET(shader_name, custom)->uniform.val != (value)) {          \
         R3D_SHADER_GET(shader_name, custom)->uniform.val = (value);             \
         glUniform1i(R3D_SHADER_GET(shader_name, custom)->uniform.loc, (value)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_FLOAT_BLT(shader_name, uniform, value) do {              \
+#define R3D_SHADER_SET_FLOAT(shader_name, uniform, value) do {                  \
     if (R3D_MOD_SHADER.shader_name.uniform.val != (value)) {                    \
         R3D_MOD_SHADER.shader_name.uniform.val = (value);                       \
         glUniform1f(                                                            \
@@ -122,21 +122,21 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_FLOAT_OVR(custom, shader_name, uniform, value) do {      \
+#define R3D_SHADER_SET_FLOAT_CUSTOM(custom, shader_name, uniform, value) do {   \
     if (((r3d_shader_custom_t*)(custom))->shader_name.uniform.val != (value)) { \
         ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = (value);    \
         glUniform1f(((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc, (value)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_FLOAT_OPT(shader_name, custom, uniform, value) do {      \
+#define R3D_SHADER_SET_FLOAT_SELECT(shader_name, custom, uniform, value) do {   \
     if (R3D_SHADER_GET(shader_name, custom)->uniform.val != (value)) {          \
         R3D_SHADER_GET(shader_name, custom)->uniform.val = (value);             \
         glUniform1f(R3D_SHADER_GET(shader_name, custom)->uniform.loc, (value)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC2_BLT(shader_name, uniform, ...) do {                 \
+#define R3D_SHADER_SET_VEC2(shader_name, uniform, ...) do {                     \
     const Vector2 tmp = (__VA_ARGS__);                                          \
     if (!Vector2Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {          \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
@@ -148,23 +148,23 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC2_OVR(custom, shader_name, uniform, ...) do {         \
+#define R3D_SHADER_SET_VEC2_CUSTOM(custom, shader_name, uniform, ...) do {      \
     const Vector2 tmp = (__VA_ARGS__);                                          \
     if (!Vector2Equals(((r3d_shader_custom_t*)(custom))->shader_name.uniform.val, tmp)) { \
-        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = tmp;          \
+        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = tmp;        \
         glUniform2fv(((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc, 1, (float*)(&tmp)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC2_OPT(shader_name, custom, uniform, ...) do {         \
+#define R3D_SHADER_SET_VEC2_SELECT(shader_name, custom, uniform, ...) do {      \
     const Vector2 tmp = (__VA_ARGS__);                                          \
-    if (!Vector2Equals(R3D_SHADER_GET(shader_name, custom)->uniform.val, tmp)) { \
+    if (!Vector2Equals(R3D_SHADER_GET(shader_name, custom)->uniform.val, tmp)) {\
         R3D_SHADER_GET(shader_name, custom)->uniform.val = tmp;                 \
         glUniform2fv(R3D_SHADER_GET(shader_name, custom)->uniform.loc, 1, (float*)(&tmp)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC3_BLT(shader_name, uniform, ...) do {                 \
+#define R3D_SHADER_SET_VEC3(shader_name, uniform, ...) do {                     \
     const Vector3 tmp = (__VA_ARGS__);                                          \
     if (!Vector3Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {          \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
@@ -176,7 +176,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC3_OVR(custom, shader_name, uniform, ...) do {         \
+#define R3D_SHADER_SET_VEC3_CUSTOM(custom, shader_name, uniform, ...) do {      \
     const Vector3 tmp = (__VA_ARGS__);                                          \
     if (!Vector3Equals(((r3d_shader_custom_t*)(custom))->shader_name.uniform.val, tmp)) { \
         ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = tmp;        \
@@ -184,15 +184,15 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC3_OPT(shader_name, custom, uniform, ...) do {         \
+#define R3D_SHADER_SET_VEC3_SELECT(shader_name, custom, uniform, ...) do {      \
     const Vector3 tmp = (__VA_ARGS__);                                          \
-    if (!Vector3Equals(R3D_SHADER_GET(shader_name, custom)->uniform.val, tmp)) { \
+    if (!Vector3Equals(R3D_SHADER_GET(shader_name, custom)->uniform.val, tmp)) {\
         R3D_SHADER_GET(shader_name, custom)->uniform.val = tmp;                 \
         glUniform3fv(R3D_SHADER_GET(shader_name, custom)->uniform.loc, 1, (float*)(&tmp)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC4_BLT(shader_name, uniform, ...) do {                 \
+#define R3D_SHADER_SET_VEC4(shader_name, uniform, ...) do {                     \
     const Vector4 tmp = (__VA_ARGS__);                                          \
     if (!Vector4Equals(R3D_MOD_SHADER.shader_name.uniform.val, tmp)) {          \
         R3D_MOD_SHADER.shader_name.uniform.val = tmp;                           \
@@ -204,7 +204,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC4_OVR(custom, shader_name, uniform, ...) do {         \
+#define R3D_SHADER_SET_VEC4_CUSTOM(custom, shader_name, uniform, ...) do {      \
     const Vector4 tmp = (__VA_ARGS__);                                          \
     if (!Vector4Equals(((r3d_shader_custom_t*)(custom))->shader_name.uniform.val, tmp)) { \
         ((r3d_shader_custom_t*)(custom))->shader_name.uniform.val = tmp;        \
@@ -212,15 +212,15 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_VEC4_OPT(shader_name, custom, uniform, ...) do {         \
+#define R3D_SHADER_SET_VEC4_SELECT(shader_name, custom, uniform, ...) do {      \
     const Vector4 tmp = (__VA_ARGS__);                                          \
-    if (!Vector4Equals(R3D_SHADER_GET(shader_name, custom)->uniform.val, tmp)) { \
+    if (!Vector4Equals(R3D_SHADER_GET(shader_name, custom)->uniform.val, tmp)) {\
         R3D_SHADER_GET(shader_name, custom)->uniform.val = tmp;                 \
         glUniform4fv(R3D_SHADER_GET(shader_name, custom)->uniform.loc, 1, (float*)(&tmp)); \
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL3_BLT(shader_name, uniform, space, ...) do {          \
+#define R3D_SHADER_SET_COL3(shader_name, uniform, space, ...) do {              \
     const Color tmp = (__VA_ARGS__);                                            \
     if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||             \
         memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp,                   \
@@ -236,7 +236,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL3_OVR(custom, shader_name, uniform, space, ...) do {  \
+#define R3D_SHADER_SET_COL3_CUSTOM(custom, shader_name, uniform, space, ...) do { \
     const Color tmp = (__VA_ARGS__);                                            \
     if (((r3d_shader_custom_t*)(custom))->shader_name.uniform.colorSpace != (space) || \
         memcmp(&((r3d_shader_custom_t*)(custom))->shader_name.uniform.val, &tmp, sizeof(Color)) != 0) { \
@@ -247,7 +247,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL3_OPT(shader_name, custom, uniform, space, ...) do {  \
+#define R3D_SHADER_SET_COL3_SELECT(shader_name, custom, uniform, space, ...) do { \
     const Color tmp = (__VA_ARGS__);                                            \
     if (R3D_SHADER_GET(shader_name, custom)->uniform.colorSpace != (space) ||   \
         memcmp(&R3D_SHADER_GET(shader_name, custom)->uniform.val, &tmp, sizeof(Color)) != 0) { \
@@ -258,7 +258,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL4_BLT(shader_name, uniform, space, ...) do {          \
+#define R3D_SHADER_SET_COL4(shader_name, uniform, space, ...) do {              \
     const Color tmp = (__VA_ARGS__);                                            \
     if (R3D_MOD_SHADER.shader_name.uniform.colorSpace != (space) ||             \
         memcmp(&R3D_MOD_SHADER.shader_name.uniform.val, &tmp,                   \
@@ -274,7 +274,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL4_OVR(custom, shader_name, uniform, space, ...) do {  \
+#define R3D_SHADER_SET_COL4_CUSTOM(custom, shader_name, uniform, space, ...) do { \
     const Color tmp = (__VA_ARGS__);                                            \
     if (((r3d_shader_custom_t*)(custom))->shader_name.uniform.colorSpace != (space) || \
         memcmp(&((r3d_shader_custom_t*)(custom))->shader_name.uniform.val, &tmp, sizeof(Color)) != 0) { \
@@ -285,7 +285,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_COL4_OPT(shader_name, custom, uniform, space, ...) do {  \
+#define R3D_SHADER_SET_COL4_SELECT(shader_name, custom, uniform, space, ...) do { \
     const Color tmp = (__VA_ARGS__);                                            \
     if (R3D_SHADER_GET(shader_name, custom)->uniform.colorSpace != (space) ||   \
         memcmp(&R3D_SHADER_GET(shader_name, custom)->uniform.val, &tmp, sizeof(Color)) != 0) { \
@@ -296,7 +296,7 @@
     }                                                                           \
 } while(0)
 
-#define R3D_SHADER_SET_MAT4_BLT(shader_name, uniform, value) do {               \
+#define R3D_SHADER_SET_MAT4(shader_name, uniform, value) do {                   \
     glUniformMatrix4fv(                                                         \
         R3D_MOD_SHADER.shader_name.uniform.loc,                                 \
         1,                                                                      \
@@ -305,7 +305,7 @@
     );                                                                          \
 } while(0)
 
-#define R3D_SHADER_SET_MAT4_OVR(custom, shader_name, uniform, value) do {       \
+#define R3D_SHADER_SET_MAT4_CUSTOM(custom, shader_name, uniform, value) do {    \
     glUniformMatrix4fv(                                                         \
         ((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc,              \
         1,                                                                      \
@@ -314,39 +314,12 @@
     );                                                                          \
 } while(0)
 
-#define R3D_SHADER_SET_MAT4_OPT(shader_name, custom, uniform, value) do {       \
+#define R3D_SHADER_SET_MAT4_SELECT(shader_name, custom, uniform, value) do {    \
     glUniformMatrix4fv(                                                         \
         R3D_SHADER_GET(shader_name, custom)->uniform.loc,                       \
         1,                                                                      \
         GL_TRUE,                                                                \
         (float*)(&(value))                                                      \
-    );                                                                          \
-} while(0)
-
-#define R3D_SHADER_SET_MAT4V_BLT(shader_name, uniform, array, count) do {       \
-    glUniformMatrix4fv(                                                         \
-        R3D_MOD_SHADER.shader_name.uniform.loc,                                 \
-        (count),                                                                \
-        GL_TRUE,                                                                \
-        (float*)(array)                                                         \
-    );                                                                          \
-} while(0)
-
-#define R3D_SHADER_SET_MAT4V_OVR(custom, shader_name, uniform, array, count) do { \
-    glUniformMatrix4fv(                                                         \
-        ((r3d_shader_custom_t*)(custom))->shader_name.uniform.loc,              \
-        (count),                                                                \
-        GL_TRUE,                                                                \
-        (float*)(array)                                                         \
-    );                                                                          \
-} while(0)
-
-#define R3D_SHADER_SET_MAT4V_OPT(shader_name, custom, uniform, array, count) do { \
-    glUniformMatrix4fv(                                                         \
-        R3D_SHADER_GET(shader_name, custom)->uniform.loc,                       \
-        (count),                                                                \
-        GL_TRUE,                                                                \
-        (float*)(array)                                                         \
     );                                                                          \
 } while(0)
 
