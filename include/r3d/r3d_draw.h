@@ -101,6 +101,7 @@ R3DAPI void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transfo
  * @brief Queues an instanced mesh draw command.
  *
  * Draws multiple instances using the provided instance buffer.
+ * Does nothing if the number of instances is <= 0.
  * 
  * The command is executed during R3D_End().
  */
@@ -109,6 +110,7 @@ R3DAPI void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_Inst
 /**
  * @brief Queues an instanced mesh draw command with an additional transform.
  *
+ * Does nothing if the number of instances is <= 0.
  * The transform is applied to all instances.
  *
  * The command is executed during R3D_End().
@@ -140,6 +142,7 @@ R3DAPI void R3D_DrawModelPro(R3D_Model model, Matrix transform);
  * @brief Queues an instanced model draw command.
  *
  * Draws multiple instances using the provided instance buffer.
+ * Does nothing if the number of instances is <= 0.
  * 
  * The command is executed during R3D_End().
  */
@@ -148,6 +151,7 @@ R3DAPI void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances
 /**
  * @brief Queues an instanced model draw command with an additional transform.
  *
+ * Does nothing if the number of instances is <= 0.
  * The transform is applied to all instances.
  *
  * The command is executed during R3D_End().
@@ -183,6 +187,7 @@ R3DAPI void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player
  * @brief Queues an instanced animated model draw command.
  *
  * Draws multiple animated instances using the provided instance buffer.
+ * Does nothing if the number of instances is <= 0.
  * 
  * The command is executed during R3D_End().
  */
@@ -191,6 +196,7 @@ R3DAPI void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer 
 /**
  * @brief Queues an instanced animated model draw command with an additional transform.
  *
+ * Does nothing if the number of instances is <= 0.
  * The transform is applied to all instances.
  *
  * The command is executed during R3D_End().
@@ -222,6 +228,7 @@ R3DAPI void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform);
  * @brief Queues an instanced decal draw command.
  *
  * Draws multiple instances using the provided instance buffer.
+ * Does nothing if the number of instances is <= 0.
  * 
  * The command is executed during R3D_End().
  */
@@ -230,6 +237,7 @@ R3DAPI void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances
 /**
  * @brief Queues an instanced decal draw command with an additional transform.
  *
+ * Does nothing if the number of instances is <= 0.
  * The transform is applied to all instances.
  * 
  * The command is executed during R3D_End().

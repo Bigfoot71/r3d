@@ -290,6 +290,8 @@ void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuf
 
 void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
+    if (count <= 0) return;
+
     if (!BIT_TEST_ANY(R3D.layers, mesh.layerMask)) {
         return;
     }
@@ -354,6 +356,8 @@ void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int c
 
 void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
+    if (count <= 0) return;
+
     r3d_draw_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.skinTexture = model.skeleton.skinTexture;
@@ -426,6 +430,8 @@ void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player,
 
 void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
+    if (count <= 0) return;
+
     r3d_draw_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.aabb = model.aabb;
@@ -494,6 +500,8 @@ void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int c
 
 void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int count, Matrix transform)
 {
+    if (count <= 0) return;
+
     decal.normalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
