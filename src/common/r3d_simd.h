@@ -48,14 +48,14 @@
     #include <pmmintrin.h>
 #endif
 
-#if defined(__SSE2__)
-    #define R3D_HAS_SSE2
-    #include <emmintrin.h>
+#if defined(__SSE2__) || _M_IX86_FP == 2 || (defined(_M_AMD64) || defined(_M_X64)) 
+#define R3D_HAS_SSE2
+#include <emmintrin.h>
 #endif
 
-#if defined(__SSE__)
-    #define R3D_HAS_SSE
-    #include <xmmintrin.h>
+#if defined(__SSE__) || _M_IX86_FP == 1
+#define R3D_HAS_SSE
+#include <xmmintrin.h>
 #endif
 
 #if defined(__ARM_NEON) || defined(__aarch64__)
