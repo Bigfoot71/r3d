@@ -1,4 +1,4 @@
-/* r3d_draw.c -- Internal R3D draw module.
+/* r3d_render.c -- Internal R3D render module.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./r3d_draw.h"
+#include "./r3d_render.h"
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stdint.h>
@@ -26,32 +26,32 @@
 // MODULE STATE
 // ========================================
 
-struct r3d_draw R3D_MOD_DRAW;
+struct r3d_mod_render R3D_MOD_RENDER;
 
 // ========================================
 // INTERNAL SHAPE FUNCTIONS
 // ========================================
 
-typedef void (*draw_shape_loader_func)(r3d_draw_shape_t*);
+typedef void (*shape_loader_func)(r3d_render_shape_t*);
 
-static void load_shape_dummy(r3d_draw_shape_t* dummy);
-static void load_shape_quad(r3d_draw_shape_t* quad);
-static void load_shape_cube(r3d_draw_shape_t* cube);
+static void load_shape_dummy(r3d_render_shape_t* dummy);
+static void load_shape_quad(r3d_render_shape_t* quad);
+static void load_shape_cube(r3d_render_shape_t* cube);
 
-static const draw_shape_loader_func SHAPE_LOADERS[] = {
-    [R3D_DRAW_SHAPE_DUMMY] = load_shape_dummy,
-    [R3D_DRAW_SHAPE_QUAD] = load_shape_quad,
-    [R3D_DRAW_SHAPE_CUBE] = load_shape_cube,
+static const shape_loader_func SHAPE_LOADERS[] = {
+    [R3D_RENDER_SHAPE_DUMMY] = load_shape_dummy,
+    [R3D_RENDER_SHAPE_QUAD] = load_shape_quad,
+    [R3D_RENDER_SHAPE_CUBE] = load_shape_cube,
 };
 
-void load_shape_dummy(r3d_draw_shape_t* shape)
+void load_shape_dummy(r3d_render_shape_t* shape)
 {
     glGenVertexArrays(1, &shape->vao);
     shape->vertexCount = 3;
     shape->indexCount = 0;
 }
 
-void load_shape_quad(r3d_draw_shape_t* shape)
+void load_shape_quad(r3d_render_shape_t* shape)
 {
     static const R3D_Vertex VERTS[] = {
         {{-0.5f, 0.5f, 0}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
@@ -61,14 +61,14 @@ void load_shape_quad(r3d_draw_shape_t* shape)
     };
     static const GLubyte INDICES[] = {0, 1, 2, 1, 3, 2};
 
-    r3d_draw_create_vertex_array(
+    r3d_render_create_vertex_array(
         &shape->vao, &shape->vbo, &shape->ebo,
         VERTS, 4, INDICES, 6, (int)sizeof(uint8_t),
         GL_STATIC_DRAW
     );
 }
 
-void load_shape_cube(r3d_draw_shape_t* shape)
+void load_shape_cube(r3d_render_shape_t* shape)
 {
     static const R3D_Vertex VERTS[] = {
         // Front (Z+)
@@ -107,7 +107,7 @@ void load_shape_cube(r3d_draw_shape_t* shape)
         12,13,14, 14,13,15,   16,17,18, 18,17,19,   20,21,22, 22,21,23
     };
 
-    r3d_draw_create_vertex_array(
+    r3d_render_create_vertex_array(
         &shape->vao, &shape->vbo, &shape->ebo,
         VERTS, 24, INDICES, 36, (int)sizeof(uint8_t),
         GL_STATIC_DRAW
@@ -198,41 +198,41 @@ static void disable_instances(R3D_InstanceFlags flags)
 // INTERNAL ARRAY FUNCTIONS
 // ========================================
 
-static inline size_t get_draw_call_index(const r3d_draw_call_t* call)
+static inline size_t get_draw_call_index(const r3d_render_call_t* call)
 {
-    assert(call >= R3D_MOD_DRAW.calls);
-    return (size_t)(call - R3D_MOD_DRAW.calls);
+    assert(call >= R3D_MOD_RENDER.calls);
+    return (size_t)(call - R3D_MOD_RENDER.calls);
 }
 
 static inline int get_last_group_index(void)
 {
-    int groupIndex = R3D_MOD_DRAW.numGroups - 1;
+    int groupIndex = R3D_MOD_RENDER.numGroups - 1;
     assert(groupIndex >= 0);
     return groupIndex;
 }
 
-static inline r3d_draw_group_t* get_last_group(void)
+static inline r3d_render_group_t* get_last_group(void)
 {
     int groupIndex = get_last_group_index();
-    return &R3D_MOD_DRAW.groups[groupIndex];
+    return &R3D_MOD_RENDER.groups[groupIndex];
 }
 
 static bool growth_arrays(void)
 {
     #define GROW_AND_ASSIGN(field) do { \
-        void* _p = RL_REALLOC(R3D_MOD_DRAW.field, newCapacity * sizeof(*R3D_MOD_DRAW.field)); \
+        void* _p = RL_REALLOC(R3D_MOD_RENDER.field, newCapacity * sizeof(*R3D_MOD_RENDER.field)); \
         if (_p == NULL) return false; \
-        R3D_MOD_DRAW.field = _p; \
+        R3D_MOD_RENDER.field = _p; \
     } while (0)
 
-    int newCapacity = 2 * R3D_MOD_DRAW.capacity;
+    int newCapacity = 2 * R3D_MOD_RENDER.capacity;
 
     GROW_AND_ASSIGN(clusters);
     GROW_AND_ASSIGN(groupVisibility);
     GROW_AND_ASSIGN(callIndices);
     GROW_AND_ASSIGN(groups);
 
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; ++i) {
+    for (int i = 0; i < R3D_RENDER_LIST_COUNT; ++i) {
         GROW_AND_ASSIGN(list[i].calls);
     }
 
@@ -242,7 +242,7 @@ static bool growth_arrays(void)
 
     #undef GROW_AND_ASSIGN
 
-    R3D_MOD_DRAW.capacity = newCapacity;
+    R3D_MOD_RENDER.capacity = newCapacity;
 
     return true;
 }
@@ -267,7 +267,7 @@ static inline GLenum get_opengl_primitive(R3D_PrimitiveType primitive)
     return GL_TRIANGLES; // consider an error...
 }
 
-static void bind_draw_call_vao(const r3d_draw_call_t* call, GLenum* primitive, GLenum* elemType, GLint* vertCount, GLint* elemCount)
+static void bind_draw_call_vao(const r3d_render_call_t* call, GLenum* primitive, GLenum* elemType, GLint* vertCount, GLint* elemCount)
 {
     assert(primitive && elemType && vertCount && elemCount);
 
@@ -277,7 +277,7 @@ static void bind_draw_call_vao(const r3d_draw_call_t* call, GLenum* primitive, G
     *elemCount = 0;
 
     switch (call->type) {
-    case R3D_DRAW_CALL_MESH:
+    case R3D_RENDER_CALL_MESH:
         {
             const R3D_Mesh* mesh = &call->mesh.instance;
             glBindVertexArray(mesh->vao);
@@ -288,10 +288,10 @@ static void bind_draw_call_vao(const r3d_draw_call_t* call, GLenum* primitive, G
             *elemType = GL_UNSIGNED_INT;
         }
         break;
-    case R3D_DRAW_CALL_DECAL:
+    case R3D_RENDER_CALL_DECAL:
         {
-            r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[R3D_DRAW_SHAPE_CUBE];
-            if (buffer->vao == 0) SHAPE_LOADERS[R3D_DRAW_SHAPE_CUBE](buffer);
+            r3d_render_shape_t* buffer = &R3D_MOD_RENDER.shapes[R3D_RENDER_SHAPE_CUBE];
+            if (buffer->vao == 0) SHAPE_LOADERS[R3D_RENDER_SHAPE_CUBE](buffer);
             else glBindVertexArray(buffer->vao);
 
             *primitive = GL_TRIANGLES;
@@ -323,12 +323,12 @@ static inline bool frustum_test_aabb(const r3d_frustum_t* frustum, const Boundin
     return r3d_frustum_is_obb_in(frustum, aabb, transform);
 }
 
-static inline bool frustum_test_draw_call(const r3d_frustum_t* frustum, const r3d_draw_call_t* call, const Matrix* transform)
+static inline bool frustum_test_draw_call(const r3d_frustum_t* frustum, const r3d_render_call_t* call, const Matrix* transform)
 {
     switch (call->type) {
-    case R3D_DRAW_CALL_MESH:
+    case R3D_RENDER_CALL_MESH:
         return frustum_test_aabb(frustum, &call->mesh.instance.aabb, transform);
-    case R3D_DRAW_CALL_DECAL:
+    case R3D_RENDER_CALL_DECAL:
         return frustum_test_aabb(frustum, &(BoundingBox) {
             .min.x = -0.5f, .min.y = -0.5f, .min.z = -0.5f,
             .max.x = +0.5f, .max.y = +0.5f, .max.z = +0.5f
@@ -378,10 +378,10 @@ static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, co
     return maxDistSq;
 }
 
-static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_draw_call_t* call)
+static inline void sort_fill_material_data(r3d_render_sort_t* sortData, const r3d_render_call_t* call)
 {
     switch (call->type) {
-    case R3D_DRAW_CALL_MESH:
+    case R3D_RENDER_CALL_MESH:
         sortData->material.shader = (uintptr_t)call->mesh.material.shader;
         sortData->material.shading = call->mesh.material.unlit;
         sortData->material.albedo = call->mesh.material.albedo.texture.id;
@@ -396,7 +396,7 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
         sortData->material.billboard = call->mesh.material.billboardMode;
         break;
 
-    case R3D_DRAW_CALL_DECAL:
+    case R3D_RENDER_CALL_DECAL:
         memset(&sortData->material, 0, sizeof(sortData->material));
         sortData->material.shader = (uintptr_t)call->decal.instance.shader;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
@@ -407,19 +407,19 @@ static inline void sort_fill_material_data(r3d_draw_sort_t* sortData, const r3d_
     }
 }
 
-static void sort_fill_cache_front_to_back(r3d_draw_list_enum_t list)
+static void sort_fill_cache_front_to_back(r3d_render_list_enum_t list)
 {
-    assert(list < R3D_DRAW_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
-    assert(list != R3D_DRAW_LIST_DECAL && "Decal render list should not be sorted by distance");
+    assert(list < R3D_RENDER_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
+    assert(list != R3D_RENDER_LIST_DECAL && "Decal render list should not be sorted by distance");
 
-    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+    r3d_render_list_t* drawList = &R3D_MOD_RENDER.list[list];
 
     for (int i = 0; i < drawList->numCalls; i++)
     {
         int callIndex = drawList->calls[i];
-        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-        const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-        r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
+        const r3d_render_call_t* call = &R3D_MOD_RENDER.calls[callIndex];
+        const r3d_render_group_t* group = r3d_render_get_call_group(call);
+        r3d_render_sort_t* sortData = &R3D_MOD_RENDER.sortCache[callIndex];
 
         sortData->distance = calculate_center_distance_to_camera(
             &call->mesh.instance.aabb, &group->transform
@@ -429,19 +429,19 @@ static void sort_fill_cache_front_to_back(r3d_draw_list_enum_t list)
     }
 }
 
-static void sort_fill_cache_back_to_front(r3d_draw_list_enum_t list)
+static void sort_fill_cache_back_to_front(r3d_render_list_enum_t list)
 {
-    assert(list < R3D_DRAW_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
-    assert(list != R3D_DRAW_LIST_DECAL && "Decal render list should not be sorted by distance");
+    assert(list < R3D_RENDER_LIST_NON_INST_COUNT && "Instantiated render lists should not be sorted by distance");
+    assert(list != R3D_RENDER_LIST_DECAL && "Decal render list should not be sorted by distance");
 
-    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+    r3d_render_list_t* drawList = &R3D_MOD_RENDER.list[list];
 
     for (int i = 0; i < drawList->numCalls; i++)
     {
         int callIndex = drawList->calls[i];
-        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-        const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
-        r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
+        const r3d_render_call_t* call = &R3D_MOD_RENDER.calls[callIndex];
+        const r3d_render_group_t* group = r3d_render_get_call_group(call);
+        r3d_render_sort_t* sortData = &R3D_MOD_RENDER.sortCache[callIndex];
 
         sortData->distance = calculate_max_distance_to_camera(
             &call->mesh.instance.aabb, &group->transform
@@ -452,15 +452,15 @@ static void sort_fill_cache_back_to_front(r3d_draw_list_enum_t list)
     }
 }
 
-static void sort_fill_cache_by_material(r3d_draw_list_enum_t list)
+static void sort_fill_cache_by_material(r3d_render_list_enum_t list)
 {
-    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+    r3d_render_list_t* drawList = &R3D_MOD_RENDER.list[list];
 
     for (int i = 0; i < drawList->numCalls; i++)
     {
         int callIndex = drawList->calls[i];
-        const r3d_draw_call_t* call = &R3D_MOD_DRAW.calls[callIndex];
-        r3d_draw_sort_t* sortData = &R3D_MOD_DRAW.sortCache[callIndex];
+        const r3d_render_call_t* call = &R3D_MOD_RENDER.calls[callIndex];
+        r3d_render_sort_t* sortData = &R3D_MOD_RENDER.sortCache[callIndex];
 
         sortData->distance = 0.0f;
 
@@ -474,17 +474,17 @@ static int compare_front_to_back(const void* a, const void* b)
     int indexB = *(int*)b;
 
     int materialCmp = memcmp(
-        &R3D_MOD_DRAW.sortCache[indexA].material,
-        &R3D_MOD_DRAW.sortCache[indexB].material,
-        sizeof(R3D_MOD_DRAW.sortCache[0].material)
+        &R3D_MOD_RENDER.sortCache[indexA].material,
+        &R3D_MOD_RENDER.sortCache[indexB].material,
+        sizeof(R3D_MOD_RENDER.sortCache[0].material)
     );
 
     if (materialCmp != 0) {
         return materialCmp;
     }
 
-    float distA = R3D_MOD_DRAW.sortCache[indexA].distance;
-    float distB = R3D_MOD_DRAW.sortCache[indexB].distance;
+    float distA = R3D_MOD_RENDER.sortCache[indexA].distance;
+    float distB = R3D_MOD_RENDER.sortCache[indexB].distance;
 
     return (distA > distB) - (distA < distB);
 }
@@ -494,8 +494,8 @@ static int compare_back_to_front(const void* a, const void* b)
     int indexA = *(int*)a;
     int indexB = *(int*)b;
 
-    float distA = R3D_MOD_DRAW.sortCache[indexA].distance;
-    float distB = R3D_MOD_DRAW.sortCache[indexB].distance;
+    float distA = R3D_MOD_RENDER.sortCache[indexA].distance;
+    float distB = R3D_MOD_RENDER.sortCache[indexB].distance;
 
     return (distA < distB) - (distA > distB);
 }
@@ -506,9 +506,9 @@ static int compare_materials_only(const void* a, const void* b)
     int indexB = *(int*)b;
 
     return memcmp(
-        &R3D_MOD_DRAW.sortCache[indexA].material,
-        &R3D_MOD_DRAW.sortCache[indexB].material,
-        sizeof(R3D_MOD_DRAW.sortCache[0].material)
+        &R3D_MOD_RENDER.sortCache[indexA].material,
+        &R3D_MOD_RENDER.sortCache[indexB].material,
+        sizeof(R3D_MOD_RENDER.sortCache[0].material)
     );
 }
 
@@ -516,135 +516,135 @@ static int compare_materials_only(const void* a, const void* b)
 // MODULE FUNCTIONS
 // ========================================
 
-bool r3d_draw_init(void)
+bool r3d_render_init(void)
 {
     const int DRAW_RESERVE_COUNT = 1024;
 
     #define ALLOC_AND_ASSIGN(field, logfmt, ...)  do { \
-        void* _p = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_DRAW.field)); \
+        void* _p = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_RENDER.field)); \
         if (_p == NULL) { \
-            R3D_TRACELOG(LOG_FATAL, "Failed to init draw module; " logfmt, ##__VA_ARGS__); \
+            R3D_TRACELOG(LOG_FATAL, "Failed to init render module; " logfmt, ##__VA_ARGS__); \
             goto fail; \
         } \
-        R3D_MOD_DRAW.field = _p; \
+        R3D_MOD_RENDER.field = _p; \
     } while (0)
 
-    memset(&R3D_MOD_DRAW, 0, sizeof(R3D_MOD_DRAW));
+    memset(&R3D_MOD_RENDER, 0, sizeof(R3D_MOD_RENDER));
 
-    ALLOC_AND_ASSIGN(clusters, "Draw cluster array allocation failed");
-    ALLOC_AND_ASSIGN(groupVisibility, "Group visibility array allocation failed");
+    ALLOC_AND_ASSIGN(clusters, "Render cluster array allocation failed");
+    ALLOC_AND_ASSIGN(groupVisibility, "Render group visibility array allocation failed");
     ALLOC_AND_ASSIGN(callIndices, "Draw call indices array allocation failed");
-    ALLOC_AND_ASSIGN(groups, "Draw group array allocation failed");
+    ALLOC_AND_ASSIGN(groups, "Render group array allocation failed");
 
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
+    for (int i = 0; i < R3D_RENDER_LIST_COUNT; i++) {
         ALLOC_AND_ASSIGN(list[i].calls, "Draw call array %i allocation failed", i);
     }
 
     ALLOC_AND_ASSIGN(calls, "Draw call array allocation failed");
-    ALLOC_AND_ASSIGN(groupIndices, "Draw group indices array allocation failed");
+    ALLOC_AND_ASSIGN(groupIndices, "Render group indices array allocation failed");
     ALLOC_AND_ASSIGN(sortCache, "Sorting cache array allocation failed");
 
     #undef ALLOC_AND_ASSIGN
 
-    R3D_MOD_DRAW.capacity = DRAW_RESERVE_COUNT;
-    R3D_MOD_DRAW.activeCluster = -1;
+    R3D_MOD_RENDER.capacity = DRAW_RESERVE_COUNT;
+    R3D_MOD_RENDER.activeCluster = -1;
 
     return true;
 
 fail:
-    r3d_draw_quit();
+    r3d_render_quit();
     return false;
 }
 
-void r3d_draw_quit(void)
+void r3d_render_quit(void)
 {
-    for (int i = 0; i < R3D_DRAW_SHAPE_COUNT; i++) {
-        r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[i];
+    for (int i = 0; i < R3D_RENDER_SHAPE_COUNT; i++) {
+        r3d_render_shape_t* buffer = &R3D_MOD_RENDER.shapes[i];
         if (buffer->vao) glDeleteVertexArrays(1, &buffer->vao);
         if (buffer->vbo) glDeleteBuffers(1, &buffer->vbo);
         if (buffer->ebo) glDeleteBuffers(1, &buffer->ebo);
     }
 
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-        RL_FREE(R3D_MOD_DRAW.list[i].calls);
+    for (int i = 0; i < R3D_RENDER_LIST_COUNT; i++) {
+        RL_FREE(R3D_MOD_RENDER.list[i].calls);
     }
 
-    RL_FREE(R3D_MOD_DRAW.groupVisibility);
-    RL_FREE(R3D_MOD_DRAW.groupIndices);
-    RL_FREE(R3D_MOD_DRAW.callIndices);
-    RL_FREE(R3D_MOD_DRAW.sortCache);
-    RL_FREE(R3D_MOD_DRAW.groups);
-    RL_FREE(R3D_MOD_DRAW.calls);
+    RL_FREE(R3D_MOD_RENDER.groupVisibility);
+    RL_FREE(R3D_MOD_RENDER.groupIndices);
+    RL_FREE(R3D_MOD_RENDER.callIndices);
+    RL_FREE(R3D_MOD_RENDER.sortCache);
+    RL_FREE(R3D_MOD_RENDER.groups);
+    RL_FREE(R3D_MOD_RENDER.calls);
 }
 
-void r3d_draw_clear(void)
+void r3d_render_clear(void)
 {
-    for (int i = 0; i < R3D_DRAW_LIST_COUNT; i++) {
-        R3D_MOD_DRAW.list[i].numCalls = 0;
+    for (int i = 0; i < R3D_RENDER_LIST_COUNT; i++) {
+        R3D_MOD_RENDER.list[i].numCalls = 0;
     }
 
-    R3D_MOD_DRAW.numClusters = 0;
-    R3D_MOD_DRAW.numGroups = 0;
-    R3D_MOD_DRAW.numCalls = 0;
+    R3D_MOD_RENDER.numClusters = 0;
+    R3D_MOD_RENDER.numGroups = 0;
+    R3D_MOD_RENDER.numCalls = 0;
 
-    R3D_MOD_DRAW.groupCulled = false;
-    R3D_MOD_DRAW.hasDeferred = false;
-    R3D_MOD_DRAW.hasPrepass = false;
-    R3D_MOD_DRAW.hasForward = false;
+    R3D_MOD_RENDER.groupCulled = false;
+    R3D_MOD_RENDER.hasDeferred = false;
+    R3D_MOD_RENDER.hasPrepass = false;
+    R3D_MOD_RENDER.hasForward = false;
 }
 
-bool r3d_draw_cluster_begin(BoundingBox aabb)
+bool r3d_render_cluster_begin(BoundingBox aabb)
 {
-    if (R3D_MOD_DRAW.activeCluster >= 0) {
+    if (R3D_MOD_RENDER.activeCluster >= 0) {
         return false;
     }
 
-    if (R3D_MOD_DRAW.numClusters >= R3D_MOD_DRAW.capacity) {
+    if (R3D_MOD_RENDER.numClusters >= R3D_MOD_RENDER.capacity) {
         if (!growth_arrays()) {
-            R3D_TRACELOG(LOG_FATAL, "Bad alloc on draw cluster begin");
+            R3D_TRACELOG(LOG_FATAL, "Bad alloc on render cluster begin");
             return false;
         }
     }
 
-    R3D_MOD_DRAW.activeCluster = R3D_MOD_DRAW.numClusters++;
+    R3D_MOD_RENDER.activeCluster = R3D_MOD_RENDER.numClusters++;
 
-    r3d_draw_cluster_t* cluster = &R3D_MOD_DRAW.clusters[R3D_MOD_DRAW.activeCluster];
-    cluster->visible = R3D_DRAW_VISBILITY_UNKNOWN;
+    r3d_render_cluster_t* cluster = &R3D_MOD_RENDER.clusters[R3D_MOD_RENDER.activeCluster];
+    cluster->visible = R3D_RENDER_VISBILITY_UNKNOWN;
     cluster->aabb = aabb;
 
     return true;
 }
 
-bool r3d_draw_cluster_end(void)
+bool r3d_render_cluster_end(void)
 {
-    if (R3D_MOD_DRAW.activeCluster < 0) return false;
-    R3D_MOD_DRAW.activeCluster = -1;
+    if (R3D_MOD_RENDER.activeCluster < 0) return false;
+    R3D_MOD_RENDER.activeCluster = -1;
     return true;
 }
 
-void r3d_draw_group_push(const r3d_draw_group_t* group)
+void r3d_render_group_push(const r3d_render_group_t* group)
 {
-    if (R3D_MOD_DRAW.numGroups >= R3D_MOD_DRAW.capacity) {
+    if (R3D_MOD_RENDER.numGroups >= R3D_MOD_RENDER.capacity) {
         if (!growth_arrays()) {
-            R3D_TRACELOG(LOG_FATAL, "Bad alloc on draw group push");
+            R3D_TRACELOG(LOG_FATAL, "Bad alloc on render group push");
             return;
         }
     }
 
-    int groupIndex = R3D_MOD_DRAW.numGroups++;
+    int groupIndex = R3D_MOD_RENDER.numGroups++;
 
-    R3D_MOD_DRAW.groupVisibility[groupIndex] = (r3d_draw_group_visibility_t) {
-        .clusterIndex = R3D_MOD_DRAW.activeCluster,
-        .visible = R3D_DRAW_VISBILITY_UNKNOWN
+    R3D_MOD_RENDER.groupVisibility[groupIndex] = (r3d_render_group_visibility_t) {
+        .clusterIndex = R3D_MOD_RENDER.activeCluster,
+        .visible = R3D_RENDER_VISBILITY_UNKNOWN
     };
 
-    R3D_MOD_DRAW.callIndices[groupIndex] = (r3d_draw_indices_t) {0};
-    R3D_MOD_DRAW.groups[groupIndex] = *group;
+    R3D_MOD_RENDER.callIndices[groupIndex] = (r3d_render_indices_t) {0};
+    R3D_MOD_RENDER.groups[groupIndex] = *group;
 }
 
-void r3d_draw_call_push(const r3d_draw_call_t* call)
+void r3d_render_call_push(const r3d_render_call_t* call)
 {
-    if (R3D_MOD_DRAW.numCalls >= R3D_MOD_DRAW.capacity) {
+    if (R3D_MOD_RENDER.numCalls >= R3D_MOD_RENDER.capacity) {
         if (!growth_arrays()) {
             R3D_TRACELOG(LOG_FATAL, "Bad alloc on draw call push");
             return;
@@ -653,122 +653,122 @@ void r3d_draw_call_push(const r3d_draw_call_t* call)
 
     // Get group and their call indices
     int groupIndex = get_last_group_index();
-    r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
-    r3d_draw_indices_t* indices = &R3D_MOD_DRAW.callIndices[groupIndex];
+    r3d_render_group_t* group = &R3D_MOD_RENDER.groups[groupIndex];
+    r3d_render_indices_t* indices = &R3D_MOD_RENDER.callIndices[groupIndex];
 
     // Get call index and set call group indices
-    int callIndex = R3D_MOD_DRAW.numCalls++;
+    int callIndex = R3D_MOD_RENDER.numCalls++;
     if (indices->numCall == 0) {
         indices->firstCall = callIndex;
     }
     ++indices->numCall;
 
     // Set group index for this draw call
-    R3D_MOD_DRAW.groupIndices[callIndex] = groupIndex;
+    R3D_MOD_RENDER.groupIndices[callIndex] = groupIndex;
 
     // Determine the draw call list
-    r3d_draw_list_enum_t list = R3D_DRAW_LIST_OPAQUE;
-    if (r3d_draw_is_decal(call)) list = R3D_DRAW_LIST_DECAL;
-    else if (!r3d_draw_is_opaque(call)) list = R3D_DRAW_LIST_TRANSPARENT;
-    if (r3d_draw_has_instances(group)) list += R3D_DRAW_LIST_NON_INST_COUNT;
+    r3d_render_list_enum_t list = R3D_RENDER_LIST_OPAQUE;
+    if (r3d_render_is_decal(call)) list = R3D_RENDER_LIST_DECAL;
+    else if (!r3d_render_is_opaque(call)) list = R3D_RENDER_LIST_TRANSPARENT;
+    if (r3d_render_has_instances(group)) list += R3D_RENDER_LIST_NON_INST_COUNT;
 
     // Update internal flags
-    if (r3d_draw_is_deferred(call)) R3D_MOD_DRAW.hasDeferred = true;
-    else if (r3d_draw_is_prepass(call)) R3D_MOD_DRAW.hasPrepass = true;
-    else if (r3d_draw_is_forward(call)) R3D_MOD_DRAW.hasForward = true;
+    if (r3d_render_is_deferred(call)) R3D_MOD_RENDER.hasDeferred = true;
+    else if (r3d_render_is_prepass(call)) R3D_MOD_RENDER.hasPrepass = true;
+    else if (r3d_render_is_forward(call)) R3D_MOD_RENDER.hasForward = true;
 
     // Push the draw call and its index to the list
-    R3D_MOD_DRAW.calls[callIndex] = *call;
-    int listIndex = R3D_MOD_DRAW.list[list].numCalls++;
-    R3D_MOD_DRAW.list[list].calls[listIndex] = callIndex;
+    R3D_MOD_RENDER.calls[callIndex] = *call;
+    int listIndex = R3D_MOD_RENDER.list[list].numCalls++;
+    R3D_MOD_RENDER.list[list].calls[listIndex] = callIndex;
 }
 
-r3d_draw_group_t* r3d_draw_get_call_group(const r3d_draw_call_t* call)
+r3d_render_group_t* r3d_render_get_call_group(const r3d_render_call_t* call)
 {
     int callIndex = get_draw_call_index(call);
-    int groupIndex = R3D_MOD_DRAW.groupIndices[callIndex];
-    r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
+    int groupIndex = R3D_MOD_RENDER.groupIndices[callIndex];
+    r3d_render_group_t* group = &R3D_MOD_RENDER.groups[groupIndex];
 
     return group;
 }
 
-void r3d_draw_cull_groups(const r3d_frustum_t* frustum)
+void r3d_render_cull_groups(const r3d_frustum_t* frustum)
 {
     // Reset visibility states if groups were already culled in a previous pass
-    if (R3D_MOD_DRAW.groupCulled) {
-        for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++) {
-            R3D_MOD_DRAW.groupVisibility[i].visible = R3D_DRAW_VISBILITY_UNKNOWN;
+    if (R3D_MOD_RENDER.groupCulled) {
+        for (int i = 0; i < R3D_MOD_RENDER.numGroups; i++) {
+            R3D_MOD_RENDER.groupVisibility[i].visible = R3D_RENDER_VISBILITY_UNKNOWN;
         }
-        for (int i = 0; i < R3D_MOD_DRAW.numClusters; i++) {
-            R3D_MOD_DRAW.clusters[i].visible = R3D_DRAW_VISBILITY_UNKNOWN;
+        for (int i = 0; i < R3D_MOD_RENDER.numClusters; i++) {
+            R3D_MOD_RENDER.clusters[i].visible = R3D_RENDER_VISBILITY_UNKNOWN;
         }
     }
-    R3D_MOD_DRAW.groupCulled = true;
+    R3D_MOD_RENDER.groupCulled = true;
 
     // Perform frustum culling for each group
-    for (int i = 0; i < R3D_MOD_DRAW.numGroups; i++)
+    for (int i = 0; i < R3D_MOD_RENDER.numGroups; i++)
     {
-        r3d_draw_group_visibility_t* visibility = &R3D_MOD_DRAW.groupVisibility[i];
-        const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[i];
+        r3d_render_group_visibility_t* visibility = &R3D_MOD_RENDER.groupVisibility[i];
+        const r3d_render_group_t* group = &R3D_MOD_RENDER.groups[i];
 
         // Branch 1: Group belongs to a cluster
         if (visibility->clusterIndex >= 0) {
-            r3d_draw_cluster_t* cluster = &R3D_MOD_DRAW.clusters[visibility->clusterIndex];
+            r3d_render_cluster_t* cluster = &R3D_MOD_RENDER.clusters[visibility->clusterIndex];
 
             // Test cluster once (shared by multiple groups)
-            if (cluster->visible == R3D_DRAW_VISBILITY_UNKNOWN) {
+            if (cluster->visible == R3D_RENDER_VISBILITY_UNKNOWN) {
                 cluster->visible = frustum_test_aabb(frustum, &cluster->aabb, NULL);
             }
 
             // If cluster is visible, test the group
-            if (cluster->visible == R3D_DRAW_VISBILITY_TRUE) {
+            if (cluster->visible == R3D_RENDER_VISBILITY_TRUE) {
                 // For instanced: trust cluster visibility
                 // For others: test group AABB individually
-                if (r3d_draw_has_instances(group)) visibility->visible = R3D_DRAW_VISBILITY_TRUE;
+                if (r3d_render_has_instances(group)) visibility->visible = R3D_RENDER_VISBILITY_TRUE;
                 else visibility->visible = frustum_test_aabb(frustum, &group->aabb, &group->transform);
             }
             else {
-                visibility->visible = R3D_DRAW_VISBILITY_FALSE;
+                visibility->visible = R3D_RENDER_VISBILITY_FALSE;
             }
         }
         // Branch 2: Group without cluster
         else {
             // For instanced: always visible
             // For others: test group AABB
-            if (r3d_draw_has_instances(group)) visibility->visible = R3D_DRAW_VISBILITY_TRUE;
+            if (r3d_render_has_instances(group)) visibility->visible = R3D_RENDER_VISBILITY_TRUE;
             else visibility->visible = frustum_test_aabb(frustum, &group->aabb, &group->transform);
         }
     }
 }
 
-bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* frustum)
+bool r3d_render_call_is_visible(const r3d_render_call_t* call, const r3d_frustum_t* frustum)
 {
     // Get the draw call's parent group and its visibility state
     int callIndex = get_draw_call_index(call);
-    int groupIndex = R3D_MOD_DRAW.groupIndices[callIndex];
-    const r3d_draw_group_t* group = &R3D_MOD_DRAW.groups[groupIndex];
-    r3d_draw_visibility_enum_t groupVisibility = R3D_MOD_DRAW.groupVisibility[groupIndex].visible;
+    int groupIndex = R3D_MOD_RENDER.groupIndices[callIndex];
+    const r3d_render_group_t* group = &R3D_MOD_RENDER.groups[groupIndex];
+    r3d_render_visibility_enum_t groupVisibility = R3D_MOD_RENDER.groupVisibility[groupIndex].visible;
 
     // If the group was already culled, reject immediately
-    if (groupVisibility == R3D_DRAW_VISBILITY_FALSE) {
+    if (groupVisibility == R3D_RENDER_VISBILITY_FALSE) {
         return false;
     }
 
     // If the group passed culling, check if we can skip per-call testing
-    if (groupVisibility == R3D_DRAW_VISBILITY_TRUE) {
+    if (groupVisibility == R3D_RENDER_VISBILITY_TRUE) {
         // Single-call groups were already tested at the group level
-        if (R3D_MOD_DRAW.callIndices[groupIndex].numCall == 1) {
+        if (R3D_MOD_RENDER.callIndices[groupIndex].numCall == 1) {
             return true;
         }
         // Instanced/skinned groups: trust the group-level test
-        if (r3d_draw_has_instances(group) || group->skinTexture > 0) {
+        if (r3d_render_has_instances(group) || group->skinTexture > 0) {
             return true;
         }
         // Multi-call group: fall through to individual call testing
     }
     // If the group hasn't been tested yet, check instanced/skinned groups now
-    else if (groupVisibility == R3D_DRAW_VISBILITY_UNKNOWN) {
-        if (r3d_draw_has_instances(group) || group->skinTexture > 0) {
+    else if (groupVisibility == R3D_RENDER_VISBILITY_UNKNOWN) {
+        if (r3d_render_has_instances(group) || group->skinTexture > 0) {
             return frustum_test_aabb(frustum, &group->aabb, &group->transform);
         }
         // Regular multi-call group: fall through to individual call testing
@@ -778,23 +778,23 @@ bool r3d_draw_call_is_visible(const r3d_draw_call_t* call, const r3d_frustum_t* 
     return frustum_test_draw_call(frustum, call, &group->transform);
 }
 
-void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_draw_sort_enum_t mode)
+void r3d_render_sort_list(r3d_render_list_enum_t list, Vector3 viewPosition, r3d_render_sort_enum_t mode)
 {
     G_sortViewPosition = viewPosition;
 
     int (*compare_func)(const void *a, const void *b) = NULL;
-    r3d_draw_list_t* drawList = &R3D_MOD_DRAW.list[list];
+    r3d_render_list_t* drawList = &R3D_MOD_RENDER.list[list];
 
     switch (mode) {
-    case R3D_DRAW_SORT_FRONT_TO_BACK:
+    case R3D_RENDER_SORT_FRONT_TO_BACK:
         compare_func = compare_front_to_back;
         sort_fill_cache_front_to_back(list);
         break;
-    case R3D_DRAW_SORT_BACK_TO_FRONT:
+    case R3D_RENDER_SORT_BACK_TO_FRONT:
         compare_func = compare_back_to_front;
         sort_fill_cache_back_to_front(list);
         break;
-    case R3D_DRAW_SORT_MATERIAL_ONLY:
+    case R3D_RENDER_SORT_MATERIAL_ONLY:
         compare_func = compare_materials_only;
         sort_fill_cache_by_material(list);
         break;
@@ -808,7 +808,7 @@ void r3d_draw_sort_list(r3d_draw_list_enum_t list, Vector3 viewPosition, r3d_dra
     );
 }
 
-void r3d_draw(const r3d_draw_call_t* call)
+void r3d_render_draw(const r3d_render_call_t* call)
 {
     GLenum primitive, elemType;
     GLint vertCount, elemCount;
@@ -819,14 +819,14 @@ void r3d_draw(const r3d_draw_call_t* call)
     else glDrawElements(primitive, elemCount, elemType, NULL);
 }
 
-void r3d_draw_instanced(const r3d_draw_call_t* call)
+void r3d_render_draw_instanced(const r3d_render_call_t* call)
 {
     GLenum primitive, elemType;
     GLint vertCount, elemCount;
 
     bind_draw_call_vao(call, &primitive, &elemType, &vertCount, &elemCount);
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_InstanceBuffer* instances = &group->instances;
 
     enable_instances(group->instances.buffers, group->instances.flags);
@@ -841,9 +841,9 @@ void r3d_draw_instanced(const r3d_draw_call_t* call)
     disable_instances(group->instances.flags);
 }
 
-void r3d_draw_shape(r3d_draw_shape_enum_t shape)
+void r3d_render_draw_shape(r3d_render_shape_enum_t shape)
 {
-    r3d_draw_shape_t* buffer = &R3D_MOD_DRAW.shapes[shape];
+    r3d_render_shape_t* buffer = &R3D_MOD_RENDER.shapes[shape];
 
     if (buffer->vao == 0) {
         SHAPE_LOADERS[shape](buffer);
@@ -859,7 +859,7 @@ void r3d_draw_shape(r3d_draw_shape_enum_t shape)
     }
 }
 
-void r3d_draw_create_vertex_array(
+void r3d_render_create_vertex_array(
     GLuint* vao, GLuint* vbo, GLuint* ebo,
     const R3D_Vertex* vertices, int vertexCount,
     const void* indices, int indexCount, int indexStride,

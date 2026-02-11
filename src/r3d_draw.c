@@ -26,8 +26,8 @@
 #include "./modules/r3d_driver.h"
 #include "./modules/r3d_target.h"
 #include "./modules/r3d_shader.h"
+#include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
-#include "./modules/r3d_draw.h"
 #include "./modules/r3d_env.h"
 
 // ========================================
@@ -49,16 +49,16 @@
 // ========================================
 
 static void update_view_state(Camera3D camera, double near, double far);
-static void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow);
+static void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow);
 static void upload_view_block(void);
 static void upload_env_block(void);
 
-static void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light);
-static void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light);
-static void raster_geometry(const r3d_draw_call_t* call, bool matchPrepass);
-static void raster_decal(const r3d_draw_call_t* call);
-static void raster_forward(const r3d_draw_call_t* call);
-static void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj);
+static void raster_depth(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light);
+static void raster_depth_cube(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light);
+static void raster_geometry(const r3d_render_call_t* call, bool matchPrepass);
+static void raster_decal(const r3d_render_call_t* call);
+static void raster_forward(const r3d_render_call_t* call);
+static void raster_unlit(const r3d_render_call_t* call, const Matrix* invView, const Matrix* viewProj);
 
 static void pass_scene_shadow(void);
 static void pass_scene_probes(void);
@@ -104,7 +104,7 @@ void R3D_BeginEx(RenderTexture target, Camera3D camera)
     rlDrawRenderBatchActive();
     update_view_state(camera, rlGetCullDistanceNear(), rlGetCullDistanceFar());
     R3D.screen = target;
-    r3d_draw_clear();
+    r3d_render_clear();
 }
 
 void R3D_End(void)
@@ -144,15 +144,15 @@ void R3D_End(void)
 
     /* --- Cull groups and sort all draw calls before rendering --- */
 
-    r3d_draw_cull_groups(&R3D.viewState.frustum);
+    r3d_render_cull_groups(&R3D.viewState.frustum);
 
-    r3d_draw_sort_list(R3D_DRAW_LIST_OPAQUE, R3D.viewState.position, R3D_DRAW_SORT_FRONT_TO_BACK);
-    r3d_draw_sort_list(R3D_DRAW_LIST_TRANSPARENT, R3D.viewState.position, R3D_DRAW_SORT_BACK_TO_FRONT);
-    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_OPAQUE, R3D.viewState.position, R3D_RENDER_SORT_FRONT_TO_BACK);
+    r3d_render_sort_list(R3D_RENDER_LIST_TRANSPARENT, R3D.viewState.position, R3D_RENDER_SORT_BACK_TO_FRONT);
+    r3d_render_sort_list(R3D_RENDER_LIST_DECAL, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
 
-    r3d_draw_sort_list(R3D_DRAW_LIST_OPAQUE_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_TRANSPARENT_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
-    r3d_draw_sort_list(R3D_DRAW_LIST_DECAL_INST, R3D.viewState.position, R3D_DRAW_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_OPAQUE_INST, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_TRANSPARENT_INST, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_DECAL_INST, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
 
     /* --- Deferred path for opaques and decals --- */
 
@@ -164,12 +164,12 @@ void R3D_End(void)
     r3d_driver_set_depth_mask(GL_TRUE);
     r3d_driver_set_stencil_mask(0xFF);
 
-    if (r3d_draw_has_deferred() || r3d_draw_has_prepass()) {
+    if (r3d_render_has_deferred() || r3d_render_has_prepass()) {
         R3D_TARGET_CLEAR(true, R3D_TARGET_ALL_DEFERRED);
 
-        if (r3d_draw_has_deferred()) pass_scene_geometry();
-        if (r3d_draw_has_prepass()) pass_scene_prepass();
-        if (r3d_draw_has_decal()) pass_scene_decals();
+        if (r3d_render_has_deferred()) pass_scene_geometry();
+        if (r3d_render_has_prepass()) pass_scene_prepass();
+        if (r3d_render_has_decal()) pass_scene_decals();
         if (r3d_light_has_visible()) pass_deferred_lights();
 
         bool ssao = R3D.environment.ssao.enabled;
@@ -191,7 +191,7 @@ void R3D_End(void)
 
     pass_scene_background(sceneTarget);
 
-    if (r3d_draw_has_forward() || r3d_draw_has_prepass()) {
+    if (r3d_render_has_forward() || r3d_render_has_prepass()) {
         pass_scene_forward(sceneTarget);
     }
 
@@ -239,14 +239,14 @@ void R3D_End(void)
 
 void R3D_BeginCluster(BoundingBox aabb)
 {
-    if (!r3d_draw_cluster_begin(aabb)) {
+    if (!r3d_render_cluster_begin(aabb)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to begin cluster");
     }
 }
 
 void R3D_EndCluster(void)
 {
-    if (!r3d_draw_cluster_end()) {
+    if (!r3d_render_cluster_end()) {
         R3D_TRACELOG(LOG_WARNING, "Failed to end cluster");
     }
 }
@@ -269,18 +269,18 @@ void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
         return;
     }
 
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.aabb = mesh.aabb;
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
-    r3d_draw_call_t drawCall = {0};
-    drawCall.type = R3D_DRAW_CALL_MESH;
+    r3d_render_call_t drawCall = {0};
+    drawCall.type = R3D_RENDER_CALL_MESH;
     drawCall.mesh.material = material;
     drawCall.mesh.instance = mesh;
 
-    r3d_draw_call_push(&drawCall);
+    r3d_render_call_push(&drawCall);
 }
 
 void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count)
@@ -296,19 +296,19 @@ void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceB
         return;
     }
 
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
-    r3d_draw_call_t drawCall = {0};
-    drawCall.type = R3D_DRAW_CALL_MESH;
+    r3d_render_call_t drawCall = {0};
+    drawCall.type = R3D_RENDER_CALL_MESH;
     drawCall.mesh.material = material;
     drawCall.mesh.instance = mesh;
 
-    r3d_draw_call_push(&drawCall);
+    r3d_render_call_push(&drawCall);
 }
 
 void R3D_DrawModel(R3D_Model model, Vector3 position, float scale)
@@ -325,12 +325,12 @@ void R3D_DrawModelEx(R3D_Model model, Vector3 position, Quaternion rotation, Vec
 
 void R3D_DrawModelPro(R3D_Model model, Matrix transform)
 {
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.aabb = model.aabb;
     drawGroup.skinTexture = model.skeleton.skinTexture;
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -340,12 +340,12 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
             continue;
         }
 
-        r3d_draw_call_t drawCall = {0};
-        drawCall.type = R3D_DRAW_CALL_MESH;
+        r3d_render_call_t drawCall = {0};
+        drawCall.type = R3D_RENDER_CALL_MESH;
         drawCall.mesh.material = model.materials[model.meshMaterials[i]];
         drawCall.mesh.instance = *mesh;
 
-        r3d_draw_call_push(&drawCall);
+        r3d_render_call_push(&drawCall);
     }
 }
 
@@ -358,13 +358,13 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
 {
     if (count <= 0) return;
 
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.skinTexture = model.skeleton.skinTexture;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -374,12 +374,12 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
             continue;
         }
 
-        r3d_draw_call_t drawCall = {0};
-        drawCall.type = R3D_DRAW_CALL_MESH;
+        r3d_render_call_t drawCall = {0};
+        drawCall.type = R3D_RENDER_CALL_MESH;
         drawCall.mesh.material = model.materials[model.meshMaterials[i]];
         drawCall.mesh.instance = *mesh;
 
-        r3d_draw_call_push(&drawCall);
+        r3d_render_call_push(&drawCall);
     }
 }
 
@@ -397,14 +397,14 @@ void R3D_DrawAnimatedModelEx(R3D_Model model, R3D_AnimationPlayer player, Vector
 
 void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matrix transform)
 {
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.aabb = model.aabb;
 
     drawGroup.skinTexture = (player.skinTexture > 0)
         ? player.skinTexture : model.skeleton.skinTexture;
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -414,12 +414,12 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
             continue;
         }
 
-        r3d_draw_call_t drawCall = {0};
-        drawCall.type = R3D_DRAW_CALL_MESH;
+        r3d_render_call_t drawCall = {0};
+        drawCall.type = R3D_RENDER_CALL_MESH;
         drawCall.mesh.material = model.materials[model.meshMaterials[i]];
         drawCall.mesh.instance = *mesh;
 
-        r3d_draw_call_push(&drawCall);
+        r3d_render_call_push(&drawCall);
     }
 }
 
@@ -432,7 +432,7 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
 {
     if (count <= 0) return;
 
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.aabb = model.aabb;
     drawGroup.instances = instances;
@@ -441,7 +441,7 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
     drawGroup.skinTexture = (player.skinTexture > 0)
         ? player.skinTexture : model.skeleton.skinTexture;
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -451,12 +451,12 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
             continue;
         }
 
-        r3d_draw_call_t drawCall = {0};
-        drawCall.type = R3D_DRAW_CALL_MESH;
+        r3d_render_call_t drawCall = {0};
+        drawCall.type = R3D_RENDER_CALL_MESH;
         drawCall.mesh.material = model.materials[model.meshMaterials[i]];
         drawCall.mesh.instance = *mesh;
 
-        r3d_draw_call_push(&drawCall);
+        r3d_render_call_push(&drawCall);
     }
 }
 
@@ -477,20 +477,20 @@ void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform)
     decal.normalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.aabb = (BoundingBox) {
         .min = {-0.5f, -0.5f, -0.5f},
         .max = { 0.5f,  0.5f,  0.5f}
     };
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
-    r3d_draw_call_t drawCall = {0};
-    drawCall.type = R3D_DRAW_CALL_DECAL;
+    r3d_render_call_t drawCall = {0};
+    drawCall.type = R3D_RENDER_CALL_DECAL;
     drawCall.decal.instance = decal;
 
-    r3d_draw_call_push(&drawCall);
+    r3d_render_call_push(&drawCall);
 }
 
 void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count)
@@ -505,18 +505,18 @@ void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int
     decal.normalThreshold = (decal.normalThreshold == 0.0) ? PI * 2 : decal.normalThreshold * DEG2RAD;
     decal.fadeWidth = decal.fadeWidth * DEG2RAD;
 
-    r3d_draw_group_t drawGroup = {0};
+    r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
-    r3d_draw_group_push(&drawGroup);
+    r3d_render_group_push(&drawGroup);
 
-    r3d_draw_call_t drawCall = {0};
-    drawCall.type = R3D_DRAW_CALL_DECAL;
+    r3d_render_call_t drawCall = {0};
+    drawCall.type = R3D_RENDER_CALL_DECAL;
     drawCall.decal.instance = decal;
 
-    r3d_draw_call_push(&drawCall);
+    r3d_render_call_push(&drawCall);
 }
 
 // ========================================
@@ -571,9 +571,9 @@ void update_view_state(Camera3D camera, double near, double far)
     R3D.viewState.far = (float)far;
 }
 
-void upload_light_array_block_for_mesh(const r3d_draw_call_t* call, bool shadow)
+void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
     r3d_shader_block_light_array_t lights = {0};
 
@@ -665,11 +665,11 @@ void upload_env_block(void)
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env);
 }
 
-void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light)
+void raster_depth(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Material* material = &call->mesh.material;
     const R3D_Mesh* mesh = &call->mesh.instance;
 
@@ -730,21 +730,21 @@ void raster_depth(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.depth, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.depth, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
-void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_light_t* light)
+void raster_depth_cube(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Material* material = &call->mesh.material;
     const R3D_Mesh* mesh = &call->mesh.instance;
 
@@ -812,21 +812,21 @@ void raster_depth_cube(const r3d_draw_call_t* call, const Matrix* viewProj, r3d_
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.depthCube, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.depthCube, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
-void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj, r3d_env_probe_t* probe)
+void raster_probe(const r3d_render_call_t* call, const Matrix* invView, const Matrix* viewProj, r3d_env_probe_t* probe)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Material* material = &call->mesh.material;
     const R3D_Mesh* mesh = &call->mesh.instance;
 
@@ -897,21 +897,21 @@ void raster_probe(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.probe, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.probe, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
-void raster_geometry(const r3d_draw_call_t* call, bool matchPrepass)
+void raster_geometry(const r3d_render_call_t* call, bool matchPrepass)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Material* material = &call->mesh.material;
     const R3D_Mesh* mesh = &call->mesh.instance;
 
@@ -985,21 +985,21 @@ void raster_geometry(const r3d_draw_call_t* call, bool matchPrepass)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.geometry, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.geometry, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
-void raster_decal(const r3d_draw_call_t* call)
+void raster_decal(const r3d_render_call_t* call)
 {
-    assert(call->type == R3D_DRAW_CALL_DECAL); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_DECAL); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Decal* decal = &call->decal.instance;
 
     /* --- Use shader --- */
@@ -1060,21 +1060,21 @@ void raster_decal(const r3d_draw_call_t* call)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.decal, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.decal, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
-void raster_forward(const r3d_draw_call_t* call)
+void raster_forward(const r3d_render_call_t* call)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Material* material = &call->mesh.material;
     const R3D_Mesh* mesh = &call->mesh.instance;
 
@@ -1143,21 +1143,21 @@ void raster_forward(const r3d_draw_call_t* call)
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.forward, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.forward, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
-void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matrix* viewProj)
+void raster_unlit(const r3d_render_call_t* call, const Matrix* invView, const Matrix* viewProj)
 {
-    assert(call->type == R3D_DRAW_CALL_MESH); //< Paranoid assert, should be fine
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
-    const r3d_draw_group_t* group = r3d_draw_get_call_group(call);
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_Material* material = &call->mesh.material;
     const R3D_Mesh* mesh = &call->mesh.instance;
 
@@ -1216,13 +1216,13 @@ void raster_unlit(const r3d_draw_call_t* call, const Matrix* invView, const Matr
 
     /* --- Rendering the object corresponding to the draw call --- */
 
-    if (r3d_draw_has_instances(group)) {
+    if (r3d_render_has_instances(group)) {
         R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uInstancing, true);
-        r3d_draw_instanced(call);
+        r3d_render_draw_instanced(call);
     }
     else {
         R3D_SHADER_SET_INT_OPT(scene.unlit, shader, uInstancing, false);
-        r3d_draw(call);
+        r3d_render_draw(call);
     }
 }
 
@@ -1246,11 +1246,11 @@ void pass_scene_shadow(void)
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 const r3d_frustum_t* frustum = &light->frustum[iFace];
-                r3d_draw_cull_groups(frustum);
+                r3d_render_cull_groups(frustum);
 
                 #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
-                R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_PACKLIST_SHADOW) {
-                    if (r3d_draw_should_cast_shadow(call)) {
+                R3D_RENDER_FOR_EACH(call, COND, frustum, R3D_RENDER_PACKLIST_SHADOW) {
+                    if (r3d_render_should_cast_shadow(call)) {
                         raster_depth_cube(call, &light->viewProj[iFace], light);
                     }
                 }
@@ -1262,11 +1262,11 @@ void pass_scene_shadow(void)
             glClear(GL_DEPTH_BUFFER_BIT);
 
             const r3d_frustum_t* frustum = &light->frustum[0];
-            r3d_draw_cull_groups(frustum);
+            r3d_render_cull_groups(frustum);
 
             #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
-            R3D_DRAW_FOR_EACH(call, COND, frustum, R3D_DRAW_PACKLIST_SHADOW) {
-                if (r3d_draw_should_cast_shadow(call)) {
+            R3D_RENDER_FOR_EACH(call, COND, frustum, R3D_RENDER_PACKLIST_SHADOW) {
+                if (r3d_render_should_cast_shadow(call)) {
                     raster_depth(call, &light->viewProj[0], light);
                 }
             }
@@ -1288,7 +1288,7 @@ void pass_scene_probes(void)
             /* --- Generates the list of visible groups for the current face of the capture --- */
 
             const r3d_frustum_t* frustum = &probe->frustum[iFace];
-            r3d_draw_cull_groups(frustum);
+            r3d_render_cull_groups(frustum);
 
             /* --- Render scene --- */
 
@@ -1301,7 +1301,7 @@ void pass_scene_probes(void)
             r3d_env_capture_bind_fbo(iFace, 0);
             glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-            R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_PACKLIST_PROBE) {
+            R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_PACKLIST_PROBE) {
                 if (call->mesh.material.unlit) {
                     raster_unlit(call, &probe->invView[iFace], &probe->viewProj[iFace]);
                 }
@@ -1342,7 +1342,7 @@ void pass_scene_probes(void)
                 R3D_SHADER_SET_VEC4_BLT(scene.background, uColor, background);
             }
 
-            R3D_DRAW_SCREEN();
+            R3D_RENDER_SCREEN();
         }
 
         /* --- Generate irradiance and prefilter maps --- */
@@ -1372,7 +1372,7 @@ void pass_scene_geometry(void)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_OPAQUE_INST, R3D_DRAW_LIST_OPAQUE) {
+    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (!call->mesh.material.unlit) {
             raster_geometry(call, false);
         }
@@ -1394,8 +1394,8 @@ void pass_scene_prepass(void)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
-        if (r3d_draw_is_prepass(call)) {
+    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+        if (r3d_render_is_prepass(call)) {
             raster_depth(call, &R3D.viewState.viewProj, NULL);
         }
     }
@@ -1411,8 +1411,8 @@ void pass_scene_prepass(void)
     r3d_driver_set_depth_func(GL_EQUAL);
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
-        if (r3d_draw_is_prepass(call)) {
+    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+        if (r3d_render_is_prepass(call)) {
             raster_geometry(call, true);
         }
     }
@@ -1435,7 +1435,7 @@ void pass_scene_decals(void)
     r3d_driver_set_cull_face(GL_FRONT); // Only render back faces to avoid clipping issues
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_DECAL_INST, R3D_DRAW_LIST_DECAL) {
+    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_DECAL_INST, R3D_RENDER_LIST_DECAL) {
         raster_decal(call);
     }
 }
@@ -1457,7 +1457,7 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Calculate SSAO --- */
 
@@ -1473,7 +1473,7 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssao, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssao, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Blur SSAO --- */
 
@@ -1483,12 +1483,12 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_TARGET_BIND(false, R3D_TARGET_SSAO_1);
     R3D_SHADER_SET_VEC2_BLT(prepare.ssaoBlur, uDirection, (Vector2){1,0});
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoBlur, uSsaoTex, r3d_target_get(R3D_TARGET_SSAO_0));
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     R3D_TARGET_BIND(false, R3D_TARGET_SSAO_0);
     R3D_SHADER_SET_VEC2_BLT(prepare.ssaoBlur, uDirection, (Vector2){0,1});
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssaoBlur, uSsaoTex, r3d_target_get(R3D_TARGET_SSAO_1));
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     return R3D_TARGET_SSAO_0;
 }
@@ -1525,7 +1525,7 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssilInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssilInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Calculate SSIL (RAW) --- */
 
@@ -1545,7 +1545,7 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_SET_FLOAT_BLT(prepare.ssil, uAoPower, R3D.environment.ssil.aoPower);
     R3D_SHADER_SET_FLOAT_BLT(prepare.ssil, uBounce, R3D.environment.ssil.bounce);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Atrous denoise: RAW -> FILTERED --- */
 
@@ -1561,7 +1561,7 @@ r3d_target_t pass_prepare_ssil(void)
         R3D_TARGET_BIND(false, dst);
         R3D_SHADER_BIND_SAMPLER_BLT(prepare.atrousWavelet, uSourceTex, r3d_target_get(src));
         R3D_SHADER_SET_INT_BLT(prepare.atrousWavelet, uStepSize, 1 << i);
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
         SWAP(r3d_target_t, src, dst);
     }
 
@@ -1595,7 +1595,7 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssrInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.ssrInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Calculate SSR --- */
 
@@ -1614,7 +1614,7 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uMaxDistance, R3D.environment.ssr.maxDistance);
     R3D_SHADER_SET_FLOAT_BLT(prepare.ssr, uEdgeFade, R3D.environment.ssr.edgeFade);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Downsample SSR --- */
 
@@ -1628,7 +1628,7 @@ r3d_target_t pass_prepare_ssr(void)
         r3d_target_set_write_level(0, iDst);
         r3d_target_set_viewport(R3D_TARGET_SSR, iDst);
         R3D_SHADER_SET_INT_BLT(prepare.blurDown, uSourceLod, iDst - 1);
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
     }
 
     /* --- Upsample only once for each level below zero --- */
@@ -1640,7 +1640,7 @@ r3d_target_t pass_prepare_ssr(void)
         r3d_target_set_write_level(0, iDst);
         r3d_target_set_viewport(R3D_TARGET_SSR, iDst);
         R3D_SHADER_SET_INT_BLT(prepare.blurUp, uSourceLod, iDst + 1);
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
     }
 
     return R3D_TARGET_SSR;
@@ -1708,7 +1708,7 @@ void pass_deferred_lights(void)
         r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data);
 
         // Accumulate this light!
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
     }
 
     /* --- Reset undesired states --- */
@@ -1745,7 +1745,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource)
 
     R3D_SHADER_SET_FLOAT_BLT(deferred.ambient, uSsilEnergy, R3D.environment.ssil.energy);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 }
 
 void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
@@ -1770,7 +1770,7 @@ void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
 
     R3D_SHADER_SET_FLOAT_BLT(deferred.compose, uSsrNumLevels, (float)r3d_target_get_num_levels(R3D_TARGET_SSR));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 }
 
 void pass_scene_forward(r3d_target_t sceneTarget)
@@ -1786,7 +1786,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_OPAQUE_INST, R3D_DRAW_LIST_OPAQUE) {
+    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (call->mesh.material.unlit) {
             raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
         }
@@ -1796,7 +1796,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    R3D_DRAW_FOR_EACH(call, true, frustum, R3D_DRAW_LIST_TRANSPARENT_INST, R3D_DRAW_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (call->mesh.material.unlit) {
             raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
         }
@@ -1843,7 +1843,7 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_SET_VEC4_BLT(scene.background, uColor, background);
     }
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 }
 
 r3d_target_t pass_post_setup(r3d_target_t sceneTarget)
@@ -1871,7 +1871,7 @@ r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT_BLT(post.fog, uFogDensity, R3D.environment.fog.density);
     R3D_SHADER_SET_FLOAT_BLT(post.fog, uSkyAffect, R3D.environment.fog.skyAffect);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     return sceneTarget;
 }
@@ -1916,7 +1916,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     R3D_SHADER_SET_VEC4_BLT(prepare.bloomDown, uPrefilter, prefilter);
     R3D_SHADER_SET_INT_BLT(prepare.bloomDown, uDstLevel, 0);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Bloom Downsampling --- */
 
@@ -1933,7 +1933,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
         R3D_SHADER_SET_VEC2_BLT(prepare.bloomDown, uTexelSize, (Vector2) {txSrcW, txSrcH});
         R3D_SHADER_SET_INT_BLT(prepare.bloomDown, uDstLevel, dstLevel);
 
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
     }
 
     /* --- Bloom Upsampling --- */
@@ -1957,7 +1957,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
             R3D.environment.bloom.filterRadius * txSrcH
         });
 
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
     }
 
     r3d_driver_disable(GL_BLEND);
@@ -1973,7 +1973,7 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     R3D_SHADER_SET_INT_BLT(post.bloom, uBloomMode, R3D.environment.bloom.mode);
     R3D_SHADER_SET_FLOAT_BLT(post.bloom, uBloomIntensity, R3D.environment.bloom.intensity);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     return sceneTarget;
 }
@@ -1989,7 +1989,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT_BLT(prepare.dofCoc, uFocusPoint, R3D.environment.dof.focusPoint);
     R3D_SHADER_SET_FLOAT_BLT(prepare.dofCoc, uFocusScale, R3D.environment.dof.focusScale);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Downsample CoC to half resolution --- */
 
@@ -2001,7 +2001,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofDown, uCoCTex, r3d_target_get(R3D_TARGET_DOF_COC));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Calculate DoF in half resolution --- */
 
@@ -2012,7 +2012,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_BLT(prepare.dofBlur, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
     R3D_SHADER_SET_FLOAT_BLT(prepare.dofBlur, uMaxBlurSize, R3D.environment.dof.maxBlurSize * 0.5f);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     /* --- Compose DoF with the scene ---  */
 
@@ -2022,7 +2022,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_BLT(post.dof, uSceneTex, r3d_target_get(sceneTarget));
     R3D_SHADER_BIND_SAMPLER_BLT(post.dof, uBlurTex, r3d_target_get(R3D_TARGET_DOF_1));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     return sceneTarget;
 }
@@ -2044,7 +2044,7 @@ r3d_target_t pass_post_screen(r3d_target_t sceneTarget)
         R3D_SHADER_SET_VEC2_OVR(shader, post.screen, uResolution, (Vector2) {(float)R3D_TARGET_WIDTH, (float)R3D_TARGET_HEIGHT});
         R3D_SHADER_SET_VEC2_OVR(shader, post.screen, uTexelSize, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
 
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
     }
 
     return sceneTarget;
@@ -2064,7 +2064,7 @@ r3d_target_t pass_post_output(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT_BLT(post.output, uContrast, R3D.environment.color.contrast);
     R3D_SHADER_SET_FLOAT_BLT(post.output, uSaturation, R3D.environment.color.saturation);
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     return sceneTarget;
 }
@@ -2077,7 +2077,7 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER_BLT(post.fxaa, uSourceTex, r3d_target_get(sceneTarget));
     R3D_SHADER_SET_VEC2_BLT(post.fxaa, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     return sceneTarget;
 }
@@ -2147,7 +2147,7 @@ void blit_to_screen(r3d_target_t source)
             break;
         }
 
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
 
         r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
         return;
@@ -2161,7 +2161,7 @@ void blit_to_screen(r3d_target_t source)
         R3D_SHADER_SET_INT_BLT(prepare.blurDown, uSourceLod, 0);
         R3D_SHADER_BIND_SAMPLER_BLT(prepare.blurDown, uSourceTex, r3d_target_get(source));
 
-        R3D_DRAW_SCREEN();
+        R3D_RENDER_SCREEN();
 
         r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
         return;
@@ -2201,7 +2201,7 @@ void visualize_to_screen(r3d_target_t source)
     R3D_SHADER_SET_INT_BLT(post.visualizer, uOutputMode, R3D.outputMode);
     R3D_SHADER_BIND_SAMPLER_BLT(post.visualizer, uSourceTex, r3d_target_get(source));
 
-    R3D_DRAW_SCREEN();
+    R3D_RENDER_SCREEN();
 
     r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
 }

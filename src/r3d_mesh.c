@@ -13,8 +13,8 @@
 #include <stddef.h>
 #include <glad.h>
 
+#include "./modules/r3d_render.h"
 #include "./common/r3d_helper.h"
-#include "./modules/r3d_draw.h"
 
 // ========================================
 // PUBLIC API
@@ -39,7 +39,7 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
         break;
     }
 
-    r3d_draw_create_vertex_array(
+    r3d_render_create_vertex_array(
         &mesh.vao, &mesh.vbo, &mesh.ebo,
         data.vertices, data.vertexCount,
         data.indices, data.indexCount,
