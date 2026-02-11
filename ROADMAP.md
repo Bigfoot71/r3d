@@ -2,7 +2,7 @@
 
 ## **v0.9**
 
-* [ ] **Refactor internal `r3d_draw` module**
+* [x] **Refactor internal `r3d_draw` module**
   Centralize all drawing-related functionality and drawable objects, including VAO management, which is currently scattered.
 
 * [ ] **Redesign internal shader macro system**
