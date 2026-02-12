@@ -122,7 +122,7 @@ bool r3d_importer_load_skeleton(const R3D_Importer* importer, R3D_Skeleton* skel
  * Load all materials from the importer into the model
  * Returns true on success, false on failure
  */
-bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Model* model, r3d_importer_texture_cache_t* textureCache);
+bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Material** materials, int* materialCount, r3d_importer_texture_cache_t* textureCache);
 
 /**
  * Load all animations from the imported scene

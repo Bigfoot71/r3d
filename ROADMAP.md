@@ -18,7 +18,7 @@
   SMAA appears to be the most suitable next step. Techniques such as TAA currently require
   deeper architectural changes...
 
-* [ ] **Material loading/import helpers**
+* [x] **Material loading/import helpers**
   Similar to existing skeleton and animation loading utilities, it would be useful to provide
   helper functions to import materials from files when needed.
 
