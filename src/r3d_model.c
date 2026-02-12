@@ -34,7 +34,7 @@ static bool load_model_components(R3D_Model* model, const R3D_Importer* importer
         return false;
     }
 
-    if (!r3d_importer_load_materials(importer, model, textureCache)) {
+    if (!r3d_importer_load_materials(importer, &model->materials, &model->materialCount, textureCache)) {
         r3d_importer_unload_texture_cache(textureCache, true);
         return false;
     }

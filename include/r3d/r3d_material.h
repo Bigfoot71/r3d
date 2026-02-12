@@ -10,6 +10,7 @@
 #define R3D_MATERIAL_H
 
 #include "./r3d_surface_shader.h"
+#include "./r3d_importer.h"
 #include "./r3d_platform.h"
 #include <raylib.h>
 #include <stdint.h>
@@ -296,6 +297,41 @@ R3DAPI R3D_Material R3D_GetDefaultMaterial(void);
  * @param material Default material to define.
  */
 R3DAPI void R3D_SetDefaultMaterial(R3D_Material material);
+
+/**
+ * @brief Load materials from a file.
+ *
+ * Parses a 3D model file and loads its associated materials.
+ *
+ * @param filePath Path to the 3D model file.
+ * @param materialCount Pointer to an integer to store the number of loaded materials.
+ * @return Pointer to an array of loaded R3D_Material, or NULL on failure.
+ */
+R3DAPI R3D_Material* R3D_LoadMaterials(const char* filePath, int* materialCount);
+
+/**
+ * @brief Load materials from memory.
+ *
+ * Loads materials directly from a memory buffer containing 3D model data.
+ *
+ * @param data Pointer to the memory buffer containing the model data.
+ * @param size Size of the data buffer in bytes.
+ * @param hint Hint on the model format (can be NULL).
+ * @param materialCount Pointer to an integer to store the number of loaded materials.
+ * @return Pointer to an array of loaded R3D_Material, or NULL on failure.
+ */
+R3DAPI R3D_Material* R3D_LoadMaterialsFromMemory(const void* data, unsigned int size, const char* hint, int* materialCount);
+
+/**
+ * @brief Load materials from an importer.
+ *
+ * Loads materials that were previously imported via an R3D_Importer instance.
+ *
+ * @param importer Pointer to a valid R3D_Importer.
+ * @param materialCount Pointer to an integer to store the number of loaded materials.
+ * @return Pointer to an array of loaded R3D_Material, or NULL on failure.
+ */
+R3DAPI R3D_Material* R3D_LoadMaterialsFromImporter(const R3D_Importer* importer, int* materialCount);
 
 /**
  * @brief Unload a material and its associated textures.

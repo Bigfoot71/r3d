@@ -9,6 +9,7 @@
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_utils.h>
 
+#include "./importer/r3d_importer_internal.h"
 #include "./modules/r3d_texture.h"
 #include "./common/r3d_image.h"
 #include "./r3d_core_state.h"
@@ -25,6 +26,50 @@ R3D_Material R3D_GetDefaultMaterial(void)
 void R3D_SetDefaultMaterial(R3D_Material material)
 {
     R3D.material = material;
+}
+
+R3D_Material* R3D_LoadMaterials(const char* filePath, int* materialCount)
+{
+    R3D_Material* materials = NULL;
+
+    R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
+    if (importer == NULL) return materials;
+
+    materials = R3D_LoadMaterialsFromImporter(importer, materialCount);
+    R3D_UnloadImporter(importer);
+
+    return materials;
+}
+
+R3D_Material* R3D_LoadMaterialsFromMemory(const void* data, unsigned int size, const char* hint, int* materialCount)
+{
+    R3D_Material* materials = NULL;
+
+    R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
+    if (importer == NULL) return materials;
+
+    materials = R3D_LoadMaterialsFromImporter(importer, materialCount);
+    R3D_UnloadImporter(importer);
+
+    return materials;
+}
+
+R3D_Material* R3D_LoadMaterialsFromImporter(const R3D_Importer* importer, int* materialCount)
+{
+    R3D_Material* materials = NULL;
+
+    r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
+        importer, R3D.colorSpace, R3D.textureFilter);
+    if (textureCache == NULL) return NULL;
+
+    if (!r3d_importer_load_materials(importer, &materials, materialCount, textureCache)) {
+        r3d_importer_unload_texture_cache(textureCache, true);
+        return NULL;
+    }
+
+    r3d_importer_unload_texture_cache(textureCache, false);
+
+    return materials;
 }
 
 void R3D_UnloadMaterial(R3D_Material material)
