@@ -271,7 +271,7 @@ void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
-    drawGroup.aabb = mesh.aabb;
+    drawGroup.obb = r3d_compute_obb(mesh.aabb, transform);
 
     r3d_render_group_push(&drawGroup);
 
@@ -327,7 +327,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
 {
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
-    drawGroup.aabb = model.aabb;
+    drawGroup.obb = r3d_compute_obb(model.aabb, transform);
     drawGroup.skinTexture = model.skeleton.skinTexture;
 
     r3d_render_group_push(&drawGroup);
@@ -399,7 +399,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
 {
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
-    drawGroup.aabb = model.aabb;
+    drawGroup.obb = r3d_compute_obb(model.aabb, transform);
 
     drawGroup.skinTexture = (player.skinTexture > 0)
         ? player.skinTexture : model.skeleton.skinTexture;
@@ -434,7 +434,6 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
-    drawGroup.aabb = model.aabb;
     drawGroup.instances = instances;
     drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
 
@@ -479,10 +478,7 @@ void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform)
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
-    drawGroup.aabb = (BoundingBox) {
-        .min = {-0.5f, -0.5f, -0.5f},
-        .max = { 0.5f,  0.5f,  0.5f}
-    };
+    drawGroup.obb = r3d_compute_obb(R3D_AABB_UNIT, transform);
 
     r3d_render_group_push(&drawGroup);
 

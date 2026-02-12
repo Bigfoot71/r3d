@@ -1,5 +1,7 @@
+#include "raylib.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
+#include <stdlib.h>
 
 #define INSTANCE_COUNT 1000
 
@@ -20,11 +22,11 @@ int main(void)
     R3D_Material material = R3D_GetDefaultMaterial();
 
     // Generate random transforms and colors for instances
-    R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE | R3D_INSTANCE_COLOR);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
-    Quaternion* rotations = R3D_MapInstances(instances, R3D_INSTANCE_ROTATION);
-    Vector3* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE);
-    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR);
+    //R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE | R3D_INSTANCE_COLOR);
+    Vector3* positions = malloc(INSTANCE_COUNT*sizeof(Vector3));
+    Quaternion* rotations = malloc(INSTANCE_COUNT*sizeof(Quaternion));
+    Vector3* scales = malloc(INSTANCE_COUNT*sizeof(Vector3));
+    Color* colors = malloc(INSTANCE_COUNT*sizeof(Color));
 
     for (int i = 0; i < INSTANCE_COUNT; i++)
     {
@@ -48,7 +50,7 @@ int main(void)
         );
     }
 
-    R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE | R3D_INSTANCE_COLOR);
+    //R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION | R3D_INSTANCE_ROTATION | R3D_INSTANCE_SCALE | R3D_INSTANCE_COLOR);
 
     // Setup directional light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
@@ -75,7 +77,11 @@ int main(void)
             ClearBackground(RAYWHITE);
 
             R3D_Begin(camera);
-                R3D_DrawMeshInstanced(mesh, material, instances, INSTANCE_COUNT);
+                for (int i = 0; i < INSTANCE_COUNT; i++) {
+                    material.albedo.color = colors[i];
+                    R3D_DrawMeshEx(mesh, material, positions[i], rotations[i], scales[i]);
+                }
+                //R3D_DrawMeshInstanced(mesh, material, instances, INSTANCE_COUNT);
             R3D_End();
 
             DrawFPS(10, 10);

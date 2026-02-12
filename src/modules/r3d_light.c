@@ -663,7 +663,7 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
             light->state.matrixShouldBeUpdated = false;
         }
 
-        if (r3d_frustum_is_aabb_in(viewFrustum, &light->aabb)) {
+        if (r3d_frustum_is_aabb_in(viewFrustum, light->aabb)) {
             if (hasVisibleShadows) *hasVisibleShadows |= (light->shadowLayer >= 0);
             visibleLights->lights[visibleLights->count++] = index;
         }

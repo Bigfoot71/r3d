@@ -316,26 +316,44 @@ static void bind_draw_call_vao(const r3d_render_call_t* call, GLenum* primitive,
 // INTERNAL CULLING FUNCTIONS
 // ========================================
 
-static inline bool frustum_test_aabb(const r3d_frustum_t* frustum, const BoundingBox* aabb, const Matrix* transform)
+static inline bool is_aabb_visible(const r3d_frustum_t* frustum, BoundingBox aabb)
 {
-    if (memcmp(aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
+    if (memcmp(&aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
         return true;
     }
 
-    if (!transform || r3d_matrix_is_identity(transform)) {
+    return r3d_frustum_is_aabb_in(frustum, aabb);
+}
+
+static inline bool is_obb_visible(const r3d_frustum_t* frustum, r3d_oriented_box_t obb)
+{
+    if (memcmp(&obb, &(r3d_oriented_box_t){0}, sizeof(r3d_oriented_box_t)) == 0) {
+        return true;
+    }
+
+    return r3d_frustum_is_obb_in(frustum, obb);
+}
+
+static inline bool is_transformed_aabb_visible(const r3d_frustum_t* frustum, BoundingBox aabb, Matrix transform)
+{
+    if (memcmp(&aabb, &(BoundingBox){0}, sizeof(BoundingBox)) == 0) {
+        return true;
+    }
+
+    if (r3d_matrix_is_identity(transform)) {
         return r3d_frustum_is_aabb_in(frustum, aabb);
     }
 
-    return r3d_frustum_is_obb_in(frustum, aabb, transform);
+    return r3d_frustum_is_obb_in(frustum, r3d_compute_obb(aabb, transform));
 }
 
-static inline bool frustum_test_draw_call(const r3d_frustum_t* frustum, const r3d_render_call_t* call, const Matrix* transform)
+static inline bool is_draw_call_visible(const r3d_frustum_t* frustum, const r3d_render_call_t* call, Matrix transform)
 {
     switch (call->type) {
     case R3D_RENDER_CALL_MESH:
-        return frustum_test_aabb(frustum, &call->mesh.instance.aabb, transform);
+        return is_transformed_aabb_visible(frustum, call->mesh.instance.aabb, transform);
     case R3D_RENDER_CALL_DECAL:
-        return frustum_test_aabb(frustum, &(BoundingBox) {
+        return is_transformed_aabb_visible(frustum, (BoundingBox) {
             .min.x = -0.5f, .min.y = -0.5f, .min.z = -0.5f,
             .max.x = +0.5f, .max.y = +0.5f, .max.z = +0.5f
         }, transform);
@@ -723,7 +741,7 @@ void r3d_render_cull_groups(const r3d_frustum_t* frustum)
 
             // Test cluster once (shared by multiple groups)
             if (cluster->visible == R3D_RENDER_VISBILITY_UNKNOWN) {
-                cluster->visible = frustum_test_aabb(frustum, &cluster->aabb, NULL);
+                cluster->visible = is_aabb_visible(frustum, cluster->aabb);
             }
 
             // If cluster is visible, test the group
@@ -731,7 +749,7 @@ void r3d_render_cull_groups(const r3d_frustum_t* frustum)
                 // For instanced: trust cluster visibility
                 // For others: test group AABB individually
                 if (r3d_render_has_instances(group)) visibility->visible = R3D_RENDER_VISBILITY_TRUE;
-                else visibility->visible = frustum_test_aabb(frustum, &group->aabb, &group->transform);
+                else visibility->visible = is_obb_visible(frustum, group->obb);
             }
             else {
                 visibility->visible = R3D_RENDER_VISBILITY_FALSE;
@@ -742,7 +760,7 @@ void r3d_render_cull_groups(const r3d_frustum_t* frustum)
             // For instanced: always visible
             // For others: test group AABB
             if (r3d_render_has_instances(group)) visibility->visible = R3D_RENDER_VISBILITY_TRUE;
-            else visibility->visible = frustum_test_aabb(frustum, &group->aabb, &group->transform);
+            else visibility->visible = is_obb_visible(frustum, group->obb);
         }
     }
 }
@@ -775,13 +793,13 @@ bool r3d_render_call_is_visible(const r3d_render_call_t* call, const r3d_frustum
     // If the group hasn't been tested yet, check instanced/skinned groups now
     else if (groupVisibility == R3D_RENDER_VISBILITY_UNKNOWN) {
         if (r3d_render_has_instances(group) || group->skinTexture > 0) {
-            return frustum_test_aabb(frustum, &group->aabb, &group->transform);
+            return is_obb_visible(frustum, group->obb);
         }
         // Regular multi-call group: fall through to individual call testing
     }
 
     // Test this specific draw call against the frustum
-    return frustum_test_draw_call(frustum, call, &group->transform);
+    return is_draw_call_visible(frustum, call, group->transform);
 }
 
 void r3d_render_sort_list(r3d_render_list_enum_t list, Vector3 viewPosition, r3d_render_sort_enum_t mode)

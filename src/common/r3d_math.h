@@ -36,12 +36,18 @@
 #define R3D_SRGB_NONLINEAR_THRESHOLD    (0.0031308f)
 #define R3D_SRGB_LINEAR_FACTOR          (1.0f / 12.92f)
 
-#define R3D_MATRIX_IDENTITY     \
-    (Matrix) {                  \
-        1.0f, 0.0f, 0.0f, 0.0f, \
-        0.0f, 1.0f, 0.0f, 0.0f, \
-        0.0f, 0.0f, 1.0f, 0.0f, \
-        0.0f, 0.0f, 0.0f, 1.0f, \
+#define R3D_MATRIX_IDENTITY             \
+    (Matrix) {                          \
+        1.0f, 0.0f, 0.0f, 0.0f,         \
+        0.0f, 1.0f, 0.0f, 0.0f,         \
+        0.0f, 0.0f, 1.0f, 0.0f,         \
+        0.0f, 0.0f, 0.0f, 1.0f,         \
+    }
+
+#define R3D_AABB_UNIT                   \
+    (BoundingBox) {                     \
+        .min = {-0.5f, -0.5f, -0.5f},   \
+        .max = {+0.5f, +0.5f, +0.5f},   \
     }
 
 // ========================================
@@ -52,6 +58,14 @@ typedef struct {
     int x, y;
     int w, h;
 } r3d_rect_t;
+
+typedef struct {
+    Vector3 center;
+    Vector3 axisX;
+    Vector3 axisY;
+    Vector3 axisZ;
+    Vector3 halfExtents;
+} r3d_oriented_box_t;
 
 // ========================================
 // COLOR FUNCTIONS
@@ -220,9 +234,9 @@ static inline Vector4 r3d_vector4_transform(Vector4 v, const Matrix* m)
 // MATRIX FUNCTIONS
 // ========================================
 
-static inline bool r3d_matrix_is_identity(const Matrix* matrix)
+static inline bool r3d_matrix_is_identity(Matrix matrix)
 {
-    return (0 == memcmp(matrix, &R3D_MATRIX_IDENTITY, sizeof(Matrix)));
+    return (0 == memcmp(&matrix, &R3D_MATRIX_IDENTITY, sizeof(Matrix)));
 }
 
 static inline Matrix r3d_matrix_st(Vector3 scale, Vector3 translate)
@@ -298,11 +312,23 @@ static inline Matrix r3d_matrix_srt_quat(Vector3 scale, Quaternion quat, Vector3
     float qxqy = qx * qy, qxqz = qx * qz, qxqw = qx * qw;
     float qyqz = qy * qz, qyqw = qy * qw, qzqw = qz * qw;
 
+    float r00 = 1.0f - 2.0f * (qy2 + qz2);
+    float r01 = 2.0f * (qxqy - qzqw);
+    float r02 = 2.0f * (qxqz + qyqw);
+    
+    float r10 = 2.0f * (qxqy + qzqw);
+    float r11 = 1.0f - 2.0f * (qx2 + qz2);
+    float r12 = 2.0f * (qyqz - qxqw);
+    
+    float r20 = 2.0f * (qxqz - qyqw);
+    float r21 = 2.0f * (qyqz + qxqw);
+    float r22 = 1.0f - 2.0f * (qx2 + qy2);
+
     return (Matrix) {
-        scale.x * (1.0f - 2.0f * (qy2 + qz2)), scale.x * (2.0f * (qxqy - qzqw)),      scale.x * (2.0f * (qxqz + qyqw)),      translate.x,
-        scale.y * (2.0f * (qxqy + qzqw)),      scale.y * (1.0f - 2.0f * (qx2 + qz2)), scale.y * (2.0f * (qyqz - qxqw)),      translate.y,
-        scale.z * (2.0f * (qxqz - qyqw)),      scale.z * (2.0f * (qyqz + qxqw)),      scale.z * (1.0f - 2.0f * (qx2 + qy2)), translate.z,
-        0,0,0,1
+        r00 * scale.x, r01 * scale.y, r02 * scale.z, translate.x,
+        r10 * scale.x, r11 * scale.y, r12 * scale.z, translate.y,
+        r20 * scale.x, r21 * scale.y, r22 * scale.z, translate.z,
+        0, 0, 0, 1
     };
 }
 
@@ -345,6 +371,35 @@ static inline Matrix r3d_matrix_normal(const Matrix* transform)
     result.m15 = 1.0f;
 
     return result;
+}
+
+// ========================================
+// SHAPE FUNCTIONS
+// ========================================
+
+static inline r3d_oriented_box_t r3d_compute_obb(BoundingBox aabb, Matrix transform)
+{
+    r3d_oriented_box_t obb;
+
+    obb.halfExtents.x = (aabb.max.x - aabb.min.x) * 0.5f;
+    obb.halfExtents.y = (aabb.max.y - aabb.min.y) * 0.5f;
+    obb.halfExtents.z = (aabb.max.z - aabb.min.z) * 0.5f;
+
+    Vector3 localCenter = {
+        (aabb.min.x + aabb.max.x) * 0.5f,
+        (aabb.min.y + aabb.max.y) * 0.5f,
+        (aabb.min.z + aabb.max.z) * 0.5f
+    };
+
+    obb.center.x = transform.m0*localCenter.x + transform.m4*localCenter.y + transform.m8*localCenter.z + transform.m12;
+    obb.center.y = transform.m1*localCenter.x + transform.m5*localCenter.y + transform.m9*localCenter.z + transform.m13;
+    obb.center.z = transform.m2*localCenter.x + transform.m6*localCenter.y + transform.m10*localCenter.z + transform.m14;
+
+    obb.axisX = (Vector3){transform.m0, transform.m1, transform.m2};
+    obb.axisY = (Vector3){transform.m4, transform.m5, transform.m6};
+    obb.axisZ = (Vector3){transform.m8, transform.m9, transform.m10};
+
+    return obb;
 }
 
 #endif // R3D_COMMON_MATH_H

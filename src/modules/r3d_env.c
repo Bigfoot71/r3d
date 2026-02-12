@@ -499,7 +499,7 @@ void r3d_env_probe_update_and_cull(const r3d_frustum_t* viewFrustum, bool* hasVi
             }
         };
 
-        if (r3d_frustum_is_aabb_in(viewFrustum, &aabb)) {
+        if (r3d_frustum_is_aabb_in(viewFrustum, aabb)) {
             visibleProbes->probes[visibleProbes->count++] = index;
             if (hasVisibleProbes) *hasVisibleProbes = true;
         }

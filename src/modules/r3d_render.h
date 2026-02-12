@@ -196,7 +196,7 @@ typedef struct {
  */
 typedef struct {
     Matrix transform;               //< Model transformation matrix
-    BoundingBox aabb;               //< AABB of all drawables contained in the group
+    r3d_oriented_box_t obb;         //< Oriented bounding box of all drawables contained in the group
     GLuint skinTexture;             //< Texture that contains the bone matrices (can be 0 for non-skinned)
     R3D_InstanceBuffer instances;   //< Instance buffer to use
     int instanceCount;              //< Number of instances
