@@ -107,6 +107,11 @@ typedef struct {
     pipeline_entry_t blendDstFactor;
 } pipeline_cache_t;
 
+typedef struct {
+    GLuint queryID;
+    const char* label;
+} driver_timer_t;
+
 // ========================================
 // MODULE STATE
 // ========================================
@@ -114,6 +119,7 @@ typedef struct {
 static struct r3d_driver {
     extension_cache_t extCache;
     pipeline_cache_t pipeCache;
+    driver_timer_t timer;
 } R3D_MOD_DRIVER;
 
 // ========================================
@@ -512,6 +518,35 @@ void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode c
         assert(false && "This shouldn't happen");
         break;
     }
+}
+
+void r3d_driver_timer_start(const char* label)
+{
+    driver_timer_t* t = &R3D_MOD_DRIVER.timer;
+    t->label = label;
+
+    if (t->queryID == 0) {
+        glGenQueries(1, &t->queryID);
+    }
+
+    glBeginQuery(GL_TIME_ELAPSED, t->queryID);
+}
+
+double r3d_driver_timer_stop(void)
+{
+    driver_timer_t* t = &R3D_MOD_DRIVER.timer;
+    glEndQuery(GL_TIME_ELAPSED);
+
+    GLuint64 timeElapsed = 0;
+    glGetQueryObjectui64v(t->queryID, GL_QUERY_RESULT, &timeElapsed);
+
+    double ms = (double)timeElapsed / 1e6;
+
+    if (t->label) {
+        R3D_TRACELOG(LOG_INFO, "[TIMER] %s: %.3f ms\n", t->label, ms);
+    }
+
+    return ms;
 }
 
 void r3d_driver_invalidate_cache(void)

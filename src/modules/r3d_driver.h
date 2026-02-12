@@ -139,6 +139,20 @@ void r3d_driver_set_cull_mode(R3D_CullMode mode);
 void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
 
 /*
+ * Starts a GPU timer to measure the elapsed time of a code section.
+ * Uses a GL_TIME_ELAPSED query and stores the label for optional logging.
+ * DEBUG ONLY: may stall the CPU if the GPU has not finished.
+ */
+void r3d_driver_timer_start(const char* label);
+
+/*
+ * Stops the GPU timer started with r3d_driver_timer_start.
+ * Retrieves the GPU time in milliseconds and logs it if a label was provided.
+ * DEBUG ONLY: may stall the CPU if the GPU has not finished.
+ */
+double r3d_driver_timer_stop(void);
+
+/*
  * Invalidates the entire pipeline cache.
  */
 void r3d_driver_invalidate_cache(void);
