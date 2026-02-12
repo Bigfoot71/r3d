@@ -253,13 +253,13 @@ void R3D_EndCluster(void)
 
 void R3D_DrawMesh(R3D_Mesh mesh, R3D_Material material, Vector3 position, float scale)
 {
-    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    Matrix transform = r3d_matrix_st((Vector3) {scale, scale, scale}, position);
     R3D_DrawMeshPro(mesh, material, transform);
 }
 
 void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    Matrix transform = r3d_matrix_srt_quat(scale, rotation, position);
     R3D_DrawMeshPro(mesh, material, transform);
 }
 
@@ -313,13 +313,13 @@ void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceB
 
 void R3D_DrawModel(R3D_Model model, Vector3 position, float scale)
 {
-    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    Matrix transform = r3d_matrix_st((Vector3) {scale, scale, scale}, position);
     R3D_DrawModelPro(model, transform);
 }
 
 void R3D_DrawModelEx(R3D_Model model, Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    Matrix transform = r3d_matrix_srt_quat(scale, rotation, position);
     R3D_DrawModelPro(model, transform);
 }
 
@@ -385,13 +385,13 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
 
 void R3D_DrawAnimatedModel(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, float scale)
 {
-    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    Matrix transform = r3d_matrix_st((Vector3) {scale, scale, scale}, position);
     R3D_DrawAnimatedModelPro(model, player, transform);
 }
 
 void R3D_DrawAnimatedModelEx(R3D_Model model, R3D_AnimationPlayer player, Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    Matrix transform = r3d_matrix_srt_quat(scale, rotation, position);
     R3D_DrawAnimatedModelPro(model, player, transform);
 }
 
@@ -462,13 +462,13 @@ void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer playe
 
 void R3D_DrawDecal(R3D_Decal decal, Vector3 position, float scale)
 {
-    Matrix transform = r3d_matrix_scale_translate((Vector3) {scale, scale, scale}, position);
+    Matrix transform = r3d_matrix_st((Vector3) {scale, scale, scale}, position);
     R3D_DrawDecalPro(decal, transform);
 }
 
 void R3D_DrawDecalEx(R3D_Decal decal, Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    Matrix transform = r3d_matrix_scale_rotq_translate(scale, rotation, position);
+    Matrix transform = r3d_matrix_srt_quat(scale, rotation, position);
     R3D_DrawDecalPro(decal, transform);
 }
 
@@ -554,7 +554,7 @@ void update_view_state(Camera3D camera, double near, double far)
         proj = MatrixOrtho(-right, right, -top, top, near, far);
     }
 
-    Matrix viewProj = r3d_matrix_multiply(&view, &proj);
+    Matrix viewProj = MatrixMultiply(view, proj);
 
     R3D.viewState.frustum = r3d_frustum_create(viewProj);
     R3D.viewState.position = camera.position;
@@ -588,7 +588,7 @@ void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shado
         }
 
         r3d_shader_block_light_t* data = &lights.uLights[lights.uNumLights];
-        data->viewProj = r3d_matrix_transpose(&light->viewProj[0]);
+        data->viewProj = MatrixTranspose(light->viewProj[0]);
         data->color = light->color;
         data->position = light->position;
         data->direction = light->direction;
@@ -618,11 +618,11 @@ void upload_view_block(void)
 {
     r3d_shader_block_view_t view = {
         .position = R3D.viewState.position,
-        .view = r3d_matrix_transpose(&R3D.viewState.view),
-        .invView = r3d_matrix_transpose(&R3D.viewState.invView),
-        .proj = r3d_matrix_transpose(&R3D.viewState.proj),
-        .invProj = r3d_matrix_transpose(&R3D.viewState.invProj),
-        .viewProj = r3d_matrix_transpose(&R3D.viewState.viewProj),
+        .view = MatrixTranspose(R3D.viewState.view),
+        .invView = MatrixTranspose(R3D.viewState.invView),
+        .proj = MatrixTranspose(R3D.viewState.proj),
+        .invProj = MatrixTranspose(R3D.viewState.invProj),
+        .viewProj = MatrixTranspose(R3D.viewState.viewProj),
         .projMode = R3D.viewState.projMode,
         .aspect = R3D.viewState.aspect,
         .near = R3D.viewState.near,
@@ -1687,7 +1687,7 @@ void pass_deferred_lights(void)
 
         // Send light data to the GPU
         r3d_shader_block_light_t data = {
-            .viewProj = r3d_matrix_transpose(&light->viewProj[0]),
+            .viewProj = MatrixTranspose(light->viewProj[0]),
             .color = light->color,
             .position = light->position,
             .direction = light->direction,

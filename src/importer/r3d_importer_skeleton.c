@@ -43,7 +43,7 @@ static void build_skeleton_recursive(
     if (!node) return;
 
     Matrix localTransform = r3d_importer_cast(node->mTransformation);
-    Matrix modelTransform = r3d_matrix_multiply(&localTransform, &parentTransform);
+    Matrix modelTransform = MatrixMultiply(localTransform, parentTransform);
 
     // Check if this node is a bone
     int currentIndex = r3d_importer_get_bone_index(ctx->importer, node->mName.data);
@@ -56,7 +56,7 @@ static void build_skeleton_recursive(
         // Store bind root matrix
         if (parentIndex == -1) {
             Matrix invLocalTransform = MatrixInvert(localTransform);
-            *ctx->rootBind = r3d_matrix_multiply(&invLocalTransform, &modelTransform);
+            *ctx->rootBind = MatrixMultiply(invLocalTransform, modelTransform);
         }
 
         // Store bone infos
@@ -80,18 +80,20 @@ static void build_skeleton_recursive(
 
 static void upload_skeleton_bind_pose(R3D_Skeleton* skeleton)
 {
-    Matrix* finalBindPose = RL_MALLOC(skeleton->boneCount * sizeof(Matrix));
-    r3d_matrix_multiply_batch(finalBindPose, skeleton->invBind, skeleton->modelBind, skeleton->boneCount);
+    Matrix* skinBuffer = RL_MALLOC(skeleton->boneCount * sizeof(Matrix));
+    for (int i = 0; i < skeleton->boneCount; i++) {
+        skinBuffer[i] = MatrixMultiply(skeleton->invBind[i], skeleton->modelBind[i]);
+    }
 
     glGenTextures(1, &skeleton->skinTexture);
     glBindTexture(GL_TEXTURE_1D, skeleton->skinTexture);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, finalBindPose);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4 * skeleton->boneCount, 0, GL_RGBA, GL_FLOAT, skinBuffer);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glBindTexture(GL_TEXTURE_1D, 0);
 
-    RL_FREE(finalBindPose);
+    RL_FREE(skinBuffer);
 }
 
 // ========================================

@@ -569,7 +569,7 @@ RayCollision R3D_RaycastMesh(Ray ray, R3D_MeshData mesh, Matrix transform)
     {
         Vector3 closestHitLocal = Vector3Add(localOrigin, Vector3Scale(localDirection, closestT));
         Vector3 normalLocal = Vector3Normalize(Vector3CrossProduct(closestEdge1, closestEdge2));
-        Matrix normalMatrix = r3d_matrix_transpose(&invTransform);
+        Matrix normalMatrix = MatrixTranspose(invTransform);
 
         collision.hit = true;
         collision.point = r3d_vector3_transform(closestHitLocal, &transform);
@@ -629,7 +629,7 @@ RayCollision R3D_RaycastModel(Ray ray, R3D_Model model, Matrix transform)
     {
         Vector3 closestHitLocal = Vector3Add(localOrigin, Vector3Scale(localDirection, closestT));
         Vector3 normalLocal = Vector3Normalize(Vector3CrossProduct(closestEdge1, closestEdge2));
-        Matrix normalMatrix = r3d_matrix_transpose(&invTransform);
+        Matrix normalMatrix = MatrixTranspose(invTransform);
 
         collision.hit = true;
         collision.point = r3d_vector3_transform(closestHitLocal, &transform);

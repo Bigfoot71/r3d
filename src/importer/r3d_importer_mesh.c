@@ -323,7 +323,7 @@ static bool load_mesh_internal(
 static bool load_recursive(const R3D_Importer* importer, R3D_Model* model, const struct aiNode* node, const Matrix* parentTransform)
 {
     Matrix localTransform = r3d_importer_cast(node->mTransformation);
-    Matrix globalTransform = r3d_matrix_multiply(&localTransform, parentTransform);
+    Matrix globalTransform = MatrixMultiply(localTransform, *parentTransform);
 
     // Process all meshes in this node
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {

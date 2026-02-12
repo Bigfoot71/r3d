@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_animation_player.h>
 #include <raymath.h>
+#include <stdlib.h>
 #include <glad.h>
 
 #include "./common/r3d_math.h"
@@ -245,7 +246,9 @@ void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
 
 void R3D_UploadAnimationPlayerPose(R3D_AnimationPlayer* player)
 {
-    r3d_matrix_multiply_batch(player->skinBuffer, player->skeleton.invBind, player->modelPose, player->skeleton.boneCount);
+    for (int i = 0; i < player->skeleton.boneCount; i++) {
+        player->skinBuffer[i] = MatrixMultiply(player->skeleton.invBind[i], player->modelPose[i]);
+    }
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_1D, player->skinTexture);
@@ -425,7 +428,7 @@ void compute_local_matrices(R3D_AnimationPlayer* player, float totalWeight)
         }
 
         blended.rotation = QuaternionNormalize(blended.rotation);
-        localPose[iBone] = r3d_matrix_scale_rotq_translate(blended.scale, blended.rotation, blended.translation);
+        localPose[iBone] = r3d_matrix_srt_quat(blended.scale, blended.rotation, blended.translation);
     }
 }
 
@@ -440,6 +443,6 @@ void compute_model_matrices(R3D_AnimationPlayer* player)
 
     for (int iBone = 0; iBone < boneCount; iBone++) {
         int iParent = bones[iBone].parent;
-        modelPose[iBone] = r3d_matrix_multiply(&localPose[iBone], (iParent >= 0) ? &modelPose[iParent] : rootBind);
+        modelPose[iBone] = MatrixMultiply(localPose[iBone], (iParent >= 0) ? modelPose[iParent] : *rootBind);
     }
 }

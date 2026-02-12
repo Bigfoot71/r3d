@@ -10,6 +10,7 @@
 #include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <glad.h>
 
 #include "./modules/r3d_shader.h"
