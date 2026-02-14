@@ -38,34 +38,20 @@ out vec4 FragColor;
 
 /* === Raymarching === */
 
-vec3 FibonacciSphere(int i, int N)
+vec3 GetCosHemisphereSample(vec3 hitNorm, float u1, float u2)
 {
-    float m = float(i) + 0.5;
-    float z = 1.0 - 2.0 * m / float(N);
-    float r = sqrt(max(0.0, 1.0 - z * z));
-    float phi = M_TAU * m / M_PHI;
+    mat3 TBN = M_OrthonormalBasis(hitNorm);
 
-    return vec3(
+    float r = sqrt(u1);
+    float phi = M_TAU * u2;
+
+    vec3 sample = vec3(
         r * cos(phi),
         r * sin(phi),
-        z
-    );
-}
-
-mat3 OrientedHemisphere(vec3 n, float a)
-{
-    mat3 base = M_OrthonormalBasis(n);
-
-    float c = cos(a);
-    float s = sin(a);
-
-    mat3 rotZ = mat3(
-        vec3(c, -s, 0),
-        vec3(s,  c, 0),
-        vec3(0,  0, 1)
+        sqrt(max(0.0, 1.0 - u1))
     );
 
-    return base * rotZ;
+    return TBN * sample;
 }
 
 vec3 TraceRay(vec3 startViewPos, vec3 reflectionDir)
@@ -128,12 +114,12 @@ void main()
     vec3 viewPos = V_GetViewPosition(vTexCoord, linearDepth);
     vec3 viewDir = normalize(viewPos);
 
-    float rotSeed = M_TAU * M_HashIGN(gl_FragCoord.xy);
-    mat3 rot = OrientedHemisphere(viewNormal, rotSeed);
-
     for (int i = 0; i < uSampleCount; i++)
     {
-        vec3 rayDir = rot * FibonacciSphere(i, uSampleCount);
+        float u1 = M_HashIGN(gl_FragCoord.xy, float(i));
+        float u2 = M_HashIGN(gl_FragCoord.xy, float(uSampleCount - i));
+
+        vec3 rayDir = GetCosHemisphereSample(viewNormal, u1, u2);
         vec3 result = TraceRay(viewPos, rayDir);
 
         float weight = max(0.0, dot(rayDir, viewNormal));
