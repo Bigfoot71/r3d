@@ -6,6 +6,8 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
+#include <r3d/r3d_visibility.h>
+
 #include "./r3d_core_state.h"
 
 #include "./common/r3d_frustum.h"
