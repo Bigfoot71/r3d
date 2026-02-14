@@ -12,6 +12,7 @@
 #define M_HPI           1.5707963267948966
 #define M_TAU           6.2831853071795862
 #define M_INV_PI        0.3183098861837907
+#define M_PHI           1.6180339887498949
 #define M_GOLDEN_ANGLE  2.3999632297286535
 
 /* === Functions === */
@@ -79,4 +80,10 @@ float M_HashIGN(vec2 pos)
     // http://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
     const vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
     return fract(magic.z * fract(dot(pos, magic.xy)));
+}
+
+float M_HashIGN(vec2 pos, float frame)
+{
+    vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
+    return fract(magic.z * fract(dot(vec3(pos, frame), magic)));
 }

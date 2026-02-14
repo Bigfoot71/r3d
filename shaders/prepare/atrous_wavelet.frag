@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings === */
@@ -46,50 +47,62 @@ const float WEIGHTS[9] = float[9](
 
 /* === Parameters === */
 
-const float NORMAL_POWER = 6.0;         // Controls normal similarity falloff
-const float DEPTH_SENSITIVITY = 3.0;    // Controls depth discontinuity tolerance
+const float N_PHI = 0.75;
+const float P_PHI = 1.75;
 
 /* === Helper Functions === */
 
 float NormalWeight(vec3 n0, vec3 n1)
 {
-    float d = max(dot(n0, n1), 0.0);
-    return pow(d, NORMAL_POWER);
+    vec3 t = n0 - n1;
+    float dist2 = max(dot(t, t) / (uStepSize * uStepSize), 0.0);
+    return min(exp(-dist2 / N_PHI), 1.0);
 }
 
-float DepthWeight(float d0, float d1)
+float PositionWeight(vec3 p0, vec3 p1)
 {
-    float diff = abs(d0 - d1);
-    return exp(-diff * DEPTH_SENSITIVITY);
+    vec3 t = p0 - p1;
+    float dist2 = dot(t, t);
+    return min(exp(-dist2 / P_PHI), 1.0);
+}
+
+ivec2 MirrorCoord(ivec2 coord, ivec2 resolution)
+{
+    ivec2 result = abs(coord);
+    ivec2 wrapped = result % (2 * resolution);
+    ivec2 mask = -(wrapped / resolution);
+    return (wrapped & ~mask) | ((2 * resolution - wrapped - 1) & mask);
 }
 
 /* === Main Program === */
 
 void main()
 {
-    vec4 result = vec4(0.0);
-    float totalWeight = 0.0;
+    vec3 centerPosition = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 centerNormal = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
-    // NOTE: We don’t care about the space here, we just want a normal
-    vec3 centerNormal = M_DecodeOctahedral(texelFetch(uNormalTex, ivec2(gl_FragCoord.xy), 0).rg);
-    float centerDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
+    ivec2 resolution = textureSize(uSourceTex, 0);
+    ivec2 pixCoord = ivec2(gl_FragCoord.xy);
+
+    vec4 result = vec4(0.0);
+    float weightSum = 0.0;
 
     for (int i = 0; i < KERNEL_SIZE; ++i)
     {
         ivec2 offset = OFFSETS[i] * uStepSize;
-        ivec2 pixCoord = ivec2(gl_FragCoord.xy) + offset;
+        ivec2 pixOffset = MirrorCoord(pixCoord + offset, resolution);
 
-        vec4 sampleValue = texelFetch(uSourceTex, pixCoord, 0);
-        vec3 sampleNormal = M_DecodeOctahedral(texelFetch(uNormalTex, pixCoord, 0).rg);
-        float sampleDepth = texelFetch(uDepthTex, pixCoord, 0).r;
+        vec3 samplePosition = V_GetViewPosition(uDepthTex, pixOffset);
+        vec3 sampleNormal = V_GetWorldNormal(uNormalTex, pixOffset);
+        vec4 sampleColor = texelFetch(uSourceTex, pixOffset, 0);
 
+        float wPosition = PositionWeight(centerPosition, samplePosition);
         float wNormal = NormalWeight(centerNormal, sampleNormal);
-        float wDepth = DepthWeight(centerDepth, sampleDepth);
-        float w = WEIGHTS[i] * wNormal * wDepth;
+        float w = WEIGHTS[i] * wPosition * wNormal;
 
-        result += sampleValue * w;
-        totalWeight += w;
+        result += sampleColor * w;
+        weightSum += w;
     }
 
-    FragColor = result / max(totalWeight, 1e-4);
+    FragColor = result / max(weightSum, 1e-4);
 }

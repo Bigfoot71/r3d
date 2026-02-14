@@ -1,0 +1,146 @@
+/* ssgi.frag -- Screen Space Global Illumination fragment shader
+ *
+ * Copyright (c) 2025-2026 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
+#version 330 core
+
+/* === Includes === */
+
+#include "../include/blocks/view.glsl"
+#include "../include/math.glsl"
+
+/* === Varyings === */
+
+noperspective in vec2 vTexCoord;
+
+/* === Uniforms === */
+
+uniform sampler2D uHistoryTex;
+uniform sampler2D uDiffuseTex;
+uniform sampler2D uNormalTex;
+uniform sampler2D uDepthTex;
+
+uniform int uSampleCount;
+uniform int uMaxRaySteps;
+uniform float uStepSize;
+uniform float uThickness;
+uniform float uMaxDistance;
+uniform float uFadeStart;
+uniform float uFadeEnd;
+
+/* === Output === */
+
+out vec4 FragColor;
+
+/* === Raymarching === */
+
+vec3 FibonacciSphere(int i, int N)
+{
+    float m = float(i) + 0.5;
+    float z = 1.0 - 2.0 * m / float(N);
+    float r = sqrt(max(0.0, 1.0 - z * z));
+    float phi = M_TAU * m / M_PHI;
+
+    return vec3(
+        r * cos(phi),
+        r * sin(phi),
+        z
+    );
+}
+
+mat3 OrientedHemisphere(vec3 n, float a)
+{
+    mat3 base = M_OrthonormalBasis(n);
+
+    float c = cos(a);
+    float s = sin(a);
+
+    mat3 rotZ = mat3(
+        vec3(c, -s, 0),
+        vec3(s,  c, 0),
+        vec3(0,  0, 1)
+    );
+
+    return base * rotZ;
+}
+
+vec3 TraceRay(vec3 startViewPos, vec3 reflectionDir)
+{
+    vec3 dirStep = reflectionDir * uStepSize;
+    float stepDistanceSq = dot(dirStep, dirStep);
+    float maxDistanceSq = uMaxDistance * uMaxDistance;
+
+    vec3 currentPos = startViewPos + dirStep;
+    vec3 prevPos = startViewPos;
+    float rayDistanceSq = stepDistanceSq;
+
+    vec2 hitUV = vec2(0.0);
+    bool hit = false;
+
+    for (int i = 1; i < uMaxRaySteps; i++)
+    {
+        if (rayDistanceSq > maxDistanceSq) break;
+        vec2 uv = V_ViewToScreen(currentPos);
+        if (V_OffScreen(uv)) break;
+
+        float sampleZ = -textureLod(uDepthTex, uv, 0).r;
+        float depthDiff = sampleZ - currentPos.z;
+
+        if (depthDiff > 0.0 && depthDiff < uThickness) {
+            hitUV = uv;
+            hit = true;
+            break;
+        }
+
+        prevPos = currentPos;
+        currentPos += dirStep;
+        rayDistanceSq += stepDistanceSq;
+    }
+
+    if (!hit) return vec3(0.0);
+
+    vec3 hitHist = textureLod(uHistoryTex, hitUV, 0).rgb;
+    vec3 hitDiff = textureLod(uDiffuseTex, hitUV, 0).rgb;
+
+    float distFade = 1.0 - smoothstep(0.0, uMaxDistance, sqrt(rayDistanceSq));
+
+    return (hitDiff + hitHist) * distFade;
+}
+
+/* === Main Program === */
+
+void main()
+{
+    float linearDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
+    if (linearDepth >= uFadeEnd) {
+        FragColor = vec4(0.0);
+        return;
+    }
+
+    vec3 giColor = vec3(0.0);
+    float totalWeight = 0.0;
+
+    vec3 viewNormal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
+    vec3 viewPos = V_GetViewPosition(vTexCoord, linearDepth);
+    vec3 viewDir = normalize(viewPos);
+
+    float rotSeed = M_TAU * M_HashIGN(gl_FragCoord.xy);
+    mat3 rot = OrientedHemisphere(viewNormal, rotSeed);
+
+    for (int i = 0; i < uSampleCount; i++)
+    {
+        vec3 rayDir = rot * FibonacciSphere(i, uSampleCount);
+        vec3 result = TraceRay(viewPos, rayDir);
+
+        float weight = max(0.0, dot(rayDir, viewNormal));
+        giColor += result * weight;
+        totalWeight += weight;
+    }
+
+    float fade = smoothstep(uFadeEnd, uFadeStart, linearDepth);
+    FragColor = vec4(giColor / max(totalWeight, 1e-4) * fade, 1.0);
+}

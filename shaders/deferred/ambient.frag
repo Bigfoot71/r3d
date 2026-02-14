@@ -27,6 +27,7 @@ uniform sampler2D uAlbedoTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 uniform sampler2D uSsaoTex;
+uniform sampler2D uSsgiTex;
 uniform sampler2D uSsilTex;
 uniform sampler2D uOrmTex;
 
@@ -54,6 +55,7 @@ void main()
     vec3 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0).rgb;
     float ssao = texture(uSsaoTex, vTexCoord).r;
     vec4 ssil = texture(uSsilTex, vTexCoord);
+    vec4 ssgi = texture(uSsgiTex, vTexCoord);
 
     orm.x *= ssao * ssil.w; // occlusion, used during ibl
 
@@ -69,6 +71,9 @@ void main()
     vec3 specular = vec3(0.0);
     E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, P, N, V, NdotV);
 
-    FragDiffuse = vec4(diffuse + ssil.rgb * kD * uSsilEnergy, 1.0);
+    // Apply AO to SSGI to restore contrast lost in far/blurred regions
+    vec3 gi = kD * ((ssil.rgb * uSsilEnergy) + (ssgi.rgb * orm.x));
+
+    FragDiffuse = vec4(diffuse + gi, 1.0);
     FragSpecular = vec4(specular, 1.0);
 }
