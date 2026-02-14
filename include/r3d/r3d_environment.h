@@ -84,6 +84,16 @@
             .convergence = 0.5f,                        \
             .enabled = false,                           \
         },                                              \
+        .ssgi = {                                       \
+            .sampleCount = 8,                           \
+            .maxRaySteps = 32,                          \
+            .stepSize = 0.125f,                         \
+            .thickness = 1.0f,                          \
+            .maxDistance = 4.0f,                        \
+            .fadeStart = 8.0f,                          \
+            .fadeEnd = 16.0f,                           \
+            .enabled = false,                           \
+        },                                              \
         .ssr = {                                        \
             .maxRaySteps = 32,                          \
             .binarySteps = 4,                           \
@@ -243,6 +253,23 @@ typedef struct R3D_EnvSSIL {
 } R3D_EnvSSIL;
 
 /**
+ * @brief Screen Space Global Illumination (SSGI) settings.
+ *
+ * Real-time global illlumination calculated in screen space.
+ * @note Best suited for enclosed/indoor environments.
+ */
+typedef struct R3D_EnvSSGI {
+    int sampleCount;        ///< Number of rays per pixel (default: 8)
+    int maxRaySteps;        ///< Maximum ray marching steps (default: 32)
+    float stepSize;         ///< Ray step size (default: 0.125)
+    float thickness;        ///< Depth tolerance for valid hits (default: 0.2)
+    float maxDistance;      ///< Maximum ray distance (default: 4.0)
+    float fadeStart;        ///< Distance at which the GI fade begins (default: 8.0)
+    float fadeEnd;          ///< Distance at which GI is fully faded (default: 16.0)
+    bool enabled;           ///< Enable/disable SSR (default: false)
+} R3D_EnvSSGI;
+
+/**
  * @brief Screen Space Reflections (SSR) settings.
  *
  * Real-time reflections calculated in screen space.
@@ -328,6 +355,7 @@ typedef struct R3D_Environment {
     R3D_EnvAmbient    ambient;      ///< Ambient lighting configuration
     R3D_EnvSSAO       ssao;         ///< Screen space ambient occlusion
     R3D_EnvSSIL       ssil;         ///< Screen space indirect lighting
+    R3D_EnvSSGI       ssgi;         ///< Screen space global illumination
     R3D_EnvSSR        ssr;          ///< Screen space reflections
     R3D_EnvBloom      bloom;        ///< Bloom glow effect
     R3D_EnvFog        fog;          ///< Atmospheric fog
