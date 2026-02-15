@@ -14,9 +14,6 @@
 
 /* === Includes === */
 
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/shadow.glsl"
-#include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 #include "../include/pbr.glsl"
 
@@ -34,6 +31,12 @@ uniform sampler2D uOrmTex;
 uniform sampler2DArrayShadow uShadowDirTex;
 uniform sampler2DArrayShadow uShadowSpotTex;
 uniform samplerCubeArrayShadow uShadowOmniTex;
+
+/* === Blocks === */
+
+#include "../include/blocks/light.glsl"
+#include "../include/blocks/shadow.glsl"
+#include "../include/blocks/view.glsl"
 
 /* === Fragments === */
 
@@ -100,10 +103,7 @@ void main()
 
     /* --- Calculating a random rotation matrix for shadow debanding --- */
 
-    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
-    float sr = sin(r), cr = cos(r);
-
-    mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
+    mat2 diskRot = S_DebandingRotationMatrix();
 
     /* Apply shadow factor if the light casts shadows */
 
@@ -111,9 +111,9 @@ void main()
 
     if (uLight.shadowLayer >= 0) {
         switch (uLight.type) {
-        case LIGHT_DIR:  shadow = S_SampleShadowDir(uLight, uShadowDirTex, uLight.viewProj * vec4(position, 1.0), cNdotL); break;
-        case LIGHT_SPOT: shadow = S_SampleShadowSpot(uLight, uShadowSpotTex, uLight.viewProj * vec4(position, 1.0), cNdotL); break;
-        case LIGHT_OMNI: shadow = S_SampleShadowOmni(uLight, uShadowOmniTex, position, cNdotL); break;
+        case LIGHT_DIR:  shadow = S_SampleShadowDir(uLight.viewProj * vec4(position, 1.0), cNdotL, diskRot); break;
+        case LIGHT_SPOT: shadow = S_SampleShadowSpot(uLight.viewProj * vec4(position, 1.0), cNdotL, diskRot); break;
+        case LIGHT_OMNI: shadow = S_SampleShadowOmni(position, cNdotL, diskRot); break;
         }
     }
 

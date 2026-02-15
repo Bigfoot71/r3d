@@ -34,20 +34,26 @@ mat2 S_DebandingRotationMatrix()
     float sr = sin(r), cr = cos(r);
     return mat2(vec2(cr, -sr), vec2(sr, cr));
 }
-float S_SampleShadowDir(Light light, sampler2DArrayShadow shadowTex, vec4 projPos, float cNdotL)
+
+#ifdef NUM_FORWARD_LIGHTS
+float S_SampleShadowDir(int lightIndex, vec4 projPos, float cNdotL, mat2 diskRot)
 {
+    #define light uLights[lightIndex]
+#else
+float S_SampleShadowDir(vec4 projPos, float cNdotL, mat2 diskRot)
+{
+    #define light uLight
+#endif 
     vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
 
     float bias = light.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, light.shadowDepthBias * projCoords.z);
     float compareDepth = projCoords.z - bias;
 
-    mat2 diskRot = S_DebandingRotationMatrix();
-
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 offset = diskRot * VOGEL_DISK[i] * light.shadowSoftness;
-        shadow += texture(shadowTex, vec4(projCoords.xy + offset, light.shadowLayer, compareDepth));
+        shadow += texture(uShadowDirTex, vec4(projCoords.xy + offset, light.shadowLayer, compareDepth));
     }
     shadow /= float(SHADOW_SAMPLES);
 
@@ -55,30 +61,46 @@ float S_SampleShadowDir(Light light, sampler2DArrayShadow shadowTex, vec4 projPo
     float edgeFade = smoothstep(0.0, 0.15, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
     shadow = mix(1.0, shadow, edgeFade);
 
+    #undef light
+
     return shadow;
 }
 
-float S_SampleShadowSpot(Light light, sampler2DArrayShadow shadowTex, vec4 projPos, float cNdotL)
+#ifdef NUM_FORWARD_LIGHTS
+float S_SampleShadowSpot(int lightIndex, vec4 projPos, float cNdotL, mat2 diskRot)
 {
+    #define light uLights[lightIndex]
+#else
+float S_SampleShadowSpot(vec4 projPos, float cNdotL, mat2 diskRot)
+{
+    #define light uLight
+#endif 
     vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
 
     float bias = light.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, light.shadowDepthBias * projCoords.z);
     float compareDepth = projCoords.z - bias;
 
-    mat2 diskRot = S_DebandingRotationMatrix();
-
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 offset = diskRot * VOGEL_DISK[i] * light.shadowSoftness;
-        shadow += texture(shadowTex, vec4(projCoords.xy + offset, light.shadowLayer, compareDepth));
+        shadow += texture(uShadowSpotTex, vec4(projCoords.xy + offset, light.shadowLayer, compareDepth));
     }
+
+    #undef light
 
    return shadow / float(SHADOW_SAMPLES);
 }
 
-float S_SampleShadowOmni(Light light, samplerCubeArrayShadow shadowTex, vec3 fragPos, float cNdotL)
+#ifdef NUM_FORWARD_LIGHTS
+float S_SampleShadowOmni(int lightIndex, vec3 fragPos, float cNdotL, mat2 diskRot)
 {
+    #define light uLights[lightIndex]
+#else
+float S_SampleShadowOmni(vec3 fragPos, float cNdotL, mat2 diskRot)
+{
+    #define light uLight
+#endif 
     vec3 lightToFrag = fragPos - light.position;
     float currentDepth = length(lightToFrag);
 
@@ -88,13 +110,13 @@ float S_SampleShadowOmni(Light light, samplerCubeArrayShadow shadowTex, vec3 fra
 
     mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);
 
-    mat2 diskRot = S_DebandingRotationMatrix();
-
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
         vec2 diskOffset = diskRot * VOGEL_DISK[i] * light.shadowSoftness;
-        shadow += texture(shadowTex, vec4(OBN * vec3(diskOffset.xy, 1.0), light.shadowLayer), compareDepth);
+        shadow += texture(uShadowOmniTex, vec4(OBN * vec3(diskOffset.xy, 1.0), light.shadowLayer), compareDepth);
     }
+
+    #undef light
 
     return shadow / float(SHADOW_SAMPLES);
 }
