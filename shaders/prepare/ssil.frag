@@ -145,7 +145,9 @@ void main()
 
             // Weight lighting by newly visible sectors (those not already occluded) and by geometric terms (surface angles)
             float newlyVisible = 1.0 - float(BitCount(sampleBitmask & ~occlusion)) / float(SECTOR_COUNT);
-            indirect.rgb += sampleLight * newlyVisible * clamp(dot(normal, sampleHorizon), 0.0, 1.0) * clamp(dot(sampleNormal, -sampleHorizon), 0.0, 1.0);
+            float eNdotL = clamp(dot(sampleNormal, -sampleHorizon), 0.0, 1.0); // emitter
+            float rNdotL = clamp(dot(normal, sampleHorizon), 0.0, 1.0); // receiver
+            indirect.rgb += sampleLight * newlyVisible * eNdotL * rNdotL;
 
             // Accumulate occlusion across samples
             occlusion |= sampleBitmask;
