@@ -1535,8 +1535,8 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleCount, (float)R3D.environment.ssil.sampleCount);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleRadius, R3D.environment.ssil.sampleRadius);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSliceCount, (float)R3D.environment.ssil.sliceCount);
+    R3D_SHADER_SET_FLOAT(prepare.ssil, uRadius, R3D.environment.ssil.radius);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uThickness, R3D.environment.ssil.thickness);
 
     R3D_RENDER_SCREEN();
@@ -1548,13 +1548,13 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uNormalSharp, 0.02f);
+    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uNormalSharp, 0.08f);
     R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uDepthSharp, 0.04f);
 
     r3d_target_t* src = &SSIL_RAW;
     r3d_target_t* dst = &SSIL_FILTERED;
 
-    const int ITERATIONS = 5;
+    const int ITERATIONS = 3;
     for (int i = 0; i < ITERATIONS; i++) {
         R3D_TARGET_BIND(false, *dst);
         R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));

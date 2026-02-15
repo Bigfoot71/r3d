@@ -31,8 +31,8 @@ uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 
 uniform float uSampleCount;
-uniform float uSampleRadius;
 uniform float uSliceCount;
+uniform float uRadius;
 uniform float uThickness;
 
 /* === Fragments === */
@@ -93,7 +93,7 @@ void main()
     float sliceRotation = M_TAU / uSliceCount;
     float jitterRotation = M_TAU * jitter;
 
-    float sampleScale = uSampleRadius * uView.proj[0][0] / -position.z;
+    float sampleScale = uRadius * uView.proj[0][0] / -position.z;
     float sampleOffset = 0.01;
 
     // Indirect + visiblity accumulator

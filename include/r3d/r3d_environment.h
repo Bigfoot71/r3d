@@ -74,9 +74,9 @@
             .enabled = false,                           \
         },                                              \
         .ssil = {                                       \
-            .sampleCount = 4,                           \
+            .sampleCount = 2,                           \
             .sliceCount = 4,                            \
-            .sampleRadius = 2.0f,                       \
+            .radius = 2.0f,                             \
             .thickness = 1.0f,                          \
             .enabled = false,                           \
         },                                              \
@@ -233,9 +233,9 @@ typedef struct R3D_EnvSSAO {
  * reinforcing indirect lighting over a wider area.
  */
 typedef struct R3D_EnvSSIL {
-    int sampleCount;        ///< Number of samples to compute indirect lighting (default: 4)
+    int sampleCount;        ///< Number of samples to compute indirect lighting (default: 2)
     int sliceCount;         ///< Number of depth slices for accumulation (default: 4)
-    float sampleRadius;     ///< Maximum distance to gather light from (default: 2.0)
+    float radius;           ///< Maximum distance to gather light from (default: 2.0)
     float thickness;        ///< Thickness threshold for occluders (default: 1.0)
     bool enabled;           ///< Enable/disable SSIL effect (default: false)
 } R3D_EnvSSIL;

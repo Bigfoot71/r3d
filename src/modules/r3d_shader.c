@@ -371,8 +371,8 @@ bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(ssil, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
     GET_LOCATION(ssil, uSampleCount);
-    GET_LOCATION(ssil, uSampleRadius);
     GET_LOCATION(ssil, uSliceCount);
+    GET_LOCATION(ssil, uRadius);
     GET_LOCATION(ssil, uThickness);
 
     USE_SHADER(ssil);
