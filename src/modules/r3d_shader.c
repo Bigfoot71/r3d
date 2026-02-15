@@ -238,7 +238,9 @@ bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
 
     SET_UNIFORM_BUFFER(atrousWavelet, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
-    GET_LOCATION(atrousWavelet, uStepSize);
+    GET_LOCATION(atrousWavelet, uNormalSharp);
+    GET_LOCATION(atrousWavelet, uDepthSharp);
+    GET_LOCATION(atrousWavelet, uStepWidth);
 
     USE_SHADER(atrousWavelet);
     SET_SAMPLER(atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);

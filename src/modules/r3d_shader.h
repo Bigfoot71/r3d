@@ -538,7 +538,9 @@ typedef struct {
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_int_t uStepSize;
+    r3d_shader_uniform_float_t uNormalSharp;
+    r3d_shader_uniform_float_t uDepthSharp;
+    r3d_shader_uniform_int_t uStepWidth;
 } r3d_shader_prepare_atrous_wavelet_t;
 
 typedef struct {

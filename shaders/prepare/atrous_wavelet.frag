@@ -23,7 +23,9 @@ uniform sampler2D uSourceTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 
-uniform int uStepSize;  // Powers of 2: 1, 2, 4, 8... for each pass
+uniform float uNormalSharp;
+uniform float uDepthSharp;
+uniform int uStepWidth;     // Powers of 2: 1, 2, 4, 8... for each pass
 
 /* === Fragments === */
 
@@ -45,25 +47,20 @@ const float WEIGHTS[9] = float[9](
     0.0625, 0.125, 0.0625
 );
 
-/* === Parameters === */
-
-const float N_PHI = 0.75;
-const float P_PHI = 1.75;
-
 /* === Helper Functions === */
 
 float NormalWeight(vec3 n0, vec3 n1)
 {
     vec3 t = n0 - n1;
-    float dist2 = max(dot(t, t) / (uStepSize * uStepSize), 0.0);
-    return min(exp(-dist2 / N_PHI), 1.0);
+    float dist2 = max(dot(t, t) / (uStepWidth * uStepWidth), 0.0);
+    return min(exp(-dist2 / uNormalSharp), 1.0);
 }
 
 float PositionWeight(vec3 p0, vec3 p1)
 {
     vec3 t = p0 - p1;
     float dist2 = dot(t, t);
-    return min(exp(-dist2 / P_PHI), 1.0);
+    return min(exp(-dist2 / uDepthSharp), 1.0);
 }
 
 ivec2 MirrorCoord(ivec2 coord, ivec2 resolution)
@@ -89,7 +86,7 @@ void main()
 
     for (int i = 0; i < KERNEL_SIZE; ++i)
     {
-        ivec2 offset = OFFSETS[i] * uStepSize;
+        ivec2 offset = OFFSETS[i] * uStepWidth;
         ivec2 pixOffset = MirrorCoord(pixCoord + offset, resolution);
 
         vec3 samplePosition = V_GetViewPosition(uDepthTex, pixOffset);
