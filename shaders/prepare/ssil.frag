@@ -157,4 +157,5 @@ void main()
     }
 
     FragColor = indirect / uSliceCount;
+    FragColor.a = min(FragColor.a, 1.0);
 }
