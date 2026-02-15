@@ -80,6 +80,7 @@
             .thickness = 1.0f,                          \
             .intensity = 1.0f,                          \
             .aoPower = 1.0f,                            \
+            .denoiseSteps = 4,                          \
             .enabled = false,                           \
         },                                              \
         .ssgi = {                                       \
@@ -90,6 +91,7 @@
             .maxDistance = 4.0f,                        \
             .fadeStart = 8.0f,                          \
             .fadeEnd = 16.0f,                           \
+            .denoiseSteps = 5,                          \
             .enabled = false,                           \
         },                                              \
         .ssr = {                                        \
@@ -241,6 +243,7 @@ typedef struct R3D_EnvSSIL {
     float thickness;        ///< Thickness threshold for occluders (default: 1.0)
     float intensity;        ///< IL intensity multiplier (default: 1.0)
     float aoPower;          ///< AO exponent/power (default: 1.0)
+    int denoiseSteps;       ///< Number of denoiser iterations (default: 4)
     bool enabled;           ///< Enable/disable SSIL effect (default: false)
 } R3D_EnvSSIL;
 
@@ -258,6 +261,7 @@ typedef struct R3D_EnvSSGI {
     float maxDistance;      ///< Maximum ray distance (default: 4.0)
     float fadeStart;        ///< Distance at which the GI fade begins (default: 8.0)
     float fadeEnd;          ///< Distance at which GI is fully faded (default: 16.0)
+    int denoiseSteps;       ///< Number of denoiser iterations (default: 5)
     bool enabled;           ///< Enable/disable SSGI (default: false)
 } R3D_EnvSSGI;
 

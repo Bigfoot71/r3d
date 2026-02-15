@@ -1554,11 +1554,12 @@ r3d_target_t pass_prepare_ssil(void)
     r3d_target_t* src = &SSIL_RAW;
     r3d_target_t* dst = &SSIL_FILTERED;
 
-    const int ITERATIONS = 3;
-    for (int i = 0; i < ITERATIONS; i++) {
+    int steps = R3D.environment.ssil.denoiseSteps;
+
+    for (int i = 0; i < steps; i++) {
         R3D_TARGET_BIND(false, *dst);
         R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
-        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, 1 << ((ITERATIONS - 1) - i));
+        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, 1 << ((steps - 1) - i));
         R3D_RENDER_SCREEN();
         SWAP(r3d_target_t, *src, *dst);
     }
@@ -1631,11 +1632,12 @@ r3d_target_t pass_prepare_ssgi(void)
     r3d_target_t* src = &SSGI_RAW;
     r3d_target_t* dst = &SSGI_FILTERED;
 
-    const int ITERATIONS = 5;
-    for (int i = 0; i < ITERATIONS; i++) {
+    int steps = R3D.environment.ssgi.denoiseSteps;
+
+    for (int i = 0; i < steps; i++) {
         R3D_TARGET_BIND(false, *dst);
         R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
-        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, 1 << ((ITERATIONS - 1) - i));
+        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, 1 << ((steps - 1) - i));
         R3D_RENDER_SCREEN();
         SWAP(r3d_target_t, *src, *dst);
     }
