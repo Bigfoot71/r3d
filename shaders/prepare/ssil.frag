@@ -101,7 +101,7 @@ void main()
     // Iterate over angular slices around the hemisphere
     for (int slice = 0; slice < uSliceCount; slice++)
     {
-        float phi = jitterRotation + sliceRotation * (float(slice) + jitter);
+        float phi = jitterRotation + sliceRotation * float(slice);
         vec2 omega = vec2(cos(phi), sin(phi));
 
         vec3 direction = vec3(omega.x, omega.y, 0.0);
