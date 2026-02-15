@@ -9,7 +9,7 @@
   ~~Rethink the current macro-based approach for managing shaders to improve clarity and maintainability.~~
   The subject involves much more complexity than expected, it will probably remain as it is, the naming has at least been made clearer.
 
-* [ ] **Explore alternative SSGI approaches**
+* [x] **Explore alternative SSGI approaches**
   The current SSIL-VB used as a cheap SSGI solution is far from ideal and difficult to tune.
   Investigating more stable and production-ready SSGI techniques would be beneficial.
 
