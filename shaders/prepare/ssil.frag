@@ -62,7 +62,8 @@ vec3 SampleLight(vec2 texCoord)
 {
     vec3 indirect = texture(uHistoryTex, texCoord).rgb;
     vec3 direct = texture(uDiffuseTex, texCoord).rgb;
-    return direct + 0.5 * indirect;
+    float edgeMask = float(!V_OffScreen(texCoord));
+    return (direct + indirect) * edgeMask;
 }
 
 float FastAcos(float x)
