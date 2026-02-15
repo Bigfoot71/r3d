@@ -138,15 +138,15 @@ void main()
             vec3 backSample = normalize(sampleDistance - camera * uThickness);
             vec2 frontBackHorizon = vec2(dot(sampleHorizon, camera), dot(backSample, camera));
             frontBackHorizon = FastAcos(clamp(frontBackHorizon, -1.0, 1.0));
-            frontBackHorizon = clamp((frontBackHorizon + n + M_HPI) / M_PI, 0.0, 1.0);  // Normalize to [0,1] relative to surface
+            frontBackHorizon = clamp((frontBackHorizon + n + M_HPI) / M_PI, 0.0, 1.0);
 
             // Mark visible sectors for this sample
             uint sampleBitmask = UpdateSectors(frontBackHorizon.x, frontBackHorizon.y);
 
             // Weight lighting by newly visible sectors (those not already occluded) and by geometric terms (surface angles)
             float newlyVisible = 1.0 - float(BitCount(sampleBitmask & ~occlusion)) / float(SECTOR_COUNT);
-            float eNdotL = clamp(dot(sampleNormal, -sampleHorizon), 0.0, 1.0); // emitter
-            float rNdotL = clamp(dot(normal, sampleHorizon), 0.0, 1.0); // receiver
+            float eNdotL = max(dot(sampleNormal, -sampleHorizon), 0.0); // emitter
+            float rNdotL = max(dot(normal, sampleHorizon), 0.0); // receiver
             indirect.rgb += sampleLight * newlyVisible * eNdotL * rNdotL;
 
             // Accumulate occlusion across samples
