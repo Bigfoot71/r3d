@@ -35,6 +35,7 @@ uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
 
+uniform float uSsaoPower;
 uniform float uSsilIntensity;
 uniform float uSsilAoPower;
 
@@ -59,7 +60,8 @@ void main()
     vec4 ssgi = texture(uSsgiTex, vTexCoord);
 
     // Compute visibility factor, used during IBL
-    orm.x *= ssao * pow(ssil.a, uSsilAoPower); 
+    orm.x *= pow(ssil.a, uSsilAoPower); 
+    orm.x *= pow(ssao, uSsaoPower);
 
     vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
     vec3 kD = albedo * (1.0 - orm.z);

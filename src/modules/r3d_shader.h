@@ -581,7 +581,6 @@ typedef struct {
     r3d_shader_uniform_float_t uRadius;
     r3d_shader_uniform_float_t uBias;
     r3d_shader_uniform_float_t uIntensity;
-    r3d_shader_uniform_float_t uPower;
 } r3d_shader_prepare_ssao_t;
 
 typedef struct {
@@ -925,6 +924,7 @@ typedef struct {
     r3d_shader_uniform_sampler_t uIrradianceTex;
     r3d_shader_uniform_sampler_t uPrefilterTex;
     r3d_shader_uniform_sampler_t uBrdfLutTex;
+    r3d_shader_uniform_float_t uSsaoPower;
     r3d_shader_uniform_float_t uSsilIntensity;
     r3d_shader_uniform_float_t uSsilAoPower;
 } r3d_shader_deferred_ambient_t;

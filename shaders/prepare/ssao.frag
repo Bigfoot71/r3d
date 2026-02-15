@@ -29,7 +29,6 @@ uniform int uSampleCount;
 uniform float uRadius;
 uniform float uBias;
 uniform float uIntensity;
-uniform float uPower;
 
 /* === Constants === */
 
@@ -116,7 +115,5 @@ void main()
     if (abs(dFdy(depth)) < 0.2) A -= dFdy(A) * (float(pixelCoord.y & 1) - 0.5);
 
     // SAO tends to over-darken near surfaces; smoothly fade it out
-    A = mix(A, 1.0, 1.0 - clamp(0.5 * depth, 0.0, 1.0));
-
-    FragOcclusion = pow(A, uPower);
+    FragOcclusion = mix(A, 1.0, 1.0 - clamp(0.5 * depth, 0.0, 1.0));
 }

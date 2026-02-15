@@ -1469,7 +1469,6 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_SHADER_SET_FLOAT(prepare.ssao, uRadius,  R3D.environment.ssao.radius);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uBias, R3D.environment.ssao.bias);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.environment.ssao.intensity);
-    R3D_SHADER_SET_FLOAT(prepare.ssao, uPower, R3D.environment.ssao.power);
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssao, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
@@ -1815,6 +1814,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsgiTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssgiSource), BLACK));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uOrmTex, r3d_target_get_level(R3D_TARGET_ORM, 0));
 
+    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsaoPower, R3D.environment.ssao.power);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilIntensity, R3D.environment.ssil.intensity);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilAoPower, R3D.environment.ssil.aoPower);
 

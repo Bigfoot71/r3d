@@ -325,7 +325,6 @@ bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
     GET_LOCATION(ssao, uRadius);
     GET_LOCATION(ssao, uBias);
     GET_LOCATION(ssao, uIntensity);
-    GET_LOCATION(ssao, uPower);
 
     USE_SHADER(ssao);
 
@@ -1057,6 +1056,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(ambient, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(ambient, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
+    GET_LOCATION(ambient, uSsaoPower);
     GET_LOCATION(ambient, uSsilIntensity);
     GET_LOCATION(ambient, uSsilAoPower);
 
