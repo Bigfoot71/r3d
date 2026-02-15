@@ -224,7 +224,13 @@ typedef struct R3D_EnvSSAO {
 /**
  * @brief Screen Space Indirect Lighting (SSIL) settings.
  *
- * Approximates indirect lighting by gathering light from nearby surfaces in screen space.
+ * Approximates indirect lighting by gathering light from nearby visible
+ * surfaces in screen space.
+ *
+ * With a small radius, SSIL behaves like an extension of SSAO,
+ * producing a very subtle local blending of light and surface hues.
+ * With a larger radius, it becomes a better complement to SSGI,
+ * reinforcing indirect lighting over a wider area.
  */
 typedef struct R3D_EnvSSIL {
     int sampleCount;        ///< Number of samples to compute indirect lighting (default: 4)
