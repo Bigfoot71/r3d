@@ -56,95 +56,12 @@ uniform bool uProbeInterior;
 /* === Blocks === */
 
 #include "../include/blocks/light.glsl"
+#include "../include/blocks/shadow.glsl"
 #include "../include/blocks/env.glsl"
-
-/* === Constants === */
-
-#define SHADOW_SAMPLES 8
-
-const vec2 VOGEL_DISK[8] = vec2[8](
-    vec2(0.250000, 0.000000),
-    vec2(-0.319290, 0.292496),
-    vec2(0.048872, -0.556877),
-    vec2(0.402444, 0.524918),
-    vec2(-0.738535, -0.130636),
-    vec2(0.699605, -0.445031),
-    vec2(-0.234004, 0.870484),
-    vec2(-0.446271, -0.859268)
-);
 
 /* === Fragments === */
 
 layout(location = 0) out vec4 FragColor;
-
-/* === Shadow functions === */
-
-float ShadowDir(int i, float cNdotL, mat2 diskRot)
-{
-    Light light = uLights[i];
-
-    vec4 p = vPosLightSpace[i];
-    vec3 projCoords = p.xyz / p.w * 0.5 + 0.5;
-
-    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
-    bias = max(bias, light.shadowDepthBias * projCoords.z);
-    float compareDepth = projCoords.z - bias;
-
-    float shadow = 0.0;
-    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += texture(uShadowDirTex, vec4(projCoords.xy + offset, float(light.shadowLayer), compareDepth));
-    }
-    shadow /= float(SHADOW_SAMPLES);
-
-    vec3 distToBorder = min(projCoords, 1.0 - projCoords);
-    float edgeFade = smoothstep(0.0, 0.15, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
-    shadow = mix(1.0, shadow, edgeFade);
-
-    return shadow;
-}
-
-float ShadowSpot(int i, float cNdotL, mat2 diskRot)
-{
-    Light light = uLights[i];
-
-    vec4 p = vPosLightSpace[i];
-    vec3 projCoords = p.xyz / p.w * 0.5 + 0.5;
-
-    float bias = light.shadowSlopeBias * (1.0 - cNdotL);
-    bias = max(bias, light.shadowDepthBias * projCoords.z);
-    float compareDepth = projCoords.z - bias;
-
-    float shadow = 0.0;
-    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 offset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += texture(uShadowSpotTex, vec4(projCoords.xy + offset, float(light.shadowLayer), compareDepth));
-    }
-
-    return shadow / float(SHADOW_SAMPLES);
-}
-
-float ShadowOmni(int i, float cNdotL, mat2 diskRot)
-{
-    Light light = uLights[i];
-
-    vec3 lightToFrag = vPosition - light.position;
-    float currentDepth = length(lightToFrag);
-
-    float bias = light.shadowSlopeBias * (1.0 - cNdotL * 0.5);
-    bias = max(bias, light.shadowDepthBias * currentDepth);
-    float compareDepth = (currentDepth - bias) / light.far;
-
-    mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);
-
-    float shadow = 0.0;
-    for (int j = 0; j < SHADOW_SAMPLES; ++j) {
-        vec2 diskOffset = diskRot * VOGEL_DISK[j] * light.shadowSoftness;
-        shadow += texture(uShadowOmniTex, vec4(OBN * vec3(diskOffset.xy, 1.0), float(light.shadowLayer)), compareDepth);
-    }
-
-    return shadow / float(SHADOW_SAMPLES);
-}
 
 /* === User override === */
 
@@ -224,22 +141,15 @@ void main()
         vec3 specLight =  L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, ROUGHNESS);
         specLight *= lightColE * light.specular;
 
-        /*  Calculating a random rotation matrix for shadow debanding */
-
-        float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
-        float sr = sin(r), cr = cos(r);
-
-        mat2 diskRot = mat2(vec2(cr, -sr), vec2(sr, cr));
-
         /* Apply shadow factor if the light casts shadows */
 
         float shadow = 1.0;
 
         if (light.shadowLayer >= 0) {
             switch (light.type) {
-            case LIGHT_DIR: shadow = ShadowDir(i, cNdotL, diskRot); break;
-            case LIGHT_SPOT: shadow = ShadowSpot(i, cNdotL, diskRot); break;
-            case LIGHT_OMNI: shadow = ShadowOmni(i, cNdotL, diskRot); break;
+            case LIGHT_DIR:  shadow = S_SampleShadowDir(i, vPosLightSpace[i], cNdotL); break;
+            case LIGHT_SPOT: shadow = S_SampleShadowSpot(i, vPosLightSpace[i], cNdotL); break;
+            case LIGHT_OMNI: shadow = S_SampleShadowOmni(i, vPosition, cNdotL); break;
             }
         }
 
