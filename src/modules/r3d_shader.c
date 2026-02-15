@@ -1057,6 +1057,9 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(ambient, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(ambient, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
+    GET_LOCATION(ambient, uSsilIntensity);
+    GET_LOCATION(ambient, uSsilAoPower);
+
     USE_SHADER(ambient);
 
     SET_SAMPLER(ambient, uAlbedoTex, R3D_SHADER_SAMPLER_BUFFER_ALBEDO);

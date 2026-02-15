@@ -78,6 +78,8 @@
             .sliceCount = 4,                            \
             .radius = 2.0f,                             \
             .thickness = 1.0f,                          \
+            .intensity = 1.0f,                          \
+            .aoPower = 1.0f,                            \
             .enabled = false,                           \
         },                                              \
         .ssgi = {                                       \
@@ -237,6 +239,8 @@ typedef struct R3D_EnvSSIL {
     int sliceCount;         ///< Number of depth slices for accumulation (default: 4)
     float radius;           ///< Maximum distance to gather light from (default: 2.0)
     float thickness;        ///< Thickness threshold for occluders (default: 1.0)
+    float intensity;        ///< IL intensity multiplier (default: 1.0)
+    float aoPower;          ///< AO exponent/power (default: 1.0)
     bool enabled;           ///< Enable/disable SSIL effect (default: false)
 } R3D_EnvSSIL;
 

@@ -35,6 +35,9 @@ uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
 
+uniform float uSsilIntensity;
+uniform float uSsilAoPower;
+
 /* === Blocks === */
 
 #include "../include/blocks/view.glsl"
@@ -55,7 +58,8 @@ void main()
     vec4 ssil = texture(uSsilTex, vTexCoord);
     vec4 ssgi = texture(uSsgiTex, vTexCoord);
 
-    orm.x *= ssao * ssil.w; // occlusion, used during ibl
+    // Compute visibility factor, used during IBL
+    orm.x *= ssao * pow(ssil.a, uSsilAoPower); 
 
     vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
     vec3 kD = albedo * (1.0 - orm.z);
@@ -70,7 +74,7 @@ void main()
     E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, P, N, V, NdotV);
 
     // Apply AO to SSGI to restore contrast lost in far/blurred regions
-    vec3 gi = kD * (ssil.rgb + (ssgi.rgb * orm.x));
+    vec3 gi = kD * (ssil.rgb * uSsilIntensity + ssgi.rgb * orm.x);
 
     FragDiffuse = vec4(diffuse + gi, 1.0);
     FragSpecular = vec4(specular, 1.0);
