@@ -101,19 +101,15 @@ void main()
     vec3 specular = L_Specular(F0, cLdotH, cNdotH, cNdotV, cNdotL, roughness);
     specular *= lightColE * uLight.specular;
 
-    /* --- Calculating a random rotation matrix for shadow debanding --- */
-
-    mat2 diskRot = S_DebandingRotationMatrix();
-
     /* Apply shadow factor if the light casts shadows */
 
     float shadow = 1.0;
 
     if (uLight.shadowLayer >= 0) {
         switch (uLight.type) {
-        case LIGHT_DIR:  shadow = S_SampleShadowDir(uLight.viewProj * vec4(position, 1.0), cNdotL, diskRot); break;
-        case LIGHT_SPOT: shadow = S_SampleShadowSpot(uLight.viewProj * vec4(position, 1.0), cNdotL, diskRot); break;
-        case LIGHT_OMNI: shadow = S_SampleShadowOmni(position, cNdotL, diskRot); break;
+        case LIGHT_DIR:  shadow = S_SampleShadowDir(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
+        case LIGHT_SPOT: shadow = S_SampleShadowSpot(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
+        case LIGHT_OMNI: shadow = S_SampleShadowOmni(position, cNdotL); break;
         }
     }
 

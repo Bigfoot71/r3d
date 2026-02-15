@@ -96,10 +96,6 @@ void main()
     float NdotV = dot(N, V);
     float cNdotV = max(NdotV, 1e-4);  // Clamped to avoid division by zero
 
-    /*  Create a random rotation matrix for shadow debanding */
-
-    mat2 diskRot = S_DebandingRotationMatrix();
-
     /* Loop through all light sources accumulating diffuse and specular light */
 
     vec3 diffuse = vec3(0.0);
@@ -151,9 +147,9 @@ void main()
 
         if (light.shadowLayer >= 0) {
             switch (light.type) {
-            case LIGHT_DIR:  shadow = S_SampleShadowDir(i, vPosLightSpace[i], cNdotL, diskRot); break;
-            case LIGHT_SPOT: shadow = S_SampleShadowSpot(i, vPosLightSpace[i], cNdotL, diskRot); break;
-            case LIGHT_OMNI: shadow = S_SampleShadowOmni(i, vPosition, cNdotL, diskRot); break;
+            case LIGHT_DIR:  shadow = S_SampleShadowDir(i, vPosLightSpace[i], cNdotL); break;
+            case LIGHT_SPOT: shadow = S_SampleShadowSpot(i, vPosLightSpace[i], cNdotL); break;
+            case LIGHT_OMNI: shadow = S_SampleShadowOmni(i, vPosition, cNdotL); break;
             }
         }
 

@@ -36,11 +36,11 @@ mat2 S_DebandingRotationMatrix()
 }
 
 #ifdef NUM_FORWARD_LIGHTS
-float S_SampleShadowDir(int lightIndex, vec4 projPos, float cNdotL, mat2 diskRot)
+float S_SampleShadowDir(int lightIndex, vec4 projPos, float cNdotL)
 {
     #define light uLights[lightIndex]
 #else
-float S_SampleShadowDir(vec4 projPos, float cNdotL, mat2 diskRot)
+float S_SampleShadowDir(vec4 projPos, float cNdotL)
 {
     #define light uLight
 #endif 
@@ -49,6 +49,8 @@ float S_SampleShadowDir(vec4 projPos, float cNdotL, mat2 diskRot)
     float bias = light.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, light.shadowDepthBias * projCoords.z);
     float compareDepth = projCoords.z - bias;
+
+    mat2 diskRot = S_DebandingRotationMatrix();
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
@@ -67,11 +69,11 @@ float S_SampleShadowDir(vec4 projPos, float cNdotL, mat2 diskRot)
 }
 
 #ifdef NUM_FORWARD_LIGHTS
-float S_SampleShadowSpot(int lightIndex, vec4 projPos, float cNdotL, mat2 diskRot)
+float S_SampleShadowSpot(int lightIndex, vec4 projPos, float cNdotL)
 {
     #define light uLights[lightIndex]
 #else
-float S_SampleShadowSpot(vec4 projPos, float cNdotL, mat2 diskRot)
+float S_SampleShadowSpot(vec4 projPos, float cNdotL)
 {
     #define light uLight
 #endif 
@@ -80,6 +82,8 @@ float S_SampleShadowSpot(vec4 projPos, float cNdotL, mat2 diskRot)
     float bias = light.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, light.shadowDepthBias * projCoords.z);
     float compareDepth = projCoords.z - bias;
+
+    mat2 diskRot = S_DebandingRotationMatrix();
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
@@ -93,11 +97,11 @@ float S_SampleShadowSpot(vec4 projPos, float cNdotL, mat2 diskRot)
 }
 
 #ifdef NUM_FORWARD_LIGHTS
-float S_SampleShadowOmni(int lightIndex, vec3 fragPos, float cNdotL, mat2 diskRot)
+float S_SampleShadowOmni(int lightIndex, vec3 fragPos, float cNdotL)
 {
     #define light uLights[lightIndex]
 #else
-float S_SampleShadowOmni(vec3 fragPos, float cNdotL, mat2 diskRot)
+float S_SampleShadowOmni(vec3 fragPos, float cNdotL)
 {
     #define light uLight
 #endif 
@@ -107,6 +111,8 @@ float S_SampleShadowOmni(vec3 fragPos, float cNdotL, mat2 diskRot)
     float bias = light.shadowSlopeBias * (1.0 - cNdotL * 0.5);
     bias = max(bias, light.shadowDepthBias * currentDepth);
     float compareDepth = (currentDepth - bias) / light.far;
+
+    mat2 diskRot = S_DebandingRotationMatrix();    
 
     mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);
 
