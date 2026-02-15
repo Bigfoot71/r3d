@@ -108,8 +108,10 @@ typedef struct {
 } pipeline_cache_t;
 
 typedef struct {
-    GLuint queryID;
     const char* label;
+    GLuint queryIDs[2];
+    int current;
+    bool ready;
 } driver_timer_t;
 
 // ========================================
@@ -524,28 +526,39 @@ void r3d_driver_timer_start(const char* label)
 {
     driver_timer_t* t = &R3D_MOD_DRIVER.timer;
     t->label = label;
-
-    if (t->queryID == 0) {
-        glGenQueries(1, &t->queryID);
+    
+    if (t->queryIDs[0] == 0) {
+        glGenQueries(2, t->queryIDs);
+        t->current = 0;
+        t->ready = false;
     }
-
-    glBeginQuery(GL_TIME_ELAPSED, t->queryID);
+    
+    glBeginQuery(GL_TIME_ELAPSED, t->queryIDs[t->current]);
 }
 
 double r3d_driver_timer_stop(void)
 {
     driver_timer_t* t = &R3D_MOD_DRIVER.timer;
+    
     glEndQuery(GL_TIME_ELAPSED);
-
-    GLuint64 timeElapsed = 0;
-    glGetQueryObjectui64v(t->queryID, GL_QUERY_RESULT, &timeElapsed);
-
-    double ms = (double)timeElapsed / 1e6;
-
+    
+    int prev = t->current;
+    t->current = 1 - t->current;
+    
+    if (!t->ready) {
+        t->ready = true;
+        return 0.0;
+    }
+    
+    GLuint64 elapsed;
+    glGetQueryObjectui64v(t->queryIDs[prev], GL_QUERY_RESULT, &elapsed);
+    
+    double ms = (double)elapsed / 1e6;
+    
     if (t->label) {
         R3D_TRACELOG(LOG_INFO, "[TIMER] %s: %.3f ms\n", t->label, ms);
     }
-
+    
     return ms;
 }
 
