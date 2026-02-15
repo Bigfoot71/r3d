@@ -35,8 +35,6 @@ uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
 
-uniform float uSsilEnergy;
-
 /* === Blocks === */
 
 #include "../include/blocks/view.glsl"
@@ -72,7 +70,7 @@ void main()
     E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, P, N, V, NdotV);
 
     // Apply AO to SSGI to restore contrast lost in far/blurred regions
-    vec3 gi = kD * ((ssil.rgb * uSsilEnergy) + (ssgi.rgb * orm.x));
+    vec3 gi = kD * (ssil.rgb + (ssgi.rgb * orm.x));
 
     FragDiffuse = vec4(diffuse + gi, 1.0);
     FragSpecular = vec4(specular, 1.0);

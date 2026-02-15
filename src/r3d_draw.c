@@ -1502,11 +1502,7 @@ r3d_target_t pass_prepare_ssil(void)
     static r3d_target_t SSIL_RAW      = R3D_TARGET_SSIL_1;
     static r3d_target_t SSIL_FILTERED = R3D_TARGET_SSIL_2;
 
-    bool needConvergence = (R3D.environment.ssil.convergence >= 0.1f);
-    bool needBounce      = (R3D.environment.ssil.bounce >= 0.01f);
-    bool needHistory     = (needConvergence || needBounce);
-
-    if (needHistory && r3d_target_get_or_null(SSIL_HISTORY) == 0) {
+    if (r3d_target_get_or_null(SSIL_HISTORY) == 0) {
         R3D_TARGET_CLEAR(false, SSIL_HISTORY);
     }
 
@@ -1541,10 +1537,7 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleCount, (float)R3D.environment.ssil.sampleCount);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSampleRadius, R3D.environment.ssil.sampleRadius);
     R3D_SHADER_SET_FLOAT(prepare.ssil, uSliceCount, (float)R3D.environment.ssil.sliceCount);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uHitThickness, R3D.environment.ssil.hitThickness);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uConvergence, R3D.environment.ssil.convergence);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uAoPower, R3D.environment.ssil.aoPower);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uBounce, R3D.environment.ssil.bounce);
+    R3D_SHADER_SET_FLOAT(prepare.ssil, uThickness, R3D.environment.ssil.thickness);
 
     R3D_RENDER_SCREEN();
 
@@ -1555,26 +1548,21 @@ r3d_target_t pass_prepare_ssil(void)
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-    r3d_target_t src = SSIL_RAW;
-    r3d_target_t dst = SSIL_FILTERED;
+    r3d_target_t* src = &SSIL_RAW;
+    r3d_target_t* dst = &SSIL_FILTERED;
 
-    for (int i = 0; i < 3; i++) {
-        R3D_TARGET_BIND(false, dst);
-        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(src));
-        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepSize, 1 << i);
+    const int ITERATIONS = 3;
+    for (int i = 0; i < ITERATIONS; i++) {
+        R3D_TARGET_BIND(false, *dst);
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
+        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepSize, 1 << ((ITERATIONS - 1) - i));
         R3D_RENDER_SCREEN();
-        SWAP(r3d_target_t, src, dst);
+        SWAP(r3d_target_t, *src, *dst);
     }
 
-    r3d_target_t SSIL_RESULT = src;
+    SWAP(r3d_target_t, SSIL_HISTORY, *src);
 
-    /* --- Store history --- */
-
-    if (needHistory) {
-        SWAP(r3d_target_t, SSIL_HISTORY, SSIL_RESULT);
-    }
-
-    return SSIL_RESULT;
+    return SSIL_HISTORY;
 }
 
 r3d_target_t pass_prepare_ssgi(void)
@@ -1818,8 +1806,6 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsgiTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssgiSource), BLACK));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uOrmTex, r3d_target_get_level(R3D_TARGET_ORM, 0));
-
-    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilEnergy, R3D.environment.ssil.energy);
 
     R3D_RENDER_SCREEN();
 }

@@ -605,10 +605,7 @@ typedef struct {
     r3d_shader_uniform_float_t uSampleCount;
     r3d_shader_uniform_float_t uSampleRadius;
     r3d_shader_uniform_float_t uSliceCount;
-    r3d_shader_uniform_float_t uHitThickness;
-    r3d_shader_uniform_float_t uConvergence;
-    r3d_shader_uniform_float_t uAoPower;
-    r3d_shader_uniform_float_t uBounce;
+    r3d_shader_uniform_float_t uThickness;
 } r3d_shader_prepare_ssil_t;
 
 typedef struct {
@@ -926,7 +923,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uIrradianceTex;
     r3d_shader_uniform_sampler_t uPrefilterTex;
     r3d_shader_uniform_sampler_t uBrdfLutTex;
-    r3d_shader_uniform_float_t uSsilEnergy;
 } r3d_shader_deferred_ambient_t;
 
 typedef struct {

@@ -77,11 +77,7 @@
             .sampleCount = 4,                           \
             .sliceCount = 4,                            \
             .sampleRadius = 2.0f,                       \
-            .hitThickness = 0.5f,                       \
-            .aoPower = 1.0f,                            \
-            .energy = 1.0f,                             \
-            .bounce = 0.5f,                             \
-            .convergence = 0.5f,                        \
+            .thickness = 1.0f,                          \
             .enabled = false,                           \
         },                                              \
         .ssgi = {                                       \
@@ -233,22 +229,8 @@ typedef struct R3D_EnvSSAO {
 typedef struct R3D_EnvSSIL {
     int sampleCount;        ///< Number of samples to compute indirect lighting (default: 4)
     int sliceCount;         ///< Number of depth slices for accumulation (default: 4)
-    float sampleRadius;     ///< Maximum distance to gather light from (default: 5.0)
-    float hitThickness;     ///< Thickness threshold for occluders (default: 0.5)
-    float aoPower;          ///< Exponential falloff for visibility factor (too high = more noise) (default: 1.0)
-    float energy;           ///< Multiplier for indirect light intensity (default: 1.0)
-    float bounce;           /**< Bounce feeback factor. (default: 0.5)
-                              *  Simulates light bounces by re-injecting the SSIL from the previous frame into the current direct light.
-                              *  Be careful not to make the factor too high in order to avoid a feedback loop.
-                              */
-    float convergence;      /**< Temporal convergence factor (0 disables it, default 0.5).
-                              *  Smooths sudden light flashes by blending with previous frames.
-                              *  Higher values produce smoother results but may cause ghosting.
-                              *  Tip: The faster the screen changes, the higher the convergence can be acceptable.
-                              *  Requires an additional history buffer (so require more memory). 
-                              *  If multiple SSIL passes are done in the same frame, the history may be inconsistent, 
-                              *  in that case, enable SSIL/convergence for only one pass per frame.
-                              */
+    float sampleRadius;     ///< Maximum distance to gather light from (default: 2.0)
+    float thickness;        ///< Thickness threshold for occluders (default: 1.0)
     bool enabled;           ///< Enable/disable SSIL effect (default: false)
 } R3D_EnvSSIL;
 
@@ -262,11 +244,11 @@ typedef struct R3D_EnvSSGI {
     int sampleCount;        ///< Number of rays per pixel (default: 8)
     int maxRaySteps;        ///< Maximum ray marching steps (default: 32)
     float stepSize;         ///< Ray step size (default: 0.125)
-    float thickness;        ///< Depth tolerance for valid hits (default: 0.2)
+    float thickness;        ///< Depth tolerance for valid hits (default: 1.0)
     float maxDistance;      ///< Maximum ray distance (default: 4.0)
     float fadeStart;        ///< Distance at which the GI fade begins (default: 8.0)
     float fadeEnd;          ///< Distance at which GI is fully faded (default: 16.0)
-    bool enabled;           ///< Enable/disable SSR (default: false)
+    bool enabled;           ///< Enable/disable SSGI (default: false)
 } R3D_EnvSSGI;
 
 /**
