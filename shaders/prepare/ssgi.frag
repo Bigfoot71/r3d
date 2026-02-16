@@ -102,17 +102,17 @@ vec3 RotateAroundZ(vec3 v, float a)
 
 vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
 {
-    vec3  stepVS     = dirVS * uStepSize;
-    float stepLenSq  = dot(stepVS, stepVS);
-    float maxLenSq   = uMaxDistance * uMaxDistance;
+    vec3 stepVS = dirVS * uStepSize;
+    float stepLenSq = dot(stepVS, stepVS);
+    float maxLenSq = uMaxDistance * uMaxDistance;
 
-    vec3  posVS      = startViewPos + stepVS;
-    float distSq     = stepLenSq;
+    vec3 posVS = startViewPos + stepVS;
+    float distSq = stepLenSq;
 
-    vec2  hitUV      = vec2(0.0);
-    bool  hit        = false;
+    vec2 hitUV = vec2(0.0);
+    bool hit = false;
 
-    for (int it = 1; it < uMaxRaySteps; ++it)
+    for (int i = 1; i < uMaxRaySteps; i++)
     {
         if (distSq > maxLenSq) break;
 
@@ -120,10 +120,9 @@ vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
         if (V_OffScreen(uv)) break;
 
         float sceneZ = -textureLod(uDepthTex, uv, 0).r;
-        float dz     = sceneZ - posVS.z;
+        float dz = sceneZ - posVS.z;
 
-        if (dz > 0.0 && dz < uThickness)
-        {
+        if (dz > 0.0 && dz < uThickness) {
             hitUV = uv;
             hit = true;
             break;
@@ -147,13 +146,16 @@ vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
 void main()
 {
     float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    if (depth >= uFadeEnd) { FragColor = vec4(0.0); return; }
+    if (depth >= uFadeEnd) {
+        FragColor = vec4(0.0);
+        return;
+    }
 
     ivec2 pix = ivec2(gl_FragCoord.xy);
 
-    vec3 Nvs  = V_GetViewNormal(uNormalTex, pix);
-    vec3 Pvs  = V_GetViewPosition(vTexCoord, depth);
-    mat3 TBN  = M_OrthonormalBasis(Nvs);
+    vec3 Nvs = V_GetViewNormal(uNormalTex, pix);
+    vec3 Pvs = V_GetViewPosition(vTexCoord, depth);
+    mat3 TBN = M_OrthonormalBasis(Nvs);
 
     // 4x4 interleave index: 0..15, perfectly stable
     uint tileIndex = (uint(pix.x) & INTERLEAVE_TILE_MASK)
@@ -163,8 +165,8 @@ void main()
     uvec2 tileCoord = uvec2(pix) >> INTERLEAVE_TILE_LOG2;
 
     // Base az/ring: symmetric mapping from tileIndex
-    uint baseAz   = tileIndex & AZIM_MASK;     // 0..15
-    uint baseRing = tileIndex & RING_MASK;     // 0..3
+    uint baseAz = tileIndex & AZIM_MASK;    // 0..15
+    uint baseRing = tileIndex & RING_MASK;  // 0..3
 
     // Rotation base: (h + 0.5) * 2pi/ROT_PHASES
     uint h = LatticeBits(tileCoord);
@@ -172,12 +174,11 @@ void main()
 
     vec3 gi = vec3(0.0);
 
-    int spp = max(uSampleCount, 1);
-    for (int i = 0; i < spp; ++i)
+    for (int i = 0; i < uSampleCount; i++)
     {
         uint s = uint(i);
 
-        uint az   = (baseAz   + s * AZIM_STEP) & AZIM_MASK;
+        uint az = (baseAz + s * AZIM_STEP) & AZIM_MASK;
         uint ring = (baseRing + s * RING_STEP) & RING_MASK;
 
         vec3 dirLocal = DirFromAzRing(az, ring);
@@ -187,5 +188,5 @@ void main()
     }
 
     float fade = smoothstep(uFadeEnd, uFadeStart, depth);
-    FragColor = vec4(gi * (1.0 / float(spp)) * fade, 1.0);
+    FragColor = vec4(gi * (1.0 / float(uSampleCount)) * fade, 1.0);
 }
