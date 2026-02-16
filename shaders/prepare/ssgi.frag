@@ -116,8 +116,8 @@ void main()
 
     for (int i = 0; i < uSampleCount; i++)
     {
-        float u1 = M_HashIGN(gl_FragCoord.xy, float(i));
-        float u2 = M_HashIGN(gl_FragCoord.xy, float(uSampleCount - i));
+        float u1 = fract(127.0 * M_HashIGN(gl_FragCoord.xy, float(i)));                 // moiré
+        float u2 = fract(227.0 * M_HashIGN(gl_FragCoord.xy, float(uSampleCount - i)));  // bands
 
         vec3 rayDir = GetCosHemisphereSample(viewNormal, u1, u2);
         vec3 result = TraceRay(viewPos, rayDir);
