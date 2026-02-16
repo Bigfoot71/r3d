@@ -32,101 +32,160 @@ uniform float uMaxDistance;
 uniform float uFadeStart;
 uniform float uFadeEnd;
 
+/* === Constants === */
+
+// 4x4 interleaving tile (must be power of two)
+const uint INTERLEAVE_TILE_LOG2 = 2u;                           // 2 => 4x4
+const uint INTERLEAVE_TILE_SIZE = 1u << INTERLEAVE_TILE_LOG2;   // 4
+const uint INTERLEAVE_TILE_MASK = INTERLEAVE_TILE_SIZE - 1u;    // 3
+
+// Hemisphere direction set (rings x azimuths)
+const uint AZIM_COUNT = 16u;                    // power of two => cheap mod via &
+const uint RING_COUNT = 4u;                     // power of two => cheap mod via &
+const uint AZIM_MASK  = AZIM_COUNT - 1u;
+const uint RING_MASK  = RING_COUNT - 1u;
+
+// Steps must be coprime with counts (to cycle through)
+const uint AZIM_STEP = 5u; // coprime with 16
+const uint RING_STEP = 3u; // coprime with 4
+
+// Ring elevations (cos(theta)) from tight -> wide
+const float RING_COS[RING_COUNT] = float[](
+    0.98, 0.88, 0.74, 0.60
+);
+
+// Rotation lattice: pick BITS, set ROT_PHASES = 2 * (1<<BITS)
+const uint ROT_BITS   = 7u;                         // 6 or 7 are betters
+const uint ROT_PHASES = 256u;                       // = 2*(1<<ROT_BITS)
+const float ROT_INV   = 1.0 / float(ROT_PHASES);
+
+// Rotation step across samples (odd/coprime with ROT_PHASES if po2)
+const uint ROT_K = 73u; // good for 256
+const float ROT_STEP = M_TAU * ROT_INV * float(ROT_K);
+
 /* === Output === */
 
 out vec4 FragColor;
 
-/* === Raymarching === */
+/* === Helper Functions === */
 
-vec3 GetCosHemisphereSample(vec3 hitNorm, float u1, float u2)
+uint LatticeBits(uvec2 p)
 {
-    mat3 TBN = M_OrthonormalBasis(hitNorm);
-
-    float r = sqrt(u1);
-    float phi = M_TAU * u2;
-
-    vec3 sample = vec3(
-        r * cos(phi),
-        r * sin(phi),
-        sqrt(max(0.0, 1.0 - u1))
-    );
-
-    return TBN * sample;
+    // rank-1 lattice in uint space
+    uint n = p.x * 0x9E3779B9u + p.y * 0xBB67AE85u;
+    return n >> (32u - ROT_BITS); // 0..(2^ROT_BITS - 1)
 }
 
-vec3 TraceRay(vec3 startViewPos, vec3 reflectionDir)
+vec3 DirFromAzRing(uint az, uint ring)
 {
-    vec3 dirStep = reflectionDir * uStepSize;
-    float stepDistanceSq = dot(dirStep, dirStep);
-    float maxDistanceSq = uMaxDistance * uMaxDistance;
+    float phi = (float(az) * (M_TAU / float(AZIM_COUNT)));
 
-    vec3 currentPos = startViewPos + dirStep;
-    vec3 prevPos = startViewPos;
-    float rayDistanceSq = stepDistanceSq;
+    float cosT = RING_COS[ring];
+    float sinT = sqrt(max(0.0, 1.0 - cosT * cosT));
 
-    vec2 hitUV = vec2(0.0);
-    bool hit = false;
+    return vec3(
+        cos(phi) * sinT,
+        sin(phi) * sinT,
+        cosT
+    );
+}
 
-    for (int i = 1; i < uMaxRaySteps; i++)
+vec3 RotateAroundZ(vec3 v, float a)
+{
+    float c = cos(a), s = sin(a);
+    return vec3(
+        c * v.x - s * v.y,
+        s * v.x + c * v.y,
+        v.z
+    );
+}
+
+vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
+{
+    vec3  stepVS     = dirVS * uStepSize;
+    float stepLenSq  = dot(stepVS, stepVS);
+    float maxLenSq   = uMaxDistance * uMaxDistance;
+
+    vec3  posVS      = startViewPos + stepVS;
+    float distSq     = stepLenSq;
+
+    vec2  hitUV      = vec2(0.0);
+    bool  hit        = false;
+
+    for (int it = 1; it < uMaxRaySteps; ++it)
     {
-        if (rayDistanceSq > maxDistanceSq) break;
-        vec2 uv = V_ViewToScreen(currentPos);
+        if (distSq > maxLenSq) break;
+
+        vec2 uv = V_ViewToScreen(posVS);
         if (V_OffScreen(uv)) break;
 
-        float sampleZ = -textureLod(uDepthTex, uv, 0).r;
-        float depthDiff = sampleZ - currentPos.z;
+        float sceneZ = -textureLod(uDepthTex, uv, 0).r;
+        float dz     = sceneZ - posVS.z;
 
-        if (depthDiff > 0.0 && depthDiff < uThickness) {
+        if (dz > 0.0 && dz < uThickness)
+        {
             hitUV = uv;
             hit = true;
             break;
         }
 
-        prevPos = currentPos;
-        currentPos += dirStep;
-        rayDistanceSq += stepDistanceSq;
+        posVS += stepVS;
+        distSq += stepLenSq;
     }
 
     if (!hit) return vec3(0.0);
 
-    vec3 hitHist = textureLod(uHistoryTex, hitUV, 0).rgb;
-    vec3 hitDiff = textureLod(uDiffuseTex, hitUV, 0).rgb;
+    vec3 hist = textureLod(uHistoryTex, hitUV, 0).rgb;
+    vec3 diff = textureLod(uDiffuseTex, hitUV, 0).rgb;
 
-    float distFade = 1.0 - smoothstep(0.0, uMaxDistance, sqrt(rayDistanceSq));
-
-    return (hitDiff + hitHist) * distFade;
+    float distFade = 1.0 - smoothstep(0.0, uMaxDistance, sqrt(distSq));
+    return (diff + hist) * distFade;
 }
 
 /* === Main Program === */
 
 void main()
 {
-    float linearDepth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    if (linearDepth >= uFadeEnd) {
-        FragColor = vec4(0.0);
-        return;
-    }
+    float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
+    if (depth >= uFadeEnd) { FragColor = vec4(0.0); return; }
 
-    vec3 giColor = vec3(0.0);
-    float totalWeight = 0.0;
+    ivec2 pix = ivec2(gl_FragCoord.xy);
 
-    vec3 viewNormal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
-    vec3 viewPos = V_GetViewPosition(vTexCoord, linearDepth);
-    vec3 viewDir = normalize(viewPos);
+    vec3 Nvs  = V_GetViewNormal(uNormalTex, pix);
+    vec3 Pvs  = V_GetViewPosition(vTexCoord, depth);
+    mat3 TBN  = M_OrthonormalBasis(Nvs);
 
-    for (int i = 0; i < uSampleCount; i++)
+    // 4x4 interleave index: 0..15, perfectly stable
+    uint tileIndex = (uint(pix.x) & INTERLEAVE_TILE_MASK)
+                   | ((uint(pix.y) & INTERLEAVE_TILE_MASK) << INTERLEAVE_TILE_LOG2);
+
+    // Tile coordinate (one value per 4x4 block) for the lattice rotation
+    uvec2 tileCoord = uvec2(pix) >> INTERLEAVE_TILE_LOG2;
+
+    // Base az/ring: symmetric mapping from tileIndex
+    uint baseAz   = tileIndex & AZIM_MASK;     // 0..15
+    uint baseRing = tileIndex & RING_MASK;     // 0..3
+
+    // Rotation base: (h + 0.5) * 2pi/ROT_PHASES
+    uint h = LatticeBits(tileCoord);
+    float rotBase = (float(h) + 0.5) * (M_TAU * ROT_INV);
+
+    vec3 gi = vec3(0.0);
+
+    int spp = max(uSampleCount, 1);
+    for (int i = 0; i < spp; ++i)
     {
-        float u1 = fract(127.0 * M_HashIGN(gl_FragCoord.xy, float(i)));                 // moiré
-        float u2 = fract(227.0 * M_HashIGN(gl_FragCoord.xy, float(uSampleCount - i)));  // bands
+        uint s = uint(i);
 
-        vec3 rayDir = GetCosHemisphereSample(viewNormal, u1, u2);
-        vec3 result = TraceRay(viewPos, rayDir);
+        uint az   = (baseAz   + s * AZIM_STEP) & AZIM_MASK;
+        uint ring = (baseRing + s * RING_STEP) & RING_MASK;
 
-        float weight = max(0.0, dot(rayDir, viewNormal));
-        giColor += result * weight;
-        totalWeight += weight;
+        vec3 dirLocal = DirFromAzRing(az, ring);
+        dirLocal = RotateAroundZ(dirLocal, rotBase + float(i) * ROT_STEP);
+
+        gi += TraceRay(Pvs, TBN * dirLocal);
     }
 
-    float fade = smoothstep(uFadeEnd, uFadeStart, linearDepth);
-    FragColor = vec4(giColor / max(totalWeight, 1e-4) * fade, 1.0);
+    float fade = smoothstep(uFadeEnd, uFadeStart, depth);
+    FragColor = vec4(gi * (1.0 / float(spp)) * fade, 1.0);
 }
