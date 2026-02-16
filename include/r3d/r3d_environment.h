@@ -84,7 +84,7 @@
             .enabled = false,                           \
         },                                              \
         .ssgi = {                                       \
-            .sampleCount = 8,                           \
+            .sampleCount = 2,                           \
             .maxRaySteps = 32,                          \
             .stepSize = 0.125f,                         \
             .thickness = 1.0f,                          \
