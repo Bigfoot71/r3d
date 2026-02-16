@@ -13,6 +13,7 @@
 #include <assimp/material.h>
 #include <assimp/texture.h>
 
+
 #ifdef _WIN32
 #   define NOGDI
 #   define NOUSER
@@ -248,9 +249,13 @@ static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer*
         int textureIndex = atoi(&path[1]);
         const struct aiTexture* aiTex = r3d_importer_get_texture(importer, textureIndex);
 
+        char* formatHint = (char*)malloc(strlen(aiTex->achFormatHint) + 2);
+        formatHint[0] = '.';
+        strcpy(formatHint + 1, aiTex->achFormatHint);
+
         if (aiTex->mHeight == 0) {
             *outImage = LoadImageFromMemory(
-                TextFormat(".%s", aiTex->achFormatHint),
+                formatHint,
                 (const unsigned char*)aiTex->pcData,
                 aiTex->mWidth
             );
@@ -264,6 +269,8 @@ static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer*
             outImage->data = aiTex->pcData;
             *outOwned = false;
         }
+
+        free(formatHint);
     }
     else {
         *outImage = LoadImage(path);
