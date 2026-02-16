@@ -1589,14 +1589,14 @@ r3d_target_t pass_prepare_ssgi(void)
 
     /* --- Downsample G-Buffer --- */
 
-    for (int i = 0; i < 2; i++) {
-        R3D_TARGET_BIND_LEVEL(i + 1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
-        R3D_SHADER_USE(prepare.ssgiInDown);
-        R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, i));
-        R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, i));
-        R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, i));
-        R3D_RENDER_SCREEN();
-    }
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_SHADER_USE(prepare.ssgiInDown);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 0));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
+
+    R3D_RENDER_SCREEN();
 
     /* --- Calculate SSGI (RAW) --- */
 
@@ -1604,9 +1604,9 @@ r3d_target_t pass_prepare_ssgi(void)
     R3D_SHADER_USE(prepare.ssgi);
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uHistoryTex, r3d_target_get(SSGI_HISTORY));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 2));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 2));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 2));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 1));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
     R3D_SHADER_SET_INT(prepare.ssgi, uSampleCount, R3D.environment.ssgi.sampleCount);
     R3D_SHADER_SET_INT(prepare.ssgi, uMaxRaySteps, R3D.environment.ssgi.maxRaySteps);
@@ -1622,8 +1622,8 @@ r3d_target_t pass_prepare_ssgi(void)
 
     R3D_SHADER_USE(prepare.atrousWavelet);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 2));
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 2));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
+    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
     R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uNormalSharp, 0.75f);
     R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uDepthSharp, 1.75f);
