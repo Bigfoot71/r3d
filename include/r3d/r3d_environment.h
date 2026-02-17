@@ -254,7 +254,7 @@ typedef struct R3D_EnvSSIL {
  * @note Best suited for enclosed/indoor environments.
  */
 typedef struct R3D_EnvSSGI {
-    int sampleCount;        ///< Number of rays per pixel (default: 8)
+    int sampleCount;        ///< Number of rays per pixel (default: 2)
     int maxRaySteps;        ///< Maximum ray marching steps (default: 32)
     float stepSize;         ///< Ray step size (default: 0.125)
     float thickness;        ///< Depth tolerance for valid hits (default: 1.0)
