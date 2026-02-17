@@ -371,8 +371,9 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_SCENE          = 39,
 
     // Unamed for special passes
-    R3D_SHADER_SAMPLER_SOURCE_2D             = 40,
-    R3D_SHADER_SAMPLER_SOURCE_CUBE           = 41,
+    R3D_SHADER_SAMPLER_SOURCE_1D             = 40,
+    R3D_SHADER_SAMPLER_SOURCE_2D             = 41,
+    R3D_SHADER_SAMPLER_SOURCE_CUBE           = 42,
 
     // Custom samplers
     R3D_SHADER_SAMPLER_CUSTOM_1D             = 45,
@@ -418,6 +419,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_DOF_COC]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_DOF]            = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SCENE]          = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_SOURCE_1D]             = GL_TEXTURE_1D,
     [R3D_SHADER_SAMPLER_SOURCE_2D]             = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_SOURCE_CUBE]           = GL_TEXTURE_CUBE_MAP,
 
@@ -622,6 +624,7 @@ typedef struct {
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_sampler_t uLutTex;
     r3d_shader_uniform_int_t uSampleCount;
     r3d_shader_uniform_int_t uMaxRaySteps;
     r3d_shader_uniform_float_t uStepSize;

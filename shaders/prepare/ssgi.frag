@@ -23,6 +23,7 @@ uniform sampler2D uHistoryTex;
 uniform sampler2D uDiffuseTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
+uniform sampler1D uLutTex;
 
 uniform int uSampleCount;
 uniform int uMaxRaySteps;
@@ -34,70 +35,43 @@ uniform float uFadeEnd;
 
 /* === Constants === */
 
-// 4x4 interleaving tile (must be power of two)
-const uint INTERLEAVE_TILE_LOG2 = 2u;                           // 2 => 4x4
-const uint INTERLEAVE_TILE_SIZE = 1u << INTERLEAVE_TILE_LOG2;   // 4
-const uint INTERLEAVE_TILE_MASK = INTERLEAVE_TILE_SIZE - 1u;    // 3
+// These constants are related to the LUT, do not modify them.
 
-// Hemisphere direction set (rings x azimuths)
-const uint AZIM_COUNT = 16u;                    // power of two => cheap mod via &
-const uint RING_COUNT = 4u;                     // power of two => cheap mod via &
-const uint AZIM_MASK  = AZIM_COUNT - 1u;
-const uint RING_MASK  = RING_COUNT - 1u;
+const uint TILE_LOG2 = 2u;
+const uint TILE_SIZE = 1u << TILE_LOG2;
+const uint TILE_MASK = TILE_SIZE - 1u;
 
-// Steps must be coprime with counts (to cycle through)
-const uint AZIM_STEP = 5u; // coprime with 16
-const uint RING_STEP = 3u; // coprime with 4
+const uint AZIM_COUNT = 16u;
+const uint RING_COUNT = 4u;
+const uint AZIM_STEP = 5u;
+const uint RING_STEP = 3u;
 
-// Ring elevations (cos(theta)) from tight -> wide
-const float RING_COS[RING_COUNT] = float[](
-    0.98, 0.88, 0.74, 0.60
-);
+const uint ROT_PHASES = 64u;
+const uint ROT_BITS = 8u;
 
-// Rotation lattice: pick BITS, set ROT_PHASES = 2 * (1<<BITS)
-const uint ROT_BITS   = 7u;                         // 6 or 7 are betters
-const uint ROT_PHASES = 256u;                       // = 2*(1<<ROT_BITS)
-const float ROT_INV   = 1.0 / float(ROT_PHASES);
+const uint AZIM_MASK = AZIM_COUNT - 1u;
+const uint RING_MASK = RING_COUNT - 1u;
+const uint ROT_MASK  = ROT_PHASES - 1u;
 
-// Rotation step across samples (odd/coprime with ROT_PHASES if po2)
-const uint ROT_K = 73u; // good for 256
-const float ROT_STEP = M_TAU * ROT_INV * float(ROT_K);
+const uint LUT_RING_STRIDE  = AZIM_COUNT;
+const uint LUT_PHASE_STRIDE = AZIM_COUNT * RING_COUNT;
 
-/* === Output === */
+/* === Fragments === */
 
 out vec4 FragColor;
 
 /* === Helper Functions === */
 
-uint LatticeBits(uvec2 p)
+uint LatticeStatePow2(uvec2 cell, uint bits)
 {
-    // rank-1 lattice in uint space
-    uint n = p.x * 0x9E3779B9u + p.y * 0xBB67AE85u;
-    return n >> (32u - ROT_BITS); // 0..(2^ROT_BITS - 1)
+    uint n = cell.x * 0x9E3779B9u + cell.y * 0xBB67AE85u;
+    return n >> (32u - bits);
 }
 
-vec3 DirFromAzRing(uint az, uint ring)
+vec3 DirFromLUT(uint phase, uint ring, uint az)
 {
-    float phi = (float(az) * (M_TAU / float(AZIM_COUNT)));
-
-    float cosT = RING_COS[ring];
-    float sinT = sqrt(max(0.0, 1.0 - cosT * cosT));
-
-    return vec3(
-        cos(phi) * sinT,
-        sin(phi) * sinT,
-        cosT
-    );
-}
-
-vec3 RotateAroundZ(vec3 v, float a)
-{
-    float c = cos(a), s = sin(a);
-    return vec3(
-        c * v.x - s * v.y,
-        s * v.x + c * v.y,
-        v.z
-    );
+    uint index = phase * LUT_PHASE_STRIDE + ring * LUT_RING_STRIDE + az;
+    return texelFetch(uLutTex, int(index), 0).xyz;
 }
 
 vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
@@ -145,45 +119,32 @@ vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
 
 void main()
 {
-    float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    if (depth >= uFadeEnd) {
-        FragColor = vec4(0.0);
-        return;
-    }
-
     ivec2 pix = ivec2(gl_FragCoord.xy);
+    float depth = texelFetch(uDepthTex, pix, 0).r;
+    if (depth >= uFadeEnd) { FragColor = vec4(0.0); return; }
 
     vec3 Nvs = V_GetViewNormal(uNormalTex, pix);
     vec3 Pvs = V_GetViewPosition(vTexCoord, depth);
     mat3 TBN = M_OrthonormalBasis(Nvs);
 
-    // 4x4 interleave index: 0..15, perfectly stable
-    uint tileIndex = (uint(pix.x) & INTERLEAVE_TILE_MASK)
-                   | ((uint(pix.y) & INTERLEAVE_TILE_MASK) << INTERLEAVE_TILE_LOG2);
+    uint idx = (uint(pix.x) & TILE_MASK) | ((uint(pix.y) & TILE_MASK) << TILE_LOG2);
 
-    // Tile coordinate (one value per 4x4 block) for the lattice rotation
-    uvec2 tileCoord = uvec2(pix) >> INTERLEAVE_TILE_LOG2;
+    uint baseAz = idx & AZIM_MASK;
+    uint baseRing = idx & RING_MASK;
 
-    // Base az/ring: symmetric mapping from tileIndex
-    uint baseAz = tileIndex & AZIM_MASK;    // 0..15
-    uint baseRing = tileIndex & RING_MASK;  // 0..3
-
-    // Rotation base: (h + 0.5) * 2pi/ROT_PHASES
-    uint h = LatticeBits(tileCoord);
-    float rotBase = (float(h) + 0.5) * (M_TAU * ROT_INV);
+    uvec2 cell = uvec2(pix) >> TILE_LOG2;
+    uint h = LatticeStatePow2(cell, ROT_BITS) & ROT_MASK;
 
     vec3 gi = vec3(0.0);
 
     for (int i = 0; i < uSampleCount; i++)
     {
         uint s = uint(i);
-
         uint az = (baseAz + s * AZIM_STEP) & AZIM_MASK;
         uint ring = (baseRing + s * RING_STEP) & RING_MASK;
+        uint phase = (h + s) & ROT_MASK;
 
-        vec3 dirLocal = DirFromAzRing(az, ring);
-        dirLocal = RotateAroundZ(dirLocal, rotBase + float(i) * ROT_STEP);
-
+        vec3 dirLocal = DirFromLUT(phase, ring, az);
         gi += TraceRay(Pvs, TBN * dirLocal);
     }
 

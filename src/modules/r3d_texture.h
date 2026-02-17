@@ -22,6 +22,7 @@ typedef enum {
     R3D_TEXTURE_BLANK,
     R3D_TEXTURE_NORMAL,
     R3D_TEXTURE_IBL_BRDF_LUT,
+    R3D_TEXTURE_SSGI_LUT,
     R3D_TEXTURE_COUNT
 } r3d_texture_t;
 

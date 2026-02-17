@@ -418,6 +418,7 @@ bool r3d_shader_load_prepare_ssgi(r3d_shader_custom_t* custom)
     SET_SAMPLER(ssgi, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssgi, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssgi, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+    SET_SAMPLER(ssgi, uLutTex, R3D_SHADER_SAMPLER_SOURCE_1D);
 
     return true;
 }
