@@ -62,7 +62,7 @@ out vec4 FragColor;
 
 /* === Helper Functions === */
 
-uint LatticeStatePow2(uvec2 cell, uint bits)
+uint TileCellHash(uvec2 cell, uint bits)
 {
     uint n = cell.x * 0x9E3779B9u + cell.y * 0xBB67AE85u;
     return n >> (32u - bits);
@@ -133,7 +133,7 @@ void main()
     uint baseRing = idx & RING_MASK;
 
     uvec2 cell = uvec2(pix) >> TILE_LOG2;
-    uint h = LatticeStatePow2(cell, ROT_BITS) & ROT_MASK;
+    uint h = TileCellHash(cell, ROT_BITS) & ROT_MASK;
 
     vec3 gi = vec3(0.0);
 
