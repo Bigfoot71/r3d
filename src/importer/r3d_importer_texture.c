@@ -249,8 +249,8 @@ static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer*
         const struct aiTexture* aiTex = r3d_importer_get_texture(importer, textureIndex);
 
         if (aiTex->mHeight == 0) {
-            char* formatHint = RL_MALLOC(strlen(aiTex->achFormatHint) + 2);
-            snprintf(formatHint, strlen(aiTex->achFormatHint) + 2, ".%s", aiTex->achFormatHint);
+            char formatHint[HINTMAXTEXTURELEN + 1];
+            snprintf(formatHint, sizeof(formatHint), ".%s", aiTex->achFormatHint);
 
             *outImage = LoadImageFromMemory(
                 formatHint,
@@ -258,8 +258,6 @@ static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer*
                 aiTex->mWidth
             );
             *outOwned = (outImage->data != NULL);
-
-            RL_FREE(formatHint);
         }
         else {
             outImage->width = aiTex->mWidth;
