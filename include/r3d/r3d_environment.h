@@ -74,14 +74,24 @@
             .enabled = false,                           \
         },                                              \
         .ssil = {                                       \
-            .sampleCount = 4,                           \
+            .sampleCount = 2,                           \
             .sliceCount = 4,                            \
-            .sampleRadius = 2.0f,                       \
-            .hitThickness = 0.5f,                       \
+            .radius = 2.0f,                             \
+            .thickness = 1.0f,                          \
+            .intensity = 1.0f,                          \
             .aoPower = 1.0f,                            \
-            .energy = 1.0f,                             \
-            .bounce = 0.5f,                             \
-            .convergence = 0.5f,                        \
+            .denoiseSteps = 4,                          \
+            .enabled = false,                           \
+        },                                              \
+        .ssgi = {                                       \
+            .sampleCount = 2,                           \
+            .maxRaySteps = 32,                          \
+            .stepSize = 0.125f,                         \
+            .thickness = 1.0f,                          \
+            .maxDistance = 4.0f,                        \
+            .fadeStart = 8.0f,                          \
+            .fadeEnd = 16.0f,                           \
+            .denoiseSteps = 5,                          \
             .enabled = false,                           \
         },                                              \
         .ssr = {                                        \
@@ -218,29 +228,42 @@ typedef struct R3D_EnvSSAO {
 /**
  * @brief Screen Space Indirect Lighting (SSIL) settings.
  *
- * Approximates indirect lighting by gathering light from nearby surfaces in screen space.
+ * Approximates indirect lighting by gathering light from nearby visible
+ * surfaces in screen space.
+ *
+ * With a small radius, SSIL behaves like an extension of SSAO,
+ * producing a very subtle local blending of light and surface hues.
+ * With a larger radius, it becomes a better complement to SSGI,
+ * reinforcing indirect lighting over a wider area.
  */
 typedef struct R3D_EnvSSIL {
-    int sampleCount;        ///< Number of samples to compute indirect lighting (default: 4)
+    int sampleCount;        ///< Number of samples to compute indirect lighting (default: 2)
     int sliceCount;         ///< Number of depth slices for accumulation (default: 4)
-    float sampleRadius;     ///< Maximum distance to gather light from (default: 5.0)
-    float hitThickness;     ///< Thickness threshold for occluders (default: 0.5)
-    float aoPower;          ///< Exponential falloff for visibility factor (too high = more noise) (default: 1.0)
-    float energy;           ///< Multiplier for indirect light intensity (default: 1.0)
-    float bounce;           /**< Bounce feeback factor. (default: 0.5)
-                              *  Simulates light bounces by re-injecting the SSIL from the previous frame into the current direct light.
-                              *  Be careful not to make the factor too high in order to avoid a feedback loop.
-                              */
-    float convergence;      /**< Temporal convergence factor (0 disables it, default 0.5).
-                              *  Smooths sudden light flashes by blending with previous frames.
-                              *  Higher values produce smoother results but may cause ghosting.
-                              *  Tip: The faster the screen changes, the higher the convergence can be acceptable.
-                              *  Requires an additional history buffer (so require more memory). 
-                              *  If multiple SSIL passes are done in the same frame, the history may be inconsistent, 
-                              *  in that case, enable SSIL/convergence for only one pass per frame.
-                              */
+    float radius;           ///< Maximum distance to gather light from (default: 2.0)
+    float thickness;        ///< Thickness threshold for occluders (default: 1.0)
+    float intensity;        ///< IL intensity multiplier (default: 1.0)
+    float aoPower;          ///< AO exponent/power (default: 1.0)
+    int denoiseSteps;       ///< Number of denoiser iterations (default: 4)
     bool enabled;           ///< Enable/disable SSIL effect (default: false)
 } R3D_EnvSSIL;
+
+/**
+ * @brief Screen Space Global Illumination (SSGI) settings.
+ *
+ * Real-time global illlumination calculated in screen space.
+ * @note Best suited for enclosed/indoor environments.
+ */
+typedef struct R3D_EnvSSGI {
+    int sampleCount;        ///< Number of rays per pixel (default: 2)
+    int maxRaySteps;        ///< Maximum ray marching steps (default: 32)
+    float stepSize;         ///< Ray step size (default: 0.125)
+    float thickness;        ///< Depth tolerance for valid hits (default: 1.0)
+    float maxDistance;      ///< Maximum ray distance (default: 4.0)
+    float fadeStart;        ///< Distance at which the GI fade begins (default: 8.0)
+    float fadeEnd;          ///< Distance at which GI is fully faded (default: 16.0)
+    int denoiseSteps;       ///< Number of denoiser iterations (default: 5)
+    bool enabled;           ///< Enable/disable SSGI (default: false)
+} R3D_EnvSSGI;
 
 /**
  * @brief Screen Space Reflections (SSR) settings.
@@ -328,6 +351,7 @@ typedef struct R3D_Environment {
     R3D_EnvAmbient    ambient;      ///< Ambient lighting configuration
     R3D_EnvSSAO       ssao;         ///< Screen space ambient occlusion
     R3D_EnvSSIL       ssil;         ///< Screen space indirect lighting
+    R3D_EnvSSGI       ssgi;         ///< Screen space global illumination
     R3D_EnvSSR        ssr;          ///< Screen space reflections
     R3D_EnvBloom      bloom;        ///< Bloom glow effect
     R3D_EnvFog        fog;          ///< Atmospheric fog

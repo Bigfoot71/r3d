@@ -31,13 +31,9 @@ uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 
 uniform float uSampleCount;
-uniform float uSampleRadius;
 uniform float uSliceCount;
-uniform float uHitThickness;
-
-uniform float uConvergence;
-uniform float uAoPower;
-uniform float uBounce;
+uniform float uRadius;
+uniform float uThickness;
 
 /* === Fragments === */
 
@@ -66,7 +62,8 @@ vec3 SampleLight(vec2 texCoord)
 {
     vec3 indirect = texture(uHistoryTex, texCoord).rgb;
     vec3 direct = texture(uDiffuseTex, texCoord).rgb;
-    return direct + uBounce * indirect;
+    float edgeMask = float(!V_OffScreen(texCoord));
+    return (direct + indirect) * edgeMask;
 }
 
 float FastAcos(float x)
@@ -89,13 +86,15 @@ void main()
     vec3 normal = V_GetViewNormal(uNormalTex, ivec2(gl_FragCoord.xy));
     vec3 camera = normalize(-position);
 
+    vec2 screenSize = vec2(textureSize(uDiffuseTex, 0));
+    vec2 aspect = screenSize.yx / screenSize.x;
     float jitter = M_HashIGN(gl_FragCoord.xy);
 
     float sliceRotation = M_TAU / uSliceCount;
-    float jitterRotation = jitter * M_TAU;
+    float jitterRotation = M_TAU * jitter;
 
-    float sampleScale = uSampleRadius * uView.proj[1][1] / -position.z;  // World-space to screen-space conversion
-    float sampleOffset = 0.01 + 0.01 * jitter;
+    float sampleScale = uRadius * uView.proj[0][0] / -position.z;
+    float sampleOffset = 0.01;
 
     // Indirect + visiblity accumulator
     vec4 indirect = vec4(0.0);
@@ -103,7 +102,7 @@ void main()
     // Iterate over angular slices around the hemisphere
     for (int slice = 0; slice < uSliceCount; slice++)
     {
-        float phi = sliceRotation * float(slice) + jitterRotation;
+        float phi = jitterRotation + sliceRotation * float(slice);
         vec2 omega = vec2(cos(phi), sin(phi));
 
         vec3 direction = vec3(omega.x, omega.y, 0.0);
@@ -125,44 +124,38 @@ void main()
         // Trace radial samples outward along this slice
         for (int currentSample = 0; currentSample < uSampleCount; currentSample++)
         {
-            float sampleStep = (float(currentSample) + sampleOffset) / uSampleCount;
-            vec2 sampleUV = vTexCoord - sampleStep * sampleScale * omega * uView.aspect;
+            float sampleStep = (float(currentSample) + jitter) / uSampleCount + sampleOffset;
+            vec2 sampleUV = vTexCoord - sampleStep * sampleScale * omega * aspect;
 
             vec3 samplePosition = V_GetViewPosition(uDepthTex, sampleUV);
             vec3 sampleNormal = V_GetViewNormal(uNormalTex, sampleUV);
             vec3 sampleLight = SampleLight(sampleUV);
 
             vec3 sampleDistance = samplePosition - position;
-            float sampleLength = length(sampleDistance);
-            vec3 sampleHorizon = sampleDistance / sampleLength;
+            vec3 sampleHorizon = sampleDistance / length(sampleDistance);
 
             // Compute horizon angles: front (actual position) and back (with thickness offset)
-            vec3 backSample = normalize(sampleDistance - camera * uHitThickness);
+            vec3 backSample = normalize(sampleDistance - camera * uThickness);
             vec2 frontBackHorizon = vec2(dot(sampleHorizon, camera), dot(backSample, camera));
             frontBackHorizon = FastAcos(clamp(frontBackHorizon, -1.0, 1.0));
-            frontBackHorizon = clamp((frontBackHorizon + n + M_HPI) / M_PI, 0.0, 1.0);  // Normalize to [0,1] relative to surface
+            frontBackHorizon = clamp((frontBackHorizon + n + M_HPI) / M_PI, 0.0, 1.0);
 
             // Mark visible sectors for this sample
             uint sampleBitmask = UpdateSectors(frontBackHorizon.x, frontBackHorizon.y);
 
             // Weight lighting by newly visible sectors (those not already occluded) and by geometric terms (surface angles)
             float newlyVisible = 1.0 - float(BitCount(sampleBitmask & ~occlusion)) / float(SECTOR_COUNT);
-            indirect.rgb += sampleLight * newlyVisible * clamp(dot(normal, sampleHorizon), 0.0, 1.0) * clamp(dot(sampleNormal, -sampleHorizon), 0.0, 1.0);
+            float eNdotL = max(dot(sampleNormal, -sampleHorizon), 0.0); // emitter
+            float rNdotL = max(dot(normal, sampleHorizon), 0.0); // receiver
+            indirect.rgb += sampleLight * newlyVisible * eNdotL * rNdotL;
 
-            // Accumulate on-screen occlusion across samples
-            // Prevents occlusion "popping" without affecting GI visibility
-            // Not "physically" correct (GI is over-accumulated), but gives the most visually pleasing results
-            if (!V_OffScreen(sampleUV)) {
-                occlusion |= sampleBitmask;
-            }
+            // Accumulate occlusion across samples
+            occlusion |= sampleBitmask;
         }
 
         indirect.a += 1.0 - float(BitCount(occlusion)) / float(SECTOR_COUNT);
     }
 
-    indirect /= uSliceCount;
-    vec4 history = texelFetch(uHistoryTex, ivec2(gl_FragCoord.xy), 0);
-    indirect.rgb = mix(indirect.rgb, history.rgb, uConvergence);
-
-    FragColor = vec4(indirect.rgb, pow(indirect.a, uAoPower));
+    FragColor = indirect / uSliceCount;
+    FragColor.a = min(FragColor.a, 1.0);
 }

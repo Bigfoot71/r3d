@@ -17,6 +17,7 @@
 // ========================================
 
 #include <assets/brdf_lut_512_rg16_float.raw.h>
+#include <assets/ssgi_lut_4096_rgba16_float.raw.h>
 
 // ========================================
 // MODULE STATE
@@ -52,13 +53,15 @@ static void load_black(void);
 static void load_blank(void);
 static void load_normal(void);
 static void load_ibl_brdf_lut(void);
+static void load_ssgi_lut(void);
 
 static const texture_loader_func LOADERS[] = {
     [R3D_TEXTURE_WHITE] = load_white,
     [R3D_TEXTURE_BLACK] = load_black,
     [R3D_TEXTURE_BLANK] = load_blank,
     [R3D_TEXTURE_NORMAL] = load_normal,
-    [R3D_TEXTURE_IBL_BRDF_LUT] = load_ibl_brdf_lut
+    [R3D_TEXTURE_IBL_BRDF_LUT] = load_ibl_brdf_lut,
+    [R3D_TEXTURE_SSGI_LUT] = load_ssgi_lut
 };
 
 void load_white(void) {
@@ -93,6 +96,12 @@ void load_ibl_brdf_lut(void) {
     glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_IBL_BRDF_LUT]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_HALF_FLOAT, BRDF_LUT_512_RG16_FLOAT_RAW);
     tex_params(GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE);
+}
+
+void load_ssgi_lut(void) {
+    glBindTexture(GL_TEXTURE_1D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_SSGI_LUT]);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4096, 0, GL_RGBA, GL_HALF_FLOAT, SSGI_LUT_4096_RGBA16_FLOAT_RAW);
+    tex_params(GL_TEXTURE_1D, GL_NEAREST, GL_CLAMP_TO_EDGE);
 }
 
 // ========================================

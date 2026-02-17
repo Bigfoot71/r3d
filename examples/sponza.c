@@ -20,7 +20,7 @@ int main(void)
 
     // Background and ambient
     R3D_ENVIRONMENT_SET(background.color, SKYBLUE);
-    R3D_ENVIRONMENT_SET(ambient.color, GRAY);
+    R3D_ENVIRONMENT_SET(ambient.color, DARKGRAY);
 
     // Load Sponza model
     R3D_SetTextureFilter(TEXTURE_FILTER_ANISOTROPIC_8X);
@@ -30,9 +30,9 @@ int main(void)
     R3D_Light lights[2];
     for (int i = 0; i < 2; i++) {
         lights[i] = R3D_CreateLight(R3D_LIGHT_OMNI);
-        R3D_SetLightPosition(lights[i], (Vector3){ i ? -10.0f : 10.0f, 20.0f, 0.0f });
+        R3D_SetLightPosition(lights[i], (Vector3) {i ? -10.0f : 10.0f, 20.0f, 0.0f});
         R3D_SetLightActive(lights[i], true);
-        R3D_SetLightEnergy(lights[i], 4.0f);
+        R3D_SetLightEnergy(lights[i], 8.0f);
         R3D_SetShadowUpdateMode(lights[i], R3D_SHADOW_UPDATE_MANUAL);
         R3D_EnableShadow(lights[i]);
     }
@@ -63,18 +63,23 @@ int main(void)
             R3D_ENVIRONMENT_SET(ssil.enabled, !R3D_ENVIRONMENT_GET(ssil.enabled));
         }
 
-        // Toggle SSR
+        // Toggle SSGI
         if (IsKeyPressed(KEY_THREE)) {
+            R3D_ENVIRONMENT_SET(ssgi.enabled, !R3D_ENVIRONMENT_GET(ssgi.enabled));
+        }
+
+        // Toggle SSR
+        if (IsKeyPressed(KEY_FOUR)) {
             R3D_ENVIRONMENT_SET(ssr.enabled, !R3D_ENVIRONMENT_GET(ssr.enabled));
         }
 
         // Toggle fog
-        if (IsKeyPressed(KEY_FOUR)) {
+        if (IsKeyPressed(KEY_FIVE)) {
             R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
         }
 
         // Toggle FXAA
-        if (IsKeyPressed(KEY_FIVE)) {
+        if (IsKeyPressed(KEY_SIX)) {
             R3D_SetAntiAliasing(!R3D_GetAntiAliasing());
         }
 

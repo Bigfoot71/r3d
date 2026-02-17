@@ -12,7 +12,6 @@
 
 #include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
-#include "../include/pbr.glsl"
 
 /* === Varyings === */
 

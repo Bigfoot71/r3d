@@ -33,6 +33,8 @@
 #include <shaders/ssao_blur.frag.h>
 #include <shaders/ssil_in_down.frag.h>
 #include <shaders/ssil.frag.h>
+#include <shaders/ssgi_in_down.frag.h>
+#include <shaders/ssgi.frag.h>
 #include <shaders/ssr_in_down.frag.h>
 #include <shaders/ssr.frag.h>
 #include <shaders/bloom_down.frag.h>
@@ -234,7 +236,12 @@ bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_prepare_atrous_wavelet_t, prepare, atrousWavelet);
     LOAD_SHADER(atrousWavelet, SCREEN_VERT, ATROUS_WAVELET_FRAG);
 
-    GET_LOCATION(atrousWavelet, uStepSize);
+    SET_UNIFORM_BUFFER(atrousWavelet, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
+
+    GET_LOCATION(atrousWavelet, uInvNormalSharp);
+    GET_LOCATION(atrousWavelet, uInvDepthSharp);
+    GET_LOCATION(atrousWavelet, uInvStepWidth2);
+    GET_LOCATION(atrousWavelet, uStepWidth);
 
     USE_SHADER(atrousWavelet);
     SET_SAMPLER(atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
@@ -319,7 +326,6 @@ bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
     GET_LOCATION(ssao, uRadius);
     GET_LOCATION(ssao, uBias);
     GET_LOCATION(ssao, uIntensity);
-    GET_LOCATION(ssao, uPower);
 
     USE_SHADER(ssao);
 
@@ -365,12 +371,9 @@ bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(ssil, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
     GET_LOCATION(ssil, uSampleCount);
-    GET_LOCATION(ssil, uSampleRadius);
     GET_LOCATION(ssil, uSliceCount);
-    GET_LOCATION(ssil, uHitThickness);
-    GET_LOCATION(ssil, uConvergence);
-    GET_LOCATION(ssil, uAoPower);
-    GET_LOCATION(ssil, uBounce);
+    GET_LOCATION(ssil, uRadius);
+    GET_LOCATION(ssil, uThickness);
 
     USE_SHADER(ssil);
 
@@ -378,6 +381,45 @@ bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
     SET_SAMPLER(ssil, uHistoryTex, R3D_SHADER_SAMPLER_BUFFER_SSIL);
     SET_SAMPLER(ssil, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssil, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_ssgi_in_down(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_ssgi_in_down_t, prepare, ssgiInDown);
+    LOAD_SHADER(ssgiInDown, SCREEN_VERT, SSGI_IN_DOWN_FRAG);
+
+    USE_SHADER(ssgiInDown);
+    SET_SAMPLER(ssgiInDown, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
+    SET_SAMPLER(ssgiInDown, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
+    SET_SAMPLER(ssgiInDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_ssgi(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_ssgi_t, prepare, ssgi);
+    LOAD_SHADER(ssgi, SCREEN_VERT, SSGI_FRAG);
+
+    SET_UNIFORM_BUFFER(ssgi, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
+
+    GET_LOCATION(ssgi, uSampleCount);
+    GET_LOCATION(ssgi, uMaxRaySteps);
+    GET_LOCATION(ssgi, uStepSize);
+    GET_LOCATION(ssgi, uThickness);
+    GET_LOCATION(ssgi, uMaxDistance);
+    GET_LOCATION(ssgi, uFadeStart);
+    GET_LOCATION(ssgi, uFadeEnd);
+
+    USE_SHADER(ssgi);
+
+    SET_SAMPLER(ssgi, uHistoryTex, R3D_SHADER_SAMPLER_BUFFER_SSGI);
+    SET_SAMPLER(ssgi, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
+    SET_SAMPLER(ssgi, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
+    SET_SAMPLER(ssgi, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+    SET_SAMPLER(ssgi, uLutTex, R3D_SHADER_SAMPLER_SOURCE_1D);
 
     return true;
 }
@@ -1016,7 +1058,9 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(ambient, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(ambient, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
-    GET_LOCATION(ambient, uSsilEnergy);
+    GET_LOCATION(ambient, uSsaoPower);
+    GET_LOCATION(ambient, uSsilIntensity);
+    GET_LOCATION(ambient, uSsilAoPower);
 
     USE_SHADER(ambient);
 
@@ -1025,6 +1069,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     SET_SAMPLER(ambient, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
     SET_SAMPLER(ambient, uSsaoTex, R3D_SHADER_SAMPLER_BUFFER_SSAO);
     SET_SAMPLER(ambient, uSsilTex, R3D_SHADER_SAMPLER_BUFFER_SSIL);
+    SET_SAMPLER(ambient, uSsgiTex, R3D_SHADER_SAMPLER_BUFFER_SSGI);
     SET_SAMPLER(ambient, uOrmTex, R3D_SHADER_SAMPLER_BUFFER_ORM);
 
     SET_SAMPLER(ambient, uIrradianceTex, R3D_SHADER_SAMPLER_IBL_IRRADIANCE);
@@ -1245,6 +1290,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.ssaoBlur);
     UNLOAD_SHADER(prepare.ssilInDown);
     UNLOAD_SHADER(prepare.ssil);
+    UNLOAD_SHADER(prepare.ssgiInDown);
+    UNLOAD_SHADER(prepare.ssgi);
     UNLOAD_SHADER(prepare.ssrInDown);
     UNLOAD_SHADER(prepare.ssr);
     UNLOAD_SHADER(prepare.bloomDown);

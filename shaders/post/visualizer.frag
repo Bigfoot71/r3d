@@ -21,9 +21,10 @@
 #define OUTPUT_SPECULAR     5
 #define OUTPUT_SSAO         6
 #define OUTPUT_SSIL         7
-#define OUTPUT_SSR          8
-#define OUTPUT_BLOOM        9
-#define OUTPUT_DOF          10
+#define OUTPUT_SSGI         8
+#define OUTPUT_SSR          9
+#define OUTPUT_BLOOM        10
+#define OUTPUT_DOF          11
 
 /* === Varyings === */
 
@@ -65,6 +66,9 @@ void main()
         break;
     case OUTPUT_SSIL:
         FragColor = vec4(mix(FragColor.rgb, vec3(FragColor.a), 0.2), 1.0);
+        break;
+    case OUTPUT_SSGI:
+        FragColor = vec4(FragColor.rgb, 1.0);
         break;
     case OUTPUT_SSR:
         FragColor = vec4(FragColor.rgb * FragColor.a, 1.0);
