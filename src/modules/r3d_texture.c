@@ -60,7 +60,7 @@ static const texture_loader_func LOADERS[] = {
     [R3D_TEXTURE_BLACK] = load_black,
     [R3D_TEXTURE_BLANK] = load_blank,
     [R3D_TEXTURE_NORMAL] = load_normal,
-    [R3D_TEXTURE_IBL_BRDF_LUT] = load_ibl_brdf_lut,
+    [R3D_TEXTURE_BRDF_LUT] = load_ibl_brdf_lut,
     [R3D_TEXTURE_SSGI_LUT] = load_ssgi_lut
 };
 
@@ -93,7 +93,7 @@ void load_normal(void) {
 }
 
 void load_ibl_brdf_lut(void) {
-    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_IBL_BRDF_LUT]);
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_BRDF_LUT]);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_HALF_FLOAT, BRDF_LUT_512_RG16_FLOAT_RAW);
     tex_params(GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE);
 }

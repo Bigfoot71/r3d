@@ -139,7 +139,7 @@ void R3D_End(void)
     if (hasVisibleProbes || R3D.environment.ambient.map.flags != 0) {
         r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_IRRADIANCE, r3d_env_irradiance_get());
         r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_PREFILTER, r3d_env_prefilter_get());
-        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_BRDF_LUT, r3d_texture_get(R3D_TEXTURE_IBL_BRDF_LUT));
+        r3d_shader_bind_sampler(R3D_SHADER_SAMPLER_IBL_BRDF_LUT, r3d_texture_get(R3D_TEXTURE_BRDF_LUT));
         if (hasVisibleProbes) pass_scene_probes(); // Must have the IBL bind in case of ambient map
     }
 
