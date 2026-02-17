@@ -23,9 +23,10 @@ uniform sampler2D uSourceTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 
-uniform float uNormalSharp;
-uniform float uDepthSharp;
-uniform int uStepWidth;     // Powers of 2: 1, 2, 4, 8... for each pass
+uniform float uInvNormalSharp;
+uniform float uInvDepthSharp;
+uniform float uInvStepWidth2;   // 1.0 / (uStepWidth*uStepWidth)
+uniform int uStepWidth;         // Powers of 2: 1, 2, 4, 8... for each pass
 
 /* === Fragments === */
 
@@ -52,15 +53,14 @@ const float WEIGHTS[9] = float[9](
 float NormalWeight(vec3 n0, vec3 n1)
 {
     vec3 t = n0 - n1;
-    float dist2 = max(dot(t, t) / (uStepWidth * uStepWidth), 0.0);
-    return min(exp(-dist2 / uNormalSharp), 1.0);
+    float dist2 = dot(t, t) * uInvStepWidth2;
+    return exp(-dist2 * uInvNormalSharp);
 }
 
-float PositionWeight(vec3 p0, vec3 p1)
+float DepthWeight(float d0, float d1)
 {
-    vec3 t = p0 - p1;
-    float dist2 = dot(t, t);
-    return min(exp(-dist2 / uDepthSharp), 1.0);
+    float dz = d0 - d1;
+    return exp(-(dz * dz) * uInvDepthSharp);
 }
 
 ivec2 MirrorCoord(ivec2 coord, ivec2 resolution)
@@ -75,27 +75,29 @@ ivec2 MirrorCoord(ivec2 coord, ivec2 resolution)
 
 void main()
 {
-    vec3 centerPosition = V_GetViewPosition(uDepthTex, ivec2(gl_FragCoord.xy));
-    vec3 centerNormal = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
-
     ivec2 resolution = textureSize(uSourceTex, 0);
     ivec2 pixCoord = ivec2(gl_FragCoord.xy);
 
-    vec4 result = vec4(0.0);
-    float weightSum = 0.0;
+    vec3 centerNormal = M_DecodeOctahedral(texelFetch(uNormalTex, pixCoord, 0).rg);
+    float centerDepth = texelFetch(uDepthTex, pixCoord, 0).r;
 
-    for (int i = 0; i < KERNEL_SIZE; ++i)
+    vec4 result = texelFetch(uSourceTex, pixCoord, 0) * WEIGHTS[4];
+    float weightSum = WEIGHTS[4];
+
+    for (int i = 0; i < KERNEL_SIZE; i++)
     {
+        if (i == 4) continue;
+
         ivec2 offset = OFFSETS[i] * uStepWidth;
         ivec2 pixOffset = MirrorCoord(pixCoord + offset, resolution);
 
-        vec3 samplePosition = V_GetViewPosition(uDepthTex, pixOffset);
-        vec3 sampleNormal = V_GetWorldNormal(uNormalTex, pixOffset);
+        vec3 sampleNormal = M_DecodeOctahedral(texelFetch(uNormalTex, pixOffset, 0).rg);
+        float sampleDepth = texelFetch(uDepthTex, pixOffset, 0).r;
         vec4 sampleColor = texelFetch(uSourceTex, pixOffset, 0);
 
-        float wPosition = PositionWeight(centerPosition, samplePosition);
         float wNormal = NormalWeight(centerNormal, sampleNormal);
-        float w = WEIGHTS[i] * wPosition * wNormal;
+        float wDepth = DepthWeight(centerDepth, sampleDepth);
+        float w = WEIGHTS[i] * wDepth * wNormal;
 
         result += sampleColor * w;
         weightSum += w;
