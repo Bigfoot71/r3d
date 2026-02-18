@@ -210,7 +210,14 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
 
     memset(light, 0, sizeof(*light));
 
-    light->type = type;
+    light->state = (r3d_light_state_t) {
+        .shadowUpdate = R3D_SHADOW_UPDATE_INTERVAL,
+        .shadowShouldBeUpdated = true,
+        .matrixShouldBeUpdated = true,
+        .shadowFrequencySec = 0.016f,
+        .shadowTimerSec = 0.0f
+    };
+
     light->shadowLayer = -1;
     
     light->aabb.min = (Vector3) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
@@ -227,15 +234,7 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
     light->innerCutOff = cosf(22.5f * DEG2RAD);
     light->outerCutOff = cosf(45.0f * DEG2RAD);
 
-    light->enabled = false;
-
-    light->state = (r3d_light_state_t) {
-        .shadowUpdate = R3D_SHADOW_UPDATE_INTERVAL,
-        .shadowShouldBeUpdated = true,
-        .matrixShouldBeUpdated = true,
-        .shadowFrequencySec = 0.016f,
-        .shadowTimerSec = 0.0f
-    };
+    light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
 
     switch (type) {
     case R3D_LIGHT_DIR:
@@ -253,6 +252,9 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
     default:
         break;
     }
+
+    light->type = type;
+    light->enabled = false;
 
     return true;
 }
@@ -617,7 +619,6 @@ bool r3d_light_enable_shadows(r3d_light_t* light)
         layer = shadow_pool_reserve(&R3D_MOD_LIGHT.shadowPools[light->type]);
     }
 
-    light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
     light->state.shadowShouldBeUpdated = true;
     light->shadowLayer = layer;
 
