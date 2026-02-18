@@ -51,7 +51,6 @@ int main(void)
     // Setup directional light with shadows
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
     R3D_SetLightDirection(light, (Vector3){-1, -1, -1});
-    R3D_SetShadowDepthBias(light, 0.01f);
     R3D_EnableShadow(light);
     R3D_SetLightActive(light, true);
     R3D_SetLightRange(light, 32.0f);

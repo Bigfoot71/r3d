@@ -122,8 +122,7 @@ SAMPLE_SHADOW_PROJ(L_SampleShadowDir)
 #endif
 
     vec3 projCoords = Pls.xyz / Pls.w * 0.5 + 0.5;
-    float bias = LIGHT.shadowSlopeBias * (1.0 - cNdotL);
-    bias = max(bias, LIGHT.shadowDepthBias * projCoords.z);
+    float bias = LIGHT.shadowDepthBias + LIGHT.shadowSlopeBias * (1.0 - cNdotL);
     float compareDepth = projCoords.z - bias;
 
     float shadow = 0.0;
@@ -147,8 +146,7 @@ SAMPLE_SHADOW_PROJ(L_SampleShadowSpot)
 #endif
 
     vec3 projCoords = Pls.xyz / Pls.w * 0.5 + 0.5;
-    float bias = LIGHT.shadowSlopeBias * (1.0 - cNdotL);
-    bias = max(bias, LIGHT.shadowDepthBias * projCoords.z);
+    float bias = LIGHT.shadowDepthBias + LIGHT.shadowSlopeBias * (1.0 - cNdotL);
     float compareDepth = projCoords.z - bias;
 
     float shadow = 0.0;
@@ -165,8 +163,7 @@ SAMPLE_SHADOW_OMNI(L_SampleShadowOmni)
     vec3 lightToFrag = Pws - LIGHT.position;
     float currentDepth = length(lightToFrag);
 
-    float bias = LIGHT.shadowSlopeBias * (1.0 - cNdotL * 0.5);
-    bias = max(bias, LIGHT.shadowDepthBias * currentDepth);
+    float bias = LIGHT.shadowDepthBias + LIGHT.shadowSlopeBias * (1.0 - cNdotL);
     float compareDepth = (currentDepth - bias) / LIGHT.far;
 
     mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);

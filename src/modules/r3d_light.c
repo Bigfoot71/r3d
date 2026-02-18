@@ -238,16 +238,16 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
 
     switch (type) {
     case R3D_LIGHT_DIR:
-        light->shadowDepthBias = 0.0002f;
-        light->shadowSlopeBias = 0.002f;
+        light->shadowDepthBias = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
+        light->shadowSlopeBias = 6.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
         break;
     case R3D_LIGHT_SPOT:
-        light->shadowDepthBias = 0.00002f;
-        light->shadowSlopeBias = 0.0002f;
+        light->shadowDepthBias = 0.25f / R3D_LIGHT_SHADOW_SIZE[light->type];
+        light->shadowSlopeBias = 1.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
         break;
     case R3D_LIGHT_OMNI:
-        light->shadowDepthBias = 0.01f;
-        light->shadowSlopeBias = 0.02f;
+        light->shadowDepthBias = 0.025f;
+        light->shadowSlopeBias = 0.1f;
         break;
     default:
         break;

@@ -31,7 +31,6 @@ int main(void)
     R3D_SetLightRange(light, 16.0f);
     R3D_SetLightActive(light, true);
     R3D_EnableShadow(light);
-    R3D_SetShadowDepthBias(light, 0.005f);
 
     // Load materials
     R3D_AlbedoMap baseAlbedo = R3D_LoadAlbedoMap(RESOURCES_PATH "images/placeholder.png", WHITE);

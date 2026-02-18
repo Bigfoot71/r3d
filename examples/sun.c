@@ -48,7 +48,6 @@ int main(void)
     R3D_SetLightActive(light, true);
     R3D_SetLightRange(light, 16.0f);
     R3D_SetShadowSoftness(light, 2.0f);
-    R3D_SetShadowDepthBias(light, 0.01f);
     R3D_EnableShadow(light);
 
     // Setup camera

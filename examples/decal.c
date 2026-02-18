@@ -43,7 +43,6 @@ int main(void)
     // Create light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
     R3D_SetLightDirection(light, (Vector3){ 0.5f, -1, -0.5f });
-    R3D_SetShadowDepthBias(light, 0.005f);
     R3D_EnableShadow(light);
     R3D_SetLightActive(light, true);
 
