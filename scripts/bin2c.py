@@ -108,7 +108,7 @@ def write_data_to_header(data, out_path, guard, array_name, mode='binary'):
 
         f.write(f"#endif // {guard}\n")
 
-def write_text_array(f, data, array_name):
+def write_text_array(f, data, array_name, chunk_size=16000):
     """Write data as single-line C string literal"""
     try:
         text = data.decode('utf-8')
@@ -119,7 +119,10 @@ def write_text_array(f, data, array_name):
     text_size = len(data)
     escaped_text = escape_c_string(text)
 
-    f.write(f'static const char {array_name}[] = "{escaped_text}";\n\n')
+    f.write(f'static const char {array_name}[] =\n')
+    for i in range(0, len(escaped_text), chunk_size):
+        f.write(f'    "{escaped_text[i:i + chunk_size]}"\n')
+    f.write(';\n\n')
     f.write(f"#define {array_name}_SIZE {text_size}\n\n")
 
 def write_binary_array(f, data, array_name):
