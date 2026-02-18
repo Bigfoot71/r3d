@@ -2189,11 +2189,23 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
 
     /* --- Clear previous content --- */
 
-    R3D_TARGET_CLEAR(false, R3D_TARGET_SMAA_EDGES, R3D_TARGET_SMAA_BLEND);
+    // Bind and clear the stencil buffer. Since AA is the last post-processing
+    // pass, clearing it here is safe. The stencil is used to avoid running the
+    // blending weight calculation on pixels that have no edges, pass 1 writes 1
+    // to the stencil for each edge pixel (non-edge pixels are discarded by the
+    // shader), then pass 2 only executes where stencil == 1.
+
+    r3d_driver_enable(GL_STENCIL_TEST);
+    r3d_driver_set_stencil_mask(0xFF);
+
+    R3D_TARGET_CLEAR(true, R3D_TARGET_SMAA_EDGES, R3D_TARGET_SMAA_BLEND);
 
     /* --- Edge detection ---  */
 
-    R3D_TARGET_BIND(false, R3D_TARGET_SMAA_EDGES);
+    r3d_driver_set_stencil_func(GL_ALWAYS, 1, 0xFF);
+    r3d_driver_set_stencil_op(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+    R3D_TARGET_BIND(true, R3D_TARGET_SMAA_EDGES);
     R3D_SHADER_USE(prepare.smaaEdgeDetection);
 
     R3D_SHADER_BIND_SAMPLER(prepare.smaaEdgeDetection, uSceneTex, r3d_target_get(sceneSource));
@@ -2203,7 +2215,10 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
 
     /* --- Compute blending weights --- */
 
-    R3D_TARGET_BIND(false, R3D_TARGET_SMAA_BLEND);
+    r3d_driver_set_stencil_func(GL_EQUAL, 1, 0xFF);
+    r3d_driver_set_stencil_op(GL_KEEP, GL_KEEP, GL_KEEP);
+
+    R3D_TARGET_BIND(true, R3D_TARGET_SMAA_BLEND);
     R3D_SHADER_USE(prepare.smaaBlendingWeights);
 
     R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights, uEdgesTex, r3d_target_get(R3D_TARGET_SMAA_EDGES));
@@ -2214,6 +2229,8 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
     R3D_RENDER_SCREEN();
 
     /* --- Apply anti aliasing to the scene --- */
+
+    r3d_driver_disable(GL_STENCIL_TEST);
 
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
     R3D_SHADER_USE(post.smaa);
