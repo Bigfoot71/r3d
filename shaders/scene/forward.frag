@@ -99,6 +99,8 @@ void main()
 
     /* Loop through all light sources accumulating diffuse and specular light */
 
+    mat2 diskRot  = L_ShadowDebandingMatrix(gl_FragCoord.xy);
+
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
 
@@ -148,9 +150,9 @@ void main()
 
         if (light.shadowLayer >= 0) {
             switch (light.type) {
-            case LIGHT_DIR:  shadow = L_SampleShadowDir(i, vPosLightSpace[i], cNdotL); break;
-            case LIGHT_SPOT: shadow = L_SampleShadowSpot(i, vPosLightSpace[i], cNdotL); break;
-            case LIGHT_OMNI: shadow = L_SampleShadowOmni(i, vPosition, cNdotL); break;
+            case LIGHT_DIR:  shadow = L_SampleShadowDir(i, vPosLightSpace[i], cNdotL, diskRot); break;
+            case LIGHT_SPOT: shadow = L_SampleShadowSpot(i, vPosLightSpace[i], cNdotL, diskRot); break;
+            case LIGHT_OMNI: shadow = L_SampleShadowOmni(i, vPosition, cNdotL, diskRot); break;
             }
         }
 

@@ -61,19 +61,19 @@ void main()
 
     /* Get position and normal in world space */
 
-    vec3 position = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    vec3 P = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
     vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
     /* Compute view direction and the dot product of the normal and view direction */
 
-    vec3 V = normalize(uView.position - position);
+    vec3 V = normalize(uView.position - P);
 
     float NdotV = dot(N, V);
     float cNdotV = max(NdotV, 1e-4); // Clamped to avoid division by zero
 
     /* Compute light direction and the dot product of the normal and light direction */
 
-    vec3 L = (uLight.type == LIGHT_DIR) ? -uLight.direction : normalize(uLight.position - position);
+    vec3 L = (uLight.type == LIGHT_DIR) ? -uLight.direction : normalize(uLight.position - P);
 
     float NdotL = max(dot(N, L), 0.0);
     float cNdotL = min(NdotL, 1.0); // Clamped to avoid division by zero
@@ -107,26 +107,25 @@ void main()
     float shadow = 1.0;
 
     if (uLight.shadowLayer >= 0) {
+        mat2 diskRot  = L_ShadowDebandingMatrix(gl_FragCoord.xy);
         switch (uLight.type) {
-        case LIGHT_DIR:  shadow = L_SampleShadowDir(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
-        case LIGHT_SPOT: shadow = L_SampleShadowSpot(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
-        case LIGHT_OMNI: shadow = L_SampleShadowOmni(position, cNdotL); break;
+        case LIGHT_DIR:  shadow = L_SampleShadowDir(P, cNdotL, diskRot); break;
+        case LIGHT_SPOT: shadow = L_SampleShadowSpot(P, cNdotL, diskRot); break;
+        case LIGHT_OMNI: shadow = L_SampleShadowOmni(P, cNdotL, diskRot); break;
         }
     }
 
     /* Apply attenuation based on the distance from the light */
 
-    if (uLight.type != LIGHT_DIR)
-    {
-        float dist = length(uLight.position - position);
+    if (uLight.type != LIGHT_DIR) {
+        float dist = length(uLight.position - P);
         float atten = 1.0 - clamp(dist / uLight.range, 0.0, 1.0);
         shadow *= atten * uLight.attenuation;
     }
 
     /* Apply spotlight effect if the light is a spotlight */
 
-    if (uLight.type == LIGHT_SPOT)
-    {
+    if (uLight.type == LIGHT_SPOT) {
         float theta = dot(L, -uLight.direction);
         float epsilon = (uLight.innerCutOff - uLight.outerCutOff);
         shadow *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);

@@ -13,13 +13,13 @@
 
 /* === Macros === */
 
-#ifdef NUM_FORWARD_LIGHTS
-#   define SAMPLE_SHADOW_PROJ(name) float name(int lightIndex, vec4 projPos, float cNdotL)
-#   define SAMPLE_SHADOW_OMNI(name) float name(int lightIndex, vec3 fragPos, float cNdotL)
+#if defined(NUM_FORWARD_LIGHTS)
+#   define SAMPLE_SHADOW_PROJ(name) float name(int lightIndex, vec4 Pls, float cNdotL, mat2 diskRot)
+#   define SAMPLE_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float cNdotL, mat2 diskRot)
 #   define LIGHT uLights[lightIndex]
 #else
-#   define SAMPLE_SHADOW_PROJ(name) float name(vec4 projPos, float cNdotL)
-#   define SAMPLE_SHADOW_OMNI(name) float name(vec3 fragPos, float cNdotL)
+#   define SAMPLE_SHADOW_PROJ(name) float name(vec3 Pws, float cNdotL, mat2 diskRot)
+#   define SAMPLE_SHADOW_OMNI(name) float name(vec3 Pws, float cNdotL, mat2 diskRot)
 #   define LIGHT uLight
 #endif
 
@@ -108,22 +108,23 @@ vec3 L_Specular(vec3 F0, float cLdotH, float cNdotH, float cNdotV, float cNdotL,
 
 #ifdef L_SHADOW_IMPL
 
-mat2 L_DebandingRotationMatrix()
+mat2 L_ShadowDebandingMatrix(vec2 fragCoord)
 {
-    float r = M_TAU * M_HashIGN(gl_FragCoord.xy);
+    float r = M_TAU * M_HashIGN(fragCoord);
     float sr = sin(r), cr = cos(r);
     return mat2(vec2(cr, -sr), vec2(sr, cr));
 }
 
 SAMPLE_SHADOW_PROJ(L_SampleShadowDir)
 {
-    vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
+#if !defined(NUM_FORWARD_LIGHTS)
+    vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
+#endif
 
+    vec3 projCoords = Pls.xyz / Pls.w * 0.5 + 0.5;
     float bias = LIGHT.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, LIGHT.shadowDepthBias * projCoords.z);
     float compareDepth = projCoords.z - bias;
-
-    mat2 diskRot = L_DebandingRotationMatrix();
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
@@ -141,13 +142,14 @@ SAMPLE_SHADOW_PROJ(L_SampleShadowDir)
 
 SAMPLE_SHADOW_PROJ(L_SampleShadowSpot)
 {
-    vec3 projCoords = projPos.xyz / projPos.w * 0.5 + 0.5;
+#if !defined(NUM_FORWARD_LIGHTS)
+    vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
+#endif
 
+    vec3 projCoords = Pls.xyz / Pls.w * 0.5 + 0.5;
     float bias = LIGHT.shadowSlopeBias * (1.0 - cNdotL);
     bias = max(bias, LIGHT.shadowDepthBias * projCoords.z);
     float compareDepth = projCoords.z - bias;
-
-    mat2 diskRot = L_DebandingRotationMatrix();
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
@@ -160,14 +162,12 @@ SAMPLE_SHADOW_PROJ(L_SampleShadowSpot)
 
 SAMPLE_SHADOW_OMNI(L_SampleShadowOmni)
 {
-    vec3 lightToFrag = fragPos - LIGHT.position;
+    vec3 lightToFrag = Pws - LIGHT.position;
     float currentDepth = length(lightToFrag);
 
     float bias = LIGHT.shadowSlopeBias * (1.0 - cNdotL * 0.5);
     bias = max(bias, LIGHT.shadowDepthBias * currentDepth);
     float compareDepth = (currentDepth - bias) / LIGHT.far;
-
-    mat2 diskRot = L_DebandingRotationMatrix();
 
     mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);
 
