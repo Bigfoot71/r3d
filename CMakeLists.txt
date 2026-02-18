@@ -294,6 +294,10 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/atrous_wavelet.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/bicubic_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/lanczos_up.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/smaa_blending_weigths.vert"
+    "${R3D_ROOT_PATH}/shaders/prepare/smaa_blending_weigths.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/smaa_edge_detection.vert"
+    "${R3D_ROOT_PATH}/shaders/prepare/smaa_edge_detection.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao_in_down.frag"
@@ -335,12 +339,16 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/post/screen.frag"
     "${R3D_ROOT_PATH}/shaders/post/output.frag"
     "${R3D_ROOT_PATH}/shaders/post/fxaa.frag"
+    "${R3D_ROOT_PATH}/shaders/post/smaa.vert"
+    "${R3D_ROOT_PATH}/shaders/post/smaa.frag"
     "${R3D_ROOT_PATH}/shaders/post/visualizer.frag"
 )
 
 embed_assets(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/assets/brdf_lut_512_rg16_float.raw"
     "${R3D_ROOT_PATH}/assets/ssgi_lut_4096_rgba16_float.raw"
+    "${R3D_ROOT_PATH}/assets/smaa_area_160x560_rg8.raw"
+    "${R3D_ROOT_PATH}/assets/smaa_search_64x16_r8.raw"
 )
 
 # ========================================
