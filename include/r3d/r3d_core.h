@@ -64,6 +64,7 @@ typedef uint32_t R3D_Layer;
 typedef enum R3D_AntiAliasing {
     R3D_ANTI_ALIASING_DISABLED, ///< Anti-aliasing is disabled. Edges may appear jagged.
     R3D_ANTI_ALIASING_FXAA,     ///< FXAA is applied. Smooths edges efficiently but may appear blurry.
+    R3D_ANTI_ALIASING_SMAA,     ///< SMAA is applied.
 } R3D_AntiAliasing;
 
 /**

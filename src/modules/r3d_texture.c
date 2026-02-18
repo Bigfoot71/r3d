@@ -18,6 +18,8 @@
 
 #include <assets/brdf_lut_512_rg16_float.raw.h>
 #include <assets/ssgi_lut_4096_rgba16_float.raw.h>
+#include <assets/smaa_area_160x560_rg8.raw.h>
+#include <assets/smaa_search_64x16_r8.raw.h>
 
 // ========================================
 // MODULE STATE
@@ -54,6 +56,8 @@ static void load_blank(void);
 static void load_normal(void);
 static void load_ibl_brdf_lut(void);
 static void load_ssgi_lut(void);
+static void load_smaa_area(void);
+static void load_smaa_search(void);
 
 static const texture_loader_func LOADERS[] = {
     [R3D_TEXTURE_WHITE] = load_white,
@@ -61,7 +65,9 @@ static const texture_loader_func LOADERS[] = {
     [R3D_TEXTURE_BLANK] = load_blank,
     [R3D_TEXTURE_NORMAL] = load_normal,
     [R3D_TEXTURE_BRDF_LUT] = load_ibl_brdf_lut,
-    [R3D_TEXTURE_SSGI_LUT] = load_ssgi_lut
+    [R3D_TEXTURE_SSGI_LUT] = load_ssgi_lut,
+    [R3D_TEXTURE_SMAA_AREA] = load_smaa_area,
+    [R3D_TEXTURE_SMAA_SEARCH] = load_smaa_search,
 };
 
 void load_white(void) {
@@ -102,6 +108,18 @@ void load_ssgi_lut(void) {
     glBindTexture(GL_TEXTURE_1D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_SSGI_LUT]);
     glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4096, 0, GL_RGBA, GL_HALF_FLOAT, SSGI_LUT_4096_RGBA16_FLOAT_RAW);
     tex_params(GL_TEXTURE_1D, GL_NEAREST, GL_CLAMP_TO_EDGE);
+}
+
+void load_smaa_area(void) {
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_SMAA_AREA]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RG8, 160, 560, 0, GL_RG, GL_UNSIGNED_BYTE, SMAA_AREA_160X560_RG8_RAW);
+    tex_params(GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE);
+}
+
+void load_smaa_search(void) {
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TEXTURE.textures[R3D_TEXTURE_SMAA_SEARCH]);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, 64, 16, 0, GL_RED, GL_UNSIGNED_BYTE, SMAA_SEARCH_64X16_R8_RAW);
+    tex_params(GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE);
 }
 
 // ========================================

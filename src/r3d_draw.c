@@ -85,6 +85,7 @@ static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
+static r3d_target_t pass_post_smaa(r3d_target_t sceneTarget);
 
 static void blit_to_screen(r3d_target_t source);
 static void visualize_to_screen(r3d_target_t source);
@@ -218,8 +219,15 @@ void R3D_End(void)
     sceneTarget = pass_post_screen(sceneTarget);
     sceneTarget = pass_post_output(sceneTarget);
 
-    if (R3D.antiAliasing == R3D_ANTI_ALIASING_FXAA) {
+    switch (R3D.antiAliasing) {
+    case R3D_ANTI_ALIASING_FXAA:
         sceneTarget = pass_post_fxaa(sceneTarget);
+        break;
+    case R3D_ANTI_ALIASING_SMAA:
+        sceneTarget = pass_post_smaa(sceneTarget);
+        break;
+    default:
+        break;
     }
 
     switch (R3D.outputMode) {
@@ -2162,6 +2170,57 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
 
     R3D_SHADER_BIND_SAMPLER(post.fxaa, uSourceTex, r3d_target_get(sceneTarget));
     R3D_SHADER_SET_VEC2(post.fxaa, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
+
+    R3D_RENDER_SCREEN();
+
+    return sceneTarget;
+}
+
+r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
+{
+    r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
+
+    Vector4 metrics = {
+        R3D_TARGET_TEXEL_WIDTH,
+        R3D_TARGET_TEXEL_HEIGHT,
+        R3D_TARGET_WIDTH,
+        R3D_TARGET_HEIGHT
+    };
+
+    /* --- Clear previous content --- */
+
+    R3D_TARGET_CLEAR(false, R3D_TARGET_SMAA_EDGES, R3D_TARGET_SMAA_BLEND);
+
+    /* --- Edge detection ---  */
+
+    R3D_TARGET_BIND(false, R3D_TARGET_SMAA_EDGES);
+    R3D_SHADER_USE(prepare.smaaEdgeDetection);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaEdgeDetection, uSceneTex, r3d_target_get(sceneSource));
+    R3D_SHADER_SET_VEC4(prepare.smaaEdgeDetection, uMetrics, metrics);
+
+    R3D_RENDER_SCREEN();
+
+    /* --- Compute blending weights --- */
+
+    R3D_TARGET_BIND(false, R3D_TARGET_SMAA_BLEND);
+    R3D_SHADER_USE(prepare.smaaBlendingWeights);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights, uEdgesTex, r3d_target_get(R3D_TARGET_SMAA_EDGES));
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights, uAreaTex, r3d_texture_get(R3D_TEXTURE_SMAA_AREA));
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights, uSearchTex, r3d_texture_get(R3D_TEXTURE_SMAA_SEARCH));
+    R3D_SHADER_SET_VEC4(prepare.smaaBlendingWeights, uMetrics, metrics);
+
+    R3D_RENDER_SCREEN();
+
+    /* --- Apply anti aliasing to the scene --- */
+
+    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.smaa);
+
+    R3D_SHADER_BIND_SAMPLER(post.smaa, uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(post.smaa, uBlendTex, r3d_target_get(R3D_TARGET_SMAA_BLEND));
+    R3D_SHADER_SET_VEC4(post.smaa, uMetrics, metrics);
 
     R3D_RENDER_SCREEN();
 

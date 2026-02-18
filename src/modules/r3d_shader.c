@@ -42,6 +42,10 @@
 #include <shaders/dof_coc.frag.h>
 #include <shaders/dof_down.frag.h>
 #include <shaders/dof_blur.frag.h>
+#include <shaders/smaa_blending_weigths.vert.h>
+#include <shaders/smaa_blending_weigths.frag.h>
+#include <shaders/smaa_edge_detection.vert.h>
+#include <shaders/smaa_edge_detection.frag.h>
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap_irradiance.frag.h>
 #include <shaders/cubemap_prefilter.frag.h>
@@ -64,6 +68,8 @@
 #include <shaders/screen.frag.h>
 #include <shaders/output.frag.h>
 #include <shaders/fxaa.frag.h>
+#include <shaders/smaa.vert.h>
+#include <shaders/smaa.frag.h>
 #include <shaders/visualizer.frag.h>
 
 // ========================================
@@ -244,7 +250,7 @@ bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
     GET_LOCATION(atrousWavelet, uStepWidth);
 
     USE_SHADER(atrousWavelet);
-    SET_SAMPLER(atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+    SET_SAMPLER(atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
     SET_SAMPLER(atrousWavelet, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(atrousWavelet, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
@@ -259,7 +265,7 @@ bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
     GET_LOCATION(bicubicUp, uSourceTexel);
 
     USE_SHADER(bicubicUp);
-    SET_SAMPLER(bicubicUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+    SET_SAMPLER(bicubicUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
 
     return true;
 }
@@ -272,7 +278,7 @@ bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
     GET_LOCATION(lanczosUp, uSourceTexel);
 
     USE_SHADER(lanczosUp);
-    SET_SAMPLER(lanczosUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+    SET_SAMPLER(lanczosUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
 
     return true;
 }
@@ -285,7 +291,7 @@ bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom)
     GET_LOCATION(blurDown, uSourceLod);
 
     USE_SHADER(blurDown);
-    SET_SAMPLER(blurDown, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+    SET_SAMPLER(blurDown, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
 
     return true;
 }
@@ -298,7 +304,7 @@ bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom)
     GET_LOCATION(blurUp, uSourceLod);
 
     USE_SHADER(blurUp);
-    SET_SAMPLER(blurUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+    SET_SAMPLER(blurUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
 
     return true;
 }
@@ -419,7 +425,7 @@ bool r3d_shader_load_prepare_ssgi(r3d_shader_custom_t* custom)
     SET_SAMPLER(ssgi, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssgi, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssgi, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
-    SET_SAMPLER(ssgi, uLutTex, R3D_SHADER_SAMPLER_SOURCE_1D);
+    SET_SAMPLER(ssgi, uLutTex, R3D_SHADER_SAMPLER_SOURCE_1D_0);
 
     return true;
 }
@@ -532,6 +538,34 @@ bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_smaa_edge_detection_t, prepare, smaaEdgeDetection);
+    LOAD_SHADER(smaaEdgeDetection, SMAA_EDGE_DETECTION_VERT, SMAA_EDGE_DETECTION_FRAG);
+
+    GET_LOCATION(smaaEdgeDetection, uMetrics);
+
+    USE_SHADER(smaaEdgeDetection);
+    SET_SAMPLER(smaaEdgeDetection, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_smaa_blending_weights_t, prepare, smaaBlendingWeights);
+    LOAD_SHADER(smaaBlendingWeights, SMAA_BLENDING_WEIGTHS_VERT, SMAA_BLENDING_WEIGTHS_FRAG);
+
+    GET_LOCATION(smaaBlendingWeights, uMetrics);
+
+    USE_SHADER(smaaBlendingWeights);
+    SET_SAMPLER(smaaBlendingWeights, uEdgesTex, R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES);
+    SET_SAMPLER(smaaBlendingWeights, uAreaTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(smaaBlendingWeights, uSearchTex, R3D_SHADER_SAMPLER_SOURCE_2D_1);
+
+    return true;
+}
+
 bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_prepare_cubemap_from_equirectangular_t, prepare, cubemapFromEquirectangular);
@@ -541,7 +575,7 @@ bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* c
     GET_LOCATION(cubemapFromEquirectangular, uMatView);
 
     USE_SHADER(cubemapFromEquirectangular);
-    SET_SAMPLER(cubemapFromEquirectangular, uPanoramaTex, R3D_SHADER_SAMPLER_SOURCE_2D);
+    SET_SAMPLER(cubemapFromEquirectangular, uPanoramaTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
 
     return true;
 }
@@ -555,7 +589,7 @@ bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom)
     GET_LOCATION(cubemapIrradiance, uMatView);
 
     USE_SHADER(cubemapIrradiance);
-    SET_SAMPLER(cubemapIrradiance, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+    SET_SAMPLER(cubemapIrradiance, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE_0);
 
     return true;
 }
@@ -572,7 +606,7 @@ bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
     GET_LOCATION(cubemapPrefilter, uRoughness);
 
     USE_SHADER(cubemapPrefilter);
-    SET_SAMPLER(cubemapPrefilter, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+    SET_SAMPLER(cubemapPrefilter, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_CUBE_0);
 
     return true;
 }
@@ -804,7 +838,7 @@ bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
 
     USE_SHADER(skybox);
 
-    SET_SAMPLER(skybox, uSkyMap, R3D_SHADER_SAMPLER_SOURCE_CUBE);
+    SET_SAMPLER(skybox, uSkyMap, R3D_SHADER_SAMPLER_SOURCE_CUBE_0);
 
     return true;
 }
@@ -1228,6 +1262,20 @@ bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_post_smaa(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_post_smaa_t, post, smaa);
+    LOAD_SHADER(smaa, SMAA_VERT, SMAA_FRAG);
+
+    GET_LOCATION(smaa, uMetrics);
+
+    USE_SHADER(smaa);
+    SET_SAMPLER(smaa, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+    SET_SAMPLER(smaa, uBlendTex, R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND);
+
+    return true;
+}
+
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_post_visualizer_t, post, visualizer);
@@ -1299,6 +1347,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.dofCoc);
     UNLOAD_SHADER(prepare.dofDown);
     UNLOAD_SHADER(prepare.dofBlur);
+    UNLOAD_SHADER(prepare.smaaEdgeDetection);
+    UNLOAD_SHADER(prepare.smaaBlendingWeights);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);
@@ -1323,6 +1373,7 @@ void r3d_shader_quit()
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.output);
     UNLOAD_SHADER(post.fxaa);
+    UNLOAD_SHADER(post.smaa);
     UNLOAD_SHADER(post.visualizer);
 }
 
