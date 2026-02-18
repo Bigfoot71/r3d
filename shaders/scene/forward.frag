@@ -55,8 +55,9 @@ uniform bool uProbeInterior;
 
 /* === Blocks === */
 
+#define L_SHADOW_IMPL   //< Shadow functions in blocks/light.glsl
+
 #include "../include/blocks/light.glsl"
-#include "../include/blocks/shadow.glsl"
 #include "../include/blocks/env.glsl"
 
 /* === Fragments === */
@@ -147,9 +148,9 @@ void main()
 
         if (light.shadowLayer >= 0) {
             switch (light.type) {
-            case LIGHT_DIR:  shadow = S_SampleShadowDir(i, vPosLightSpace[i], cNdotL); break;
-            case LIGHT_SPOT: shadow = S_SampleShadowSpot(i, vPosLightSpace[i], cNdotL); break;
-            case LIGHT_OMNI: shadow = S_SampleShadowOmni(i, vPosition, cNdotL); break;
+            case LIGHT_DIR:  shadow = L_SampleShadowDir(i, vPosLightSpace[i], cNdotL); break;
+            case LIGHT_SPOT: shadow = L_SampleShadowSpot(i, vPosLightSpace[i], cNdotL); break;
+            case LIGHT_OMNI: shadow = L_SampleShadowOmni(i, vPosition, cNdotL); break;
             }
         }
 

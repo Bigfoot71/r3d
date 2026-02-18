@@ -34,8 +34,9 @@ uniform samplerCubeArrayShadow uShadowOmniTex;
 
 /* === Blocks === */
 
+#define L_SHADOW_IMPL   //< Shadow functions in blocks/light.glsl
+
 #include "../include/blocks/light.glsl"
-#include "../include/blocks/shadow.glsl"
 #include "../include/blocks/view.glsl"
 
 /* === Fragments === */
@@ -107,9 +108,9 @@ void main()
 
     if (uLight.shadowLayer >= 0) {
         switch (uLight.type) {
-        case LIGHT_DIR:  shadow = S_SampleShadowDir(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
-        case LIGHT_SPOT: shadow = S_SampleShadowSpot(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
-        case LIGHT_OMNI: shadow = S_SampleShadowOmni(position, cNdotL); break;
+        case LIGHT_DIR:  shadow = L_SampleShadowDir(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
+        case LIGHT_SPOT: shadow = L_SampleShadowSpot(uLight.viewProj * vec4(position, 1.0), cNdotL); break;
+        case LIGHT_OMNI: shadow = L_SampleShadowOmni(position, cNdotL); break;
         }
     }
 
