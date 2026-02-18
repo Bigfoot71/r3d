@@ -1,3 +1,11 @@
+/* smaa_edge_detection.vert -- SMAA blending weigths calculation pass
+ *
+ * Copyright (c) 2025-2026 Le Juez Victor
+ *
+ * This software is provided 'as-is', without any express or implied warranty.
+ * For conditions of distribution and use, see accompanying LICENSE file.
+ */
+
 #version 330 core
 
 #define SMAA_INCLUDE_VS 1
