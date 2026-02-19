@@ -217,6 +217,7 @@ R3DAPI R3D_AntiAliasingMode R3D_GetAntiAliasingMode(void);
  * The new mode takes effect on subsequent frames.
  *
  * @param mode The desired R3D_AntiAliasingMode.
+ * @note If the mode is invalid, no AA will be applied.
  */
 R3DAPI void R3D_SetAntiAliasingMode(R3D_AntiAliasingMode mode);
 
@@ -234,6 +235,7 @@ R3DAPI R3D_AntiAliasingPreset R3D_GetAntiAliasingPreset(void);
  * Compiled variants are cached and reused if the preset is set again.
  *
  * @param preset The desired R3D_AntiAliasingPreset.
+ * @note The preset will be a clamp between low and ultra.
  */
 R3DAPI void R3D_SetAntiAliasingPreset(R3D_AntiAliasingPreset preset);
 

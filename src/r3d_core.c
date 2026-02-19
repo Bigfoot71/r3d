@@ -116,7 +116,7 @@ R3D_AntiAliasingPreset R3D_GetAntiAliasingPreset(void)
 
 void R3D_SetAntiAliasingPreset(R3D_AntiAliasingPreset preset)
 {
-    R3D.aaPreset = preset;
+    R3D.aaPreset = CLAMP(preset, 0, R3D_ANTI_ALIASING_PRESET_COUNT - 1);
 }
 
 R3D_AspectMode R3D_GetAspectMode(void)
