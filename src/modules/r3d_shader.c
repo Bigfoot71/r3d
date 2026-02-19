@@ -15,6 +15,7 @@
 #include <rlgl.h>
 
 #include "../common/r3d_helper.h"
+#include "r3d/r3d_core.h"
 
 // ========================================
 // SHADER CODE INCLUDES
@@ -85,7 +86,10 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 #define DECL_SHADER(type, category, shader_name) \
     type* shader_name = &R3D_MOD_SHADER.category.shader_name
 
-#define DECL_SHADER_SELECT(type, category, shader_name, custom)                    \
+#define DECL_SHADER_INDEXED(type, category, shader_name, index) \
+    type* shader_name = &R3D_MOD_SHADER.category.shader_name[index]
+
+#define DECL_SHADER_SELECT(type, category, shader_name, custom)                 \
     type* shader_name = ((custom) == NULL)                                      \
         ? &R3D_MOD_SHADER.category.shader_name                                  \
         : &(custom)->category.shader_name
@@ -122,6 +126,14 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 #define UNLOAD_SHADER(shader_name) do {                                         \
     if (R3D_MOD_SHADER.shader_name.id != 0) {                                   \
         glDeleteProgram(R3D_MOD_SHADER.shader_name.id);                         \
+    }                                                                           \
+} while(0)
+
+#define UNLOAD_SHADERS(shader_name, count) do {                                 \
+    for (int i = 0; i < count; i++) {                                           \
+        if (R3D_MOD_SHADER.shader_name[i].id != 0) {                            \
+            glDeleteProgram(R3D_MOD_SHADER.shader_name[i].id);                  \
+        }                                                                       \
     }                                                                           \
 } while(0)
 
@@ -538,10 +550,22 @@ bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom)
+static bool load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom, int index)
 {
-    DECL_SHADER(r3d_shader_prepare_smaa_edge_detection_t, prepare, smaaEdgeDetection);
-    LOAD_SHADER(smaaEdgeDetection, SMAA_EDGE_DETECTION_VERT, SMAA_EDGE_DETECTION_FRAG);
+    char defQualityPreset[32] = {0};
+    r3d_string_format(defQualityPreset, sizeof(defQualityPreset), "QUALITY_PRESET %i", index);
+
+    const char* VS_DEFINES[] = {defQualityPreset};
+    const char* FS_DEFINES[] = {defQualityPreset};
+
+    char* vsCode = inject_defines(SMAA_EDGE_DETECTION_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
+    char* fsCode = inject_defines(SMAA_EDGE_DETECTION_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    DECL_SHADER_INDEXED(r3d_shader_prepare_smaa_edge_detection_t, prepare, smaaEdgeDetection, index);
+    LOAD_SHADER(smaaEdgeDetection, vsCode, fsCode);
+
+    RL_FREE(vsCode);
+    RL_FREE(fsCode);
 
     GET_LOCATION(smaaEdgeDetection, uMetrics);
 
@@ -551,10 +575,42 @@ bool r3d_shader_load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_smaa_edge_detection_low(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(r3d_shader_prepare_smaa_blending_weights_t, prepare, smaaBlendingWeights);
-    LOAD_SHADER(smaaBlendingWeights, SMAA_BLENDING_WEIGTHS_VERT, SMAA_BLENDING_WEIGTHS_FRAG);
+    return load_prepare_smaa_edge_detection(custom, R3D_ANTI_ALIASING_PRESET_LOW);
+}
+
+bool r3d_shader_load_prepare_smaa_edge_detection_medium(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_edge_detection(custom, R3D_ANTI_ALIASING_PRESET_MEDIUM);
+}
+
+bool r3d_shader_load_prepare_smaa_edge_detection_high(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_edge_detection(custom, R3D_ANTI_ALIASING_PRESET_HIGH);
+}
+
+bool r3d_shader_load_prepare_smaa_edge_detection_ultra(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_edge_detection(custom, R3D_ANTI_ALIASING_PRESET_ULTRA);
+}
+
+static bool load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom, int index)
+{
+    char defQualityPreset[32] = {0};
+    r3d_string_format(defQualityPreset, sizeof(defQualityPreset), "QUALITY_PRESET %i", index);
+
+    const char* VS_DEFINES[] = {defQualityPreset};
+    const char* FS_DEFINES[] = {defQualityPreset};
+
+    char* vsCode = inject_defines(SMAA_BLENDING_WEIGTHS_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
+    char* fsCode = inject_defines(SMAA_BLENDING_WEIGTHS_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    DECL_SHADER_INDEXED(r3d_shader_prepare_smaa_blending_weights_t, prepare, smaaBlendingWeights, index);
+    LOAD_SHADER(smaaBlendingWeights, vsCode, fsCode);
+
+    RL_FREE(vsCode);
+    RL_FREE(fsCode);
 
     GET_LOCATION(smaaBlendingWeights, uMetrics);
 
@@ -564,6 +620,26 @@ bool r3d_shader_load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom)
     SET_SAMPLER(smaaBlendingWeights, uSearchTex, R3D_SHADER_SAMPLER_SOURCE_2D_1);
 
     return true;
+}
+
+bool r3d_shader_load_prepare_smaa_blending_weights_low(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_blending_weights(custom, R3D_ANTI_ALIASING_PRESET_LOW);
+}
+
+bool r3d_shader_load_prepare_smaa_blending_weights_medium(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_blending_weights(custom, R3D_ANTI_ALIASING_PRESET_MEDIUM);
+}
+
+bool r3d_shader_load_prepare_smaa_blending_weights_high(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_blending_weights(custom, R3D_ANTI_ALIASING_PRESET_HIGH);
+}
+
+bool r3d_shader_load_prepare_smaa_blending_weights_ultra(r3d_shader_custom_t* custom)
+{
+    return load_prepare_smaa_blending_weights(custom, R3D_ANTI_ALIASING_PRESET_ULTRA);
 }
 
 bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom)
@@ -1249,23 +1325,63 @@ bool r3d_shader_load_post_output(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom)
+static bool load_post_fxaa(r3d_shader_custom_t* custom, int index)
 {
-    DECL_SHADER(r3d_shader_post_fxaa_t, post, fxaa);
-    LOAD_SHADER(fxaa, SCREEN_VERT, FXAA_FRAG);
+    char defQualityPreset[32] = {0};
+    r3d_string_format(defQualityPreset, sizeof(defQualityPreset), "QUALITY_PRESET %i", index);
 
-    GET_LOCATION(fxaa, uSourceTexel);
+    const char* FS_DEFINES[] = {defQualityPreset};
+    char* fsCode = inject_defines(FXAA_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    DECL_SHADER_INDEXED(r3d_shader_post_fxaa_t, post, fxaa, index);
+    LOAD_SHADER(fxaa, SCREEN_VERT, fsCode);
+
+    RL_FREE(fsCode);
+
+    GET_LOCATION(fxaa, uSceneTexel);
 
     USE_SHADER(fxaa);
-    SET_SAMPLER(fxaa, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+    SET_SAMPLER(fxaa, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
 
     return true;
 }
 
-bool r3d_shader_load_post_smaa(r3d_shader_custom_t* custom)
+bool r3d_shader_load_post_fxaa_low(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(r3d_shader_post_smaa_t, post, smaa);
-    LOAD_SHADER(smaa, SMAA_VERT, SMAA_FRAG);
+    return load_post_fxaa(custom, R3D_ANTI_ALIASING_PRESET_LOW);
+}
+
+bool r3d_shader_load_post_fxaa_medium(r3d_shader_custom_t* custom)
+{
+    return load_post_fxaa(custom, R3D_ANTI_ALIASING_PRESET_MEDIUM);
+}
+
+bool r3d_shader_load_post_fxaa_high(r3d_shader_custom_t* custom)
+{
+    return load_post_fxaa(custom, R3D_ANTI_ALIASING_PRESET_HIGH);
+}
+
+bool r3d_shader_load_post_fxaa_ultra(r3d_shader_custom_t* custom)
+{
+    return load_post_fxaa(custom, R3D_ANTI_ALIASING_PRESET_ULTRA);
+}
+
+static bool load_post_smaa(r3d_shader_custom_t* custom, int index)
+{
+    char defQualityPreset[32] = {0};
+    r3d_string_format(defQualityPreset, sizeof(defQualityPreset), "QUALITY_PRESET %i", index);
+
+    const char* VS_DEFINES[] = {defQualityPreset};
+    const char* FS_DEFINES[] = {defQualityPreset};
+
+    char* vsCode = inject_defines(SMAA_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
+    char* fsCode = inject_defines(SMAA_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    DECL_SHADER_INDEXED(r3d_shader_post_smaa_t, post, smaa, index);
+    LOAD_SHADER(smaa, vsCode, fsCode);
+
+    RL_FREE(vsCode);
+    RL_FREE(fsCode);
 
     GET_LOCATION(smaa, uMetrics);
 
@@ -1274,6 +1390,26 @@ bool r3d_shader_load_post_smaa(r3d_shader_custom_t* custom)
     SET_SAMPLER(smaa, uBlendTex, R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND);
 
     return true;
+}
+
+bool r3d_shader_load_post_smaa_low(r3d_shader_custom_t* custom)
+{
+    return load_post_smaa(custom, R3D_ANTI_ALIASING_PRESET_LOW);
+}
+
+bool r3d_shader_load_post_smaa_medium(r3d_shader_custom_t* custom)
+{
+    return load_post_smaa(custom, R3D_ANTI_ALIASING_PRESET_MEDIUM);
+}
+
+bool r3d_shader_load_post_smaa_high(r3d_shader_custom_t* custom)
+{
+    return load_post_smaa(custom, R3D_ANTI_ALIASING_PRESET_HIGH);
+}
+
+bool r3d_shader_load_post_smaa_ultra(r3d_shader_custom_t* custom)
+{
+    return load_post_smaa(custom, R3D_ANTI_ALIASING_PRESET_ULTRA);
 }
 
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
@@ -1347,8 +1483,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.dofCoc);
     UNLOAD_SHADER(prepare.dofDown);
     UNLOAD_SHADER(prepare.dofBlur);
-    UNLOAD_SHADER(prepare.smaaEdgeDetection);
-    UNLOAD_SHADER(prepare.smaaBlendingWeights);
+    UNLOAD_SHADERS(prepare.smaaEdgeDetection, R3D_ANTI_ALIASING_PRESET_COUNT);
+    UNLOAD_SHADERS(prepare.smaaBlendingWeights, R3D_ANTI_ALIASING_PRESET_COUNT);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);
@@ -1372,8 +1508,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.output);
-    UNLOAD_SHADER(post.fxaa);
-    UNLOAD_SHADER(post.smaa);
+    UNLOAD_SHADERS(post.fxaa, R3D_ANTI_ALIASING_PRESET_COUNT);
+    UNLOAD_SHADERS(post.smaa, R3D_ANTI_ALIASING_PRESET_COUNT);
     UNLOAD_SHADER(post.visualizer);
 }
 

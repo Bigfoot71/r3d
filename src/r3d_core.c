@@ -49,7 +49,8 @@ bool R3D_Init(int resWidth, int resHeight)
     R3D.environment = R3D_ENVIRONMENT_BASE;
     R3D.material = R3D_MATERIAL_BASE;
 
-    R3D.antiAliasing = R3D_ANTI_ALIASING_DISABLED;
+    R3D.aaMode = R3D_ANTI_ALIASING_MODE_NONE;
+    R3D.aaPreset = R3D_ANTI_ALIASING_PRESET_MEDIUM;
     R3D.aspectMode = R3D_ASPECT_EXPAND;
     R3D.upscaleMode = R3D_UPSCALE_NEAREST;
     R3D.downscaleMode = R3D_DOWNSCALE_NEAREST;
@@ -98,14 +99,24 @@ void R3D_UpdateResolution(int width, int height)
     r3d_target_resize(width, height);
 }
 
-R3D_AntiAliasing R3D_GetAntiAliasing(void)
+R3D_AntiAliasingMode R3D_GetAntiAliasingMode(void)
 {
-    return R3D.antiAliasing;
+    return R3D.aaMode;
 }
 
-void R3D_SetAntiAliasing(R3D_AntiAliasing mode)
+void R3D_SetAntiAliasingMode(R3D_AntiAliasingMode mode)
 {
-    R3D.antiAliasing = mode;
+    R3D.aaMode = mode;
+}
+
+R3D_AntiAliasingPreset R3D_GetAntiAliasingPreset(void)
+{
+    return R3D.aaPreset;
+}
+
+void R3D_SetAntiAliasingPreset(R3D_AntiAliasingPreset preset)
+{
+    R3D.aaPreset = preset;
 }
 
 R3D_AspectMode R3D_GetAspectMode(void)

@@ -78,13 +78,19 @@ int main(void)
             R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
         }
 
-        // Swtich anti aliasing
+        // Swtich anti aliasing mode
         if (IsKeyPressed(KEY_F)) {
-            R3D_AntiAliasing aa = R3D_GetAntiAliasing();
-            R3D_SetAntiAliasing((aa + 1) % 3);
+            R3D_AntiAliasingMode aaMode = R3D_GetAntiAliasingMode();
+            R3D_SetAntiAliasingMode((aaMode + 1) % 3);
         }
 
-        // Cycle tonemapping
+        // Swtich anti aliasing preset
+        if (IsKeyPressed(KEY_G)) {
+            R3D_AntiAliasingPreset aaPreset = R3D_GetAntiAliasingPreset();
+            R3D_SetAntiAliasingPreset((aaPreset + 1) % R3D_ANTI_ALIASING_PRESET_COUNT);
+        }
+
+        // Swtich tonemapping
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             R3D_Tonemap mode = R3D_ENVIRONMENT_GET(tonemap.mode);
             R3D_ENVIRONMENT_SET(tonemap.mode, (mode + R3D_TONEMAP_COUNT - 1) % R3D_TONEMAP_COUNT);
@@ -122,17 +128,30 @@ int main(void)
             }
             DrawText(tonemapText, GetScreenWidth() - MeasureText(tonemapText, 20) - 10, 10, 20, LIME);
 
-            // Display anti aliasing
-            R3D_AntiAliasing aa = R3D_GetAntiAliasing();
-            const char* aaText = "";
-            switch (aa)
+            // Display anti aliasing mode
+            R3D_AntiAliasingMode aaMode = R3D_GetAntiAliasingMode();
+            const char* aaModeText = "";
+            switch (aaMode)
             {
-                case R3D_ANTI_ALIASING_DISABLED: aaText = "AA: NONE"; break;
-                case R3D_ANTI_ALIASING_FXAA:     aaText = "AA: FXAA"; break;
-                case R3D_ANTI_ALIASING_SMAA:     aaText = "AA: SMAA"; break;
+                case R3D_ANTI_ALIASING_MODE_NONE: aaModeText = "AA: NONE"; break;
+                case R3D_ANTI_ALIASING_MODE_FXAA: aaModeText = "AA: FXAA"; break;
+                case R3D_ANTI_ALIASING_MODE_SMAA: aaModeText = "AA: SMAA"; break;
                 default: break;
             }
-            DrawText(aaText, 10, GetScreenHeight() - 30, 20, LIME);
+            DrawText(aaModeText, 10, GetScreenHeight() - 30, 20, LIME);
+
+            // Display anti aliasing preset
+            R3D_AntiAliasingPreset aaPreset = R3D_GetAntiAliasingPreset();
+            const char* aaPresetText = "";
+            switch (aaPreset)
+            {
+                case R3D_ANTI_ALIASING_PRESET_LOW: aaPresetText = "- Low"; break;
+                case R3D_ANTI_ALIASING_PRESET_MEDIUM: aaPresetText = "- Medium"; break;
+                case R3D_ANTI_ALIASING_PRESET_HIGH: aaPresetText = "- High"; break;
+                case R3D_ANTI_ALIASING_PRESET_ULTRA: aaPresetText = "- Ultra"; break;
+                default: break;
+            }
+            DrawText(aaPresetText, MeasureText(aaModeText, 20) + 20, GetScreenHeight() - 30, 20, LIME);
 
             DrawFPS(10, 10);
         EndDrawing();

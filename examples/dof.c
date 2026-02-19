@@ -15,7 +15,7 @@ int main(void)
 
     // Initialize R3D with FXAA
     R3D_Init(GetScreenWidth(), GetScreenHeight());
-    R3D_SetAntiAliasing(R3D_ANTI_ALIASING_FXAA);
+    R3D_SetAntiAliasingMode(R3D_ANTI_ALIASING_MODE_FXAA);
 
     // Configure depth of field and background
     R3D_ENVIRONMENT_SET(background.color, BLACK);

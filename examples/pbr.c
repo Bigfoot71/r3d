@@ -13,7 +13,7 @@ int main(void)
 
     // Initialize R3D
     R3D_Init(GetScreenWidth(), GetScreenHeight());
-    R3D_SetAntiAliasing(R3D_ANTI_ALIASING_FXAA);
+    R3D_SetAntiAliasingMode(R3D_ANTI_ALIASING_MODE_FXAA);
 
     // Setup environment sky
     R3D_Cubemap cubemap = R3D_LoadCubemap(RESOURCES_PATH "panorama/indoor.hdr", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);

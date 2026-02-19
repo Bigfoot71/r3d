@@ -10,6 +10,15 @@ uniform vec4 uMetrics;
 
 #define SMAA_GLSL_3
 #define SMAA_RT_METRICS uMetrics
-#define SMAA_PRESET_HIGH
+
+#if QUALITY_PRESET == 0
+#   define SMAA_PRESET_LOW
+#elif QUALITY_PRESET == 1
+#   define SMAA_PRESET_MEDIUM
+#elif QUALITY_PRESET == 2
+#   define SMAA_PRESET_HIGH
+#elif QUALITY_PRESET == 3
+#   define SMAA_PRESET_ULTRA
+#endif
 
 #include "../external/SMAA.hlsl"

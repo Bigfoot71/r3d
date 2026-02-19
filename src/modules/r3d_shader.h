@@ -1022,8 +1022,8 @@ typedef struct {
 
 typedef struct {
     unsigned int id;
-    r3d_shader_uniform_sampler_t uSourceTex;
-    r3d_shader_uniform_vec2_t uSourceTexel;
+    r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_vec2_t uSceneTexel;
 } r3d_shader_post_fxaa_t;
 
 typedef struct {
@@ -1103,8 +1103,8 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_dof_coc_t dofCoc;
         r3d_shader_prepare_dof_down_t dofDown;
         r3d_shader_prepare_dof_blur_t dofBlur;
-        r3d_shader_prepare_smaa_edge_detection_t smaaEdgeDetection;
-        r3d_shader_prepare_smaa_blending_weights_t smaaBlendingWeights;
+        r3d_shader_prepare_smaa_edge_detection_t smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
+        r3d_shader_prepare_smaa_blending_weights_t smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
         r3d_shader_prepare_cubemap_irradiance_t cubemapIrradiance;
         r3d_shader_prepare_cubemap_prefilter_t cubemapPrefilter;
@@ -1137,8 +1137,8 @@ extern struct r3d_mod_shader {
         r3d_shader_post_bloom_t bloom;
         r3d_shader_post_dof_t dof;
         r3d_shader_post_output_t output;
-        r3d_shader_post_fxaa_t fxaa;
-        r3d_shader_post_smaa_t smaa;
+        r3d_shader_post_fxaa_t fxaa[R3D_ANTI_ALIASING_PRESET_COUNT];
+        r3d_shader_post_smaa_t smaa[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_post_visualizer_t visualizer;
     } post;
 
@@ -1169,8 +1169,14 @@ bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom);
-bool r3d_shader_load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom);
-bool r3d_shader_load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_edge_detection_low(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_edge_detection_medium(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_edge_detection_high(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_edge_detection_ultra(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_blending_weights_low(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_blending_weights_medium(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_blending_weights_high(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_smaa_blending_weights_ultra(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_from_equirectangular(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_irradiance(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom);
@@ -1192,8 +1198,14 @@ bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_output(r3d_shader_custom_t* custom);
-bool r3d_shader_load_post_fxaa(r3d_shader_custom_t* custom);
-bool r3d_shader_load_post_smaa(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_fxaa_low(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_fxaa_medium(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_fxaa_high(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_fxaa_ultra(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_smaa_low(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_smaa_medium(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_smaa_high(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_smaa_ultra(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
 
 static const struct r3d_shader_loader {
@@ -1219,8 +1231,8 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func dofCoc;
         r3d_shader_loader_func dofDown;
         r3d_shader_loader_func dofBlur;
-        r3d_shader_loader_func smaaEdgeDetection;
-        r3d_shader_loader_func smaaBlendingWeights;
+        r3d_shader_loader_func smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
+        r3d_shader_loader_func smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func cubemapFromEquirectangular;
         r3d_shader_loader_func cubemapIrradiance;
         r3d_shader_loader_func cubemapPrefilter;
@@ -1254,8 +1266,8 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func dof;
         r3d_shader_loader_func screen;
         r3d_shader_loader_func output;
-        r3d_shader_loader_func fxaa;
-        r3d_shader_loader_func smaa;
+        r3d_shader_loader_func fxaa[R3D_ANTI_ALIASING_PRESET_COUNT];
+        r3d_shader_loader_func smaa[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func visualizer;
     } post;
 
@@ -1281,8 +1293,14 @@ static const struct r3d_shader_loader {
         .dofCoc = r3d_shader_load_prepare_dof_coc,
         .dofDown = r3d_shader_load_prepare_dof_down,
         .dofBlur = r3d_shader_load_prepare_dof_blur,
-        .smaaEdgeDetection = r3d_shader_load_prepare_smaa_edge_detection,
-        .smaaBlendingWeights = r3d_shader_load_prepare_smaa_blending_weights,
+        .smaaEdgeDetection[0] = r3d_shader_load_prepare_smaa_edge_detection_low,
+        .smaaEdgeDetection[1] = r3d_shader_load_prepare_smaa_edge_detection_medium,
+        .smaaEdgeDetection[2] = r3d_shader_load_prepare_smaa_edge_detection_high,
+        .smaaEdgeDetection[3] = r3d_shader_load_prepare_smaa_edge_detection_ultra,
+        .smaaBlendingWeights[0] = r3d_shader_load_prepare_smaa_blending_weights_low,
+        .smaaBlendingWeights[1] = r3d_shader_load_prepare_smaa_blending_weights_medium,
+        .smaaBlendingWeights[2] = r3d_shader_load_prepare_smaa_blending_weights_high,
+        .smaaBlendingWeights[3] = r3d_shader_load_prepare_smaa_blending_weights_ultra,
         .cubemapFromEquirectangular = r3d_shader_load_prepare_cubemap_from_equirectangular,
         .cubemapIrradiance = r3d_shader_load_prepare_cubemap_irradiance,
         .cubemapPrefilter = r3d_shader_load_prepare_cubemap_prefilter,
@@ -1313,8 +1331,14 @@ static const struct r3d_shader_loader {
         .dof = r3d_shader_load_post_dof,
         .screen = r3d_shader_load_post_screen,
         .output = r3d_shader_load_post_output,
-        .fxaa = r3d_shader_load_post_fxaa,
-        .smaa = r3d_shader_load_post_smaa,
+        .fxaa[0] = r3d_shader_load_post_fxaa_low,
+        .fxaa[1] = r3d_shader_load_post_fxaa_medium,
+        .fxaa[2] = r3d_shader_load_post_fxaa_high,
+        .fxaa[3] = r3d_shader_load_post_fxaa_ultra,
+        .smaa[0] = r3d_shader_load_post_smaa_low,
+        .smaa[1] = r3d_shader_load_post_smaa_medium,
+        .smaa[2] = r3d_shader_load_post_smaa_high,
+        .smaa[3] = r3d_shader_load_post_smaa_ultra,
         .visualizer = r3d_shader_load_post_visualizer,
     },
 
