@@ -13,7 +13,7 @@
   The current SSIL-VB used as a cheap SSGI solution is far from ideal and difficult to tune.
   Investigating more stable and production-ready SSGI techniques would be beneficial.
 
-* [ ] **Add more anti-aliasing options**
+* [x] **Add more anti-aliasing options**
   Provide higher-quality anti-aliasing solutions in addition to FXAA.
   SMAA appears to be the most suitable next step. Techniques such as TAA currently require
   deeper architectural changes...
