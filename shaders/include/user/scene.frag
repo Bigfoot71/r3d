@@ -23,6 +23,11 @@ float OCCLUSION     = 0.0;
 float ROUGHNESS     = 0.0;
 float METALNESS     = 0.0;
 
+/* === Built-In Constants === */
+
+int FRAME_INDEX = 0;
+float TIME = 0.0;
+
 /* === User Callable === */
 
 vec4 SampleAlbedo(vec2 texCoord)
@@ -107,6 +112,11 @@ void SceneFragment(vec2 texCoord, mat3 tbn, float alphaCutoff)
 
 #endif // !R3D_NO_AUTO_FETCH && !UNLIT && !DEPTH && !DEPTH_CUBE
 #endif // !R3D_NO_AUTO_FETCH
+
+    /* --- Fill constants --- */
+
+    FRAME_INDEX = uFrame.index;
+    TIME = uFrame.time;
 
     /* --- Execute user code --- */
 

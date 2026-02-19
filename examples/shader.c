@@ -31,12 +31,16 @@ int main(void)
     Texture texture = LoadTextureFromImage(image);
     UnloadImage(image);
 
-    // Set custom sampler
+    // Set material custom uniform/sampler
     R3D_SetSurfaceShaderSampler(material.shader, "u_texture", texture);
+    R3D_SetSurfaceShaderUniform(material.shader, "u_time_scale", (float[]){0.75f});
 
     // Load a screen shader
     R3D_ScreenShader* shader = R3D_LoadScreenShader(RESOURCES_PATH "shaders/screen.glsl");
     R3D_SetScreenShaderChain(&shader, 1);
+
+    // Set screen custom unforms
+    R3D_SetScreenShaderUniform(shader, "u_time_scale", (float[]){2.5f});
 
     // Create light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
@@ -59,16 +63,10 @@ int main(void)
 
         BeginDrawing();
             ClearBackground(RAYWHITE);
-
-            float time = 2.0f * GetTime();
-            R3D_SetScreenShaderUniform(shader, "u_time", &time);
-            R3D_SetSurfaceShaderUniform(material.shader, "u_time", &time);
-
             R3D_Begin(camera);
                 R3D_DrawMesh(plane, R3D_MATERIAL_BASE, (Vector3) {0, -0.5f, 0}, 1.0f);
                 R3D_DrawMesh(torus, material, Vector3Zero(), 1.0f);
             R3D_End();
-
         EndDrawing();
     }
 

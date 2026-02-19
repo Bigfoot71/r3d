@@ -6,18 +6,27 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-vec3 POSITION;
-vec2 TEXCOORD;
-vec3 EMISSION;
-vec4 COLOR;
-vec4 TANGENT;
-vec3 NORMAL;
+/* === Built-In Output Variables === */
 
-vec3 INSTANCE_POSITION;
-vec4 INSTANCE_ROTATION;
-vec3 INSTANCE_SCALE;
-vec4 INSTANCE_COLOR;
-vec4 INSTANCE_CUSTOM;
+vec3 POSITION = vec3(0.0);
+vec2 TEXCOORD = vec2(0.0);
+vec3 EMISSION = vec3(0.0);
+vec4 COLOR    = vec4(0.0);
+vec4 TANGENT  = vec4(0.0);
+vec3 NORMAL   = vec3(0.0);
+
+vec3 INSTANCE_POSITION = vec3(0.0);
+vec4 INSTANCE_ROTATION = vec4(0.0);
+vec3 INSTANCE_SCALE    = vec3(0.0);
+vec4 INSTANCE_COLOR    = vec4(0.0);
+vec4 INSTANCE_CUSTOM   = vec4(0.0);
+
+/* === Built-In Constants === */
+
+int FRAME_INDEX = 0;
+float TIME = 0.0;
+
+/* === Internal Vertex Stage === */
 
 #define vertex()
 
@@ -35,6 +44,9 @@ void SceneVertex()
     COLOR = aColor * uAlbedoColor;
     TANGENT = aTangent;
     NORMAL = aNormal;
+
+    FRAME_INDEX = uFrame.index;
+    TIME = uFrame.time;
 
     vertex();
 }

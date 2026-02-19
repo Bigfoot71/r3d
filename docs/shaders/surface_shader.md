@@ -110,6 +110,8 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 | `INSTANCE_SCALE` | `vec3` | Instance scale |
 | `INSTANCE_COLOR` | `vec4` | Instance color |
 | `INSTANCE_CUSTOM` | `vec4` | Custom user-defined instance data |
+| `FRAME_INDEX` | `int` | Index incremented at each frame |
+| `TIME` | `float` | Time provided by the raylib's `GetTime()` |
 
 **Instance Variables:**
 
@@ -181,6 +183,8 @@ Fragment-stage variables are pre-initialized with material values (unless `R3D_N
 | `OCCLUSION` | `float` | Ambient occlusion |
 | `ROUGHNESS` | `float` | Surface roughness (0 = smooth, 1 = rough) |
 | `METALNESS` | `float` | Metallic property (0 = dielectric, 1 = metal) |
+| `FRAME_INDEX` | `int` | Index incremented at each frame |
+| `TIME` | `float` | Time provided by the raylib's `GetTime()` |
 
 **Example:**
 ```glsl

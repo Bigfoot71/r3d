@@ -78,6 +78,8 @@ Screen shaders provide built-in variables for screen-space operations:
 | `TEXEL_SIZE` | `vec2` | Size of one texel (1.0 / RESOLUTION) |
 | `RESOLUTION` | `vec2` | Screen resolution in pixels |
 | `ASPECT` | `float` | Screen aspect ratio |
+| `FRAME_INDEX` | `int` | Index incremented at each frame |
+| `TIME` | `float` | Time provided by the raylib's `GetTime()` |
 | `COLOR` | `vec3` | Output color (write to this) |
 
 ### Usage Examples

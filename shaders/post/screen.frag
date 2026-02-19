@@ -36,6 +36,9 @@ vec2 TEXEL_SIZE = vec2(0.0);
 vec2 RESOLUTION = vec2(0.0);
 float ASPECT = 0.0;
 
+int FRAME_INDEX = 0;
+float TIME = 0.0;
+
 /* === Built-In Output Variables === */
 
 vec3 COLOR = vec3(0.0);
@@ -106,6 +109,9 @@ void main()
     TEXEL_SIZE = uFrame.texelSize;
     RESOLUTION = uFrame.screenSize;
     ASPECT = uView.aspect;
+
+    FRAME_INDEX = uFrame.index;
+    TIME = uFrame.time;
 
     fragment();
 
