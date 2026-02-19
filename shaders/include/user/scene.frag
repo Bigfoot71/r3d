@@ -8,22 +8,22 @@
 
 /* === Built-In Input Variables === */
 
-vec2 TEXCOORD       = vec2(0.0);
-vec3 TANGENT        = vec3(0.0);
-vec3 BITANGENT      = vec3(0.0);
-vec3 NORMAL         = vec3(0.0);
+vec2 TEXCOORD  = vec2(0.0);
+vec3 TANGENT   = vec3(0.0);
+vec3 BITANGENT = vec3(0.0);
+vec3 NORMAL    = vec3(0.0);
 
 /* === Built-In Output Variables === */
 
-vec3 ALBEDO         = vec3(0.0);
-float ALPHA         = 0.0;
-vec3 EMISSION       = vec3(0.0);
-vec3 NORMAL_MAP     = vec3(0.0);
-float OCCLUSION     = 0.0;
-float ROUGHNESS     = 0.0;
-float METALNESS     = 0.0;
+vec3 ALBEDO     = vec3(0.0);
+float ALPHA     = 0.0;
+vec3 EMISSION   = vec3(0.0);
+vec3 NORMAL_MAP = vec3(0.0);
+float OCCLUSION = 0.0;
+float ROUGHNESS = 0.0;
+float METALNESS = 0.0;
 
-/* === Built-In Constants === */
+/* === Built-In Globals === */
 
 int FRAME_INDEX = 0;
 float TIME = 0.0;

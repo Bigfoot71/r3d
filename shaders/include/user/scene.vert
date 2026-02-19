@@ -6,6 +6,19 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
+/* === Built-In Constants === */
+
+#define MATRIX_MODEL    uMatModel
+#define MATRIX_NORMAL   mat3(uMatNormal)
+
+#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#   define MATRIX_INV_VIEW          uMatInvView
+#   define MATRIX_VIEW_PROJECTION   uMatViewProj
+#else
+#   define MATRIX_INV_VIEW          uView.invView
+#   define MATRIX_VIEW_PROJECTION   uView.viewProj
+#endif
+
 /* === Built-In Output Variables === */
 
 vec3 POSITION = vec3(0.0);
@@ -21,7 +34,7 @@ vec3 INSTANCE_SCALE    = vec3(0.0);
 vec4 INSTANCE_COLOR    = vec4(0.0);
 vec4 INSTANCE_CUSTOM   = vec4(0.0);
 
-/* === Built-In Constants === */
+/* === Built-In Globals === */
 
 int FRAME_INDEX = 0;
 float TIME = 0.0;

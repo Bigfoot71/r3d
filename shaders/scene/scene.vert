@@ -168,11 +168,7 @@ void main()
 {
     SceneVertex();
 
-#if defined(DECAL)
-    mat4 finalMatModel = uMatModel;
-#endif // DECAL
-
-    vec3 billboardCenter = vec3(uMatModel[3]);
+    vec3 billboardCenter = vec3(MATRIX_MODEL[3]);
     vec3 localPosition = POSITION;
     vec3 localNormal = NORMAL;
     vec3 localTangent = TANGENT.xyz;
@@ -185,9 +181,13 @@ void main()
         localTangent = sMatNormal * localTangent;
     }
 
-    vec3 finalPosition = vec3(uMatModel * vec4(localPosition, 1.0));
-    vec3 finalNormal = mat3(uMatNormal) * localNormal;
-    vec3 finalTangent = mat3(uMatNormal) * localTangent;
+    vec3 finalPosition = vec3(MATRIX_MODEL * vec4(localPosition, 1.0));
+    vec3 finalNormal = MATRIX_NORMAL * localNormal;
+    vec3 finalTangent = MATRIX_NORMAL * localTangent;
+
+#if defined(DECAL)
+    mat4 decalMatModel = MATRIX_MODEL;
+#endif // DECAL
 
     if (uInstancing) {
         billboardCenter += INSTANCE_POSITION;
@@ -199,25 +199,18 @@ void main()
 
     #if defined(DECAL)
         mat4 iMatModel = MatrixTransform(INSTANCE_POSITION, INSTANCE_ROTATION, INSTANCE_SCALE);
-        finalMatModel = iMatModel * finalMatModel;
+        decalMatModel = iMatModel * decalMatModel;
     #endif // DECAL
     }
 
-#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if !defined(DECAL) 
     if (uBillboard == BILLBOARD_FRONT) {
-        BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
+        BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, MATRIX_INV_VIEW);
     }
     else if (uBillboard == BILLBOARD_Y_AXIS) {
-        BillboardYAxis(finalPosition, finalNormal, finalTangent, billboardCenter, uMatInvView);
+        BillboardYAxis(finalPosition, finalNormal, finalTangent, billboardCenter, MATRIX_INV_VIEW);
     }
-#else
-    if (uBillboard == BILLBOARD_FRONT) {
-        BillboardFront(finalPosition, finalNormal, finalTangent, billboardCenter, uView.invView);
-    }
-    else if (uBillboard == BILLBOARD_Y_AXIS) {
-        BillboardYAxis(finalPosition, finalNormal, finalTangent, billboardCenter, uView.invView);
-    }
-#endif
+#endif // !DECAL
 
     vec3 T = normalize(finalTangent);
     vec3 N = normalize(finalNormal);
@@ -239,16 +232,12 @@ void main()
     }
 #endif // FORWARD || PROBE
 
-#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
-    gl_Position = uMatViewProj * vec4(vPosition, 1.0);
-#else
-    gl_Position = uView.viewProj * vec4(vPosition, 1.0);
-#endif
+    gl_Position = MATRIX_VIEW_PROJECTION * vec4(vPosition, 1.0);
 
 #if defined(DECAL)
-    vDecalProjection = inverse(finalMatModel) * uView.invView;
-    vDecalAxes[0] = normalize(finalMatModel[0].xyz);
-    vDecalAxes[1] = normalize(finalMatModel[1].xyz);
-    vDecalAxes[2] = normalize(finalMatModel[2].xyz);
+    vDecalProjection = inverse(decalMatModel) * MATRIX_INV_VIEW;
+    vDecalAxes[0] = normalize(decalMatModel[0].xyz);
+    vDecalAxes[1] = normalize(decalMatModel[1].xyz);
+    vDecalAxes[2] = normalize(decalMatModel[2].xyz);
 #endif // DECAL
 }

@@ -99,6 +99,10 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 
 | Variable | Type | Description |
 |----------|------|-------------|
+| `MATRIX_MODEL` | `mat4` | Model matrix (read-only). |
+| `MATRIX_NORMAL` | `mat3` | Normal matrix (read-only). |
+| `MATRIX_INV_VIEW` | `mat4` | Inverse view matrix (read-only). |
+| `MATRIX_VIEW_PROJECTION` | `mat4` | View-projection matrix (read-only). |
 | `POSITION` | `vec3` | Vertex position (local space) |
 | `TEXCOORD` | `vec2` | Texture coordinates |
 | `NORMAL` | `vec3` | Vertex normal (local space) |
@@ -112,6 +116,10 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 | `INSTANCE_CUSTOM` | `vec4` | Custom user-defined instance data |
 | `FRAME_INDEX` | `int` | Index incremented at each frame |
 | `TIME` | `float` | Time provided by the raylib's `GetTime()` |
+
+> [!WARNING]
+> Mesh attributes (`POSITION`, `NORMAL`, etc.) are provided in **local space** and must remain in local space.
+> You should **not manually apply model, view, or projection transformations** to them.
 
 **Instance Variables:**
 
