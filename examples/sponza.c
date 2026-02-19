@@ -78,9 +78,10 @@ int main(void)
             R3D_ENVIRONMENT_SET(fog.mode, R3D_ENVIRONMENT_GET(fog.mode) == R3D_FOG_DISABLED ? R3D_FOG_EXP : R3D_FOG_DISABLED);
         }
 
-        // Toggle FXAA
-        if (IsKeyPressed(KEY_SIX)) {
-            R3D_SetAntiAliasing(!R3D_GetAntiAliasing());
+        // Swtich anti aliasing
+        if (IsKeyPressed(KEY_F)) {
+            R3D_AntiAliasing aa = R3D_GetAntiAliasing();
+            R3D_SetAntiAliasing((aa + 1) % 3);
         }
 
         // Cycle tonemapping
@@ -120,6 +121,18 @@ int main(void)
                 default: break;
             }
             DrawText(tonemapText, GetScreenWidth() - MeasureText(tonemapText, 20) - 10, 10, 20, LIME);
+
+            // Display anti aliasing
+            R3D_AntiAliasing aa = R3D_GetAntiAliasing();
+            const char* aaText = "";
+            switch (aa)
+            {
+                case R3D_ANTI_ALIASING_DISABLED: aaText = "AA: NONE"; break;
+                case R3D_ANTI_ALIASING_FXAA:     aaText = "AA: FXAA"; break;
+                case R3D_ANTI_ALIASING_SMAA:     aaText = "AA: SMAA"; break;
+                default: break;
+            }
+            DrawText(aaText, 10, GetScreenHeight() - 30, 20, LIME);
 
             DrawFPS(10, 10);
         EndDrawing();
