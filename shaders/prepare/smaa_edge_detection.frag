@@ -22,6 +22,9 @@ out vec2 FragColor;
 
 void main()
 {
+#if QUALITY_PRESET < 2
     FragColor = SMAALumaEdgeDetectionPS(vTexCoord, vOffset, uSceneTex);
-    // or SMAAColorEdgeDetectionPS / SMAADepthEdgeDetectionPS
+#else
+    FragColor = SMAAColorEdgeDetectionPS(vTexCoord, vOffset, uSceneTex);
+#endif
 }
