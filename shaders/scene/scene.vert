@@ -16,6 +16,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/frame.glsl"
 #include "../include/blocks/light.glsl"
 #include "../include/blocks/view.glsl"
 #include "../include/math.glsl"

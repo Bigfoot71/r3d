@@ -57,6 +57,7 @@ uniform bool uProbeInterior;
 
 #define L_SHADOW_IMPL   //< Shadow functions in blocks/light.glsl
 
+#include "../include/blocks/frame.glsl"
 #include "../include/blocks/light.glsl"
 #include "../include/blocks/env.glsl"
 

@@ -6,10 +6,10 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-uniform vec4 uMetrics;
+#include "../include/blocks/frame.glsl"
 
 #define SMAA_GLSL_3
-#define SMAA_RT_METRICS uMetrics
+#define SMAA_RT_METRICS vec4(uFrame.texelSize, uFrame.screenSize)
 
 #if QUALITY_PRESET == 0
 #   define SMAA_PRESET_LOW

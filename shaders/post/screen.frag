@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/frame.glsl"
 #include "../include/blocks/view.glsl"
 
 /* === Varyings === */
@@ -21,8 +22,6 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uSceneTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-uniform vec2 uResolution;
-uniform vec2 uTexelSize;
 
 /* === Fragments === */
 
@@ -104,8 +103,8 @@ void main()
     TEXCOORD = vTexCoord;
     PIXCOORD = ivec2(gl_FragCoord.xy);
 
-    TEXEL_SIZE = uTexelSize;
-    RESOLUTION = uResolution;
+    TEXEL_SIZE = uFrame.texelSize;
+    RESOLUTION = uFrame.screenSize;
     ASPECT = uView.aspect;
 
     fragment();

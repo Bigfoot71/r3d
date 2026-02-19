@@ -566,7 +566,7 @@ static bool load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom, int in
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
-    GET_LOCATION(smaaEdgeDetection, uMetrics);
+    SET_UNIFORM_BUFFER(smaaEdgeDetection, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
 
     USE_SHADER(smaaEdgeDetection);
     SET_SAMPLER(smaaEdgeDetection, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
@@ -611,7 +611,7 @@ static bool load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom, int 
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
-    GET_LOCATION(smaaBlendingWeights, uMetrics);
+    SET_UNIFORM_BUFFER(smaaBlendingWeights, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
 
     USE_SHADER(smaaBlendingWeights);
     SET_SAMPLER(smaaBlendingWeights, uEdgesTex, R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES);
@@ -733,6 +733,7 @@ bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
+    SET_UNIFORM_BUFFER(geometry, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
     SET_UNIFORM_BUFFER(geometry, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
@@ -798,6 +799,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     RL_FREE(fsCode);
 
     SET_UNIFORM_BUFFER(forward, LightArrayBlock, R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT);
+    SET_UNIFORM_BUFFER(forward, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
     SET_UNIFORM_BUFFER(forward, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(forward, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
@@ -862,6 +864,8 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
 
     RL_FREE(vsCode);
     RL_FREE(fsCode);
+
+    SET_UNIFORM_BUFFER(unlit, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(unlit, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
@@ -939,6 +943,8 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
+    SET_UNIFORM_BUFFER(depth, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
+
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(depth, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
     }
@@ -986,6 +992,8 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 
     RL_FREE(vsCode);
     RL_FREE(fsCode);
+
+    SET_UNIFORM_BUFFER(depthCube, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(depthCube, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
@@ -1044,6 +1052,7 @@ bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
     RL_FREE(fsCode);
 
     SET_UNIFORM_BUFFER(probe, LightArrayBlock, R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT);
+    SET_UNIFORM_BUFFER(probe, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
     SET_UNIFORM_BUFFER(probe, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(probe, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
 
@@ -1112,6 +1121,7 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
+    SET_UNIFORM_BUFFER(decal, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
     SET_UNIFORM_BUFFER(decal, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
@@ -1287,12 +1297,12 @@ bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom)
     LOAD_SHADER(screen, SCREEN_VERT, fragCode);
     RL_FREE(fragCode);
 
+    SET_UNIFORM_BUFFER(screen, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
+    SET_UNIFORM_BUFFER(screen, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
+
     if (custom->userCode && strstr(custom->userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(screen, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
     }
-
-    GET_LOCATION(screen, uResolution);
-    GET_LOCATION(screen, uTexelSize);
 
     USE_SHADER(screen);
     SET_SAMPLER(screen, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
@@ -1337,7 +1347,7 @@ static bool load_post_fxaa(r3d_shader_custom_t* custom, int index)
 
     RL_FREE(fsCode);
 
-    GET_LOCATION(fxaa, uSceneTexel);
+    SET_UNIFORM_BUFFER(fxaa, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
 
     USE_SHADER(fxaa);
     SET_SAMPLER(fxaa, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
@@ -1382,7 +1392,7 @@ static bool load_post_smaa(r3d_shader_custom_t* custom, int index)
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
-    GET_LOCATION(smaa, uMetrics);
+    SET_UNIFORM_BUFFER(smaa, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
 
     USE_SHADER(smaa);
     SET_SAMPLER(smaa, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
@@ -1433,6 +1443,7 @@ bool r3d_shader_init()
     memset(&R3D_MOD_SHADER, 0, sizeof(R3D_MOD_SHADER));
 
     const int UNIFORM_BUFFER_SIZES[R3D_SHADER_BLOCK_COUNT] = {
+        [R3D_SHADER_BLOCK_FRAME] = sizeof(r3d_shader_block_frame_t),
         [R3D_SHADER_BLOCK_VIEW] = sizeof(r3d_shader_block_view_t),
         [R3D_SHADER_BLOCK_ENV] = sizeof(r3d_shader_block_env_t),
         [R3D_SHADER_BLOCK_LIGHT] = sizeof(r3d_shader_block_light_t),
@@ -1530,6 +1541,10 @@ void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data)
     int blockSize = 0;
 
     switch (block) {
+    case R3D_SHADER_BLOCK_FRAME:
+        blockSlot = R3D_SHADER_BLOCK_FRAME_SLOT;
+        blockSize = sizeof(r3d_shader_block_frame_t);
+        break;
     case R3D_SHADER_BLOCK_VIEW:
         blockSlot = R3D_SHADER_BLOCK_VIEW_SLOT;
         blockSize = sizeof(r3d_shader_block_view_t);

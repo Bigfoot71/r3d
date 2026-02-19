@@ -47,6 +47,10 @@
 
 #include "../external/Fxaa3_11.h"
 
+/* === Includes === */
+
+#include "../include/blocks/frame.glsl"
+
 /* === Varyings === */
 
 noperspective in vec2 vTexCoord;
@@ -54,7 +58,6 @@ noperspective in vec2 vTexCoord;
 /* === Uniforms === */
 
 uniform sampler2D uSceneTex;
-uniform vec2 uSceneTexel;
 
 /* === Fragments === */
 
@@ -65,8 +68,8 @@ out vec4 FragColor;
 void main()
 {
     vec4 fxaaConsolePosPos = FxaaFloat4(
-        vTexCoord - (0.5 * uSceneTexel),
-        vTexCoord + (0.5 * uSceneTexel)
+        vTexCoord - (0.5 * uFrame.texelSize),
+        vTexCoord + (0.5 * uFrame.texelSize)
     );
 
     vec4 dummy = vec4(0.0);
@@ -77,7 +80,7 @@ void main()
         uSceneTex,                  // tex
         uSceneTex,                  // fxaaConsole360TexExpBiasNegOne
         uSceneTex,                  // fxaaConsole360TexExpBiasNegTwo
-        uSceneTexel,                // fxaaQualityRcpFrame
+        uFrame.texelSize,           // fxaaQualityRcpFrame
         vec4(0.0),                  // fxaaConsoleRcpFrameOpt
         vec4(0.0),                  // fxaaConsoleRcpFrameOpt2
         vec4(0.0),                  // fxaaConsole360RcpFrameOpt2
