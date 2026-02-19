@@ -542,7 +542,7 @@ typedef struct {
 // ========================================
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
@@ -553,37 +553,37 @@ typedef struct {
 } r3d_shader_prepare_atrous_wavelet_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_vec2_t uSourceTexel;
 } r3d_shader_prepare_bicubic_up_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_vec2_t uSourceTexel;
 } r3d_shader_prepare_lanczos_up_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uSourceLod;
 } r3d_shader_prepare_blur_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uSourceLod;
 } r3d_shader_prepare_blur_up_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_prepare_ssao_in_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uSampleCount;
@@ -593,21 +593,21 @@ typedef struct {
 } r3d_shader_prepare_ssao_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSsaoTex;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_vec2_t uDirection;
 } r3d_shader_prepare_ssao_blur_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_prepare_ssil_in_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uHistoryTex;
     r3d_shader_uniform_sampler_t uNormalTex;
@@ -619,14 +619,14 @@ typedef struct {
 } r3d_shader_prepare_ssil_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_prepare_ssgi_in_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uHistoryTex;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
@@ -642,7 +642,7 @@ typedef struct {
 } r3d_shader_prepare_ssgi_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uSpecularTex;
     r3d_shader_uniform_sampler_t uNormalTex;
@@ -650,7 +650,7 @@ typedef struct {
 } r3d_shader_prepare_ssr_in_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uSpecularTex;
     r3d_shader_uniform_sampler_t uNormalTex;
@@ -664,7 +664,7 @@ typedef struct {
 } r3d_shader_prepare_ssr_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uTexture;
     r3d_shader_uniform_vec2_t uTexelSize;
     r3d_shader_uniform_vec4_t uPrefilter;
@@ -672,41 +672,41 @@ typedef struct {
 } r3d_shader_prepare_bloom_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uTexture;
     r3d_shader_uniform_vec2_t uFilterRadius;
     r3d_shader_uniform_float_t uSrcLevel;
 } r3d_shader_prepare_bloom_up_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_float_t uFocusPoint;
     r3d_shader_uniform_float_t uFocusScale;
 } r3d_shader_prepare_dof_coc_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_sampler_t uCoCTex;
 } r3d_shader_prepare_dof_down_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_float_t uMaxBlurSize;
 } r3d_shader_prepare_dof_blur_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_vec4_t uMetrics;
 } r3d_shader_prepare_smaa_edge_detection_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uEdgesTex;
     r3d_shader_uniform_sampler_t uAreaTex;
     r3d_shader_uniform_sampler_t uSearchTex;
@@ -714,21 +714,21 @@ typedef struct {
 } r3d_shader_prepare_smaa_blending_weights_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_sampler_t uPanoramaTex;
 } r3d_shader_prepare_cubemap_from_equirectangular_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_sampler_t uSourceTex;
 } r3d_shader_prepare_cubemap_irradiance_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_sampler_t uSourceTex;
@@ -738,7 +738,7 @@ typedef struct {
 } r3d_shader_prepare_cubemap_prefilter_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_mat4_t uMatProj;
     r3d_shader_uniform_mat4_t uMatView;
     r3d_shader_uniform_col3_t uSkyTopColor;
@@ -757,7 +757,7 @@ typedef struct {
 } r3d_shader_prepare_cubemap_skybox_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -781,7 +781,7 @@ typedef struct {
 } r3d_shader_scene_geometry_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -811,7 +811,7 @@ typedef struct {
 } r3d_shader_scene_forward_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_mat4_t uMatNormal;
@@ -828,7 +828,7 @@ typedef struct {
 } r3d_shader_scene_unlit_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -844,7 +844,7 @@ typedef struct {
 } r3d_shader_scene_depth_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
@@ -862,7 +862,7 @@ typedef struct {
 } r3d_shader_scene_depth_cube_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
@@ -895,7 +895,7 @@ typedef struct {
 } r3d_shader_scene_probe_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
     r3d_shader_uniform_col4_t uAlbedoColor;
@@ -922,12 +922,12 @@ typedef struct {
 } r3d_shader_scene_decal_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_vec4_t uColor;
 } r3d_shader_scene_background_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatInvProj;
     r3d_shader_uniform_sampler_t uSkyMap;
@@ -937,7 +937,7 @@ typedef struct {
 } r3d_shader_scene_skybox_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uAlbedoTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
@@ -954,7 +954,7 @@ typedef struct {
 } r3d_shader_deferred_ambient_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uAlbedoTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
@@ -965,7 +965,7 @@ typedef struct {
 } r3d_shader_deferred_lighting_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uAlbedoTex;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uSpecularTex;
@@ -975,7 +975,7 @@ typedef struct {
 } r3d_shader_deferred_compose_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_int_t uFogMode;
@@ -987,7 +987,7 @@ typedef struct {
 } r3d_shader_post_fog_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uBloomTex;
     r3d_shader_uniform_int_t uBloomMode;
@@ -995,13 +995,13 @@ typedef struct {
 } r3d_shader_post_bloom_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uBlurTex;
 } r3d_shader_post_dof_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
@@ -1010,7 +1010,7 @@ typedef struct {
 } r3d_shader_post_screen_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_float_t uTonemapExposure;
     r3d_shader_uniform_float_t uTonemapWhite;
@@ -1021,20 +1021,20 @@ typedef struct {
 } r3d_shader_post_output_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_vec2_t uSceneTexel;
 } r3d_shader_post_fxaa_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uBlendTex;
     r3d_shader_uniform_vec4_t uMetrics;
 } r3d_shader_post_smaa_t;
 
 typedef struct {
-    unsigned int id;
+    GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uOutputMode;
 } r3d_shader_post_visualizer_t;
