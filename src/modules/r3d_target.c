@@ -90,6 +90,8 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_DOF_0]       = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_DOF_1]       = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_BLOOM]       = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
+    [R3D_TARGET_SMAA_EDGES]  = { FORMAT_RG8U,    1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SMAA_BLEND]  = { FORMAT_RGBA8U,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SCENE_0]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SCENE_1]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
 };

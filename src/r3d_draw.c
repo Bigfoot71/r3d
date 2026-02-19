@@ -85,6 +85,7 @@ static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
+static r3d_target_t pass_post_smaa(r3d_target_t sceneTarget);
 
 static void blit_to_screen(r3d_target_t source);
 static void visualize_to_screen(r3d_target_t source);
@@ -218,8 +219,15 @@ void R3D_End(void)
     sceneTarget = pass_post_screen(sceneTarget);
     sceneTarget = pass_post_output(sceneTarget);
 
-    if (R3D.antiAliasing == R3D_ANTI_ALIASING_FXAA) {
+    switch (R3D.aaMode) {
+    case R3D_ANTI_ALIASING_MODE_FXAA:
         sceneTarget = pass_post_fxaa(sceneTarget);
+        break;
+    case R3D_ANTI_ALIASING_MODE_SMAA:
+        sceneTarget = pass_post_smaa(sceneTarget);
+        break;
+    default:
+        break;
     }
 
     switch (R3D.outputMode) {
@@ -2158,10 +2166,78 @@ r3d_target_t pass_post_output(r3d_target_t sceneTarget)
 r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
 {
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
-    R3D_SHADER_USE(post.fxaa);
+    R3D_SHADER_USE(post.fxaa[R3D.aaPreset]);
 
-    R3D_SHADER_BIND_SAMPLER(post.fxaa, uSourceTex, r3d_target_get(sceneTarget));
-    R3D_SHADER_SET_VEC2(post.fxaa, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
+    R3D_SHADER_BIND_SAMPLER(post.fxaa[R3D.aaPreset], uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_SET_VEC2(post.fxaa[R3D.aaPreset], uSceneTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
+
+    R3D_RENDER_SCREEN();
+
+    return sceneTarget;
+}
+
+r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
+{
+    r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
+
+    Vector4 metrics = {
+        R3D_TARGET_TEXEL_WIDTH,
+        R3D_TARGET_TEXEL_HEIGHT,
+        R3D_TARGET_WIDTH,
+        R3D_TARGET_HEIGHT
+    };
+
+    /* --- Clear previous content --- */
+
+    // Bind and clear the stencil buffer. Since AA is the last post-processing
+    // pass, clearing it here is safe. The stencil is used to avoid running the
+    // blending weight calculation on pixels that have no edges, pass 1 writes 1
+    // to the stencil for each edge pixel (non-edge pixels are discarded by the
+    // shader), then pass 2 only executes where stencil == 1.
+
+    r3d_driver_enable(GL_STENCIL_TEST);
+    r3d_driver_set_stencil_mask(0xFF);
+
+    R3D_TARGET_CLEAR(true, R3D_TARGET_SMAA_EDGES, R3D_TARGET_SMAA_BLEND);
+
+    /* --- Edge detection ---  */
+
+    r3d_driver_set_stencil_func(GL_ALWAYS, 1, 0xFF);
+    r3d_driver_set_stencil_op(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+    R3D_TARGET_BIND(true, R3D_TARGET_SMAA_EDGES);
+    R3D_SHADER_USE(prepare.smaaEdgeDetection[R3D.aaPreset]);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaEdgeDetection[R3D.aaPreset], uSceneTex, r3d_target_get(sceneSource));
+    R3D_SHADER_SET_VEC4(prepare.smaaEdgeDetection[R3D.aaPreset], uMetrics, metrics);
+
+    R3D_RENDER_SCREEN();
+
+    /* --- Compute blending weights --- */
+
+    r3d_driver_set_stencil_func(GL_EQUAL, 1, 0xFF);
+    r3d_driver_set_stencil_op(GL_KEEP, GL_KEEP, GL_KEEP);
+
+    R3D_TARGET_BIND(true, R3D_TARGET_SMAA_BLEND);
+    R3D_SHADER_USE(prepare.smaaBlendingWeights[R3D.aaPreset]);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights[R3D.aaPreset], uEdgesTex, r3d_target_get(R3D_TARGET_SMAA_EDGES));
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights[R3D.aaPreset], uAreaTex, r3d_texture_get(R3D_TEXTURE_SMAA_AREA));
+    R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights[R3D.aaPreset], uSearchTex, r3d_texture_get(R3D_TEXTURE_SMAA_SEARCH));
+    R3D_SHADER_SET_VEC4(prepare.smaaBlendingWeights[R3D.aaPreset], uMetrics, metrics);
+
+    R3D_RENDER_SCREEN();
+
+    /* --- Apply anti aliasing to the scene --- */
+
+    r3d_driver_disable(GL_STENCIL_TEST);
+
+    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+    R3D_SHADER_USE(post.smaa[R3D.aaPreset]);
+
+    R3D_SHADER_BIND_SAMPLER(post.smaa[R3D.aaPreset], uSceneTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(post.smaa[R3D.aaPreset], uBlendTex, r3d_target_get(R3D_TARGET_SMAA_BLEND));
+    R3D_SHADER_SET_VEC4(post.smaa[R3D.aaPreset], uMetrics, metrics);
 
     R3D_RENDER_SCREEN();
 

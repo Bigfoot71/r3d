@@ -13,7 +13,7 @@ int main(void)
 
     // Initialize R3D
     R3D_Init(GetScreenWidth(), GetScreenHeight());
-    R3D_SetAntiAliasing(R3D_ANTI_ALIASING_FXAA);
+    R3D_SetAntiAliasingMode(R3D_ANTI_ALIASING_MODE_FXAA);
 
     // Create meshes and material
     R3D_Mesh plane = R3D_GenMeshPlane(1000, 1000, 1, 1);

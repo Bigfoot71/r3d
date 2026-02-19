@@ -46,7 +46,8 @@ extern struct r3d_core_state {
     R3D_Environment environment;        //< Current environment settings
     R3D_Material material;              //< Default material to use
     r3d_core_view_t viewState;          //< Current view state
-    R3D_AntiAliasing antiAliasing;      //< Defines how the aspect ratio is calculated
+    R3D_AntiAliasingMode aaMode;        //< Defines the anti aliasing mode
+    R3D_AntiAliasingPreset aaPreset;    //< Defines the anti aliasing quality preset
     R3D_AspectMode aspectMode;          //< Defines how the aspect ratio is calculated
     R3D_UpscaleMode upscaleMode;        //< Upscaling mode used during the final blit
     R3D_DownscaleMode downscaleMode;    //< Downscaling mode used during the final blit
