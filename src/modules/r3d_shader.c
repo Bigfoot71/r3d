@@ -15,7 +15,6 @@
 #include <rlgl.h>
 
 #include "../common/r3d_helper.h"
-#include "r3d/r3d_core.h"
 
 // ========================================
 // SHADER CODE INCLUDES
@@ -129,8 +128,8 @@ struct r3d_mod_shader R3D_MOD_SHADER;
     }                                                                           \
 } while(0)
 
-#define UNLOAD_SHADERS(shader_name, count) do {                                 \
-    for (int i = 0; i < count; i++) {                                           \
+#define UNLOAD_SHADERS(shader_name) do {                                        \
+    for (int i = 0; i < ARRAY_SIZE(R3D_MOD_SHADER.shader_name); i++) {          \
         if (R3D_MOD_SHADER.shader_name[i].id != 0) {                            \
             glDeleteProgram(R3D_MOD_SHADER.shader_name[i].id);                  \
         }                                                                       \
@@ -226,7 +225,7 @@ static GLuint link_shader(GLuint vertShader, GLuint fragShader)
     return program;
 }
 
-GLuint load_shader(const char* vsCode, const char* fsCode)
+static GLuint load_shader(const char* vsCode, const char* fsCode)
 {
     GLuint vs = compile_shader(vsCode, GL_VERTEX_SHADER);
     if (vs == 0) return 0;
@@ -1483,8 +1482,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.dofCoc);
     UNLOAD_SHADER(prepare.dofDown);
     UNLOAD_SHADER(prepare.dofBlur);
-    UNLOAD_SHADERS(prepare.smaaEdgeDetection, R3D_ANTI_ALIASING_PRESET_COUNT);
-    UNLOAD_SHADERS(prepare.smaaBlendingWeights, R3D_ANTI_ALIASING_PRESET_COUNT);
+    UNLOAD_SHADERS(prepare.smaaEdgeDetection);
+    UNLOAD_SHADERS(prepare.smaaBlendingWeights);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);
@@ -1508,8 +1507,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.output);
-    UNLOAD_SHADERS(post.fxaa, R3D_ANTI_ALIASING_PRESET_COUNT);
-    UNLOAD_SHADERS(post.smaa, R3D_ANTI_ALIASING_PRESET_COUNT);
+    UNLOAD_SHADERS(post.fxaa);
+    UNLOAD_SHADERS(post.smaa);
     UNLOAD_SHADER(post.visualizer);
 }
 
