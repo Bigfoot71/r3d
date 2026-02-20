@@ -49,7 +49,8 @@
 #include <shaders/cubemap_from_equirectangular.frag.h>
 #include <shaders/cubemap_irradiance.frag.h>
 #include <shaders/cubemap_prefilter.frag.h>
-#include <shaders/cubemap_skybox.frag.h>
+#include <shaders/cubemap_procedural_sky.frag.h>
+#include <shaders/cubemap_custom_sky.frag.h>
 #include <shaders/scene.vert.h>
 #include <shaders/geometry.frag.h>
 #include <shaders/forward.frag.h>
@@ -686,28 +687,52 @@ bool r3d_shader_load_prepare_cubemap_prefilter(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_prepare_cubemap_skybox(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_cubemap_procedural_sky(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(r3d_shader_prepare_cubemap_skybox_t, prepare, cubemapSkybox);
-    LOAD_SHADER(cubemapSkybox, CUBEMAP_VERT, CUBEMAP_SKYBOX_FRAG);
+    DECL_SHADER(r3d_shader_prepare_cubemap_procedural_sky_t, prepare, cubemapProceduralSky);
+    LOAD_SHADER(cubemapProceduralSky, CUBEMAP_VERT, CUBEMAP_PROCEDURAL_SKY_FRAG);
 
-    GET_LOCATION(cubemapSkybox, uMatProj);
-    GET_LOCATION(cubemapSkybox, uMatView);
-    GET_LOCATION(cubemapSkybox, uSkyTopColor);
-    GET_LOCATION(cubemapSkybox, uSkyHorizonColor);
-    GET_LOCATION(cubemapSkybox, uSkyHorizonCurve);
-    GET_LOCATION(cubemapSkybox, uSkyEnergy);
-    GET_LOCATION(cubemapSkybox, uGroundBottomColor);
-    GET_LOCATION(cubemapSkybox, uGroundHorizonColor);
-    GET_LOCATION(cubemapSkybox, uGroundHorizonCurve);
-    GET_LOCATION(cubemapSkybox, uGroundEnergy);
-    GET_LOCATION(cubemapSkybox, uSunDirection);
-    GET_LOCATION(cubemapSkybox, uSunColor);
-    GET_LOCATION(cubemapSkybox, uSunSize);
-    GET_LOCATION(cubemapSkybox, uSunCurve);
-    GET_LOCATION(cubemapSkybox, uSunEnergy);
+    GET_LOCATION(cubemapProceduralSky, uMatProj);
+    GET_LOCATION(cubemapProceduralSky, uMatView);
+    GET_LOCATION(cubemapProceduralSky, uSkyTopColor);
+    GET_LOCATION(cubemapProceduralSky, uSkyHorizonColor);
+    GET_LOCATION(cubemapProceduralSky, uSkyHorizonCurve);
+    GET_LOCATION(cubemapProceduralSky, uSkyEnergy);
+    GET_LOCATION(cubemapProceduralSky, uGroundBottomColor);
+    GET_LOCATION(cubemapProceduralSky, uGroundHorizonColor);
+    GET_LOCATION(cubemapProceduralSky, uGroundHorizonCurve);
+    GET_LOCATION(cubemapProceduralSky, uGroundEnergy);
+    GET_LOCATION(cubemapProceduralSky, uSunDirection);
+    GET_LOCATION(cubemapProceduralSky, uSunColor);
+    GET_LOCATION(cubemapProceduralSky, uSunSize);
+    GET_LOCATION(cubemapProceduralSky, uSunCurve);
+    GET_LOCATION(cubemapProceduralSky, uSunEnergy);
 
-    USE_SHADER(cubemapSkybox);
+    USE_SHADER(cubemapProceduralSky);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_cubemap_custom_sky(r3d_shader_custom_t* custom)
+{
+    assert(custom != NULL);
+
+    r3d_shader_prepare_cubemap_custom_sky_t* cubemapCustomSky = &custom->prepare.cubemapCustomSky;
+    char* fragCode = inject_content(CUBEMAP_CUSTOM_SKY_FRAG, custom->userCode, "#define fragment()", 0);
+    LOAD_SHADER(cubemapCustomSky, SCREEN_VERT, fragCode);
+    RL_FREE(fragCode);
+
+    SET_UNIFORM_BUFFER(cubemapCustomSky, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
+
+    if (custom->userCode && strstr(custom->userCode, "UserBlock") != NULL) {
+        SET_UNIFORM_BUFFER(cubemapCustomSky, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
+    }
+
+    GET_LOCATION(cubemapCustomSky, uMatProj);
+    GET_LOCATION(cubemapCustomSky, uMatView);
+
+    USE_SHADER(cubemapCustomSky);
+    set_custom_samplers(cubemapCustomSky->id, custom);
 
     return true;
 }
@@ -1309,9 +1334,7 @@ bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom)
     SET_SAMPLER(screen, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(screen, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
-    if (custom != NULL) {
-        set_custom_samplers(screen->id, custom);
-    }
+    set_custom_samplers(screen->id, custom);
 
     return true;
 }
@@ -1498,7 +1521,7 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
     UNLOAD_SHADER(prepare.cubemapIrradiance);
     UNLOAD_SHADER(prepare.cubemapPrefilter);
-    UNLOAD_SHADER(prepare.cubemapSkybox);
+    UNLOAD_SHADER(prepare.cubemapProceduralSky);
 
     UNLOAD_SHADER(scene.geometry);
     UNLOAD_SHADER(scene.forward);

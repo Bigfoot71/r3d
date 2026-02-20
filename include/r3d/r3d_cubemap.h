@@ -19,27 +19,6 @@
  */
 
 // ========================================
-// CONSTANTS
-// ========================================
-
-#define R3D_CUBEMAP_SKY_BASE                                    \
-    R3D_LITERAL(R3D_CubemapSky) {                               \
-        .skyTopColor = (Color) {98, 116, 140, 255},             \
-        .skyHorizonColor = (Color) {165, 167, 171, 255},        \
-        .skyHorizonCurve = 0.15f,                               \
-        .skyEnergy = 1.0f,                                      \
-        .groundBottomColor = (Color) {51, 43, 34, 255},         \
-        .groundHorizonColor = (Color) {165, 167, 171, 255},     \
-        .groundHorizonCurve = 0.02f,                            \
-        .groundEnergy = 1.0f,                                   \
-        .sunDirection = (Vector3) {-1.0f, -1.0f, -1.0f},        \
-        .sunColor = (Color) {255, 255, 255, 255},               \
-        .sunSize = 1.5f * DEG2RAD,                              \
-        .sunCurve = 0.15,                                       \
-        .sunEnergy = 1.0f,                                      \
-    }
-
-// ========================================
 // ENUM TYPES
 // ========================================
 
@@ -73,31 +52,6 @@ typedef struct R3D_Cubemap {
     int size;
 } R3D_Cubemap;
 
-/**
- * @brief Parameters for procedural sky generation.
- *
- * Curves control gradient falloff (lower = sharper transition at horizon).
- */
-typedef struct R3D_CubemapSky {
-
-    Color skyTopColor;          // Sky color at zenith
-    Color skyHorizonColor;      // Sky color at horizon
-    float skyHorizonCurve;      // Gradient curve exponent (0.01 - 1.0, typical: 0.15)
-    float skyEnergy;            // Sky brightness multiplier
-
-    Color groundBottomColor;    // Ground color at nadir
-    Color groundHorizonColor;   // Ground color at horizon
-    float groundHorizonCurve;   // Gradient curve exponent (typical: 0.02)
-    float groundEnergy;         // Ground brightness multiplier
-
-    Vector3 sunDirection;       // Direction from which light comes (can take not normalized)
-    Color sunColor;             // Sun disk color
-    float sunSize;              // Sun angular size in radians (real sun: ~0.0087 rad = 0.5°)
-    float sunCurve;             // Sun edge softness exponent (typical: 0.15)
-    float sunEnergy;            // Sun brightness multiplier
-
-} R3D_CubemapSky;
-
 // ========================================
 // PUBLIC API
 // ========================================
@@ -121,25 +75,9 @@ R3DAPI R3D_Cubemap R3D_LoadCubemap(const char* fileName, R3D_CubemapLayout layou
 R3DAPI R3D_Cubemap R3D_LoadCubemapFromImage(Image image, R3D_CubemapLayout layout);
 
 /**
- * @brief Generates a procedural sky cubemap.
- *
- * Creates a GPU cubemap with procedural gradient sky and sun rendering.
- * The cubemap is ready for use as environment map or IBL source.
- */
-R3DAPI R3D_Cubemap R3D_GenCubemapSky(int size, R3D_CubemapSky params);
-
-/**
  * @brief Releases GPU resources associated with a cubemap.
  */
 R3DAPI void R3D_UnloadCubemap(R3D_Cubemap cubemap);
-
-/**
- * @brief Updates an existing procedural sky cubemap.
- *
- * Re-renders the cubemap with new parameters. Faster than unload + generate
- * when animating sky conditions (time of day, weather, etc.).
- */
-R3DAPI void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params);
 
 #ifdef __cplusplus
 } // extern "C"
