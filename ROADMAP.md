@@ -22,7 +22,7 @@
   Similar to existing skeleton and animation loading utilities, it would be useful to provide
   helper functions to import materials from files when needed.
 
-* [ ] **Review skybox generation**
+* [x] **Review skybox generation**
   Improve parameter structure and naming, add an optional debanding setting, and support shaders for skyboxes.
 
 ## **Ideas (Not Planned Yet)**
