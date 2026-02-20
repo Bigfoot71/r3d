@@ -37,7 +37,7 @@ R3D_Cubemap R3D_GenProceduralSky(int size, R3D_ProceduralSky params)
     return cubemap;
 }
 
-R3D_Cubemap R3D_GenCustomSKy(int size, R3D_SkyShader* shader)
+R3D_Cubemap R3D_GenCustomSky(int size, R3D_SkyShader* shader)
 {
     R3D_Cubemap cubemap = r3d_cubemap_allocate(size);
     R3D_UpdateCustomSky(&cubemap, shader);
