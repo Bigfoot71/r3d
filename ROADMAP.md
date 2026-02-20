@@ -25,11 +25,9 @@
 * [ ] **Review skybox generation**
   Improve parameter structure and naming, add an optional debanding setting, and support shaders for skyboxes.
 
-* [ ] **Consider `R3D_Camera` type (maybe)**
-  Think about introducing a dedicated camera type that handles `cullMask` per camera (instead of using global state) and manages `near/far` parameters directly, removing the last dependency on `rlgl`.
-
 ## **Ideas (Not Planned Yet)**
 
+* [ ] Think about introducing a dedicated `R3D_Camera` that handles `cullMask` per camera (instead of using global state) and manages `near/far` parameters directly, removing the last dependency on `rlgl`.
 * [ ] Investigate the integration of a velocity buffer and frame history, mainly for TAA and motion blur. The current begin/end rendering model makes this non-trivial.
 * [ ] Improve support for shadow/transparency interaction (e.g., colored shadows).
 * [ ] Implement Cascaded Shadow Maps (or alternative) for directional lights.
