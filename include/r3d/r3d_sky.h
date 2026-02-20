@@ -36,7 +36,7 @@
         .groundEnergy = 1.0f,                                   \
         .sunDirection = (Vector3) {-1.0f, -1.0f, -1.0f},        \
         .sunColor = (Color) {255, 255, 255, 255},               \
-        .sunSize = 1.5f * DEG2RAD,                              \
+        .sunSize = 1.0f * DEG2RAD,                              \
         .sunCurve = 0.15f,                                      \
         .sunEnergy = 1.0f,                                      \
     }
