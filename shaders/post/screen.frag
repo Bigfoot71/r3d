@@ -10,6 +10,7 @@
 
 /* === Includes === */
 
+#include "../include/blocks/frame.glsl"
 #include "../include/blocks/view.glsl"
 
 /* === Varyings === */
@@ -21,8 +22,6 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uSceneTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-uniform vec2 uResolution;
-uniform vec2 uTexelSize;
 
 /* === Fragments === */
 
@@ -36,6 +35,9 @@ ivec2 PIXCOORD  = ivec2(0);
 vec2 TEXEL_SIZE = vec2(0.0);
 vec2 RESOLUTION = vec2(0.0);
 float ASPECT = 0.0;
+
+int FRAME_INDEX = 0;
+float TIME = 0.0;
 
 /* === Built-In Output Variables === */
 
@@ -104,9 +106,12 @@ void main()
     TEXCOORD = vTexCoord;
     PIXCOORD = ivec2(gl_FragCoord.xy);
 
-    TEXEL_SIZE = uTexelSize;
-    RESOLUTION = uResolution;
+    TEXEL_SIZE = uFrame.texelSize;
+    RESOLUTION = uFrame.screenSize;
     ASPECT = uView.aspect;
+
+    FRAME_INDEX = uFrame.index;
+    TIME = uFrame.time;
 
     fragment();
 

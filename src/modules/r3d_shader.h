@@ -24,11 +24,12 @@
 // MODULE CONSTANTS
 // ========================================
 
-#define R3D_SHADER_BLOCK_VIEW_SLOT          0
-#define R3D_SHADER_BLOCK_ENV_SLOT           1
-#define R3D_SHADER_BLOCK_LIGHT_SLOT         2
-#define R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT   3
-#define R3D_SHADER_BLOCK_USER_SLOT          4
+#define R3D_SHADER_BLOCK_FRAME_SLOT         0
+#define R3D_SHADER_BLOCK_VIEW_SLOT          1
+#define R3D_SHADER_BLOCK_ENV_SLOT           2
+#define R3D_SHADER_BLOCK_LIGHT_SLOT         3
+#define R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT   4
+#define R3D_SHADER_BLOCK_USER_SLOT          5
 
 // ========================================
 // SHADER MANAGEMENT MACROS
@@ -461,6 +462,7 @@ typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 // ========================================
 
 typedef enum {
+    R3D_SHADER_BLOCK_FRAME,
     R3D_SHADER_BLOCK_VIEW,
     R3D_SHADER_BLOCK_ENV,
     R3D_SHADER_BLOCK_LIGHT,
@@ -471,6 +473,13 @@ typedef enum {
 // ========================================
 // UNIFORM BLOCK STRUCTS
 // ========================================
+
+typedef struct {
+    alignas(8) Vector2 screenSize;
+    alignas(8) Vector2 texelSize;
+    alignas(4) float time;
+    alignas(4) int index;
+} r3d_shader_block_frame_t;
 
 typedef struct {
     alignas(16) Vector3 position;
@@ -702,7 +711,6 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_vec4_t uMetrics;
 } r3d_shader_prepare_smaa_edge_detection_t;
 
 typedef struct {
@@ -710,7 +718,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uEdgesTex;
     r3d_shader_uniform_sampler_t uAreaTex;
     r3d_shader_uniform_sampler_t uSearchTex;
-    r3d_shader_uniform_vec4_t uMetrics;
 } r3d_shader_prepare_smaa_blending_weights_t;
 
 typedef struct {
@@ -1005,8 +1012,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_vec2_t uResolution;
-    r3d_shader_uniform_vec2_t uTexelSize;
 } r3d_shader_post_screen_t;
 
 typedef struct {
@@ -1023,14 +1028,12 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_vec2_t uSceneTexel;
 } r3d_shader_post_fxaa_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uBlendTex;
-    r3d_shader_uniform_vec4_t uMetrics;
 } r3d_shader_post_smaa_t;
 
 typedef struct {

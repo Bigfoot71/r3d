@@ -10,11 +10,13 @@
 
 /* === Includes === */
 
+#include "../include/blocks/frame.glsl"
 #include "../include/blocks/view.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings === */
 
+smooth in vec3 vPosition;       //< For custom shaders
 smooth in vec2 vTexCoord;
 flat   in vec3 vEmission;
 smooth in vec4 vColor;

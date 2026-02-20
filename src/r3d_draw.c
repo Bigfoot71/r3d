@@ -50,6 +50,7 @@
 
 static void update_view_state(Camera3D camera, double near, double far);
 static void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow);
+static void upload_frame_block(void);
 static void upload_view_block(void);
 static void upload_env_block(void);
 
@@ -117,6 +118,7 @@ void R3D_End(void)
 
     /* --- Upload and bind uniform buffers --- */
 
+    upload_frame_block();
     upload_view_block();
     upload_env_block();
 
@@ -621,6 +623,20 @@ void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shado
     }
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT_ARRAY, &lights);
+}
+
+void upload_frame_block(void)
+{
+    static int frameIndex = 0;
+
+    r3d_shader_block_frame_t frame = {
+        .screenSize = (Vector2) {(float)R3D_TARGET_WIDTH, (float)R3D_TARGET_HEIGHT},
+        .texelSize = (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT},
+        .time = (float)GetTime(),
+        .index = frameIndex++,
+    };
+
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FRAME, &frame);
 }
 
 void upload_view_block(void)
@@ -2135,9 +2151,6 @@ r3d_target_t pass_post_screen(r3d_target_t sceneTarget)
         R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
         R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
 
-        R3D_SHADER_SET_VEC2_CUSTOM(shader, post.screen, uResolution, (Vector2) {(float)R3D_TARGET_WIDTH, (float)R3D_TARGET_HEIGHT});
-        R3D_SHADER_SET_VEC2_CUSTOM(shader, post.screen, uTexelSize, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
-
         R3D_RENDER_SCREEN();
     }
 
@@ -2169,8 +2182,6 @@ r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget)
     R3D_SHADER_USE(post.fxaa[R3D.aaPreset]);
 
     R3D_SHADER_BIND_SAMPLER(post.fxaa[R3D.aaPreset], uSceneTex, r3d_target_get(sceneTarget));
-    R3D_SHADER_SET_VEC2(post.fxaa[R3D.aaPreset], uSceneTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
-
     R3D_RENDER_SCREEN();
 
     return sceneTarget;
@@ -2209,7 +2220,6 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
     R3D_SHADER_USE(prepare.smaaEdgeDetection[R3D.aaPreset]);
 
     R3D_SHADER_BIND_SAMPLER(prepare.smaaEdgeDetection[R3D.aaPreset], uSceneTex, r3d_target_get(sceneSource));
-    R3D_SHADER_SET_VEC4(prepare.smaaEdgeDetection[R3D.aaPreset], uMetrics, metrics);
 
     R3D_RENDER_SCREEN();
 
@@ -2224,7 +2234,6 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights[R3D.aaPreset], uEdgesTex, r3d_target_get(R3D_TARGET_SMAA_EDGES));
     R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights[R3D.aaPreset], uAreaTex, r3d_texture_get(R3D_TEXTURE_SMAA_AREA));
     R3D_SHADER_BIND_SAMPLER(prepare.smaaBlendingWeights[R3D.aaPreset], uSearchTex, r3d_texture_get(R3D_TEXTURE_SMAA_SEARCH));
-    R3D_SHADER_SET_VEC4(prepare.smaaBlendingWeights[R3D.aaPreset], uMetrics, metrics);
 
     R3D_RENDER_SCREEN();
 
@@ -2237,7 +2246,6 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
 
     R3D_SHADER_BIND_SAMPLER(post.smaa[R3D.aaPreset], uSceneTex, r3d_target_get(sceneTarget));
     R3D_SHADER_BIND_SAMPLER(post.smaa[R3D.aaPreset], uBlendTex, r3d_target_get(R3D_TARGET_SMAA_BLEND));
-    R3D_SHADER_SET_VEC4(post.smaa[R3D.aaPreset], uMetrics, metrics);
 
     R3D_RENDER_SCREEN();
 

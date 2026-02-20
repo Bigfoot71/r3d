@@ -8,6 +8,10 @@
 
 #version 330 core
 
+/* === Includes === */
+
+#include "../include/blocks/frame.glsl"
+
 /* === Varyings === */
 
 smooth in vec3 vPosition;

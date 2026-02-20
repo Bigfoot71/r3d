@@ -1,12 +1,12 @@
 #pragma usage opaque shadow
 
 uniform sampler2D u_texture;
-uniform float u_time;
+uniform float u_time_scale;
 
 flat varying float v_time;
 
 void vertex() {
-    v_time = 0.5 * sin(u_time) + 0.5;
+    v_time = 0.5 * sin(TIME * u_time_scale) + 0.5;
     POSITION *= 1.0 + v_time;
 }
 

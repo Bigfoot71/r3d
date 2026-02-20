@@ -99,6 +99,10 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 
 | Variable | Type | Description |
 |----------|------|-------------|
+| `MATRIX_MODEL` | `mat4` | Model matrix (read-only) |
+| `MATRIX_NORMAL` | `mat3` | Normal matrix (read-only) |
+| `MATRIX_INV_VIEW` | `mat4` | Inverse view matrix (read-only) |
+| `MATRIX_VIEW_PROJECTION` | `mat4` | View-projection matrix (read-only) |
 | `POSITION` | `vec3` | Vertex position (local space) |
 | `TEXCOORD` | `vec2` | Texture coordinates |
 | `NORMAL` | `vec3` | Vertex normal (local space) |
@@ -110,6 +114,12 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 | `INSTANCE_SCALE` | `vec3` | Instance scale |
 | `INSTANCE_COLOR` | `vec4` | Instance color |
 | `INSTANCE_CUSTOM` | `vec4` | Custom user-defined instance data |
+| `FRAME_INDEX` | `int` | Index incremented at each frame |
+| `TIME` | `float` | Time provided by the raylib's `GetTime()` |
+
+> [!WARNING]
+> Mesh attributes (`POSITION`, `NORMAL`, etc.) are provided in **local space** and must remain in local space.
+> You should **not manually apply model, view, or projection transformations** to them.
 
 **Instance Variables:**
 
@@ -171,6 +181,7 @@ Fragment-stage variables are pre-initialized with material values (unless `R3D_N
 | Variable | Type | Description |
 |----------|------|-------------|
 | `TEXCOORD` | `vec2` | Interpolated texture coordinates |
+| `POSITION` | `vec3` | Interpolated fragments's world position (read-only) |
 | `NORMAL` | `vec3` | Surface normal (world space) |
 | `TANGENT` | `vec3` | Surface tangent |
 | `BITANGENT` | `vec3` | Surface bitangent |
@@ -181,6 +192,8 @@ Fragment-stage variables are pre-initialized with material values (unless `R3D_N
 | `OCCLUSION` | `float` | Ambient occlusion |
 | `ROUGHNESS` | `float` | Surface roughness (0 = smooth, 1 = rough) |
 | `METALNESS` | `float` | Metallic property (0 = dielectric, 1 = metal) |
+| `FRAME_INDEX` | `int` | Index incremented at each frame |
+| `TIME` | `float` | Time provided by the raylib's `GetTime()` |
 
 **Example:**
 ```glsl
