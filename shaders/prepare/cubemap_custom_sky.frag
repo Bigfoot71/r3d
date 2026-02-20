@@ -1,4 +1,4 @@
-/* screen.frag -- Base of custom screen fragment shader
+/* cubemap_custom_sky.frag -- Base of custom custom skybox fragment shader
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
