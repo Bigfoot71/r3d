@@ -9,6 +9,7 @@
 #ifndef R3D_SKY_H
 #define R3D_SKY_H
 
+#include "./r3d_sky_shader.h"
 #include "./r3d_platform.h"
 #include "./r3d_cubemap.h"
 #include <raylib.h>
@@ -86,12 +87,28 @@ extern "C" {
 R3DAPI R3D_Cubemap R3D_GenProceduralSky(int size, R3D_ProceduralSky params);
 
 /**
+ * @brief Generates a custom sky cubemap.
+ *
+ * Creates a GPU cubemap rendered using the provided sky shader.
+ * The cubemap is ready for use as environment map or IBL source.
+ */
+R3DAPI R3D_Cubemap R3D_GenCustomSky(int size, R3D_SkyShader* shader);
+
+/**
  * @brief Updates an existing procedural sky cubemap.
  *
  * Re-renders the cubemap with new parameters. Faster than unload + generate
  * when animating sky conditions (time of day, weather, etc.).
  */
 R3DAPI void R3D_UpdateProceduralSky(R3D_Cubemap* cubemap, R3D_ProceduralSky params);
+
+/**
+ * @brief Updates an existing custom sky cubemap.
+ *
+ * Re-renders the cubemap using the provided sky shader. Faster than unload + generate
+ * when animating sky conditions or updating shader uniforms (time, clouds, stars, etc.).
+ */
+R3DAPI void R3D_UpdateCustomSky(R3D_Cubemap* cubemap, R3D_SkyShader* shader);
 
 #ifdef __cplusplus
 } // extern "C"

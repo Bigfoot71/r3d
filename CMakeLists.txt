@@ -269,6 +269,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_lighting.c"
     "${R3D_ROOT_PATH}/src/r3d_surface_shader.c"
     "${R3D_ROOT_PATH}/src/r3d_screen_shader.c"
+    "${R3D_ROOT_PATH}/src/r3d_sky_shader.c"
     "${R3D_ROOT_PATH}/src/r3d_material.c"
     "${R3D_ROOT_PATH}/src/r3d_mesh.c"
     "${R3D_ROOT_PATH}/src/r3d_mesh_data.c"
@@ -318,7 +319,8 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_from_equirectangular.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_irradiance.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/cubemap_prefilter.frag"
-    "${R3D_ROOT_PATH}/shaders/prepare/cubemap_skybox.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/cubemap_procedural_sky.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/cubemap_custom_sky.frag"
     # Scene
     "${R3D_ROOT_PATH}/shaders/scene/scene.vert"
     "${R3D_ROOT_PATH}/shaders/scene/geometry.frag"

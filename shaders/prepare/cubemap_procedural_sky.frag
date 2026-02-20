@@ -1,4 +1,4 @@
-/* cubemap_skybox.frag -- Skybox generation fragment shader
+/* cubemap_procedural_sky.frag -- Procedural sky generation fragment shader
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
