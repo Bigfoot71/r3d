@@ -36,7 +36,7 @@ int main(void)
     R3D_UnmapInstances(instances, R3D_INSTANCE_POSITION);
 
     // Setup environment
-    R3D_Cubemap skybox = R3D_GenCubemapSky(1024, R3D_CUBEMAP_SKY_BASE);
+    R3D_Cubemap skybox = R3D_GenProceduralSky(1024, R3D_PROCEDURAL_SKY_BASE);
     R3D_ENVIRONMENT_SET(background.sky, skybox);
 
     R3D_AmbientMap ambientMap = R3D_GenAmbientMap(skybox, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);

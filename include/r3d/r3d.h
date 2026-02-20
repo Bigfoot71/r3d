@@ -38,6 +38,7 @@
 #include "r3d_probe.h"
 #include "r3d_screen_shader.h"
 #include "r3d_skeleton.h"
+#include "r3d_sky.h"
 #include "r3d_surface_shader.h"
 #include "r3d_utils.h"
 #include "r3d_visibility.h"

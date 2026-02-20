@@ -19,20 +19,25 @@
 #include "./r3d_core_state.h"
 
 // ========================================
-// INTERNAL FUNCTIONS
+// INTERNAL SHARED FUNCTIONS
+// ========================================
+
+R3D_Cubemap r3d_cubemap_allocate(int size);
+void r3d_cubemap_gen_mipmap(const R3D_Cubemap* cubemap);
+
+// ========================================
+// INTERNAL LOCAL FUNCTIONS
 // ========================================
 
 static const char* get_layout_name(R3D_CubemapLayout layout);
 static R3D_CubemapLayout detect_cubemap_layout(Image image);
 static int get_cubemap_size_from_layout(Image image, R3D_CubemapLayout layout);
-static R3D_Cubemap allocate_cubemap(int size);
 static R3D_Cubemap load_cubemap_from_panorama(Image image, int size);
 static R3D_Cubemap load_cubemap_from_line_vertical(Image image, int size);
 static Image alloc_work_faces_image(Image source, int size);
 static R3D_Cubemap load_cubemap_from_line_horizontal(Image image, int size);
 static R3D_Cubemap load_cubemap_from_cross_three_by_four(Image image, int size);
 static R3D_Cubemap load_cubemap_from_cross_four_by_three(Image image, int size);
-static void generate_mipmap(const R3D_Cubemap* cubemap);
 
 // ========================================
 // PUBLIC API
@@ -84,17 +89,10 @@ R3D_Cubemap R3D_LoadCubemapFromImage(Image image, R3D_CubemapLayout layout)
         break;
     }
 
-    generate_mipmap(&cubemap);
+    r3d_cubemap_gen_mipmap(&cubemap);
 
     R3D_TRACELOG(LOG_INFO, "Cubemap loaded from '%s' successfully (%dx%d)", get_layout_name(layout), size, size);
 
-    return cubemap;
-}
-
-R3D_Cubemap R3D_GenCubemapSky(int size, R3D_CubemapSky params)
-{
-    R3D_Cubemap cubemap = allocate_cubemap(size);
-    R3D_UpdateCubemapSky(&cubemap, params);
     return cubemap;
 }
 
@@ -104,50 +102,53 @@ void R3D_UnloadCubemap(R3D_Cubemap cubemap)
     glDeleteTextures(1, &cubemap.texture);
 }
 
-void R3D_UpdateCubemapSky(R3D_Cubemap* cubemap, R3D_CubemapSky params)
+// ========================================
+// INTERNAL SHARED FUNCTIONS
+// ========================================
+
+R3D_Cubemap r3d_cubemap_allocate(int size)
 {
-    r3d_driver_invalidate_cache();
+    R3D_Cubemap cubemap = {0};
+    cubemap.size = size;
 
-    Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
+    glGenFramebuffers(1, &cubemap.fbo);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, cubemap->fbo);
-    glViewport(0, 0, cubemap->size, cubemap->size);
+    glGenTextures(1, &cubemap.texture);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
 
-    R3D_SHADER_USE(prepare.cubemapSkybox);
-    r3d_driver_disable(GL_CULL_FACE);
-
-    R3D_SHADER_SET_MAT4(prepare.cubemapSkybox, uMatProj, matProj);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyTopColor, R3D.colorSpace, params.skyTopColor);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSkyHorizonColor, R3D.colorSpace, params.skyHorizonColor);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSkyHorizonCurve, params.skyHorizonCurve);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSkyEnergy, params.skyEnergy);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundBottomColor, R3D.colorSpace, params.groundBottomColor);
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uGroundHorizonColor, R3D.colorSpace, params.groundHorizonColor);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uGroundHorizonCurve, params.groundHorizonCurve);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uGroundEnergy, params.groundEnergy);
-    R3D_SHADER_SET_VEC3(prepare.cubemapSkybox, uSunDirection, Vector3Normalize(Vector3Negate(params.sunDirection)));
-    R3D_SHADER_SET_COL3(prepare.cubemapSkybox, uSunColor, R3D.colorSpace, params.sunColor);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunSize, params.sunSize);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunCurve, params.sunCurve);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapSkybox, uSunEnergy, params.sunEnergy);
-
-    for (int i = 0; i < 6; i++) {
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap->texture, 0);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
-        R3D_SHADER_SET_MAT4(prepare.cubemapSkybox, uMatView, R3D.matCubeViews[i]);
-        R3D_RENDER_CUBE();
+    int mipCount = r3d_get_mip_levels_1d(size);
+    for (int level = 0; level < mipCount; level++) {
+        int mipSize = size >> level;
+        for (int i = 0; i < 6; i++) {
+            glTexImage2D(
+                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, GL_RGB16F,
+                mipSize, mipSize, 0, GL_RGB, GL_HALF_FLOAT, NULL
+            );
+        }
     }
 
-    generate_mipmap(cubemap);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, mipCount - 1);
 
-    glViewport(0, 0, rlGetFramebufferWidth(), rlGetFramebufferHeight());
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    r3d_driver_enable(GL_CULL_FACE);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return cubemap;
+}
+
+void r3d_cubemap_gen_mipmap(const R3D_Cubemap* cubemap)
+{
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->texture);
+    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
 
 // ========================================
-// INTERNAL FUNCTIONS
+// INTERNAL LOCAL FUNCTIONS
 // ========================================
 
 const char* get_layout_name(R3D_CubemapLayout layout)
@@ -222,45 +223,11 @@ int get_cubemap_size_from_layout(Image image, R3D_CubemapLayout layout)
     return size;
 }
 
-R3D_Cubemap allocate_cubemap(int size)
-{
-    R3D_Cubemap cubemap = {0};
-    cubemap.size = size;
-
-    glGenFramebuffers(1, &cubemap.fbo);
-
-    glGenTextures(1, &cubemap.texture);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
-
-    int mipCount = r3d_get_mip_levels_1d(size);
-    for (int level = 0; level < mipCount; level++) {
-        int mipSize = size >> level;
-        for (int i = 0; i < 6; i++) {
-            glTexImage2D(
-                GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, level, GL_RGB16F,
-                mipSize, mipSize, 0, GL_RGB, GL_HALF_FLOAT, NULL
-            );
-        }
-    }
-
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, mipCount - 1);
-
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-
-    return cubemap;
-}
-
 R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 {
     r3d_driver_invalidate_cache();
 
-    R3D_Cubemap cubemap = allocate_cubemap(size);
+    R3D_Cubemap cubemap = r3d_cubemap_allocate(size);
     Texture2D panorama = LoadTextureFromImage(image);
     SetTextureFilter(panorama, TEXTURE_FILTER_BILINEAR);
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
@@ -300,7 +267,7 @@ R3D_Cubemap load_cubemap_from_line_vertical(Image image, int size)
     }
 
     int faceSize = size * size * 3 * sizeof(uint16_t);
-    R3D_Cubemap cubemap = allocate_cubemap(size);
+    R3D_Cubemap cubemap = r3d_cubemap_allocate(size);
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap.texture);
     for (int i = 0; i < 6; i++) {
@@ -404,11 +371,4 @@ R3D_Cubemap load_cubemap_from_cross_four_by_three(Image image, int size)
     UnloadImage(faces);
 
     return cubemap;
-}
-
-void generate_mipmap(const R3D_Cubemap* cubemap)
-{
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap->texture);
-    glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
