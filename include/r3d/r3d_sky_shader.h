@@ -63,11 +63,7 @@ R3DAPI R3D_SkyShader* R3D_LoadSkyShaderFromMemory(const char* code);
 R3DAPI void R3D_UnloadSkyShader(R3D_SkyShader* shader);
 
 /**
- * @brief Sets a uniform value for the current frame.
- *
- * Once a uniform is set, it remains valid for the all frames.
- * If an uniform is set multiple times during the same frame,
- * the last value defined before R3D_End() is used.
+ * @brief Sets a uniform value for all subsequent sky generations.
  *
  * Supported types:
  * bool, int, float,
@@ -86,11 +82,7 @@ R3DAPI void R3D_UnloadSkyShader(R3D_SkyShader* shader);
 R3DAPI void R3D_SetSkyShaderUniform(R3D_SkyShader* shader, const char* name, const void* value);
 
 /**
- * @brief Sets a texture sampler for the current frame.
- *
- * Once a sampler is set, it remains valid for all frames.
- * If a sampler is set multiple times during the same frame,
- * the last value defined before R3D_End() is used.
+ * @brief Sets a uniform value for all subsequent sky generations.
  *
  * Supported samplers:
  * sampler1D, sampler2D, sampler3D, samplerCube
