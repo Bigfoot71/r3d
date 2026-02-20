@@ -6,6 +6,10 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
+/* === Built-In Constants === */
+
+#define POSITION vPosition
+
 /* === Built-In Input Variables === */
 
 vec2 TEXCOORD  = vec2(0.0);

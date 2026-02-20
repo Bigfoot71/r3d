@@ -99,10 +99,10 @@ All vertex-stage variables are initialized with local (pre-transformation) attri
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `MATRIX_MODEL` | `mat4` | Model matrix (read-only). |
-| `MATRIX_NORMAL` | `mat3` | Normal matrix (read-only). |
-| `MATRIX_INV_VIEW` | `mat4` | Inverse view matrix (read-only). |
-| `MATRIX_VIEW_PROJECTION` | `mat4` | View-projection matrix (read-only). |
+| `MATRIX_MODEL` | `mat4` | Model matrix (read-only) |
+| `MATRIX_NORMAL` | `mat3` | Normal matrix (read-only) |
+| `MATRIX_INV_VIEW` | `mat4` | Inverse view matrix (read-only) |
+| `MATRIX_VIEW_PROJECTION` | `mat4` | View-projection matrix (read-only) |
 | `POSITION` | `vec3` | Vertex position (local space) |
 | `TEXCOORD` | `vec2` | Texture coordinates |
 | `NORMAL` | `vec3` | Vertex normal (local space) |
@@ -181,6 +181,7 @@ Fragment-stage variables are pre-initialized with material values (unless `R3D_N
 | Variable | Type | Description |
 |----------|------|-------------|
 | `TEXCOORD` | `vec2` | Interpolated texture coordinates |
+| `POSITION` | `vec3` | Interpolated fragments's world position (read-only) |
 | `NORMAL` | `vec3` | Surface normal (world space) |
 | `TANGENT` | `vec3` | Surface tangent |
 | `BITANGENT` | `vec3` | Surface bitangent |

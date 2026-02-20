@@ -17,6 +17,7 @@
 
 /* === Varyings === */
 
+smooth in vec3 vPosition;           //< For custom shaders
 smooth in mat4 vDecalProjection;
 smooth in mat3 vDecalAxes;
 flat   in vec3 vEmission;

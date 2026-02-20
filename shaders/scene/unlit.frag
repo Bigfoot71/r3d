@@ -14,6 +14,7 @@
 
 /* === Varyings === */
 
+smooth in vec3 vPosition;       //< For custom shaders
 smooth in vec2 vTexCoord;
 smooth in vec4 vColor;
 
