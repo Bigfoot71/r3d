@@ -32,7 +32,7 @@ int main(void)
     // Load and generate skyboxes
     R3D_Cubemap skyPanorama = R3D_LoadCubemap(RESOURCES_PATH "panorama/sky.hdr", R3D_CUBEMAP_LAYOUT_AUTO_DETECT);
     R3D_Cubemap skyProcedural = R3D_GenProceduralSky(1024, skyParams);
-    R3D_Cubemap skyCustom = R3D_GenCustomSKy(512, shader);
+    R3D_Cubemap skyCustom = R3D_GenCustomSky(512, shader);
 
     // Generate ambient maps
     R3D_AmbientMap ambientPanorama = R3D_GenAmbientMap(skyPanorama, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
