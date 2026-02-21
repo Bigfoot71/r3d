@@ -30,7 +30,7 @@
 /**
  * @brief Bitmask defining which instance attributes are present.
  */
-typedef int R3D_InstanceFlags;
+typedef uint32_t R3D_InstanceFlags;
 
 #define R3D_INSTANCE_POSITION   (1 << 0)    /*< Vector3     */
 #define R3D_INSTANCE_ROTATION   (1 << 1)    /*< Quaternion  */
@@ -51,8 +51,8 @@ typedef int R3D_InstanceFlags;
  */
 typedef struct R3D_InstanceBuffer {
     uint32_t buffers[R3D_INSTANCE_ATTRIBUTE_COUNT];
+    R3D_InstanceFlags flags;
     int capacity;
-    int flags;
 } R3D_InstanceBuffer;
 
 // ========================================
