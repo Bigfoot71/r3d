@@ -719,7 +719,7 @@ bool r3d_shader_load_prepare_cubemap_custom_sky(r3d_shader_custom_t* custom)
 
     r3d_shader_prepare_cubemap_custom_sky_t* cubemapCustomSky = &custom->prepare.cubemapCustomSky;
     char* fragCode = inject_content(CUBEMAP_CUSTOM_SKY_FRAG, custom->userCode, "#define fragment()", 0);
-    LOAD_SHADER(cubemapCustomSky, SCREEN_VERT, fragCode);
+    LOAD_SHADER(cubemapCustomSky, CUBEMAP_VERT, fragCode);
     RL_FREE(fragCode);
 
     SET_UNIFORM_BUFFER(cubemapCustomSky, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
