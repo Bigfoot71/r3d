@@ -210,12 +210,12 @@ void R3D_End(void)
         sceneTarget = pass_post_fog(sceneTarget);
     }
 
-    if (R3D.environment.bloom.mode != R3D_BLOOM_DISABLED) {
-        sceneTarget = pass_post_bloom(sceneTarget);
-    }
-
     if (R3D.environment.dof.mode != R3D_DOF_DISABLED) {
         sceneTarget = pass_post_dof(sceneTarget);
+    }
+
+    if (R3D.environment.bloom.mode != R3D_BLOOM_DISABLED) {
+        sceneTarget = pass_post_bloom(sceneTarget);
     }
 
     sceneTarget = pass_post_screen(sceneTarget);
