@@ -237,7 +237,19 @@ if(BUILD_SHARED_LIBS)
     add_definitions(-DGLAD_API_CALL_EXPORT)
 endif()
 
+if(R3D_SUPPORT_ASSIMP)
+    set(R3D_IMPORTER_SOURCES
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
+    )
+endif()
+
 add_library(${PROJECT_NAME}
+    # Importer
+    ${R3D_IMPORTER_SOURCES}
     # Common
     "${R3D_ROOT_PATH}/src/common/r3d_frustum.c"
     "${R3D_ROOT_PATH}/src/common/r3d_helper.c"
@@ -279,16 +291,6 @@ add_library(${PROJECT_NAME}
     # External
     "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
 )
-
-if(R3D_SUPPORT_ASSIMP)
-    set(R3D_IMPORTER_SOURCES
-        "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
-        "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
-        "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
-        "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
-        "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
-    )
-endif()
 
 # ========================================
 # Embedded Resources
