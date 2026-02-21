@@ -28,10 +28,11 @@ endif()
 
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${R3D_ROOT_PATH}/cmake")
 
-option(R3D_BUILD_DOCS "Build the doxygen documentation" OFF)
-option(R3D_BUILD_EXAMPLES "Build the examples" ${R3D_IS_MAIN})
 option(R3D_RAYLIB_VENDORED "Use vendored raylib from submodule" OFF)
 option(R3D_ASSIMP_VENDORED "Use vendored assimp from submodule" OFF)
+option(R3D_SUPPORT_ASSIMP "Build with Assimp importer support" ON)
+option(R3D_BUILD_EXAMPLES "Build the examples" ${R3D_IS_MAIN})
+option(R3D_BUILD_DOCS "Build the doxygen documentation" OFF)
 
 # ========================================
 # Output Directories
@@ -89,71 +90,73 @@ configure_file(
 # Dependencies: Assimp
 # ========================================
 
-if(R3D_ASSIMP_VENDORED)
-    set(R3D_ASSIMP_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/assimp")
-    set(R3D_ASSIMP_CMAKELISTS "${R3D_ASSIMP_SUBMODULE_PATH}/CMakeLists.txt")
+if(R3D_SUPPORT_ASSIMP)
+    if(R3D_ASSIMP_VENDORED)
+        set(R3D_ASSIMP_SUBMODULE_PATH "${R3D_ROOT_PATH}/external/assimp")
+        set(R3D_ASSIMP_CMAKELISTS "${R3D_ASSIMP_SUBMODULE_PATH}/CMakeLists.txt")
 
-    if(NOT EXISTS "${R3D_ASSIMP_CMAKELISTS}")
-        message(FATAL_ERROR 
-            "Vendored assimp not found!\n"
-            "Missing: ${R3D_ASSIMP_CMAKELISTS}\n"
-            "Please initialize the submodule with:\n"
-            "    git submodule update --init --recursive")
-    endif()
+        if(NOT EXISTS "${R3D_ASSIMP_CMAKELISTS}")
+            message(FATAL_ERROR 
+                "Vendored assimp not found!\n"
+                "Missing: ${R3D_ASSIMP_CMAKELISTS}\n"
+                "Please initialize the submodule with:\n"
+                "    git submodule update --init --recursive")
+        endif()
 
-    message(STATUS "Using vendored assimp from: ${R3D_ASSIMP_SUBMODULE_PATH}")
+        message(STATUS "Using vendored assimp from: ${R3D_ASSIMP_SUBMODULE_PATH}")
 
-    # Common settings
-    set(ASSIMP_INJECT_DEBUG_POSTFIX     OFF CACHE BOOL "")
-    set(ASSIMP_WARNINGS_AS_ERRORS       OFF CACHE BOOL "")
-    set(ASSIMP_IGNORE_GIT_HASH          ON CACHE BOOL "")
-    set(ASSIMP_BUILD_TESTS              OFF CACHE BOOL "")
-    set(ASSIMP_NO_EXPORT                ON CACHE BOOL "")
-    set(ASSIMP_INSTALL                  OFF CACHE BOOL "")
+        # Common settings
+        set(ASSIMP_INJECT_DEBUG_POSTFIX     OFF CACHE BOOL "")
+        set(ASSIMP_WARNINGS_AS_ERRORS       OFF CACHE BOOL "")
+        set(ASSIMP_IGNORE_GIT_HASH          ON CACHE BOOL "")
+        set(ASSIMP_BUILD_TESTS              OFF CACHE BOOL "")
+        set(ASSIMP_NO_EXPORT                ON CACHE BOOL "")
+        set(ASSIMP_INSTALL                  OFF CACHE BOOL "")
 
-    # Enabled importers
-    # Note: There may be conflicts between Assimp and raylib if both enable the M3D format
-    set(_ASSIMP_ENABLED_IMPORTERS
-        COLLADA GLTF OBJ FBX IQM
-    )
+        # Enabled importers
+        # Note: There may be conflicts between Assimp and raylib if both enable the M3D format
+        set(_ASSIMP_ENABLED_IMPORTERS
+            COLLADA GLTF OBJ FBX IQM
+        )
 
-    # Disabled importers
-    set(_ASSIMP_DISABLED_IMPORTERS
-        AMF BVH OFF COB STL 3DS AC ASE ASSBIN B3D DXF CSM HMP 
-        IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OGRE 
-        OPENGEX PLY MS3D BLEND IFC XGL Q3D Q3BSP RAW SIB SMD 
-        TERRAGEN 3D X X3D 3MF MMD
-    )
+        # Disabled importers
+        set(_ASSIMP_DISABLED_IMPORTERS
+            AMF BVH OFF COB STL 3DS AC ASE ASSBIN B3D DXF CSM HMP 
+            IRRMESH IRR LWO LWS M3D MD2 MD3 MD5 MDC MDL NFF NDO OGRE 
+            OPENGEX PLY MS3D BLEND IFC XGL Q3D Q3BSP RAW SIB SMD 
+            TERRAGEN 3D X X3D 3MF MMD
+        )
 
-    foreach(importer ${_ASSIMP_ENABLED_IMPORTERS})
-        set(ASSIMP_BUILD_${importer}_IMPORTER ON CACHE BOOL "")
-    endforeach()
+        foreach(importer ${_ASSIMP_ENABLED_IMPORTERS})
+            set(ASSIMP_BUILD_${importer}_IMPORTER ON CACHE BOOL "")
+        endforeach()
 
-    foreach(importer ${_ASSIMP_DISABLED_IMPORTERS})
-        set(ASSIMP_BUILD_${importer}_IMPORTER OFF CACHE BOOL "")
-    endforeach()
+        foreach(importer ${_ASSIMP_DISABLED_IMPORTERS})
+            set(ASSIMP_BUILD_${importer}_IMPORTER OFF CACHE BOOL "")
+        endforeach()
 
-    add_subdirectory("${R3D_ASSIMP_SUBMODULE_PATH}")
+        add_subdirectory("${R3D_ASSIMP_SUBMODULE_PATH}")
 
-    set(R3D_ASSIMP_INC "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "" FORCE)
-    set(R3D_ASSIMP_LIB "assimp" CACHE STRING "" FORCE)
+        set(R3D_ASSIMP_INC "${R3D_ASSIMP_SUBMODULE_PATH}/include" CACHE STRING "" FORCE)
+        set(R3D_ASSIMP_LIB "assimp" CACHE STRING "" FORCE)
 
-    set_target_properties(assimp PROPERTIES 
-        RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
-        LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
-        ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
-    )
-else()
-    find_package(assimp QUIET)
-    if(assimp_FOUND)
-        message(STATUS "Using system-installed Assimp")
-        set(R3D_ASSIMP_INC "${ASSIMP_INCLUDE_DIRS}" CACHE STRING "" FORCE)
-        set(R3D_ASSIMP_LIB "${ASSIMP_LIBRARIES}" CACHE STRING "" FORCE)
+        set_target_properties(assimp PROPERTIES 
+            RUNTIME_OUTPUT_DIRECTORY ${R3D_RUNTIME_OUTPUT_DIRECTORY}
+            LIBRARY_OUTPUT_DIRECTORY ${R3D_LIBRARY_OUTPUT_DIRECTORY}
+            ARCHIVE_OUTPUT_DIRECTORY ${R3D_ARCHIVE_OUTPUT_DIRECTORY}
+        )
     else()
-        message(FATAL_ERROR
-            "System Assimp not found.\n"
-            "Please install Assimp development files for your platform, "
-            "or use the vendored version included with this project.")
+        find_package(assimp QUIET)
+        if(assimp_FOUND)
+            message(STATUS "Using system-installed Assimp")
+            set(R3D_ASSIMP_INC "${ASSIMP_INCLUDE_DIRS}" CACHE STRING "" FORCE)
+            set(R3D_ASSIMP_LIB "${ASSIMP_LIBRARIES}" CACHE STRING "" FORCE)
+        else()
+            message(FATAL_ERROR
+                "System Assimp not found.\n"
+                "Please install Assimp development files for your platform, "
+                "or use the vendored version included with this project.")
+        endif()
     endif()
 endif()
 
@@ -235,12 +238,6 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 add_library(${PROJECT_NAME}
-    # Importer
-    "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
-    "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
-    "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
-    "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
-    "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
     # Common
     "${R3D_ROOT_PATH}/src/common/r3d_frustum.c"
     "${R3D_ROOT_PATH}/src/common/r3d_helper.c"
@@ -282,6 +279,16 @@ add_library(${PROJECT_NAME}
     # External
     "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
 )
+
+if(R3D_SUPPORT_ASSIMP)
+    set(R3D_IMPORTER_SOURCES
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
+        "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
+    )
+endif()
 
 # ========================================
 # Embedded Resources
@@ -366,8 +373,11 @@ target_include_directories(${PROJECT_NAME}
         "${R3D_GENERATED_INCLUDE_DIR}"
         "${R3D_ROOT_PATH}/include"
         "${R3D_RAYLIB_INC}"
-        "${R3D_ASSIMP_INC}"
 )
+
+if(R3D_SUPPORT_ASSIMP)
+    target_link_libraries(${PROJECT_NAME} PRIVATE "${R3D_ASSIMP_LIB}")
+endif()
 
 # ========================================
 # Link Libraries
@@ -376,8 +386,11 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         "${R3D_RAYLIB_LIB}"
-        "${R3D_ASSIMP_LIB}"
 )
+
+if(R3D_SUPPORT_ASSIMP)
+    target_include_directories(${PROJECT_NAME} PRIVATE "${R3D_ASSIMP_INC}")
+endif()
 
 check_library_exists(m cos "" HAVE_LIB_M)
 if(HAVE_LIB_M)

@@ -9,7 +9,10 @@
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_utils.h>
 
-#include "./importer/r3d_importer_internal.h"
+#ifdef R3D_SUPPORT_ASSIMP
+#   include "./importer/r3d_importer_internal.h"
+#endif
+
 #include "./modules/r3d_texture.h"
 #include "./common/r3d_image.h"
 #include "./r3d_core_state.h"
@@ -32,11 +35,17 @@ R3D_Material* R3D_LoadMaterials(const char* filePath, int* materialCount)
 {
     R3D_Material* materials = NULL;
 
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
     if (importer == NULL) return materials;
 
     materials = R3D_LoadMaterialsFromImporter(importer, materialCount);
     R3D_UnloadImporter(importer);
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load '%s': built without Assimp support", filePath);
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return materials;
 }
@@ -45,11 +54,22 @@ R3D_Material* R3D_LoadMaterialsFromMemory(const void* data, unsigned int size, c
 {
     R3D_Material* materials = NULL;
 
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
     if (importer == NULL) return materials;
 
     materials = R3D_LoadMaterialsFromImporter(importer, materialCount);
     R3D_UnloadImporter(importer);
+
+#else
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load '%s' from memory: built without Assimp support", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load asset from memory: built without Assimp support");
+    }
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return materials;
 }
@@ -57,6 +77,12 @@ R3D_Material* R3D_LoadMaterialsFromMemory(const void* data, unsigned int size, c
 R3D_Material* R3D_LoadMaterialsFromImporter(const R3D_Importer* importer, int* materialCount)
 {
     R3D_Material* materials = NULL;
+
+#ifdef R3D_SUPPORT_ASSIMP
+    if (importer == NULL) {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load materials from importer: NULL importer");
+        return materials;
+    }
 
     r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
         importer, R3D.colorSpace, R3D.textureFilter);
@@ -68,6 +94,11 @@ R3D_Material* R3D_LoadMaterialsFromImporter(const R3D_Importer* importer, int* m
     }
 
     r3d_importer_unload_texture_cache(textureCache, false);
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load materials from importer: built without Assimp support");
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return materials;
 }

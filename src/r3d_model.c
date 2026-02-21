@@ -10,13 +10,19 @@
 #include <r3d/r3d_skeleton.h>
 #include <r3d/r3d_model.h>
 #include <r3d/r3d_mesh.h>
+#include <r3d_config.h>
+#include <stdlib.h>
 
-#include "./importer/r3d_importer_internal.h"
-#include "./r3d_core_state.h"
+#ifdef R3D_SUPPORT_ASSIMP
+#   include "./importer/r3d_importer_internal.h"
+#   include "./r3d_core_state.h"
+#endif
 
 // ========================================
 // INTERNAL FUNCTIONS
 // ========================================
+
+#ifdef R3D_SUPPORT_ASSIMP
 
 static bool load_model_components(R3D_Model* model, const R3D_Importer* importer)
 {
@@ -44,6 +50,8 @@ static bool load_model_components(R3D_Model* model, const R3D_Importer* importer
     return true;
 }
 
+#endif // R3D_SUPPORT_ASSIMP
+
 // ========================================
 // PUBLIC API
 // ========================================
@@ -57,12 +65,18 @@ R3D_Model R3D_LoadModelEx(const char* filePath, R3D_ImportFlags flags)
 {
     R3D_Model model = {0};
 
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporter(filePath, flags);
     if (importer == NULL) return model;
 
     model = R3D_LoadModelFromImporter(importer);
 
     R3D_UnloadImporter(importer);
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load '%s': built without Assimp support", filePath);
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return model;
 }
@@ -76,12 +90,23 @@ R3D_Model R3D_LoadModelFromMemoryEx(const void* data, unsigned int size, const c
 {
     R3D_Model model = {0};
 
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, flags);
     if (importer == NULL) return model;
 
     model = R3D_LoadModelFromImporter(importer);
 
     R3D_UnloadImporter(importer);
+
+#else
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load '%s' from memory: built without Assimp support", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load asset from memory: built without Assimp support");
+    }
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return model;
 }
@@ -90,8 +115,9 @@ R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 {
     R3D_Model model = {0};
 
+#ifdef R3D_SUPPORT_ASSIMP
     if (importer == NULL) {
-        R3D_TRACELOG(LOG_ERROR, "Cannot load model from NULL importer");
+        R3D_TRACELOG(LOG_WARNING, "Cannot load model from importer: NULL importer");
         return model;
     }
 
@@ -107,6 +133,11 @@ R3D_Model R3D_LoadModelFromImporter(const R3D_Importer* importer)
 
         R3D_TRACELOG(LOG_WARNING, "Failed to load model: '%s'", importer->name);
     }
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load model from importer: built without Assimp support");
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return model;
 }
