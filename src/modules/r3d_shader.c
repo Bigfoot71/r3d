@@ -37,11 +37,11 @@
 #include <shaders/ssgi.frag.h>
 #include <shaders/ssr_in_down.frag.h>
 #include <shaders/ssr.frag.h>
-#include <shaders/bloom_down.frag.h>
-#include <shaders/bloom_up.frag.h>
 #include <shaders/dof_coc.frag.h>
 #include <shaders/dof_down.frag.h>
 #include <shaders/dof_blur.frag.h>
+#include <shaders/bloom_down.frag.h>
+#include <shaders/bloom_up.frag.h>
 #include <shaders/smaa_blending_weigths.vert.h>
 #include <shaders/smaa_blending_weigths.frag.h>
 #include <shaders/smaa_edge_detection.vert.h>
@@ -64,8 +64,8 @@
 #include <shaders/lighting.frag.h>
 #include <shaders/compose.frag.h>
 #include <shaders/fog.frag.h>
-#include <shaders/bloom.frag.h>
 #include <shaders/dof.frag.h>
+#include <shaders/bloom.frag.h>
 #include <shaders/screen.frag.h>
 #include <shaders/output.frag.h>
 #include <shaders/fxaa.frag.h>
@@ -480,35 +480,6 @@ bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER(r3d_shader_prepare_bloom_down_t, prepare, bloomDown);
-    LOAD_SHADER(bloomDown, SCREEN_VERT, BLOOM_DOWN_FRAG);
-
-    GET_LOCATION(bloomDown, uTexelSize);
-    GET_LOCATION(bloomDown, uPrefilter);
-    GET_LOCATION(bloomDown, uDstLevel);
-
-    USE_SHADER(bloomDown);
-    SET_SAMPLER(bloomDown, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
-
-    return true;
-}
-
-bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER(r3d_shader_prepare_bloom_up_t, prepare, bloomUp);
-    LOAD_SHADER(bloomUp, SCREEN_VERT, BLOOM_UP_FRAG);
-
-    GET_LOCATION(bloomUp, uFilterRadius);
-    GET_LOCATION(bloomUp, uSrcLevel);
-
-    USE_SHADER(bloomUp);
-    SET_SAMPLER(bloomUp, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
-
-    return true;
-}
-
 bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_prepare_dof_coc_t, prepare, dofCoc);
@@ -546,6 +517,35 @@ bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom)
     USE_SHADER(dofBlur);
     SET_SAMPLER(dofBlur, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_DOF);     //< RGB: Color | A: CoC
     SET_SAMPLER(dofBlur, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_bloom_down_t, prepare, bloomDown);
+    LOAD_SHADER(bloomDown, SCREEN_VERT, BLOOM_DOWN_FRAG);
+
+    GET_LOCATION(bloomDown, uTexelSize);
+    GET_LOCATION(bloomDown, uPrefilter);
+    GET_LOCATION(bloomDown, uDstLevel);
+
+    USE_SHADER(bloomDown);
+    SET_SAMPLER(bloomDown, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_bloom_up_t, prepare, bloomUp);
+    LOAD_SHADER(bloomUp, SCREEN_VERT, BLOOM_UP_FRAG);
+
+    GET_LOCATION(bloomUp, uFilterRadius);
+    GET_LOCATION(bloomUp, uSrcLevel);
+
+    USE_SHADER(bloomUp);
+    SET_SAMPLER(bloomUp, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
 
     return true;
 }
@@ -1285,6 +1285,18 @@ bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_post_dof_t, post, dof);
+    LOAD_SHADER(dof, SCREEN_VERT, DOF_FRAG);
+
+    USE_SHADER(dof);
+    SET_SAMPLER(dof, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+    SET_SAMPLER(dof, uBlurTex, R3D_SHADER_SAMPLER_BUFFER_DOF);
+
+    return true;
+}
+
 bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_post_bloom_t, post, bloom);
@@ -1297,18 +1309,6 @@ bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(bloom, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(bloom, uBloomTex, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
-
-    return true;
-}
-
-bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER(r3d_shader_post_dof_t, post, dof);
-    LOAD_SHADER(dof, SCREEN_VERT, DOF_FRAG);
-
-    USE_SHADER(dof);
-    SET_SAMPLER(dof, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
-    SET_SAMPLER(dof, uBlurTex, R3D_SHADER_SAMPLER_BUFFER_DOF);
 
     return true;
 }
@@ -1511,11 +1511,11 @@ void r3d_shader_quit()
     UNLOAD_SHADER(prepare.ssgi);
     UNLOAD_SHADER(prepare.ssrInDown);
     UNLOAD_SHADER(prepare.ssr);
-    UNLOAD_SHADER(prepare.bloomDown);
-    UNLOAD_SHADER(prepare.bloomUp);
     UNLOAD_SHADER(prepare.dofCoc);
     UNLOAD_SHADER(prepare.dofDown);
     UNLOAD_SHADER(prepare.dofBlur);
+    UNLOAD_SHADER(prepare.bloomDown);
+    UNLOAD_SHADER(prepare.bloomUp);
     UNLOAD_SHADERS(prepare.smaaEdgeDetection);
     UNLOAD_SHADERS(prepare.smaaBlendingWeights);
     UNLOAD_SHADER(prepare.cubemapFromEquirectangular);
@@ -1538,8 +1538,8 @@ void r3d_shader_quit()
     UNLOAD_SHADER(deferred.compose);
 
     UNLOAD_SHADER(post.fog);
-    UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.dof);
+    UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.output);
     UNLOAD_SHADERS(post.fxaa);
     UNLOAD_SHADERS(post.smaa);
