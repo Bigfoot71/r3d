@@ -15,12 +15,12 @@
 // PUBLIC API
 // ========================================
 
-R3DAPI R3D_Environment* R3D_GetEnvironment(void)
+R3D_Environment* R3D_GetEnvironment(void)
 {
 	return &R3D.environment;
 }
 
-R3DAPI void R3D_SetEnvironment(const R3D_Environment* env)
+void R3D_SetEnvironment(const R3D_Environment* env)
 {
 	R3D.environment = *env;
 }

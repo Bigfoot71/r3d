@@ -10,9 +10,12 @@
 #include <r3d_config.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <string.h>
 #include <glad.h>
 
-#include "./importer/r3d_importer_internal.h"
+#ifdef R3D_SUPPORT_ASSIMP
+#   include "./importer/r3d_importer_internal.h"
+#endif
 
 // ========================================
 // PUBLIC API
@@ -22,11 +25,17 @@ R3D_Skeleton R3D_LoadSkeleton(const char* filePath)
 {
     R3D_Skeleton skeleton = {0};
 
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
     if (importer == NULL) return skeleton;
 
     skeleton = R3D_LoadSkeletonFromImporter(importer);
     R3D_UnloadImporter(importer);
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load '%s': built without Assimp support", filePath);
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return skeleton;
 }
@@ -35,11 +44,22 @@ R3D_Skeleton R3D_LoadSkeletonFromMemory(const void* data, unsigned int size, con
 {
     R3D_Skeleton skeleton = {0};
 
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
     if (importer == NULL) return skeleton;
 
     skeleton = R3D_LoadSkeletonFromImporter(importer);
     R3D_UnloadImporter(importer);
+
+#else
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load '%s' from memory: built without Assimp support", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load asset from memory: built without Assimp support");
+    }
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return skeleton;
 }
@@ -48,8 +68,9 @@ R3D_Skeleton R3D_LoadSkeletonFromImporter(const R3D_Importer* importer)
 {
     R3D_Skeleton skeleton = {0};
 
-    if (!importer) {
-        R3D_TRACELOG(LOG_ERROR, "Cannot load skeleton from NULL importer");
+#ifdef R3D_SUPPORT_ASSIMP
+    if (importer == NULL) {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load skeleton from importer: NULL importer");
         return skeleton;
     }
 
@@ -59,6 +80,11 @@ R3D_Skeleton R3D_LoadSkeletonFromImporter(const R3D_Importer* importer)
     else {
         R3D_TRACELOG(LOG_WARNING, "Failed to load skeleton: '%s'", importer->name, skeleton.boneCount);
     }
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load skeleton from importer: built without Assimp support");
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return skeleton;
 }

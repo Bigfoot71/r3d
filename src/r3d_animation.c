@@ -10,9 +10,12 @@
 #include <r3d_config.h>
 #include <raymath.h>
 #include <string.h>
+#include <stdlib.h>
 #include <glad.h>
 
-#include "./importer/r3d_importer_internal.h"
+#ifdef R3D_SUPPORT_ASSIMP
+#   include "./importer/r3d_importer_internal.h"
+#endif
 
 // ========================================
 // PUBLIC API
@@ -20,22 +23,43 @@
 
 R3D_AnimationLib R3D_LoadAnimationLib(const char* filePath)
 {
+    R3D_AnimationLib animLib = {0};
+
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporter(filePath, 0);
     if (importer == NULL) return (R3D_AnimationLib) {0};
 
-    R3D_AnimationLib animLib = R3D_LoadAnimationLibFromImporter(importer);
+    animLib = R3D_LoadAnimationLibFromImporter(importer);
     R3D_UnloadImporter(importer);
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load '%s': built without Assimp support", filePath);
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return animLib;
 }
 
 R3D_AnimationLib R3D_LoadAnimationLibFromMemory(const void* data, unsigned int size, const char* hint)
 {
+    R3D_AnimationLib animLib = {0};
+
+#ifdef R3D_SUPPORT_ASSIMP
     R3D_Importer* importer = R3D_LoadImporterFromMemory(data, size, hint, 0);
     if (importer == NULL) return (R3D_AnimationLib) {0};
 
-    R3D_AnimationLib animLib = R3D_LoadAnimationLibFromImporter(importer);
+    animLib = R3D_LoadAnimationLibFromImporter(importer);
     R3D_UnloadImporter(importer);
+
+#else
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load '%s' from memory: built without Assimp support", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load asset from memory: built without Assimp support");
+    }
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return animLib;
 }
@@ -44,8 +68,9 @@ R3D_AnimationLib R3D_LoadAnimationLibFromImporter(const R3D_Importer* importer)
 {
     R3D_AnimationLib animLib = {0};
 
+#ifdef R3D_SUPPORT_ASSIMP
     if (!importer) {
-        R3D_TRACELOG(LOG_ERROR, "Cannot load animation library from NULL importer");
+        R3D_TRACELOG(LOG_WARNING, "Cannot load animation library from importer: NULL importer");
         return animLib;
     }
 
@@ -55,6 +80,11 @@ R3D_AnimationLib R3D_LoadAnimationLibFromImporter(const R3D_Importer* importer)
     else {
         R3D_TRACELOG(LOG_WARNING, "Failed to load animation library: '%s'", importer->name);
     }
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load animation library from importer: built without Assimp support");
+
+#endif // R3D_SUPPORT_ASSIMP
 
     return animLib;
 }

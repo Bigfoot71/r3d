@@ -8,6 +8,7 @@
 
 #include "./r3d_image.h"
 
+#include <r3d_config.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -166,7 +167,7 @@ static void get_texture_format(int format, bool srgb, GLenum* glInternalFormat, 
     case RL_PIXELFORMAT_COMPRESSED_DXT1_RGBA: *glInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
     case RL_PIXELFORMAT_COMPRESSED_DXT3_RGBA: *glInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
     case RL_PIXELFORMAT_COMPRESSED_DXT5_RGBA: *glInternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
-    default: TRACELOG(RL_LOG_WARNING, "R3D: Current format not supported (%i)", format); break;
+    default: R3D_TRACELOG(RL_LOG_WARNING, "Current format not supported (%i)", format); break;
     }
 
     if (srgb) {

@@ -6,10 +6,16 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "./importer/r3d_importer_internal.h"
-#include "./common/r3d_helper.h"
-#include <assimp/cimport.h>
+#include <r3d/r3d_importer.h>
 #include <r3d_config.h>
+#include <raylib.h>
+#include <stddef.h>
+
+#ifdef R3D_SUPPORT_ASSIMP
+#   include "./importer/r3d_importer_internal.h"
+#   include "./common/r3d_helper.h"
+#   include <assimp/cimport.h>
+#endif
 
 // ========================================
 // INTERNAL CONSTANTS
@@ -42,6 +48,8 @@
 // ========================================
 // PRIVATE FUNCTIONS
 // ========================================
+
+#ifdef R3D_SUPPORT_ASSIMP
 
 static void determine_importer_name(char* outName, size_t outSize, const struct aiScene* scene, const char* hint)
 {
@@ -123,12 +131,15 @@ static void build_bone_mapping(R3D_Importer* importer)
     }
 }
 
+#endif // R3D_SUPPORT_ASSIMP
+
 // ========================================
 // PUBLIC FUNCTIONS
 // ========================================
 
 R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
 {
+#ifdef R3D_SUPPORT_ASSIMP
     enum aiPostProcessSteps aiFlags = POST_PROCESS_PRESET_FAST;
     if (BIT_TEST(flags, R3D_IMPORT_QUALITY)) {
         aiFlags = POST_PROCESS_PRESET_QUALITY;
@@ -152,10 +163,17 @@ R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
     R3D_TRACELOG(LOG_INFO, "Importer loaded successfully: '%s'", filePath);
 
     return importer;
+
+#else
+    R3D_TRACELOG(LOG_WARNING, "Cannot load '%s': built without Assimp support", filePath);
+    return NULL;
+
+#endif // R3D_SUPPORT_ASSIMP
 }
 
 R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, const char* hint, R3D_ImportFlags flags)
 {
+#ifdef R3D_SUPPORT_ASSIMP
     enum aiPostProcessSteps aiFlags = POST_PROCESS_PRESET_FAST;
     if (BIT_TEST(flags, R3D_IMPORT_QUALITY)) {
         aiFlags = POST_PROCESS_PRESET_QUALITY;
@@ -187,10 +205,23 @@ R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, co
     }
 
     return importer;
+
+#else
+    if (hint && hint[0] != '\0') {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load '%s' from memory: built without Assimp support", hint);
+    }
+    else {
+        R3D_TRACELOG(LOG_WARNING, "Cannot load asset from memory: built without Assimp support");
+    }
+
+    return NULL;
+
+#endif // R3D_SUPPORT_ASSIMP
 }
 
 void R3D_UnloadImporter(R3D_Importer* importer)
 {
+#ifdef R3D_SUPPORT_ASSIMP
     if (!importer) return;
 
     HASH_CLEAR(hh, importer->bones.head);
@@ -201,4 +232,9 @@ void R3D_UnloadImporter(R3D_Importer* importer)
 
     aiReleaseImport(importer->scene);
     RL_FREE(importer);
+
+#else
+    (void)importer;
+
+#endif // R3D_SUPPORT_ASSIMP
 }
