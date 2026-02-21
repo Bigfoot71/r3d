@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_utils.h>
+#include <r3d_config.h>
 
 #ifdef R3D_SUPPORT_ASSIMP
 #   include "./importer/r3d_importer_internal.h"
