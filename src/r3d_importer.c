@@ -58,18 +58,18 @@ static void determine_importer_name(char* outName, size_t outSize, const struct 
                 const char* filename = strrchr(str->data, '/');
                 if (!filename) filename = strrchr(str->data, '\\');
                 filename = filename ? filename + 1 : str->data;
-                snprintf(outName, outSize, "memory data (%s)", filename);
+                r3d_string_format(outName, outSize, "memory data (%s)", filename);
                 return;
             }
         }
     }
 
     if (hint && hint[0] != '\0') {
-        snprintf(outName, outSize, "memory data (%s)", hint);
+        r3d_string_format(outName, outSize, "memory data (%s)", hint);
         return;
     }
 
-    snprintf(outName, outSize, "memory data");
+    r3d_string_format(outName, outSize, "memory data");
 }
 
 static void build_bone_mapping(R3D_Importer* importer)

@@ -84,9 +84,7 @@ static bool load_channel(R3D_AnimationChannel* channel, const R3D_Importer* impo
     channel->boneIndex = r3d_importer_get_bone_index(importer, boneName);
 
     if (channel->boneIndex < 0) {
-        R3D_TRACELOG(LOG_WARNING,
-                 "Bone '%s' from animation not found in skeleton",
-                 boneName);
+        R3D_TRACELOG(LOG_WARNING, "Bone '%s' from animation not found in skeleton", boneName);
         return false;
     }
 

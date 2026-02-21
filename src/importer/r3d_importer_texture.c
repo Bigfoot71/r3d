@@ -250,7 +250,7 @@ static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer*
 
         if (aiTex->mHeight == 0) {
             char formatHint[sizeof(aiTex->achFormatHint) + 2] = {0};
-            snprintf(formatHint, sizeof(formatHint), ".%.*s", (int)sizeof(aiTex->achFormatHint), aiTex->achFormatHint);
+            r3d_string_format(formatHint, sizeof(formatHint), ".%.*s", (int)sizeof(aiTex->achFormatHint), aiTex->achFormatHint);
 
             *outImage = LoadImageFromMemory(
                 formatHint,

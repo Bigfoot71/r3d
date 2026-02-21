@@ -83,16 +83,18 @@ int r3d_get_cpu_count(void);
 // INLINED FUNCTIONS
 // ========================================
 
-static inline void r3d_string_format(char *dst, size_t dstSize, const char *fmt, ...)
+static inline int r3d_string_format(char* dst, size_t dstSize, const char* fmt, ...)
 {
+    if (!dst || dstSize == 0) return -1;
+
     va_list args;
     va_start(args, fmt);
     int written = vsnprintf(dst, dstSize, fmt, args);
     va_end(args);
 
-    if (written < 0 || (size_t)written >= dstSize) {
-        dst[dstSize - 1] = '\0';
-    }
+    dst[dstSize - 1] = '\0';
+
+    return written;
 }
 
 static inline int32_t r3d_get_mip_levels_1d(int32_t s)
