@@ -256,6 +256,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/common/r3d_image.c"
     "${R3D_ROOT_PATH}/src/common/r3d_pass.c"
     # Modules
+    "${R3D_ROOT_PATH}/src/modules/r3d_animtree.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_texture.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_target.c"
     "${R3D_ROOT_PATH}/src/modules/r3d_shader.c"
@@ -265,6 +266,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_env.c"
     # Core
     "${R3D_ROOT_PATH}/src/r3d_animation_player.c"
+    "${R3D_ROOT_PATH}/src/r3d_animation_tree.c"
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"
