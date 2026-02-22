@@ -126,6 +126,11 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ^
             -DBUILD_SHARED_LIBS=OFF ^
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded ^
+            -DCMAKE_C_FLAGS_RELEASE="/O2 /Oi /GL /Gy /DNDEBUG" ^
+            -DCMAKE_CXX_FLAGS_RELEASE="/O2 /Oi /GL /Gy /DNDEBUG" ^
+            -DCMAKE_EXE_LINKER_FLAGS_RELEASE="/LTCG /OPT:REF /OPT:ICF" ^
+            -DCMAKE_STATIC_LINKER_FLAGS_RELEASE="/LTCG" ^
             -DR3D_RAYLIB_VENDORED=ON ^
             -DR3D_ASSIMP_VENDORED=ON ^
             -DR3D_BUILD_EXAMPLES=ON ^
