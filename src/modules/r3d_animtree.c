@@ -360,6 +360,7 @@ static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex target
     r3d_stmedge_t** open_paths   = node->path.open;
     r3d_stmedge_t** next_paths   = node->path.next;
     bool*           marked       = node->path.mark;
+    memset(marked, false, node->states_cnt * sizeof(*node->path.mark));
     marked[node->active_idx] = true;
 
     int paths_cnt = expand_path(node, open_paths, open_paths, 0, 0,
