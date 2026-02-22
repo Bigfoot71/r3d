@@ -58,7 +58,7 @@ typedef struct {
 typedef struct {
     unsigned int    out_cnt;
     unsigned int    max_out;
-    r3d_stmedge_t** out_list; // TODO: change to dynamic array
+    r3d_stmedge_t** out_list;
     r3d_stmedge_t*  active_in;
 } r3d_stmstate_t;
 
@@ -120,10 +120,10 @@ struct r3d_animtree_stm {
     R3D_AnimationStmIndex  active_idx;
     R3D_AnimationTreeNode* node_list;
     r3d_stmedge_t*         edge_list;
-    r3d_stmstate_t*        state_list; // TODO: change to dynamic array
+    r3d_stmstate_t*        state_list;
     r3d_stmvisit_t*        visit_list;
     struct {
-        r3d_stmedge_t** edges; // TODO: change to dynamic array
+        r3d_stmedge_t** edges;
         unsigned int    idx;
         unsigned int    len;
         r3d_stmedge_t** open;

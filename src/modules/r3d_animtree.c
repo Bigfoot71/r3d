@@ -1090,8 +1090,6 @@ void r3d_animtree_update(R3D_AnimationTree* atree, float elapsed_time,
     int                  bone_cnt = p->skeleton.boneCount;
     if(elapsed_time < 0.0f) return;
 
-    // R3D_TRACELOG(LOG_WARNING, "ANIMTREE UPDATE START %f", elapsed_time);
-
     bool succ;
     succ = anode_update(atree, *atree->rootNode, elapsed_time, NULL);
     if(succ)
