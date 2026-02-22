@@ -126,6 +126,7 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=ccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ^
             -DBUILD_SHARED_LIBS=OFF ^
+            -DASSIMP_INSTALL_PDB=OFF ^
             -DR3D_RAYLIB_VENDORED=ON ^
             -DR3D_ASSIMP_VENDORED=ON ^
             -DR3D_BUILD_EXAMPLES=ON ^
