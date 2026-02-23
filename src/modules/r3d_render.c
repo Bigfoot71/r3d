@@ -21,7 +21,6 @@
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
 #include "../common/r3d_hash.h"
-#include "raylib.h"
 
 // ========================================
 // MODULE STATE
