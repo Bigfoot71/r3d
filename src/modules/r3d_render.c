@@ -21,6 +21,7 @@
 #include "../common/r3d_frustum.h"
 #include "../common/r3d_math.h"
 #include "../common/r3d_hash.h"
+#include "raylib.h"
 
 // ========================================
 // MODULE STATE
@@ -124,13 +125,13 @@ void load_shape_cube(r3d_render_shape_t* shape)
 // INTERNAL INSTANCES FUNCTIONS
 // ========================================
 
-static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT], R3D_InstanceFlags flags)
+static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT], R3D_InstanceFlags flags, int offset)
 {
     if (BIT_TEST(flags, R3D_INSTANCE_POSITION)) {
         glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
         glEnableVertexAttribArray(10);
         glVertexAttribDivisor(10, 1);
-        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)(offset * sizeof(Vector3)));
     }
     else {
         glDisableVertexAttribArray(10);
@@ -140,7 +141,7 @@ static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT],
         glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
         glEnableVertexAttribArray(11);
         glVertexAttribDivisor(11, 1);
-        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), 0);
+        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), (void*)(offset * sizeof(Quaternion)));
     }
     else {
         glDisableVertexAttribArray(11);
@@ -150,7 +151,7 @@ static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT],
         glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
         glEnableVertexAttribArray(12);
         glVertexAttribDivisor(12, 1);
-        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), 0);
+        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)(offset * sizeof(Vector3)));
     }
     else {
         glDisableVertexAttribArray(12);
@@ -160,7 +161,7 @@ static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT],
         glBindBuffer(GL_ARRAY_BUFFER, buffers[3]);
         glEnableVertexAttribArray(13);
         glVertexAttribDivisor(13, 1);
-        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), 0);
+        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), (void*)(offset * sizeof(Color)));
     }
     else {
         glDisableVertexAttribArray(13);
@@ -170,7 +171,7 @@ static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT],
         glBindBuffer(GL_ARRAY_BUFFER, buffers[4]);
         glEnableVertexAttribArray(14);
         glVertexAttribDivisor(14, 1);
-        glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), 0);
+        glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)(offset * sizeof(Vector4)));
     }
     else {
         glDisableVertexAttribArray(14);
@@ -853,7 +854,7 @@ void r3d_render_draw_instanced(const r3d_render_call_t* call)
     const r3d_render_group_t* group = r3d_render_get_call_group(call);
     const R3D_InstanceBuffer* instances = &group->instances;
 
-    enable_instances(group->instances.buffers, group->instances.flags);
+    enable_instances(group->instances.buffers, group->instances.flags, group->instanceOffset);
 
     if (elemCount == 0) {
         glDrawArraysInstanced(primitive, 0, vertCount, group->instanceCount);

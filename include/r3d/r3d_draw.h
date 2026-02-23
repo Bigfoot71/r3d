@@ -102,20 +102,37 @@ R3DAPI void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transfo
  *
  * Draws multiple instances using the provided instance buffer.
  * Does nothing if the number of instances is <= 0.
- * 
+ *
  * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count);
 
 /**
- * @brief Queues an instanced mesh draw command with an additional transform.
+ * @brief Queues an instanced mesh draw command with an instance range.
  *
- * Does nothing if the number of instances is <= 0.
+ * Draws 'count' instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
+ *
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int offset, int count);
+
+/**
+ * @brief Queues an instanced mesh draw command with an instance range and an additional transform.
+ *
+ * Draws 'count' instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
  * The transform is applied to all instances.
  *
  * The command is executed during R3D_End().
  */
-R3DAPI void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform);
+R3DAPI void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int offset, int count, Matrix transform);
 
 /**
  * @brief Queues a model draw command with position and uniform scale.
@@ -143,20 +160,37 @@ R3DAPI void R3D_DrawModelPro(R3D_Model model, Matrix transform);
  *
  * Draws multiple instances using the provided instance buffer.
  * Does nothing if the number of instances is <= 0.
- * 
+ *
  * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int count);
 
 /**
- * @brief Queues an instanced model draw command with an additional transform.
+ * @brief Queues an instanced model draw command with an instance range.
  *
- * Does nothing if the number of instances is <= 0.
+ * Draws 'count' instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
+ *
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int offset, int count);
+
+/**
+ * @brief Queues an instanced model draw command with an instance range and an additional transform.
+ *
+ * Draws 'count' instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
  * The transform is applied to all instances.
  *
  * The command is executed during R3D_End().
  */
-R3DAPI void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform);
+R3DAPI void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, int offset, int count, Matrix transform);
 
 /**
  * @brief Queues an animated model draw command.
@@ -188,20 +222,37 @@ R3DAPI void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player
  *
  * Draws multiple animated instances using the provided instance buffer.
  * Does nothing if the number of instances is <= 0.
- * 
+ *
  * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count);
 
 /**
- * @brief Queues an instanced animated model draw command with an additional transform.
+ * @brief Queues an instanced animated model draw command with an instance range.
  *
- * Does nothing if the number of instances is <= 0.
+ * Draws 'count' animated instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
+ *
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int offset, int count);
+
+/**
+ * @brief Queues an instanced animated model draw command with an instance range and an additional transform.
+ *
+ * Draws 'count' animated instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
  * The transform is applied to all instances.
  *
  * The command is executed during R3D_End().
  */
-R3DAPI void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform);
+R3DAPI void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int offset, int count, Matrix transform);
 
 /**
  * @brief Queues a decal draw command with position and uniform scale.
@@ -229,20 +280,37 @@ R3DAPI void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform);
  *
  * Draws multiple instances using the provided instance buffer.
  * Does nothing if the number of instances is <= 0.
- * 
+ *
  * The command is executed during R3D_End().
  */
 R3DAPI void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count);
 
 /**
- * @brief Queues an instanced decal draw command with an additional transform.
+ * @brief Queues an instanced decal draw command with an instance range.
  *
- * Does nothing if the number of instances is <= 0.
- * The transform is applied to all instances.
- * 
+ * Draws 'count' instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
+ *
  * The command is executed during R3D_End().
  */
-R3DAPI void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int count, Matrix transform);
+R3DAPI void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int offset, int count);
+
+/**
+ * @brief Queues an instanced decal draw command with an instance range and an additional transform.
+ *
+ * Draws 'count' instances starting at 'offset' in the instance buffer.
+ * Both 'offset' and 'count' are clamped to stay within [0, instances.capacity]:
+ *   - offset is clamped to [0, capacity]
+ *   - count is clamped to [0, capacity - offset]
+ * Does nothing if the resulting count is <= 0.
+ * The transform is applied to all instances.
+ *
+ * The command is executed during R3D_End().
+ */
+R3DAPI void R3D_DrawDecalInstancedPro(R3D_Decal decal, R3D_InstanceBuffer instances, int offset, int count, Matrix transform);
 
 #ifdef __cplusplus
 } // extern "C"
