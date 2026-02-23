@@ -261,7 +261,7 @@ static bool stm_update_edge(const R3D_AnimationTree* atree, r3d_animtree_stm_t* 
         *done            = FloatEquals(edge->end_weight, 1.0f);
     } else {
         edge->end_weight = 1.0f;
-        *consumed_time   = 0.0f;
+        *consumed_time   = xfade;
         *done            = true;
     }
 
