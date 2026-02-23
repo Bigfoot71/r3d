@@ -300,10 +300,15 @@ void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 
 void R3D_DrawMeshInstanced(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count)
 {
-    R3D_DrawMeshInstancedEx(mesh, material, instances, count, R3D_MATRIX_IDENTITY);
+    R3D_DrawMeshInstancedPro(mesh, material, instances, 0, count, R3D_MATRIX_IDENTITY);
 }
 
-void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int count, Matrix transform)
+void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int offset, int count)
+{
+    R3D_DrawMeshInstancedPro(mesh, material, instances, offset, count, R3D_MATRIX_IDENTITY);
+}
+
+void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int offset, int count, Matrix transform)
 {
     if (count <= 0) return;
 
@@ -314,7 +319,8 @@ void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceB
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
+    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
 
     r3d_render_group_push(&drawGroup);
 
@@ -366,10 +372,15 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
 
 void R3D_DrawModelInstanced(R3D_Model model, R3D_InstanceBuffer instances, int count)
 {
-    R3D_DrawModelInstancedEx(model, instances, count, R3D_MATRIX_IDENTITY);
+    R3D_DrawModelInstancedPro(model, instances, 0, count, R3D_MATRIX_IDENTITY);
 }
 
-void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int count, Matrix transform)
+void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int offset, int count)
+{
+    R3D_DrawModelInstancedPro(model, instances, offset, count, R3D_MATRIX_IDENTITY);
+}
+
+void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, int offset, int count, Matrix transform)
 {
     if (count <= 0) return;
 
@@ -377,7 +388,8 @@ void R3D_DrawModelInstancedEx(R3D_Model model, R3D_InstanceBuffer instances, int
     drawGroup.transform = transform;
     drawGroup.skinTexture = model.skeleton.skinTexture;
     drawGroup.instances = instances;
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
+    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
 
     r3d_render_group_push(&drawGroup);
 
@@ -440,17 +452,23 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
 
 void R3D_DrawAnimatedModelInstanced(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count)
 {
-    R3D_DrawAnimatedModelInstancedEx(model, player, instances, count, R3D_MATRIX_IDENTITY);
+    R3D_DrawAnimatedModelInstancedPro(model, player, instances, 0, count, R3D_MATRIX_IDENTITY);
 }
 
-void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int count, Matrix transform)
+void R3D_DrawAnimatedModelInstancedEx(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int offset, int count)
+{
+    R3D_DrawAnimatedModelInstancedPro(model, player, instances, offset, count, R3D_MATRIX_IDENTITY);
+}
+
+void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer player, R3D_InstanceBuffer instances, int offset, int count, Matrix transform)
 {
     if (count <= 0) return;
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
+    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
 
     drawGroup.skinTexture = (player.skinTexture > 0)
         ? player.skinTexture : model.skeleton.skinTexture;
@@ -506,10 +524,15 @@ void R3D_DrawDecalPro(R3D_Decal decal, Matrix transform)
 
 void R3D_DrawDecalInstanced(R3D_Decal decal, R3D_InstanceBuffer instances, int count)
 {
-    R3D_DrawDecalInstancedEx(decal, instances, count, R3D_MATRIX_IDENTITY);
+    R3D_DrawDecalInstancedPro(decal, instances, 0, count, R3D_MATRIX_IDENTITY);
 }
 
-void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int count, Matrix transform)
+void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int offset, int count)
+{
+    R3D_DrawDecalInstancedPro(decal, instances, offset, count, R3D_MATRIX_IDENTITY);
+}
+
+void R3D_DrawDecalInstancedPro(R3D_Decal decal, R3D_InstanceBuffer instances, int offset, int count, Matrix transform)
 {
     if (count <= 0) return;
 
@@ -519,7 +542,8 @@ void R3D_DrawDecalInstancedEx(R3D_Decal decal, R3D_InstanceBuffer instances, int
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity);
+    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
 
     r3d_render_group_push(&drawGroup);
 
