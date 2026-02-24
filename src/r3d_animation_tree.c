@@ -1156,17 +1156,20 @@ static void animtree_travel(r3d_animtree_stm_t* node, R3D_AnimationStmIndex targ
 // PUBLIC API
 // ========================================
 
-R3D_AnimationTree R3D_LoadAnimationTree(R3D_AnimationPlayer player, int maxSize) {
+R3D_AnimationTree R3D_LoadAnimationTree(R3D_AnimationPlayer player, int maxSize)
+{
     return R3D_LoadAnimationTreePro(player, maxSize, -1, NULL, NULL);
 }
 
-R3D_AnimationTree R3D_LoadAnimationTreeEx(R3D_AnimationPlayer player, int maxSize, int rootBone) {
+R3D_AnimationTree R3D_LoadAnimationTreeEx(R3D_AnimationPlayer player, int maxSize, int rootBone)
+{
     return R3D_LoadAnimationTreePro(player, maxSize, rootBone, NULL, NULL);
 }
 
 R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player, int maxSize, int rootBone,
                                            R3D_AnimationTreeCallback updateCallback,
-                                           void* updateUserData) {
+                                           void* updateUserData)
+{
     R3D_AnimationTree tree = {0};
     tree.player          = player;
     tree.nodePool        = RL_MALLOC(maxSize * sizeof(*tree.nodePool));
@@ -1177,7 +1180,8 @@ R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player, int maxSi
     return tree;
 }
 
-void R3D_UnloadAnimationTree(R3D_AnimationTree tree) {
+void R3D_UnloadAnimationTree(R3D_AnimationTree tree)
+{
     int poolSize = tree.nodePoolSize;
     for(int i = 0; i < poolSize; i++) {
         R3D_AnimationTreeNode node = tree.nodePool[i];
@@ -1187,21 +1191,25 @@ void R3D_UnloadAnimationTree(R3D_AnimationTree tree) {
     RL_FREE(tree.nodePool);
 }
 
-void R3D_UpdateAnimationTree(R3D_AnimationTree* tree, float dt) {
+void R3D_UpdateAnimationTree(R3D_AnimationTree* tree, float dt)
+{
     R3D_UpdateAnimationTreeEx(tree, dt, NULL, NULL);
 }
 
 void R3D_UpdateAnimationTreeEx(R3D_AnimationTree* tree, float dt,
-                               Transform* rootMotion, Transform* rootDistance) {
+                               Transform* rootMotion, Transform* rootDistance)
+{
     animtree_update(tree, dt, rootMotion, rootDistance);
 }
 
-void R3D_AddRootAnimationNode(R3D_AnimationTree* tree, R3D_AnimationTreeNode* node) {
+void R3D_AddRootAnimationNode(R3D_AnimationTree* tree, R3D_AnimationTreeNode* node)
+{
     tree->rootNode = node;
 }
 
 bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* node,
-                          unsigned int inputIdx) {
+                          unsigned int inputIdx)
+{
     switch(parent->base->type) {
     case R3D_ANIMTREE_ANIM:
     case R3D_ANIMTREE_STM:
@@ -1217,101 +1225,122 @@ bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* 
 }
 
 R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree,
-                                               R3D_AnimationNodeParams params) {
+                                               R3D_AnimationNodeParams params)
+{
     return animtree_anim_create(tree, params);
 }
 
 R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree,
-                                            R3D_Blend2NodeParams params) {
+                                            R3D_Blend2NodeParams params)
+{
     return animtree_blend2_create(tree, params);
 }
 
 R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree,
-                                          R3D_Add2NodeParams params) {
+                                          R3D_Add2NodeParams params)
+{
     return animtree_add2_create(tree, params);
 }
 
 R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, unsigned int inputCount,
-                                            R3D_SwitchNodeParams params) {
+                                            R3D_SwitchNodeParams params)
+{
     return animtree_switch_create(tree, inputCount, params);
 }
 
 R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree, unsigned int statesCount,
-                                         unsigned int edgesCount) {
+                                         unsigned int edgesCount)
+{
     return animtree_stm_create(tree, statesCount, edgesCount, false);
 }
 
 R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree, unsigned int statesCount,
-                                           unsigned int edgesCount, bool enableTravel) {
+                                           unsigned int edgesCount, bool enableTravel)
+{
     return animtree_stm_create(tree, statesCount, edgesCount, enableTravel);
 }
 
 R3D_AnimationTreeNode* R3D_CreateStmXNode(R3D_AnimationTree* tree,
-                                          R3D_AnimationTreeNode* nestedNode) {
+                                          R3D_AnimationTreeNode* nestedNode)
+{
     return animtree_stm_x_create(tree, *nestedNode);
 }
 
 R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNode,
                                              R3D_AnimationTreeNode* stateNode,
-                                             unsigned int outEdgesCount) {
+                                             unsigned int outEdgesCount)
+{
     return amintree_state_create(stmNode->stm, *stateNode, outEdgesCount);
 }
 
 R3D_AnimationStmIndex R3D_CreateStmNodeEdge(R3D_AnimationTreeNode* stmNode,
                                             R3D_AnimationStmIndex beginStateIdx,
                                             R3D_AnimationStmIndex endStateIdx,
-                                            R3D_StmEdgeParams params) {
+                                            R3D_StmEdgeParams params)
+{
     return amintree_edge_create(stmNode->stm, beginStateIdx, endStateIdx, params);
 }
 
-void R3D_SetAnimationNodeParams(R3D_AnimationTreeNode* node, R3D_AnimationNodeParams params) {
+void R3D_SetAnimationNodeParams(R3D_AnimationTreeNode* node, R3D_AnimationNodeParams params)
+{
     node->anim->params = params;
 }
 
-R3D_AnimationNodeParams R3D_GetAnimationNodeParams(R3D_AnimationTreeNode* node) {
+R3D_AnimationNodeParams R3D_GetAnimationNodeParams(R3D_AnimationTreeNode* node)
+{
     return node->anim->params;
 }
 
-void R3D_SetBlend2NodeParams(R3D_AnimationTreeNode* node, R3D_Blend2NodeParams params) {
+void R3D_SetBlend2NodeParams(R3D_AnimationTreeNode* node, R3D_Blend2NodeParams params)
+{
     node->bln2->params = params;
 }
 
-R3D_Blend2NodeParams R3D_GetBlend2NodeParams(R3D_AnimationTreeNode* node) {
+R3D_Blend2NodeParams R3D_GetBlend2NodeParams(R3D_AnimationTreeNode* node)
+{
     return node->bln2->params;
 }
 
-void R3D_SetAdd2NodeParams(R3D_AnimationTreeNode* node, R3D_Add2NodeParams params) {
+void R3D_SetAdd2NodeParams(R3D_AnimationTreeNode* node, R3D_Add2NodeParams params)
+{
     node->add2->params = params;
 }
 
-R3D_Add2NodeParams R3D_GetAdd2NodeParams(R3D_AnimationTreeNode* node) {
+R3D_Add2NodeParams R3D_GetAdd2NodeParams(R3D_AnimationTreeNode* node)
+{
     return node->add2->params;
 }
 
-void R3D_SetSwitchNodeParams(R3D_AnimationTreeNode* node, R3D_SwitchNodeParams params) {
+void R3D_SetSwitchNodeParams(R3D_AnimationTreeNode* node, R3D_SwitchNodeParams params)
+{
     node->swch->params = params;
 }
 
-R3D_SwitchNodeParams R3D_GetSwitchNodeParams(R3D_AnimationTreeNode* node) {
+R3D_SwitchNodeParams R3D_GetSwitchNodeParams(R3D_AnimationTreeNode* node)
+{
     return node->swch->params;
 }
 
 void R3D_SetStmNodeEdgeParams(R3D_AnimationTreeNode* node, R3D_AnimationStmIndex edgeIndex,
-                              R3D_StmEdgeParams params) {
+                              R3D_StmEdgeParams params)
+{
     node->stm->edge_list[edgeIndex].params = params;
 }
 
 R3D_StmEdgeParams R3D_GetStmNodeEdgeParams(R3D_AnimationTreeNode* node,
-                                           R3D_AnimationStmIndex edgeIndex) {
+                                           R3D_AnimationStmIndex edgeIndex)
+{
     return node->stm->edge_list[edgeIndex].params;
 }
 
-void R3D_TravelToStmState(R3D_AnimationTreeNode* node, R3D_AnimationStmIndex targetStateIdx) {
+void R3D_TravelToStmState(R3D_AnimationTreeNode* node, R3D_AnimationStmIndex targetStateIdx)
+{
     animtree_travel(node->stm, targetStateIdx);
 }
 
 R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton, const char* boneNames[],
-                                 unsigned int boneNameCount) {
+                                 unsigned int boneNameCount)
+{
     const R3D_BoneInfo* bones  = skeleton->bones;
     const int           bCount = skeleton->boneCount;
     R3D_BoneMask        bMask  = {.boneCount = bCount};
