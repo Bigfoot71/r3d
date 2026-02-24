@@ -500,7 +500,9 @@ static bool anode_update_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_
         else {
             float t_clamp = CLAMP(s->currentTime, 0.0f, duration);
             float t_delta = t_clamp - s->currentTime;
-            elapsed_time  *= 1.0f - t_delta/t_incr;
+            elapsed_time   = (t_incr > 0.0f ?
+                              elapsed_time * (1.0f - t_delta/t_incr) :
+                              elapsed_time);
             s->currentTime = t_clamp;
         }
         node->root.loops = (int)(elapsed_time / duration);
@@ -568,8 +570,7 @@ static bool anode_update_switch(const R3D_AnimationTree* atree, r3d_animtree_swi
     }
 
     float w_sum = 0.0f;
-    for(int i = 0; i < in_count; i++)
-        w_sum += node->in_weights[i];
+    for(int i = 0; i < in_count; i++) w_sum += node->in_weights[i];
     node->weights_isum = 1.0f / w_sum;
     return true;
 }
@@ -775,6 +776,9 @@ static bool anode_eval_switch(const R3D_AnimationTree* atree, r3d_animtree_switc
     rminfo_t  rm    = {0};
     Transform in_tr = {0};
     for(int i = 0; i < in_count; i++) {
+        float w = node->in_weights[i] * w_isum;
+        if(FloatEquals(w, 0.0f)) continue;
+
         rminfo_t  rm_i;
         Transform in_i = {0};
         bool      succ = anode_eval(atree, node->in_list[i], bone_idx, &in_i,
@@ -783,8 +787,6 @@ static bool anode_eval_switch(const R3D_AnimationTree* atree, r3d_animtree_switc
             R3D_TRACELOG(LOG_WARNING, "Failed to eval switch node: input %d failed", i);
             return false;
         }
-
-        float w = node->in_weights[i] * w_isum;
         in_tr = r3d_anim_transform_addx_v(in_tr, in_i, w);
 
         if(is_rm)
@@ -975,9 +977,11 @@ static R3D_AnimationTreeNode* animtree_switch_create(R3D_AnimationTree* atree,
 
     r3d_animtree_switch_t* swch = anode->swch;
     swch->in_list    = RL_MALLOC(in_cnt * sizeof(*swch->in_list));
-    swch->in_weights = RL_MALLOC(in_cnt * sizeof(*swch->in_weights));
+    swch->in_weights = RL_CALLOC(in_cnt, sizeof(*swch->in_weights));
     swch->in_cnt     = in_cnt;
     swch->params     = params;
+
+    swch->in_weights[params.activeInput] = 1.0f;
     return anode;
 }
 
