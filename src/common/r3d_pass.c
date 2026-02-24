@@ -25,12 +25,8 @@
 // COMMON ENVIRONMENT GENERATION
 // ========================================
 
-void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache)
+void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize)
 {
-    if (invalidateCache) {
-        r3d_driver_invalidate_cache();
-    }
-
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
 
     R3D_SHADER_USE(prepare.cubemapIrradiance);
@@ -50,12 +46,8 @@ void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, b
     r3d_driver_enable(GL_CULL_FACE);
 }
 
-void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache)
+void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
 {
-    if (invalidateCache) {
-        r3d_driver_invalidate_cache();
-    }
-
     Matrix matProj = MatrixPerspective(90.0 * DEG2RAD, 1.0, 0.1, 10.0);
     int srcNumLevels = r3d_get_mip_levels_1d(srcSize);
 

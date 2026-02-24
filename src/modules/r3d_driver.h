@@ -152,6 +152,9 @@ void r3d_driver_timer_start(const char* label);
  */
 double r3d_driver_timer_stop(void);
 
+void r3d_driver_save_viewport(void);
+void r3d_driver_reset_viewport(void);
+
 /*
  * Invalidates the entire pipeline cache.
  */

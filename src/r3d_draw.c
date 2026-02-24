@@ -112,9 +112,10 @@ void R3D_BeginEx(RenderTexture target, Camera3D camera)
 
 void R3D_End(void)
 {
-    /* --- Invalidates the OpenGL state cache --- */
+    /* --- Invalidates OpenGL cache and save some infos --- */
 
     r3d_driver_invalidate_cache();
+    r3d_driver_save_viewport();
 
     /* --- Upload and bind uniform buffers --- */
 
@@ -1399,11 +1400,11 @@ void pass_scene_probes(void)
         r3d_env_capture_gen_mipmaps();
 
         if (probe->irradiance >= 0) {
-            r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE, false);
+            r3d_pass_prepare_irradiance(probe->irradiance, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE);
         }
 
         if (probe->prefilter >= 0) {
-            r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE, false);
+            r3d_pass_prepare_prefilter(probe->prefilter, r3d_env_capture_get(), R3D_PROBE_CAPTURE_SIZE);
         }
 
         r3d_target_invalidate_cache(); //< The IBL gen functions bind framebuffers; resetting them prevents any problems
@@ -2408,7 +2409,7 @@ void cleanup_after_render(void)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);
 
-    glViewport(0, 0, GetRenderWidth(), GetRenderHeight());
+    r3d_driver_reset_viewport();
 
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);

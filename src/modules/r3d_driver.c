@@ -105,6 +105,7 @@ typedef struct {
     pipeline_entry_t blendEquation;
     pipeline_entry_t blendSrcFactor;
     pipeline_entry_t blendDstFactor;
+    GLint viewport[4];
 } pipeline_cache_t;
 
 typedef struct {
@@ -547,6 +548,17 @@ double r3d_driver_timer_stop(void)
     }
 
     return ms;
+}
+
+void r3d_driver_save_viewport(void)
+{
+    glGetIntegerv(GL_VIEWPORT, R3D_MOD_DRIVER.pipeCache.viewport);
+}
+
+void r3d_driver_reset_viewport(void)
+{
+    const GLint* vp = R3D_MOD_DRIVER.pipeCache.viewport;
+    glViewport(vp[0], vp[1], vp[2], vp[3]);
 }
 
 void r3d_driver_invalidate_cache(void)

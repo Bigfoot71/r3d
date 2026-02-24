@@ -16,7 +16,7 @@
 // COMMON ENVIRONMENT GENERATION
 // ========================================
 
-void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache);
-void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize, bool invalidateCache);
+void r3d_pass_prepare_irradiance(int layerMap, GLuint srcCubemap, int srcSize);
+void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize);
 
 #endif // R3D_COMMON_PASS_H

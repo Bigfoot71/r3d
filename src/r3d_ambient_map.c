@@ -16,6 +16,8 @@
 
 #include "./common/r3d_helper.h"
 #include "./common/r3d_pass.h"
+
+#include "./modules/r3d_driver.h"
 #include "./modules/r3d_env.h"
 
 // ========================================
@@ -62,6 +64,9 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
 {
     R3D_AmbientMap ambientMap = {0};
 
+    r3d_driver_invalidate_cache();
+    r3d_driver_save_viewport();
+
     int irradiance = -1;
     if (BIT_TEST(flags, R3D_AMBIENT_ILLUMINATION)) {
         irradiance = r3d_env_irradiance_reserve_layer();
@@ -69,7 +74,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
             return ambientMap;
         }
-        r3d_pass_prepare_irradiance(irradiance, cubemap.texture, cubemap.size, true);
+        r3d_pass_prepare_irradiance(irradiance, cubemap.texture, cubemap.size);
     }
 
     int prefilter = -1;
@@ -80,8 +85,10 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
             r3d_env_irradiance_release_layer(irradiance);
             return ambientMap;
         }
-        r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size, true);
+        r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size);
     }
+
+    r3d_driver_reset_viewport();
 
     ambientMap.irradiance = irradiance + 1;
     ambientMap.prefilter = prefilter + 1;
@@ -103,11 +110,16 @@ void R3D_UnloadAmbientMap(R3D_AmbientMap ambientMap)
 
 void R3D_UpdateAmbientMap(R3D_AmbientMap ambientMap, R3D_Cubemap cubemap)
 {
+    r3d_driver_invalidate_cache();
+    r3d_driver_save_viewport();
+
     if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
-        r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size, true);
+        r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size);
     }
 
     if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_REFLECTION) && ambientMap.prefilter > 0) {
-        r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size, true);
+        r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size);
     }
+
+    r3d_driver_reset_viewport();
 }
