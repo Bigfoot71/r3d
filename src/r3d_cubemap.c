@@ -226,7 +226,7 @@ int get_cubemap_size_from_layout(Image image, R3D_CubemapLayout layout)
 R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
 {
     r3d_driver_invalidate_cache();
-    r3d_driver_save_viewport();
+    r3d_driver_store_viewport();
 
     R3D_Cubemap cubemap = r3d_cubemap_allocate(size);
     Texture2D panorama = LoadTextureFromImage(image);
@@ -253,7 +253,7 @@ R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
     UnloadTexture(panorama);
 
     r3d_driver_enable(GL_CULL_FACE);
-    r3d_driver_reset_viewport();
+    r3d_driver_restore_viewport();
 
     return cubemap;
 }

@@ -115,7 +115,7 @@ void R3D_End(void)
     /* --- Invalidates OpenGL cache and save some infos --- */
 
     r3d_driver_invalidate_cache();
-    r3d_driver_save_viewport();
+    r3d_driver_store_viewport();
 
     /* --- Upload and bind uniform buffers --- */
 
@@ -2409,7 +2409,7 @@ void cleanup_after_render(void)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glBindVertexArray(0);
 
-    r3d_driver_reset_viewport();
+    r3d_driver_restore_viewport();
 
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_DEPTH_TEST);

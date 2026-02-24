@@ -65,7 +65,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
     R3D_AmbientMap ambientMap = {0};
 
     r3d_driver_invalidate_cache();
-    r3d_driver_save_viewport();
+    r3d_driver_store_viewport();
 
     int irradiance = -1;
     if (BIT_TEST(flags, R3D_AMBIENT_ILLUMINATION)) {
@@ -88,7 +88,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
         r3d_pass_prepare_prefilter(prefilter, cubemap.texture, cubemap.size);
     }
 
-    r3d_driver_reset_viewport();
+    r3d_driver_restore_viewport();
 
     ambientMap.irradiance = irradiance + 1;
     ambientMap.prefilter = prefilter + 1;
@@ -111,7 +111,7 @@ void R3D_UnloadAmbientMap(R3D_AmbientMap ambientMap)
 void R3D_UpdateAmbientMap(R3D_AmbientMap ambientMap, R3D_Cubemap cubemap)
 {
     r3d_driver_invalidate_cache();
-    r3d_driver_save_viewport();
+    r3d_driver_store_viewport();
 
     if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
         r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size);
@@ -121,5 +121,5 @@ void R3D_UpdateAmbientMap(R3D_AmbientMap ambientMap, R3D_Cubemap cubemap)
         r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size);
     }
 
-    r3d_driver_reset_viewport();
+    r3d_driver_restore_viewport();
 }

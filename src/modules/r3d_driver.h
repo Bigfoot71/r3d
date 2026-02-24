@@ -152,8 +152,18 @@ void r3d_driver_timer_start(const char* label);
  */
 double r3d_driver_timer_stop(void);
 
-void r3d_driver_save_viewport(void);
-void r3d_driver_reset_viewport(void);
+/*
+ * Stores the current viewport state into the cache.
+ * The cached state persists until the next call to r3d_driver_invalidate_cache.
+ */
+void r3d_driver_store_viewport(void);
+
+/*
+ * Restores the viewport state from the cache.
+ * Should be called after r3d_driver_store_viewport to reset the viewport
+ * to the state it was in before any internal rendering operations.
+ */
+void r3d_driver_restore_viewport(void);
 
 /*
  * Invalidates the entire pipeline cache.
