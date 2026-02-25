@@ -310,7 +310,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree,
 /**
  * @brief Creates animation node of type State Machine (Stm).
  *
- * Stm node allows to create a state machine graph of any animation nodes, with optional stop/done node StmX.
+ * Stm node allows to create a state machine graph of any animation nodes.
  *
  * @param tree Animation tree.
  * @param statesCount Maximum number of states in the state machine.
@@ -348,7 +348,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmXNode(R3D_AnimationTree* tree,
 /**
  * @brief Creates state in a State Machine animation node.
  *
- * @param stmNode State Machine animation node.
+ * @param stmNode Animation node of type State Machine.
  * @param stateNode Associated animation node of the state.
  * @param outEdgesCount Number of output edges of the state.
  */
@@ -359,7 +359,7 @@ R3DAPI R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNo
 /**
  * @brief Creates edge in a State Machine animation node.
  *
- * @param stmNode State Machine animation node.
+ * @param stmNode Animation node of type State Machine.
  * @param beginStateIndex Index of state connected to the edge beginning.
  * @param endStateIndex Index of state connected to the edge end.
  * @param params Edge initial parameters.
