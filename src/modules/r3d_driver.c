@@ -144,6 +144,20 @@ static int get_capability_index(GLenum cap)
     return -1;
 }
 
+/* Returns true if the given extension is supported */
+static bool query_ext(const char* name)
+{
+    GLint numExtensions = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, &numExtensions);
+
+    for (GLint i = 0; i < numExtensions; i++) {
+        const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
+        if (ext && strcmp(ext, name) == 0) return true;
+    }
+
+    return false;
+}
+
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
@@ -166,52 +180,24 @@ bool r3d_driver_check_ext(const char* name)
 {
     if (!name) return false;
 
-    // Name length check
-    size_t nameLen = strlen(name);
-    if (nameLen >= R3D_OPENGL_EXT_NAME_MAX) {
-        // Name too long, direct verification without cache
-        GLint num_extensions = 0;
-        glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
-
-        for (GLint i = 0; i < num_extensions; i++) {
-            const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
-            if (ext && strcmp(ext, name) == 0) {
-                return true;
-            }
-        }
-        return false;
+    // Name too long: skip cache, query directly
+    if (strlen(name) >= R3D_OPENGL_EXT_NAME_MAX) {
+        return query_ext(name);
     }
 
     // Search the cache
     extension_entry_t* cached = NULL;
     HASH_FIND_STR(R3D_MOD_DRIVER.extCache.head, name, cached);
-    
-    if (cached) {
-        return cached->supported;
-    }
+    if (cached) return cached->supported;
 
-    // Extension not hidden, verified via OpenGL
-    bool supported = false;
-    GLint num_extensions = 0;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    // Query OpenGL and cache the result if space available
+    bool supported = query_ext(name);
 
-    for (GLint i = 0; i < num_extensions; i++) {
-        const char* ext = (const char*)glGetStringi(GL_EXTENSIONS, i);
-        if (ext && strcmp(ext, name) == 0) {
-            supported = true;
-            break;
-        }
-    }
-
-    // Add to cache if space available
     if (R3D_MOD_DRIVER.extCache.count < R3D_OPENGL_EXT_CACHE_MAX) {
-        extension_entry_t* entry = &R3D_MOD_DRIVER.extCache.array[R3D_MOD_DRIVER.extCache.count];
-        R3D_MOD_DRIVER.extCache.count++;
-
+        extension_entry_t* entry = &R3D_MOD_DRIVER.extCache.array[R3D_MOD_DRIVER.extCache.count++];
         strncpy(entry->name, name, R3D_OPENGL_EXT_NAME_MAX - 1);
         entry->name[R3D_OPENGL_EXT_NAME_MAX - 1] = '\0';
         entry->supported = supported;
-
         HASH_ADD_STR(R3D_MOD_DRIVER.extCache.head, name, entry);
     }
 
