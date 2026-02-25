@@ -24,30 +24,31 @@
  */
 typedef enum {
     R3D_TARGET_INVALID = -1,
-    R3D_TARGET_ALBEDO,          //< Full - Mip 2 - RGB[8|8|8]
-    R3D_TARGET_NORMAL,          //< Full - Mip 2 - RG[16|16]
-    R3D_TARGET_ORM,             //< Full - Mip 2 - RGB[8|8|8]
-    R3D_TARGET_DEPTH,           //< Full - Mip 2 - R[16]
-    R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB[16|16|16]
-    R3D_TARGET_SPECULAR,        //< Full - Mip 2 - RGB[16|16|16]
-    R3D_TARGET_GEOM_NORMAL,     //< Full - Mip 1 - RG[16|16]
-    R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R[8]
-    R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R[8]
-    R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_SSGI_0,          //< Half - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_SSGI_1,          //< Half - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_SSGI_2,          //< Half - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_SSR,             //< Half - Mip N - RGBA[16|16|16|16]
-    R3D_TARGET_DOF_COC,         //< Full - Mip 1 - R[16]
-    R3D_TARGET_DOF_0,           //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_DOF_1,           //< Half - Mip 1 - RGBA[16|16|16|16]
-    R3D_TARGET_BLOOM,           //< Half - Mip N - RGB[16|16|16]
-    R3D_TARGET_SMAA_EDGES,      //< Full - Mip 1 - RG[8|8]
-    R3D_TARGET_SMAA_BLEND,      //< Full - Mip 1 - RGBA[8|8|8|8]
-    R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB[16|16|16]
-    R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB[16|16|16]
+    R3D_TARGET_ALBEDO,          //< Full - Mip 2 - RGB8
+    R3D_TARGET_NORMAL,          //< Full - Mip 2 - RG16
+    R3D_TARGET_ORM,             //< Full - Mip 2 - RGB8
+    R3D_TARGET_DEPTH,           //< Full - Mip N - R16F
+    R3D_TARGET_DIFFUSE,         //< Full - Mip 2 - RGB16F
+    R3D_TARGET_SPECULAR,        //< Full - Mip 2 - RGB16F
+    R3D_TARGET_GEOM_NORMAL,     //< Full - Mip 1 - RG16
+    R3D_TARGET_SELECTOR,        //< Half - Mip N - R8UI
+    R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R8
+    R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R8
+    R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_SSIL_1,          //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_SSIL_2,          //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_SSGI_0,          //< Half - Mip 1 - RGB16F
+    R3D_TARGET_SSGI_1,          //< Half - Mip 1 - RGB16F
+    R3D_TARGET_SSGI_2,          //< Half - Mip 1 - RGB16F
+    R3D_TARGET_SSR,             //< Half - Mip N - RGBA16F
+    R3D_TARGET_DOF_COC,         //< Full - Mip 1 - R16F
+    R3D_TARGET_DOF_0,           //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_DOF_1,           //< Half - Mip 1 - RGBA16F
+    R3D_TARGET_BLOOM,           //< Half - Mip N - RGB16F
+    R3D_TARGET_SMAA_EDGES,      //< Full - Mip 1 - RG8
+    R3D_TARGET_SMAA_BLEND,      //< Full - Mip 1 - RGBA8
+    R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB16F
+    R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB16F
     R3D_TARGET_COUNT
 } r3d_target_t;
 
@@ -92,6 +93,8 @@ typedef enum {
 #define R3D_TARGET_TEXEL_WIDTH  R3D_MOD_TARGET.txlW
 #define R3D_TARGET_TEXEL_HEIGHT R3D_MOD_TARGET.txlH
 
+#define R3D_TARGET_LEVEL_LIST(...) (int[]){ __VA_ARGS__ }
+
 #define R3D_TARGET_CLEAR(depth, ...)                                    \
     r3d_target_clear(                                                   \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
@@ -111,6 +114,13 @@ typedef enum {
         (r3d_target_t[]){ __VA_ARGS__ },                                \
         sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
         (level), false                                                  \
+    )
+
+#define R3D_TARGET_BIND_LEVELS(levelsArr, ...)                          \
+    r3d_target_bind_levels(                                             \
+        (r3d_target_t[]){ __VA_ARGS__ },                                \
+        (levelsArr),                                                    \
+        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t)  \
     )
 
 /*
@@ -225,14 +235,29 @@ r3d_target_t r3d_target_swap_scene(r3d_target_t scene);
 void r3d_target_clear(const r3d_target_t* targets, int count, int level, bool depth);
 
 /*
- * Creates and binds an FBO with the requested attachment combination.
- * Attachment locations follow the order provided.
+ * Creates (or retrieves) and binds an FBO with the requested attachment combination.
+ * Attachment locations follow the order of targets (COLOR0 = targets[0], etc).
  *
  * This function attaches the targets at the specified level and sets the corresponding viewport.
  * Ensure that the provided target combination is compatible with the specified level.
  * The depth buffer can only be attached when the level is zero.
  */
 void r3d_target_bind(const r3d_target_t* targets, int count, int level, bool depth);
+
+/*
+ * Creates (or retrieves) and binds an FBO for the given attachments.
+ * Attachment locations follow the order of targets (COLOR0 = targets[0], etc).
+ *
+ * Unlike r3d_target_bind(), each attachment can be bound at a different mip level
+ * via the corresponding entry in levels.
+ *
+ * The viewport is set from targets[0] at levels[0].
+ *
+ * Notes:
+ * - All specified levels must have identical dimensions.
+ * - No hardware depth buffer is attached by this function.
+ */
+void r3d_target_bind_levels(const r3d_target_t* targets, int* levels, int count);
 
 /*
  * Sets the viewport according to the target and specified level.

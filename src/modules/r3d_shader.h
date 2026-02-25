@@ -362,16 +362,17 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_ORM           = 24,
     R3D_SHADER_SAMPLER_BUFFER_DIFFUSE       = 25,
     R3D_SHADER_SAMPLER_BUFFER_SPECULAR      = 26,
-    R3D_SHADER_SAMPLER_BUFFER_SSAO          = 27,
-    R3D_SHADER_SAMPLER_BUFFER_SSIL          = 28,
-    R3D_SHADER_SAMPLER_BUFFER_SSGI          = 29,
-    R3D_SHADER_SAMPLER_BUFFER_SSR           = 30,
-    R3D_SHADER_SAMPLER_BUFFER_DOF_COC       = 31,
-    R3D_SHADER_SAMPLER_BUFFER_DOF           = 32,
-    R3D_SHADER_SAMPLER_BUFFER_BLOOM         = 33,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 34,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 35,
-    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 36,
+    R3D_SHADER_SAMPLER_BUFFER_SELECTOR      = 27,
+    R3D_SHADER_SAMPLER_BUFFER_SSAO          = 28,
+    R3D_SHADER_SAMPLER_BUFFER_SSIL          = 29,
+    R3D_SHADER_SAMPLER_BUFFER_SSGI          = 30,
+    R3D_SHADER_SAMPLER_BUFFER_SSR           = 31,
+    R3D_SHADER_SAMPLER_BUFFER_DOF_COC       = 32,
+    R3D_SHADER_SAMPLER_BUFFER_DOF           = 33,
+    R3D_SHADER_SAMPLER_BUFFER_BLOOM         = 34,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 35,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 36,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 37,
 
     // Unamed for special passes
     R3D_SHADER_SAMPLER_SOURCE_1D_0          = 40,
@@ -414,6 +415,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_ORM]             = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_DIFFUSE]         = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]        = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_SELECTOR]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_GEOM_NORMAL]     = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSAO]            = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSIL]            = GL_TEXTURE_2D,
@@ -587,8 +589,13 @@ typedef struct {
 
 typedef struct {
     GLuint id;
-    r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
+} r3d_shader_prepare_depth_pyramid_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSelectorTex;
+    r3d_shader_uniform_sampler_t uNormalTex;
 } r3d_shader_prepare_ssao_in_down_t;
 
 typedef struct {
@@ -610,9 +617,9 @@ typedef struct {
 
 typedef struct {
     GLuint id;
+    r3d_shader_uniform_sampler_t uSelectorTex;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
-    r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_prepare_ssil_in_down_t;
 
 typedef struct {
@@ -629,9 +636,9 @@ typedef struct {
 
 typedef struct {
     GLuint id;
+    r3d_shader_uniform_sampler_t uSelectorTex;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
-    r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_prepare_ssgi_in_down_t;
 
 typedef struct {
@@ -652,10 +659,10 @@ typedef struct {
 
 typedef struct {
     GLuint id;
+    r3d_shader_uniform_sampler_t uSelectorTex;
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uSpecularTex;
     r3d_shader_uniform_sampler_t uNormalTex;
-    r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_prepare_ssr_in_down_t;
 
 typedef struct {
@@ -1103,6 +1110,7 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_lanczos_up_t lanczosUp;
         r3d_shader_prepare_blur_down_t blurDown;
         r3d_shader_prepare_blur_up_t blurUp;
+        r3d_shader_prepare_depth_pyramid_t depthPyramid;
         r3d_shader_prepare_ssao_in_down_t ssaoInDown;
         r3d_shader_prepare_ssao_t ssao;
         r3d_shader_prepare_ssao_blur_t ssaoBlur;
@@ -1169,6 +1177,7 @@ bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_depth_pyramid(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssao_in_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_ssao_blur(r3d_shader_custom_t* custom);
@@ -1232,6 +1241,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func lanczosUp;
         r3d_shader_loader_func blurDown;
         r3d_shader_loader_func blurUp;
+        r3d_shader_loader_func depthPyramid;
         r3d_shader_loader_func ssaoInDown;
         r3d_shader_loader_func ssao;
         r3d_shader_loader_func ssaoBlur;
@@ -1295,6 +1305,7 @@ static const struct r3d_shader_loader {
         .lanczosUp = r3d_shader_load_prepare_lanczos_up,
         .blurDown = r3d_shader_load_prepare_blur_down,
         .blurUp = r3d_shader_load_prepare_blur_up,
+        .depthPyramid = r3d_shader_load_prepare_depth_pyramid,
         .ssaoInDown = r3d_shader_load_prepare_ssao_in_down,
         .ssao = r3d_shader_load_prepare_ssao,
         .ssaoBlur = r3d_shader_load_prepare_ssao_blur,
