@@ -892,14 +892,31 @@ void r3d_render_create_vertex_array(
     glGenVertexArrays(1, vao);
     glBindVertexArray(*vao);
 
-    glGenBuffers(1, vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, *vbo);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        vertexCount * sizeof(R3D_Vertex),
-        vertices,
-        usage
-    );
+    GLuint buffers[2] = {0};
+    glGenBuffers(2, buffers);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[1]);
+
+    *vbo = buffers[0];
+    *ebo = buffers[1];
+
+    if (vertexCount > 0) {
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            vertexCount * sizeof(R3D_Vertex),
+            vertices,
+            usage
+        );
+    }
+
+    if (indexCount > 0) {
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            indexCount * indexStride,
+            indices,
+            usage
+        );
+    }
 
     // position (vec3)
     glEnableVertexAttribArray(0);
@@ -936,19 +953,6 @@ void r3d_render_create_vertex_array(
     glVertexAttrib4f(13, 1.0f, 1.0f, 1.0f, 1.0f);
     glVertexAttrib4f(14, 0.0f, 0.0f, 0.0f, 0.0f);
 
-    if (indexCount > 0) {
-        glGenBuffers(1, ebo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *ebo);
-        glBufferData(
-            GL_ELEMENT_ARRAY_BUFFER,
-            indexCount * indexStride,
-            indices,
-            usage
-        );
-    }
-    else {
-        *ebo = 0;
-    }
-
+    // VAO setup completed!
     glBindVertexArray(0);
 }

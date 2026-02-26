@@ -47,6 +47,8 @@ typedef struct R3D_Vertex {
 typedef struct R3D_MeshData {
     R3D_Vertex* vertices;       ///< Pointer to vertex data in CPU memory.
     uint32_t* indices;          ///< Pointer to index data in CPU memory.
+    int vertexCapacity;         ///< Capacity of vertices.
+    int indexCapacity;          ///< Capacity of indices.
     int vertexCount;            ///< Number of vertices.
     int indexCount;             ///< Number of indices.
 } R3D_MeshData;
@@ -327,6 +329,38 @@ R3DAPI R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData);
  * @return A new R3D_MeshData containing the merged geometry.
  */
 R3DAPI R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b);
+
+/**
+ * @brief Reserves memory for the specified number of vertices and indices.
+ * @param meshData Target mesh data container.
+ * @param vertexCount Number of vertices to reserve space for.
+ * @param indexCount Number of indices to reserve space for.
+ */
+R3DAPI void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount);
+
+/**
+ * @brief Clears all vertices and indices without releasing allocated memory.
+ * @param meshData Target mesh data container to reset.
+ */
+R3DAPI void R3D_ResetMeshData(R3D_MeshData* meshData);
+
+/**
+ * @brief Appends vertices and indices to the mesh data container.
+ * @param meshData Target mesh data container.
+ * @param vertices Array of vertices to append.
+ * @param vertexCount Number of vertices to append.
+ * @param indices Array of indices to append.
+ * @param indexCount Number of indices to append.
+ */
+R3DAPI void R3D_PushMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount);
+
+/**
+ * @brief Removes the specified number of vertices and indices from the end.
+ * @param meshData Target mesh data container.
+ * @param vertexCount Number of vertices to remove.
+ * @param indexCount Number of indices to remove.
+ */
+R3DAPI void R3D_PopMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount);
 
 /**
  * @brief Translates all vertices by a given offset.

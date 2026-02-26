@@ -13,6 +13,8 @@
 #include <string.h>
 #include <float.h>
 
+#include "./common/r3d_helper.h"
+
 // ========================================
 // INTERNAL FUNCTIONS
 // ========================================
@@ -52,19 +54,18 @@ R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount)
         R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for mesh vertices");
         return meshData;
     }
-
-    meshData.vertexCount = vertexCount;
+    meshData.vertexCapacity = vertexCount;
 
     if (indexCount > 0) {
         meshData.indices = RL_CALLOC(indexCount, sizeof(*meshData.indices));
         if (meshData.indices == NULL) {
             R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for mesh indices");
             RL_FREE(meshData.vertices);
+            meshData.vertexCapacity = 0;
             meshData.vertices = NULL;
-            meshData.vertexCount = 0;
             return meshData;
         }
-        meshData.indexCount = indexCount;
+        meshData.indexCapacity = indexCount;
     }
 
     return meshData;
@@ -471,7 +472,8 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
 
     R3D_Vertex* v = meshData.vertices;
     uint32_t* idx = meshData.indices;
-    int vertexCount = 0, indexCount = 0;
+    int vertexCount = 0;
+    int indexCount = 0;
 
     static const Vector2 uvs[4] = {{0,0},{1,0},{1,1},{0,1}};
     static const int faces[6][4] = {{3,2,1,0}, {4,5,6,7}, {0,1,5,4}, {2,3,7,6}, {1,2,6,5}, {3,0,4,7}};
@@ -1732,6 +1734,54 @@ R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b)
     return merged;
 }
 
+void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount)
+{
+    if (vertexCount > meshData->vertexCapacity) {
+        void* vertices = RL_REALLOC(meshData->vertices, vertexCount * sizeof(*meshData->vertices));
+        if (vertices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "");
+            return;
+        }
+        meshData->vertexCapacity = vertexCount;
+        meshData->vertices = vertices;
+    }
+
+    if (indexCount > meshData->indexCapacity) {
+        void* indices = RL_REALLOC(meshData->indices, indexCount * sizeof(*meshData->indices));
+        if (indices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "");
+            return;
+        }
+        meshData->indexCapacity = indexCount;
+        meshData->indices = indices;
+    }
+}
+
+void R3D_ResetMeshData(R3D_MeshData* meshData)
+{
+    meshData->vertexCount = 0;
+    meshData->indexCount = 0;
+}
+
+void R3D_PushMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount)
+{
+    R3D_ReserveMeshData(meshData, vertexCount, indexCount);
+
+    for (int i = 0; i < vertexCount; i++) {
+        meshData->vertices[meshData->vertexCount++] = vertices[i];
+    }
+
+    for (int i = 0; i < indexCount; i++) {
+        meshData->indices[meshData->indexCount++] = indices[i];
+    }
+}
+
+void R3D_PopMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount)
+{
+    meshData->vertexCount = MAX(meshData->vertexCount - vertexCount, 0);
+    meshData->indexCount = MAX(meshData->indexCount - indexCount, 0);
+}
+
 void R3D_TranslateMeshData(R3D_MeshData* meshData, Vector3 translation)
 {
     if (meshData == NULL || meshData->vertices == NULL) return;
@@ -2054,7 +2104,7 @@ void gen_cube_face(
 {
     float invU = 1.0f / (float)uRes;
     float invV = 1.0f / (float)vRes;
-    Vector4 tangent4 = { tangent.x, tangent.y, tangent.z, 1.0f };
+    Vector4 tangent4 = {tangent.x, tangent.y, tangent.z, 1.0f};
 
     uint32_t faceVertStart = *vertexOffset;
     R3D_Vertex *vertex = *vertexPtr;
@@ -2076,7 +2126,7 @@ void gen_cube_face(
                 origin.z + localU * uAxis.z + localV * vAxis.z
             };
 
-            vertex->texcoord = (Vector2){ ut, vt };
+            vertex->texcoord = (Vector2){ut, vt};
             vertex->normal   = normal;
             vertex->color    = WHITE;
             vertex->tangent  = tangent4;
