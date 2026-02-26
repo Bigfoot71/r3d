@@ -17,7 +17,7 @@
 // TREE NODE TYPES
 // ========================================
 
-enum r3d_animtree_type_e {
+enum r3d_animtree_type {
     R3D_ANIMTREE_ANIM = 1,
     R3D_ANIMTREE_BLEND2,
     R3D_ANIMTREE_ADD2,
@@ -26,7 +26,7 @@ enum r3d_animtree_type_e {
     R3D_ANIMTREE_STM_X
 };
 
-typedef unsigned int               r3d_animtree_type_t;
+typedef enum   r3d_animtree_type   r3d_animtree_type_t;
 typedef struct r3d_animtree_base   r3d_animtree_base_t;
 typedef struct r3d_animtree_anim   r3d_animtree_anim_t;
 typedef struct r3d_animtree_blend2 r3d_animtree_blend2_t;
