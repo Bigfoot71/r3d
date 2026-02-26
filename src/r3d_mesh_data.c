@@ -1739,7 +1739,7 @@ void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount
     if (vertexCount > meshData->vertexCapacity) {
         void* vertices = RL_REALLOC(meshData->vertices, vertexCount * sizeof(*meshData->vertices));
         if (vertices == NULL) {
-            R3D_TRACELOG(LOG_WARNING, "");
+            R3D_TRACELOG(LOG_WARNING, "Failed to reserve vertices memory");
             return;
         }
         meshData->vertexCapacity = vertexCount;
@@ -1749,7 +1749,7 @@ void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount
     if (indexCount > meshData->indexCapacity) {
         void* indices = RL_REALLOC(meshData->indices, indexCount * sizeof(*meshData->indices));
         if (indices == NULL) {
-            R3D_TRACELOG(LOG_WARNING, "");
+            R3D_TRACELOG(LOG_WARNING, "Failed to reserve indices memory");
             return;
         }
         meshData->indexCapacity = indexCount;
