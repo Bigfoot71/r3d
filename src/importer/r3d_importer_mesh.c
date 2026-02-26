@@ -271,7 +271,7 @@ static bool load_mesh_internal(
     int vertexCount = aiMesh->mNumVertices;
     int indexCount = 3 * aiMesh->mNumFaces;
 
-    R3D_MeshData data = R3D_CreateMeshData(vertexCount, indexCount);
+    R3D_MeshData data = R3D_LoadMeshData(vertexCount, indexCount);
     if (!data.vertices || !data.indices) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load mesh; Unable to allocate mesh data");
         return false;

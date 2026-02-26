@@ -19,6 +19,23 @@
  */
 
 // ========================================
+// ENUMS TYPES
+// ========================================
+
+/**
+ * @brief Defines the geometric primitive type.
+ */
+typedef enum R3D_PrimitiveType {
+    R3D_PRIMITIVE_POINTS,           ///< Each vertex represents a single point.
+    R3D_PRIMITIVE_LINES,            ///< Each pair of vertices forms an independent line segment.
+    R3D_PRIMITIVE_LINE_STRIP,       ///< Connected series of line segments sharing vertices.
+    R3D_PRIMITIVE_LINE_LOOP,        ///< Closed loop of connected line segments.
+    R3D_PRIMITIVE_TRIANGLES,        ///< Each set of three vertices forms an independent triangle.
+    R3D_PRIMITIVE_TRIANGLE_STRIP,   ///< Connected strip of triangles sharing vertices.
+    R3D_PRIMITIVE_TRIANGLE_FAN      ///< Fan of triangles sharing the first vertex.
+} R3D_PrimitiveType;
+
+// ========================================
 // STRUCTS TYPES
 // ========================================
 
@@ -47,6 +64,8 @@ typedef struct R3D_Vertex {
 typedef struct R3D_MeshData {
     R3D_Vertex* vertices;       ///< Pointer to vertex data in CPU memory.
     uint32_t* indices;          ///< Pointer to index data in CPU memory.
+    int vertexCapacity;         ///< Capacity of vertices.
+    int indexCapacity;          ///< Capacity of indices.
     int vertexCount;            ///< Number of vertices.
     int indexCount;             ///< Number of indices.
 } R3D_MeshData;
@@ -71,7 +90,7 @@ extern "C" {
  *
  * @return A new R3D_MeshData instance with allocated memory.
  */
-R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
+R3DAPI R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount);
 
 /**
  * @brief Releases memory used by a mesh data container.
@@ -314,11 +333,31 @@ R3DAPI R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size);
 R3DAPI R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize);
 
 /**
+ * @brief Reserves memory for the specified number of vertices and indices.
+ * @param meshData Target mesh data container.
+ * @param vertexCount Number of vertices to reserve space for.
+ * @param indexCount Number of indices to reserve space for.
+ */
+R3DAPI void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount);
+
+/**
+ * @brief Shrinks allocated memory to fit the current vertex and index counts.
+ * @param meshData Target mesh data container to shrink.
+ */
+R3DAPI void R3D_ShrinkMeshData(R3D_MeshData* meshData);
+
+/**
+ * @brief Clears all vertices and indices without releasing allocated memory.
+ * @param meshData Target mesh data container to reset.
+ */
+R3DAPI void R3D_ResetMeshData(R3D_MeshData* meshData);
+
+/**
  * @brief Creates a deep copy of an existing mesh data container.
  * @param meshData Source mesh data to duplicate.
  * @return A new R3D_MeshData containing a copy of the source data.
  */
-R3DAPI R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData);
+R3DAPI R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData);
 
 /**
  * @brief Merges two mesh data containers into a single one.
@@ -327,6 +366,23 @@ R3DAPI R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData);
  * @return A new R3D_MeshData containing the merged geometry.
  */
 R3DAPI R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b);
+
+/**
+ * @brief Appends vertices and indices to the mesh data container.
+ * @param meshData Target mesh data container.
+ * @param vertices Array of vertices to append.
+ * @param vertexCount Number of vertices to append.
+ * @param indices Array of indices to append.
+ * @param indexCount Number of indices to append.
+ */
+R3DAPI void R3D_AppendMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount);
+
+/**
+ * @brief Applies a transformation matrix to all vertices in the mesh data.
+ * @param meshData Target mesh data container.
+ * @param transform Transformation matrix to apply.
+ */
+R3DAPI void R3D_TransformMeshData(R3D_MeshData* meshData, Matrix transform);
 
 /**
  * @brief Translates all vertices by a given offset.
@@ -372,14 +428,18 @@ R3DAPI void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData);
 /**
  * @brief Computes vertex normals from triangle geometry.
  * @param meshData Mesh data to modify.
+ * @param type Primitive type of the mesh. Points and line primitives are not
+ *             supported and will default to a front-facing normal (0, 0, 1).
  */
-R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData);
+R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type);
 
 /**
  * @brief Computes vertex tangents based on existing normals and UVs.
  * @param meshData Mesh data to modify.
+ * @param type Primitive type of the mesh. Points and line primitives are not
+ *             supported and will default to a front-facing tangent (1, 0, 0, 1).
  */
-R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData);
+R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type);
 
 /**
  * @brief Calculates the axis-aligned bounding box of the mesh.

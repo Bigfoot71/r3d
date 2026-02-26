@@ -34,14 +34,20 @@
 // HELPER MACROS
 // ========================================
 
-#define R3D_SHADOW_CAST_ONLY_MASK ( \
-    (1 << R3D_SHADOW_CAST_ONLY_AUTO) | \
-    (1 << R3D_SHADOW_CAST_ONLY_DOUBLE_SIDED) | \
-    (1 << R3D_SHADOW_CAST_ONLY_FRONT_SIDE) | \
-    (1 << R3D_SHADOW_CAST_ONLY_BACK_SIDE) \
+#define IS_MESH_VALID(mesh)                     \
+    (((mesh).vao != 0) && ((mesh).vertexCount > 0))
+
+#define IS_MESH_DRAWABLE(mesh, cullMask)        \
+    (IS_MESH_VALID(mesh) && BIT_TEST_ANY((cullMask), (mesh).layerMask))
+
+#define SHADOW_CAST_ONLY_MASK (                 \
+    (1 << R3D_SHADOW_CAST_ONLY_AUTO) |          \
+    (1 << R3D_SHADOW_CAST_ONLY_DOUBLE_SIDED) |  \
+    (1 << R3D_SHADOW_CAST_ONLY_FRONT_SIDE) |    \
+    (1 << R3D_SHADOW_CAST_ONLY_BACK_SIDE)       \
 )
 
-#define R3D_IS_SHADOW_CAST_ONLY(mode) \
+#define IS_SHADOW_CAST_ONLY(mode)               \
     ((R3D_SHADOW_CAST_ONLY_MASK & (1 << (mode))) != 0)
 
 // ========================================
@@ -286,7 +292,7 @@ void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quat
 
 void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 {
-    if (!BIT_TEST_ANY(R3D.layers, mesh.layerMask)) {
+    if (!IS_MESH_DRAWABLE(mesh, R3D.layers)) {
         return;
     }
 
@@ -318,7 +324,7 @@ void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_Instance
 {
     if (count <= 0) return;
 
-    if (!BIT_TEST_ANY(R3D.layers, mesh.layerMask)) {
+    if (!IS_MESH_DRAWABLE(mesh, R3D.layers)) {
         return;
     }
 
@@ -362,8 +368,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-
-        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
             continue;
         }
 
@@ -402,8 +407,7 @@ void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, in
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-
-        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
             continue;
         }
 
@@ -442,8 +446,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-
-        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
             continue;
         }
 
@@ -484,8 +487,7 @@ void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer play
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-
-        if (!BIT_TEST_ANY(R3D.layers, mesh->layerMask)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
             continue;
         }
 

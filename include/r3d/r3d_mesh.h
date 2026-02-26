@@ -33,19 +33,6 @@ typedef enum R3D_MeshUsage {
 } R3D_MeshUsage;
 
 /**
- * @brief Defines the geometric primitive type.
- */
-typedef enum R3D_PrimitiveType {
-    R3D_PRIMITIVE_POINTS,           ///< Each vertex represents a single point.
-    R3D_PRIMITIVE_LINES,            ///< Each pair of vertices forms an independent line segment.
-    R3D_PRIMITIVE_LINE_STRIP,       ///< Connected series of line segments sharing vertices.
-    R3D_PRIMITIVE_LINE_LOOP,        ///< Closed loop of connected line segments.
-    R3D_PRIMITIVE_TRIANGLES,        ///< Each set of three vertices forms an independent triangle.
-    R3D_PRIMITIVE_TRIANGLE_STRIP,   ///< Connected strip of triangles sharing vertices.
-    R3D_PRIMITIVE_TRIANGLE_FAN      ///< Fan of triangles sharing the first vertex.
-} R3D_PrimitiveType;
-
-/**
  * @brief Shadow casting modes for objects.
  *
  * Controls how an object interacts with the shadow mapping system.
@@ -76,8 +63,10 @@ typedef enum R3D_ShadowCastMode {
  */
 typedef struct R3D_Mesh {
     uint32_t vao, vbo, ebo;                 ///< OpenGL objects handles.
-    int vertexCount, indexCount;            ///< Number of vertices and indices currently in use.
-    int allocVertexCount, allocIndexCount;  ///< Number of vertices and indices allocated in GPU buffers.
+    int vertexCapacity;                     ///< Number of vertices allocated in GPU buffers.
+    int indexCapacity;                      ///< Number of indices allocated in GPU buffers.
+    int vertexCount;                        ///< Number of vertices currently in use.
+    int indexCount;                         ///< Number of indices currently in use.
     R3D_ShadowCastMode shadowCastMode;      ///< Shadow casting mode for the mesh.
     R3D_PrimitiveType primitiveType;        ///< Type of primitive that constitutes the vertices.
     R3D_MeshUsage usage;                    ///< Hint about the usage of the mesh, retained in case of update if there is a reallocation.
@@ -96,7 +85,7 @@ extern "C" {
 /**
  * @brief Creates a 3D mesh from CPU-side mesh data.
  * @param type Primitive type used to interpret vertex data.
- * @param data R3D_MeshData containing vertices and indices (cannot be NULL).
+ * @param data R3D_MeshData containing vertices and indices (can be zero initialized).
  * @param aabb Optional pointer to a bounding box. If NULL, it will be computed automatically.
  * @param usage Hint on how the mesh will be used.
  * @return Created R3D_Mesh.

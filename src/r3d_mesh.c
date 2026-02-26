@@ -17,19 +17,13 @@
 #include "./common/r3d_helper.h"
 
 // ========================================
-// PUBLIC API
+// INTERNAL FUNCTIONS
 // ========================================
 
-R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingBox* aabb, R3D_MeshUsage usage)
+static GLenum get_opengl_usage(R3D_MeshUsage usage)
 {
-    R3D_Mesh mesh = {0};
-
-    if (data.vertexCount <= 0 || !data.vertices) {
-        R3D_TRACELOG(LOG_WARNING, "Invalid mesh data passed to R3D_UpdateMesh");
-        return mesh;
-    }
-
     GLenum glUsage = GL_STATIC_DRAW;
+
     switch (usage) {
     case R3D_STATIC_MESH: glUsage = GL_STATIC_DRAW; break;
     case R3D_DYNAMIC_MESH: glUsage = GL_DYNAMIC_DRAW; break;
@@ -39,16 +33,27 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
         break;
     }
 
+    return glUsage;
+}
+
+// ========================================
+// PUBLIC API
+// ========================================
+
+R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingBox* aabb, R3D_MeshUsage usage)
+{
+    R3D_Mesh mesh = {0};
+
     r3d_render_create_vertex_array(
         &mesh.vao, &mesh.vbo, &mesh.ebo,
         data.vertices, data.vertexCount,
         data.indices, data.indexCount,
         (int)sizeof(*data.indices),
-        GL_STATIC_DRAW
+        get_opengl_usage(usage)
     );
 
-    mesh.vertexCount = mesh.allocVertexCount = data.vertexCount;
-    mesh.indexCount = mesh.allocIndexCount = data.indexCount;
+    mesh.vertexCount = mesh.vertexCapacity = data.vertexCount;
+    mesh.indexCount = mesh.indexCapacity = data.indexCount;
     mesh.shadowCastMode = R3D_SHADOW_CAST_ON_AUTO;
     mesh.layerMask = R3D_LAYER_01;
     mesh.primitiveType = type;
@@ -324,52 +329,40 @@ R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
 
 bool R3D_UpdateMesh(R3D_Mesh* mesh, R3D_MeshData data, const BoundingBox* aabb)
 {
-    if (!mesh || mesh->vao == 0 || mesh->vbo == 0) {
+    if (!mesh || mesh->vao == 0 || mesh->vbo == 0 || mesh->ebo == 0) {
         R3D_TRACELOG(LOG_WARNING, "Cannot update mesh; Invalid mesh instance");
         return false;
     }
 
-    if (data.vertexCount <= 0 || !data.vertices) {
-        R3D_TRACELOG(LOG_WARNING, "Invalid mesh data given to R3D_UpdateMesh");
+    if (!data.vertices || data.vertexCount <= 0) {
+        R3D_TRACELOG(LOG_WARNING, "Cannont update mesh; Invalid mesh data");
         return false;
     }
 
-    GLenum glUsage = GL_STATIC_DRAW;
-    switch (mesh->usage) {
-    case R3D_STATIC_MESH: glUsage = GL_STATIC_DRAW; break;
-    case R3D_DYNAMIC_MESH: glUsage = GL_DYNAMIC_DRAW; break;
-    case R3D_STREAMED_MESH: glUsage = GL_STREAM_DRAW; break;
-    default:
-        R3D_TRACELOG(LOG_WARNING, "Invalid mesh usage; R3D_STATIC_MESH will be used");
-        break;
-    }
+    GLenum glUsage = get_opengl_usage(mesh->usage);
 
     glBindVertexArray(mesh->vao);
     glBindBuffer(GL_ARRAY_BUFFER, mesh->vbo);
 
-    if (mesh->allocVertexCount < data.vertexCount) {
-        glBufferData(GL_ARRAY_BUFFER, mesh->vertexCount * sizeof(R3D_Vertex), data.vertices, glUsage);
-        mesh->allocVertexCount = data.vertexCount;
+    if (mesh->vertexCapacity < data.vertexCount) {
+        glBufferData(GL_ARRAY_BUFFER, data.vertexCount * sizeof(R3D_Vertex), data.vertices, glUsage);
+        mesh->vertexCapacity = data.vertexCount;
     }
     else {
-        glBufferSubData(GL_ARRAY_BUFFER, 0, mesh->vertexCount * sizeof(R3D_Vertex), data.vertices);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, data.vertexCount * sizeof(R3D_Vertex), data.vertices);
     }
 
     if (data.indexCount > 0) {
-        if (mesh->allocIndexCount < data.indexCount) {
-            if (mesh->ebo == 0) glGenBuffers(1, &mesh->ebo);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh->ebo);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->indexCount * sizeof(uint32_t), data.indices, glUsage);
-            mesh->allocIndexCount = data.indexCount;
+        if (mesh->indexCapacity < data.indexCount) {
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, data.indexCount * sizeof(uint32_t), data.indices, glUsage);
+            mesh->indexCapacity = data.indexCount;
         }
         else {
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, mesh->indexCount * sizeof(uint32_t), data.indices);
+            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, data.indexCount * sizeof(uint32_t), data.indices);
         }
     }
 
     glBindVertexArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     mesh->vertexCount = data.vertexCount;
     mesh->indexCount = data.indexCount;
