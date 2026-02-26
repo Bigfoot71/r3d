@@ -13,7 +13,6 @@
 #include <assert.h>
 
 #include "../common/r3d_helper.h"
-#include "r3d_shader.h"
 
 // ========================================
 // MODULE STATE
