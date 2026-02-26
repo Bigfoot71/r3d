@@ -255,6 +255,7 @@ R3DAPI void R3D_AddRootAnimationNode(R3D_AnimationTree* tree,
  * @param parent Parent animation node.
  * @param node Child animation node.
  * @param inputIndex Index of the parent node input used for connection.
+ * @return True on success; false if parent node or inputIndex is invalid.
  */
 R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent,
                                  R3D_AnimationTreeNode* node,
@@ -268,6 +269,7 @@ R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent,
  *
  * @param tree Animation tree.
  * @param params Animation node initial parameters.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded or animation name is not found.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree,
                                                       R3D_AnimationNodeParams params);
@@ -279,6 +281,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree,
  *
  * @param tree Animation tree.
  * @param params Blend2 node initial parameters.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree,
                                                    R3D_Blend2NodeParams params);
@@ -290,6 +293,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree,
  *
  * @param tree Animation tree.
  * @param params Add2 node initial parameters.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree,
                                                  R3D_Add2NodeParams params);
@@ -302,6 +306,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree,
  * @param tree Animation tree.
  * @param inputCount Number of available inputs.
  * @param params Switch node initial parameters.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree,
                                                    unsigned int inputCount,
@@ -315,6 +320,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree,
  * @param tree Animation tree.
  * @param statesCount Maximum number of states in the state machine.
  * @param edgesCount Maximum number of edges in the state machine.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree,
                                                 unsigned int statesCount,
@@ -327,6 +333,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree,
  * @param statesCount Maximum number of states in the state machine.
  * @param edgesCount Maximum number of edges in the state machine.
  * @param enableTravel Flag to enable or disable travel feature; enabled when set true.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree,
                                                   unsigned int statesCount,
@@ -336,11 +343,12 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree,
 /**
  * @brief Creates animation node of type State Machine Stop/Done (StmX).
  *
- * StmX is "virtual" animation node, that allows to stop state machine evaluation in current update.
+ * StmX is a helper animation node, that allows to stop state machine evaluation in current update.
  * Sets animation node done status of the state machine to true.
  *
  * @param tree Animation tree.
- * @param nestedNode "Real" animation node with animation channels.
+ * @param nestedNode Actual animation node with animation channels.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
 R3DAPI R3D_AnimationTreeNode* R3D_CreateStmXNode(R3D_AnimationTree* tree,
                                                  R3D_AnimationTreeNode* nestedNode);
@@ -351,6 +359,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmXNode(R3D_AnimationTree* tree,
  * @param stmNode Animation node of type State Machine.
  * @param stateNode Associated animation node of the state.
  * @param outEdgesCount Number of output edges of the state.
+ * @return Index of created state; -1 if maximum number of states was exceeded.
  */
 R3DAPI R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNode,
                                                     R3D_AnimationTreeNode* stateNode,
@@ -363,6 +372,7 @@ R3DAPI R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNo
  * @param beginStateIndex Index of state connected to the edge beginning.
  * @param endStateIndex Index of state connected to the edge end.
  * @param params Edge initial parameters.
+ * @return Index of created edge; -1 if maximum number of edges was exceeded.
  */
 R3DAPI R3D_AnimationStmIndex R3D_CreateStmNodeEdge(R3D_AnimationTreeNode* stmNode,
                                                    R3D_AnimationStmIndex beginStateIndex,
@@ -478,6 +488,7 @@ R3DAPI void R3D_TravelToStmState(R3D_AnimationTreeNode* node,
  * @param skeleton Skeleton of associated animation player.
  * @param boneNames Array of pointers to null-terminated strings with bone names.
  * @param boneNamesCount Count of strings in boneNames array.
+ * @return Calculated bone mask, or zeroed structure on failure.
  */
 R3DAPI R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton,
                                         const char* boneNames[],
