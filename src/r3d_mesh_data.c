@@ -15,7 +15,6 @@
 
 #include "./common/r3d_helper.h"
 #include "common/r3d_math.h"
-#include "raylib.h"
 
 // ========================================
 // INTERNAL FUNCTIONS
