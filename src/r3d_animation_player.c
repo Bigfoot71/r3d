@@ -303,9 +303,7 @@ void compute_local_matrices(R3D_AnimationPlayer* player, float totalWeight)
                                                     NULL, NULL);
             float w = state->weight * invTotalWeight;
 
-            // TODO: test 'add_v' vs 'addx_v'
-            blended = r3d_anim_transform_add_v(blended, local, w);
-            // blended = r3d_anim_transform_addx_v(blended, local, w);
+            blended = r3d_anim_transform_addx_v(blended, local, w);
         }
 
         if (!isAnimated) {
