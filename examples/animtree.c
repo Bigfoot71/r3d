@@ -32,150 +32,109 @@ int main(void)
 
     // Generate a ground plane and load the animated model
     R3D_Mesh plane = R3D_GenMeshPlane(10, 10, 1, 1);
-    R3D_Model model = R3D_LoadModel(RESOURCES_PATH "models/Human.glb");
+    R3D_Model model = R3D_LoadModel(RESOURCES_PATH "models/YBot.glb");
 
     // Load animations
-    R3D_AnimationLib modelAnims = R3D_LoadAnimationLib(RESOURCES_PATH "models/Human.glb");
+    R3D_AnimationLib modelAnims = R3D_LoadAnimationLib(RESOURCES_PATH "models/YBot.glb");
     R3D_AnimationPlayer modelPlayer = R3D_LoadAnimationPlayer(model.skeleton, modelAnims);
 
-    // Create animation tree
-    // ======== STM + TRAVEL EXAMPLE ========
-    /*
-    R3D_AnimationTree animTree = R3D_LoadAnimationTreeEx(modelPlayer, 9, 0);
-    R3D_AnimationTreeNode* stmNode = R3D_CreateStmNodeEx(&animTree, 8, 10, true);
+    // Create & define animation tree structure
+    R3D_AnimationTree animTree = R3D_LoadAnimationTreeEx(modelPlayer, 12, 0);
 
-    R3D_AnimationState animState = {.speed = 0.5f,
+    R3D_AnimationState animState = {.speed = 0.8f,
                                     .play = true,
                                     .loop = true};
-    R3D_AnimationTreeNode* animNode0 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "walk forward",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode1 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "sprint forward",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode2 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "walk left",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode3 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "sprint left",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode4 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "walk backward",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode5 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "sprint backward",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode6 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "walk right",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-    R3D_AnimationTreeNode* animNode7 = R3D_CreateAnimationNode(&animTree,
-                                                               (R3D_AnimationNodeParams){
-                                                                   .name = "idle",
-                                                                   .state = animState,
-                                                                   .looper = true
-                                                               });
-
-    R3D_AnimationStmIndex stateIdx0 = R3D_CreateStmNodeState(stmNode, animNode0, 3);
-    R3D_AnimationStmIndex stateIdx1 = R3D_CreateStmNodeState(stmNode, animNode1, 1);
-    R3D_AnimationStmIndex stateIdx2 = R3D_CreateStmNodeState(stmNode, animNode2, 1);
-    R3D_AnimationStmIndex stateIdx3 = R3D_CreateStmNodeState(stmNode, animNode3, 2);
-    R3D_AnimationStmIndex stateIdx4 = R3D_CreateStmNodeState(stmNode, animNode4, 0);
-    R3D_AnimationStmIndex stateIdx5 = R3D_CreateStmNodeState(stmNode, animNode5, 2);
-    R3D_AnimationStmIndex stateIdx6 = R3D_CreateStmNodeState(stmNode, animNode6, 1);
-    R3D_AnimationStmIndex stateIdx7 = R3D_CreateStmNodeState(stmNode, animNode7, 0);
-
     R3D_StmEdgeParams edgeParams = {.mode = R3D_STM_EDGE_ONDONE,
-                                    .xFadeTime = 0.1};
-    R3D_AnimationStmIndex edgeIdx0 = R3D_CreateStmNodeEdge(stmNode, stateIdx0, stateIdx3,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx1 = R3D_CreateStmNodeEdge(stmNode, stateIdx0, stateIdx1,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx2 = R3D_CreateStmNodeEdge(stmNode, stateIdx1, stateIdx2,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx3 = R3D_CreateStmNodeEdge(stmNode, stateIdx2, stateIdx0,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx4 = R3D_CreateStmNodeEdge(stmNode, stateIdx0, stateIdx0,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx5 = R3D_CreateStmNodeEdge(stmNode, stateIdx3, stateIdx4,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx6 = R3D_CreateStmNodeEdge(stmNode, stateIdx3, stateIdx5,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx7 = R3D_CreateStmNodeEdge(stmNode, stateIdx5, stateIdx6,
-                                                           edgeParams);
-    R3D_AnimationStmIndex edgeIdx8 = R3D_CreateStmNodeEdge(stmNode, stateIdx6, stateIdx7,
-                                                           edgeParams);
-    // R3D_AnimationStmIndex edgeIdx9 = R3D_CreateStmNodeEdge(stmNode, stateIdx5, stateIdx7,
-    //                                                        edgeParams);
+                                    .status = R3D_STM_EDGE_AUTO,
+                                    .xFadeTime = 0.0f};
+    R3D_StmEdgeParams fadedEdgeParams = {.mode = R3D_STM_EDGE_ONDONE,
+                                         .status = R3D_STM_EDGE_AUTO,
+                                         .xFadeTime = 0.3f};
 
-    R3D_TravelToStmState(stmNode, stateIdx7);
-    R3D_AddRootAnimationNode(&animTree, stmNode);
-    */
+    R3D_AnimationTreeNode* leftRightStmNode = R3D_CreateStmNode(&animTree, 4, 4);
+    {
+        R3D_AnimationTreeNode* animNode0 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk left",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationTreeNode* animNode1 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk left",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationTreeNode* animNode2 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk right",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationTreeNode* animNode3 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk right",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationStmIndex stateIdx0 = R3D_CreateStmNodeState(leftRightStmNode, animNode0, 1);
+        R3D_AnimationStmIndex stateIdx1 = R3D_CreateStmNodeState(leftRightStmNode, animNode1, 1);
+        R3D_AnimationStmIndex stateIdx2 = R3D_CreateStmNodeState(leftRightStmNode, animNode2, 1);
+        R3D_AnimationStmIndex stateIdx3 = R3D_CreateStmNodeState(leftRightStmNode, animNode3, 1);
+        R3D_CreateStmNodeEdge(leftRightStmNode, stateIdx0, stateIdx1, edgeParams);
+        R3D_CreateStmNodeEdge(leftRightStmNode, stateIdx1, stateIdx2, fadedEdgeParams);
+        R3D_CreateStmNodeEdge(leftRightStmNode, stateIdx2, stateIdx3, edgeParams);
+        R3D_CreateStmNodeEdge(leftRightStmNode, stateIdx3, stateIdx0, fadedEdgeParams);
+    }
 
-    // ======== SWITCH NODE EXAMPLE ========
-    R3D_AnimationTree animTree = R3D_LoadAnimationTreeEx(modelPlayer, 6, 0);
-    R3D_SwitchNodeParams switchParams = {.synced = true,
+    R3D_AnimationTreeNode* forwBackStmNode = R3D_CreateStmNode(&animTree, 4, 4);
+    {
+        R3D_AnimationTreeNode* animNode0 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk forward",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationTreeNode* animNode1 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk forward",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationTreeNode* animNode2 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk backward",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationTreeNode* animNode3 = R3D_CreateAnimationNode(&animTree,
+                                                                   (R3D_AnimationNodeParams){
+                                                                       .name = "walk backward",
+                                                                       .state = animState,
+                                                                       .looper = true
+                                                                   });
+        R3D_AnimationStmIndex stateIdx0 = R3D_CreateStmNodeState(forwBackStmNode, animNode0, 1);
+        R3D_AnimationStmIndex stateIdx1 = R3D_CreateStmNodeState(forwBackStmNode, animNode1, 1);
+        R3D_AnimationStmIndex stateIdx2 = R3D_CreateStmNodeState(forwBackStmNode, animNode2, 1);
+        R3D_AnimationStmIndex stateIdx3 = R3D_CreateStmNodeState(forwBackStmNode, animNode3, 1);
+        R3D_CreateStmNodeEdge(forwBackStmNode, stateIdx0, stateIdx1, edgeParams);
+        R3D_CreateStmNodeEdge(forwBackStmNode, stateIdx1, stateIdx2, fadedEdgeParams);
+        R3D_CreateStmNodeEdge(forwBackStmNode, stateIdx2, stateIdx3, edgeParams);
+        R3D_CreateStmNodeEdge(forwBackStmNode, stateIdx3, stateIdx0, fadedEdgeParams);
+    }
+
+    R3D_SwitchNodeParams switchParams = {.synced = false,
                                          .activeInput = 0,
                                          .xFadeTime = 0.4f};
-    R3D_AnimationTreeNode* switchNode = R3D_CreateSwitchNode(&animTree, 5, switchParams);
-    R3D_AnimationState     animParams = {.speed = 0.5f,
-                                         .play = true,
-                                         .loop = true};
-    R3D_AnimationTreeNode* animNode;
-    animNode = R3D_CreateAnimationNode(&animTree,
-                                       (R3D_AnimationNodeParams){
-                                           .name = "idle",
-                                           .state = (R3D_AnimationState){
-                                               .speed = 1.0f,
-                                               .play = true,
-                                               .loop = true
-                                           }
-                                       });
-    R3D_AddAnimationNode(switchNode, animNode, 0);
-    animNode = R3D_CreateAnimationNode(&animTree,
-                                       (R3D_AnimationNodeParams){
-                                           .name = "walk forward",
-                                           .state = animParams
-                                       });
-    R3D_AddAnimationNode(switchNode, animNode, 1);
-    animNode = R3D_CreateAnimationNode(&animTree,
-                                       (R3D_AnimationNodeParams){
-                                           .name = "run forward",
-                                           .state = animParams
-                                       });
-    R3D_AddAnimationNode(switchNode, animNode, 2);
-    animNode = R3D_CreateAnimationNode(&animTree,
-                                       (R3D_AnimationNodeParams){
-                                           .name = "walk backward",
-                                           .state = animParams
-                                       });
-    R3D_AddAnimationNode(switchNode, animNode, 3);
-    animNode = R3D_CreateAnimationNode(&animTree,
-                                       (R3D_AnimationNodeParams){
-                                           .name = "run backward",
-                                           .state = animParams
-                                       });
-    R3D_AddAnimationNode(switchNode, animNode, 4);
+    R3D_AnimationTreeNode* switchNode = R3D_CreateSwitchNode(&animTree, 3, switchParams);
+    R3D_AnimationTreeNode* idleNode = R3D_CreateAnimationNode(&animTree,
+                                                              (R3D_AnimationNodeParams){
+                                                                  .name = "idle",
+                                                                  .state = animState
+                                                              });
+    R3D_AddAnimationNode(switchNode, idleNode, 0);
+    R3D_AddAnimationNode(switchNode, leftRightStmNode, 1);
+    R3D_AddAnimationNode(switchNode, forwBackStmNode, 2);
     R3D_AddRootAnimationNode(&animTree, switchNode);
 
     // Setup lights with shadows
@@ -198,17 +157,12 @@ int main(void)
     {
         float delta = GetFrameTime();
 
-        // ======== SWITCH NODE EXAMPLE ========
         if(IsKeyDown(KEY_ONE))
             switchParams.activeInput = 0;
         if(IsKeyDown(KEY_TWO))
             switchParams.activeInput = 1;
         if(IsKeyDown(KEY_THREE))
             switchParams.activeInput = 2;
-        if(IsKeyDown(KEY_FOUR))
-            switchParams.activeInput = 3;
-        if(IsKeyDown(KEY_FIVE))
-            switchParams.activeInput = 4;
         R3D_SetSwitchNodeParams(switchNode, switchParams);
 
         UpdateCamera(&camera, CAMERA_ORBITAL);
@@ -221,11 +175,9 @@ int main(void)
                 R3D_DrawAnimatedModel(model, modelPlayer, Vector3Zero(), 1.0f);
             R3D_End();
 
-            DrawText("Press '1' to idle", 10, GetScreenHeight()-114, 20, BLACK);
-            DrawText("Press '2' to walk forward", 10, GetScreenHeight()-94, 20, BLACK);
-            DrawText("Press '3' to run forward", 10, GetScreenHeight()-74, 20, BLACK);
-            DrawText("Press '4' to walk backward", 10, GetScreenHeight()-54, 20, BLACK);
-            DrawText("Press '5' to run backward", 10, GetScreenHeight()-34, 20, BLACK);
+            DrawText("Press '1' to idle", 10, GetScreenHeight()-74, 20, BLACK);
+            DrawText("Press '2' to walk left and right", 10, GetScreenHeight()-54, 20, BLACK);
+            DrawText("Press '3' to walk forward and backward", 10, GetScreenHeight()-34, 20, BLACK);
         EndDrawing();
     }
 

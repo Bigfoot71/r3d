@@ -136,17 +136,17 @@ typedef struct {
  * @brief Parameters for animation state machine edge.
  */
 typedef struct {
-    R3D_StmEdgeMode   mode;          ///< Operation mode.
-    R3D_StmEdgeStatus currentStatus; ///< Current travel status.
-    R3D_StmEdgeStatus nextStatus;    ///< Travel status used after machine traversed thru this edge with currentStatus set to R3D_STM_EDGE_ONCE.
-    float             xFadeTime;     ///< Cross fade blending time between connected animation nodes, in seconds.
+    R3D_StmEdgeMode   mode;       ///< Operation mode.
+    R3D_StmEdgeStatus status;     ///< Current travel status.
+    R3D_StmEdgeStatus nextStatus; ///< Travel status used after machine traversed thru this edge with status set to R3D_STM_EDGE_ONCE.
+    float             xFadeTime;  ///< Cross fade blending time between connected animation nodes, in seconds.
 } R3D_StmEdgeParams;
 
 /**
- * @brief Manages tree structure of animation and state machine nodes.
+ * @brief Manages a tree structure of animation nodes.
  *
- * The animation tree allows to define complex logic for switching and blending animations of
- * associated animation player. It supports 5 different animation nodes: Animation, Blend2, Add2,
+ * Animation tree allows to define complex logic for switching and blending animations of
+ * associated animation player. It supports 5 different animation node types: Animation, Blend2, Add2,
  * Switch and State Machine. It also fully supports root motion and bone masking in Blend2/Add2.
  */
 typedef struct {

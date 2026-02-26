@@ -201,7 +201,7 @@ static r3d_stmedge_t* stm_find_edge(const r3d_animtree_stm_t* node,
         unsigned int edges_cnt = state->out_cnt;
         for(int e_idx = 0; e_idx < edges_cnt; e_idx++) {
             r3d_stmedge_t*    edge = state->out_list[e_idx];
-            R3D_StmEdgeStatus stat = edge->params.currentStatus;
+            R3D_StmEdgeStatus stat = edge->params.status;
             bool              open = (stat == R3D_STM_EDGE_AUTO ||
                                       stat == R3D_STM_EDGE_ONCE);
             if(open) return edge;
@@ -255,8 +255,8 @@ static bool stm_next_state(r3d_animtree_stm_t* node, r3d_stmedge_t* edge,
     anode_reset(anode);
 
     edge->end_weight = 0.0f;
-    if(edge->params.currentStatus == R3D_STM_EDGE_ONCE)
-        edge->params.currentStatus = edge->params.nextStatus;
+    if(edge->params.status == R3D_STM_EDGE_ONCE)
+        edge->params.status = edge->params.nextStatus;
 
     *next_idx = end_idx;
     return true;
@@ -308,7 +308,7 @@ static int expand_path(r3d_animtree_stm_t* node, r3d_stmedge_t** edges, r3d_stme
     for(int e_idx = 0; e_idx < out_cnt; e_idx++) {
         r3d_stmedge_t* edge = state->out_list[e_idx];
 
-        bool closed = edge->params.currentStatus == R3D_STM_EDGE_OFF;
+        bool closed = edge->params.status == R3D_STM_EDGE_OFF;
         if(closed) continue;
 
         if(next_cnt < max_open_paths) {
