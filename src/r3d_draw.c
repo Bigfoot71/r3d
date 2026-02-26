@@ -369,7 +369,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
         if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            return;
+            continue;
         }
 
         r3d_render_call_t drawCall = {0};
@@ -408,7 +408,7 @@ void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, in
     {
         const R3D_Mesh* mesh = &model.meshes[i];
         if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            return;
+            continue;
         }
 
         r3d_render_call_t drawCall = {0};
@@ -447,7 +447,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
     {
         const R3D_Mesh* mesh = &model.meshes[i];
         if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            return;
+            continue;
         }
 
         r3d_render_call_t drawCall = {0};
@@ -488,7 +488,7 @@ void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer play
     {
         const R3D_Mesh* mesh = &model.meshes[i];
         if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            return;
+            continue;
         }
 
         r3d_render_call_t drawCall = {0};
