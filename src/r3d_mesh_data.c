@@ -38,7 +38,7 @@ static void gen_cube_face(
 // PUBLIC API
 // ========================================
 
-R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount)
+R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount)
 {
     R3D_MeshData meshData = {0};
 
@@ -1675,7 +1675,7 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
     return meshData;
 }
 
-R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData)
+R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData)
 {
     R3D_MeshData duplicate = {0};
 
@@ -1684,7 +1684,7 @@ R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData)
         return duplicate;
     }
 
-    duplicate = R3D_CreateMeshData(meshData.vertexCount, meshData.indexCount);
+    duplicate = R3D_LoadMeshData(meshData.vertexCount, meshData.indexCount);
     if (duplicate.vertices == NULL) {
         return duplicate;
     }
@@ -1710,7 +1710,7 @@ R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b)
     int totalVertices = a.vertexCount + b.vertexCount;
     int totalIndices = a.indexCount + b.indexCount;
 
-    merged = R3D_CreateMeshData(totalVertices, totalIndices);
+    merged = R3D_LoadMeshData(totalVertices, totalIndices);
 
     if (merged.vertices == NULL) {
         return merged;

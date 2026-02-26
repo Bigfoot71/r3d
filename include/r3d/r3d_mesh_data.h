@@ -71,7 +71,7 @@ extern "C" {
  *
  * @return A new R3D_MeshData instance with allocated memory.
  */
-R3DAPI R3D_MeshData R3D_CreateMeshData(int vertexCount, int indexCount);
+R3DAPI R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount);
 
 /**
  * @brief Releases memory used by a mesh data container.
@@ -318,7 +318,7 @@ R3DAPI R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize);
  * @param meshData Source mesh data to duplicate.
  * @return A new R3D_MeshData containing a copy of the source data.
  */
-R3DAPI R3D_MeshData R3D_DuplicateMeshData(R3D_MeshData meshData);
+R3DAPI R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData);
 
 /**
  * @brief Merges two mesh data containers into a single one.
