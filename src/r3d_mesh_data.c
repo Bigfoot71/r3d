@@ -1738,6 +1738,58 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
     return meshData;
 }
 
+void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount)
+{
+    if (vertexCount > meshData->vertexCapacity) {
+        void* vertices = RL_REALLOC(meshData->vertices, vertexCount * sizeof(*meshData->vertices));
+        if (vertices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to reserve vertices memory");
+            return;
+        }
+        meshData->vertexCapacity = vertexCount;
+        meshData->vertices = vertices;
+    }
+
+    if (indexCount > meshData->indexCapacity) {
+        void* indices = RL_REALLOC(meshData->indices, indexCount * sizeof(*meshData->indices));
+        if (indices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to reserve indices memory");
+            return;
+        }
+        meshData->indexCapacity = indexCount;
+        meshData->indices = indices;
+    }
+}
+
+void R3D_ShrinkMeshData(R3D_MeshData* meshData)
+{
+    if (meshData->vertexCount > 0 && meshData->vertexCount != meshData->vertexCapacity) {
+        void* vertices = RL_REALLOC(meshData->vertices, meshData->vertexCount * sizeof(*meshData->vertices));
+        if (vertices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to shrink vertices memory");
+            return;
+        }
+        meshData->vertexCapacity = meshData->vertexCount;
+        meshData->vertices = vertices;
+    }
+
+    if (meshData->indexCount > 0 && meshData->indexCount != meshData->indexCapacity) {
+        void* indices = RL_REALLOC(meshData->indices, meshData->indexCount * sizeof(*meshData->indices));
+        if (indices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to shrink indices memory");
+            return;
+        }
+        meshData->indexCapacity = meshData->indexCount;
+        meshData->indices = indices;
+    }
+}
+
+void R3D_ResetMeshData(R3D_MeshData* meshData)
+{
+    meshData->vertexCount = 0;
+    meshData->indexCount = 0;
+}
+
 R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData)
 {
     R3D_MeshData duplicate = {0};
@@ -1793,58 +1845,6 @@ R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b)
     }
 
     return merged;
-}
-
-void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount)
-{
-    if (vertexCount > meshData->vertexCapacity) {
-        void* vertices = RL_REALLOC(meshData->vertices, vertexCount * sizeof(*meshData->vertices));
-        if (vertices == NULL) {
-            R3D_TRACELOG(LOG_WARNING, "Failed to reserve vertices memory");
-            return;
-        }
-        meshData->vertexCapacity = vertexCount;
-        meshData->vertices = vertices;
-    }
-
-    if (indexCount > meshData->indexCapacity) {
-        void* indices = RL_REALLOC(meshData->indices, indexCount * sizeof(*meshData->indices));
-        if (indices == NULL) {
-            R3D_TRACELOG(LOG_WARNING, "Failed to reserve indices memory");
-            return;
-        }
-        meshData->indexCapacity = indexCount;
-        meshData->indices = indices;
-    }
-}
-
-void R3D_ShrinkMeshData(R3D_MeshData* meshData)
-{
-    if (meshData->vertexCount > 0 && meshData->vertexCount != meshData->vertexCapacity) {
-        void* vertices = RL_REALLOC(meshData->vertices, meshData->vertexCount * sizeof(*meshData->vertices));
-        if (vertices == NULL) {
-            R3D_TRACELOG(LOG_WARNING, "Failed to shrink vertices memory");
-            return;
-        }
-        meshData->vertexCapacity = meshData->vertexCount;
-        meshData->vertices = vertices;
-    }
-
-    if (meshData->indexCount > 0 && meshData->indexCount != meshData->indexCapacity) {
-        void* indices = RL_REALLOC(meshData->indices, meshData->indexCount * sizeof(*meshData->indices));
-        if (indices == NULL) {
-            R3D_TRACELOG(LOG_WARNING, "Failed to shrink indices memory");
-            return;
-        }
-        meshData->indexCapacity = meshData->indexCount;
-        meshData->indices = indices;
-    }
-}
-
-void R3D_ResetMeshData(R3D_MeshData* meshData)
-{
-    meshData->vertexCount = 0;
-    meshData->indexCount = 0;
 }
 
 void R3D_AppendMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount)

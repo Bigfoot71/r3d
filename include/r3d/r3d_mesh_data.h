@@ -333,21 +333,6 @@ R3DAPI R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size);
 R3DAPI R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize);
 
 /**
- * @brief Creates a deep copy of an existing mesh data container.
- * @param meshData Source mesh data to duplicate.
- * @return A new R3D_MeshData containing a copy of the source data.
- */
-R3DAPI R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData);
-
-/**
- * @brief Merges two mesh data containers into a single one.
- * @param a First mesh data.
- * @param b Second mesh data.
- * @return A new R3D_MeshData containing the merged geometry.
- */
-R3DAPI R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b);
-
-/**
  * @brief Reserves memory for the specified number of vertices and indices.
  * @param meshData Target mesh data container.
  * @param vertexCount Number of vertices to reserve space for.
@@ -366,6 +351,21 @@ R3DAPI void R3D_ShrinkMeshData(R3D_MeshData* meshData);
  * @param meshData Target mesh data container to reset.
  */
 R3DAPI void R3D_ResetMeshData(R3D_MeshData* meshData);
+
+/**
+ * @brief Creates a deep copy of an existing mesh data container.
+ * @param meshData Source mesh data to duplicate.
+ * @return A new R3D_MeshData containing a copy of the source data.
+ */
+R3DAPI R3D_MeshData R3D_CopyMeshData(R3D_MeshData meshData);
+
+/**
+ * @brief Merges two mesh data containers into a single one.
+ * @param a First mesh data.
+ * @param b Second mesh data.
+ * @return A new R3D_MeshData containing the merged geometry.
+ */
+R3DAPI R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b);
 
 /**
  * @brief Appends vertices and indices to the mesh data container.
