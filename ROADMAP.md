@@ -25,6 +25,16 @@
 * [x] **Review skybox generation**
   Improve parameter structure and naming, add an optional debanding setting, and support shaders for skyboxes.
 
+## **v0.10**
+
+* [ ] **Hi-Z tracing (SSR/SSGI)**
+  This "simply" requires changing the number of levels of `R3D_TARGET_DEPTH` and `R3D_TARGET_SELECTOR` from '0' to the maximum value in `r3d_target.c`,
+  then implementing a shared Hi-Z screen-space ray tracing method for SSR/SSGI (it should be reusable).
+
+* [ ] **Add a render priority index to `R3D_Material`**
+  Add a signed integer indicating render priority in materials, in order to control whether certain objects should be rendered before or after others.
+  It should integrate easily with the existing material-based sorting.
+
 ## **Ideas (Not Planned Yet)**
 
 * [ ] Think about introducing a dedicated `R3D_Camera` that handles `cullMask` per camera (instead of using global state) and manages `near/far` parameters directly, removing the last dependency on `rlgl`.
