@@ -14,6 +14,8 @@
 #include <float.h>
 
 #include "./common/r3d_helper.h"
+#include "common/r3d_math.h"
+#include "raylib.h"
 
 // ========================================
 // INTERNAL FUNCTIONS
@@ -1816,13 +1818,36 @@ void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount
     }
 }
 
+void R3D_ShrinkMeshData(R3D_MeshData* meshData)
+{
+    if (meshData->vertexCount > 0 && meshData->vertexCount != meshData->vertexCapacity) {
+        void* vertices = RL_REALLOC(meshData->vertices, meshData->vertexCount * sizeof(*meshData->vertices));
+        if (vertices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to shrink vertices memory");
+            return;
+        }
+        meshData->vertexCapacity = meshData->vertexCount;
+        meshData->vertices = vertices;
+    }
+
+    if (meshData->indexCount > 0 && meshData->indexCount != meshData->indexCapacity) {
+        void* indices = RL_REALLOC(meshData->indices, meshData->indexCount * sizeof(*meshData->indices));
+        if (indices == NULL) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to shrink indices memory");
+            return;
+        }
+        meshData->indexCapacity = meshData->indexCount;
+        meshData->indices = indices;
+    }
+}
+
 void R3D_ResetMeshData(R3D_MeshData* meshData)
 {
     meshData->vertexCount = 0;
     meshData->indexCount = 0;
 }
 
-void R3D_PushMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount)
+void R3D_AppendMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount)
 {
     R3D_ReserveMeshData(meshData, vertexCount, indexCount);
 
@@ -1835,16 +1860,26 @@ void R3D_PushMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCo
     }
 }
 
-void R3D_PopMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount)
+void R3D_TransformMeshData(R3D_MeshData* meshData, Matrix transform)
 {
-    meshData->vertexCount = MAX(meshData->vertexCount - vertexCount, 0);
-    meshData->indexCount = MAX(meshData->indexCount - indexCount, 0);
+    if (meshData == NULL || meshData->vertices == NULL) return;
+
+    Matrix matNormal = r3d_matrix_normal(&transform);
+
+    for (int i = 0; i < meshData->vertexCount; i++) {
+        R3D_Vertex* vertex = &meshData->vertices[i];
+        vertex->position = r3d_vector3_transform(vertex->position, &transform);
+        vertex->normal = r3d_vector3_transform_normal(vertex->normal, &matNormal);
+        Vector3 tangent = {vertex->tangent.x, vertex->tangent.y, vertex->tangent.z};
+        tangent = Vector3Normalize(r3d_vector3_transform_normal(tangent, &transform));
+        vertex->tangent = (Vector4) {tangent.x, tangent.y, tangent.z, vertex->tangent.w};
+    }
 }
 
 void R3D_TranslateMeshData(R3D_MeshData* meshData, Vector3 translation)
 {
     if (meshData == NULL || meshData->vertices == NULL) return;
-    
+
     for (int i = 0; i < meshData->vertexCount; i++) {
         meshData->vertices[i].position.x += translation.x;
         meshData->vertices[i].position.y += translation.y;

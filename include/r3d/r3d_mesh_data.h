@@ -356,6 +356,12 @@ R3DAPI R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b);
 R3DAPI void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount);
 
 /**
+ * @brief Shrinks allocated memory to fit the current vertex and index counts.
+ * @param meshData Target mesh data container to shrink.
+ */
+R3DAPI void R3D_ShrinkMeshData(R3D_MeshData* meshData);
+
+/**
  * @brief Clears all vertices and indices without releasing allocated memory.
  * @param meshData Target mesh data container to reset.
  */
@@ -369,15 +375,14 @@ R3DAPI void R3D_ResetMeshData(R3D_MeshData* meshData);
  * @param indices Array of indices to append.
  * @param indexCount Number of indices to append.
  */
-R3DAPI void R3D_PushMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount);
+R3DAPI void R3D_AppendMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount);
 
 /**
- * @brief Removes the specified number of vertices and indices from the end.
+ * @brief Applies a transformation matrix to all vertices in the mesh data.
  * @param meshData Target mesh data container.
- * @param vertexCount Number of vertices to remove.
- * @param indexCount Number of indices to remove.
+ * @param transform Transformation matrix to apply.
  */
-R3DAPI void R3D_PopMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount);
+R3DAPI void R3D_TransformMeshData(R3D_MeshData* meshData, Matrix transform);
 
 /**
  * @brief Translates all vertices by a given offset.
