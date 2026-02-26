@@ -21,20 +21,10 @@
 
 static bool alloc_mesh(R3D_MeshData* meshData, int vertexCount, int indexCount);
 
-static void gen_cube_face(
-    R3D_Vertex **vertexPtr,
-    uint32_t **indexPtr,
-    uint32_t *vertexOffset,
-    Vector3 origin,
-    Vector3 uAxis,
-    Vector3 vAxis,
-    float uSize,
-    float vSize,
-    int uRes,
-    int vRes,
-    Vector3 normal,
-    Vector3 tangent
-);
+static inline uint32_t get_index(const R3D_MeshData* meshData, int i)
+{
+    return meshData->indexCount > 0 ? meshData->indices[i] : (uint32_t)i;
+}
 
 // ========================================
 // PUBLIC API
@@ -339,6 +329,75 @@ R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length)
     }
 
     return meshData;
+}
+
+static void gen_cube_face(
+    R3D_Vertex **vertexPtr,
+    uint32_t **indexPtr,
+    uint32_t *vertexOffset,
+    Vector3 origin,
+    Vector3 uAxis,
+    Vector3 vAxis,
+    float uSize,
+    float vSize,
+    int uRes,
+    int vRes,
+    Vector3 normal,
+    Vector3 tangent)
+{
+    float invU = 1.0f / (float)uRes;
+    float invV = 1.0f / (float)vRes;
+    Vector4 tangent4 = {tangent.x, tangent.y, tangent.z, 1.0f};
+
+    uint32_t faceVertStart = *vertexOffset;
+    R3D_Vertex *vertex = *vertexPtr;
+    uint32_t *index = *indexPtr;
+
+    for (int v = 0; v <= vRes; v++)
+    {
+        float vt = v * invV;
+        float localV = (vt - 0.5f) * vSize;
+
+        for (int u = 0; u <= uRes; u++)
+        {
+            float ut = u * invU;
+            float localU = (ut - 0.5f) * uSize;
+
+            vertex->position = (Vector3){
+                origin.x + localU * uAxis.x + localV * vAxis.x,
+                origin.y + localU * uAxis.y + localV * vAxis.y,
+                origin.z + localU * uAxis.z + localV * vAxis.z
+            };
+
+            vertex->texcoord = (Vector2){ut, vt};
+            vertex->normal   = normal;
+            vertex->color    = WHITE;
+            vertex->tangent  = tangent4;
+
+            vertex++;
+            (*vertexOffset)++;
+        }
+    }
+
+    for (int v = 0; v < vRes; v++)
+    {
+        uint32_t rowStart     = faceVertStart + v * (uRes + 1);
+        uint32_t nextRowStart = rowStart + (uRes + 1);
+
+        for (int u = 0; u < uRes; u++)
+        {
+            uint32_t i0 = rowStart + u;
+            uint32_t i1 = i0 + 1;
+            uint32_t i2 = nextRowStart + u;
+            uint32_t i3 = i2 + 1;
+
+            *index++ = i0; *index++ = i1; *index++ = i2;
+            *index++ = i2; *index++ = i1; *index++ = i3;
+        }
+    }
+
+    *vertexPtr = vertex;
+    *indexPtr  = index;
 }
 
 R3D_MeshData R3D_GenMeshDataCubeEx(float width, float height, float length, int resX, int resY, int resZ)
@@ -1820,15 +1879,36 @@ void R3D_ScaleMeshData(R3D_MeshData* meshData, Vector3 scale)
 {
     if (meshData == NULL || meshData->vertices == NULL) return;
 
-    for (int i = 0; i < meshData->vertexCount; i++) {
-        meshData->vertices[i].position.x *= scale.x;
-        meshData->vertices[i].position.y *= scale.y;
-        meshData->vertices[i].position.z *= scale.z;
-    }
-
     if (scale.x != scale.y || scale.y != scale.z) {
-        R3D_GenMeshDataNormals(meshData);
-        R3D_GenMeshDataTangents(meshData);
+        Vector3 invScale = {
+            scale.x != 0.0f ? 1.0f / scale.x : 0.0f,
+            scale.y != 0.0f ? 1.0f / scale.y : 0.0f,
+            scale.z != 0.0f ? 1.0f / scale.z : 0.0f
+        };
+        for (int i = 0; i < meshData->vertexCount; i++) {
+            R3D_Vertex* v = &meshData->vertices[i];
+            v->position.x *= scale.x;
+            v->position.y *= scale.y;
+            v->position.z *= scale.z;
+            v->normal.x *= invScale.x;
+            v->normal.y *= invScale.y;
+            v->normal.z *= invScale.z;
+            v->normal = Vector3Normalize(v->normal);
+            v->tangent.x *= scale.x;
+            v->tangent.y *= scale.y;
+            v->tangent.z *= scale.z;
+            float w = v->tangent.w;
+            Vector3 t = Vector3Normalize((Vector3){v->tangent.x, v->tangent.y, v->tangent.z});
+            v->tangent = (Vector4) {t.x, t.y, t.z, w};
+        }
+    }
+    else {
+        for (int i = 0; i < meshData->vertexCount; i++) {
+            R3D_Vertex* v = &meshData->vertices[i];
+            v->position.x *= scale.x;
+            v->position.y *= scale.y;
+            v->position.z *= scale.z;
+        }
     }
 }
 
@@ -1874,49 +1954,72 @@ void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData)
     }
 }
 
-void R3D_GenMeshDataNormals(R3D_MeshData* meshData)
+static void accumulate_face_normal(R3D_MeshData* meshData, uint32_t i0, uint32_t i1, uint32_t i2)
 {
-    if (meshData == NULL || meshData->vertices == NULL) return;
+    Vector3 v0 = meshData->vertices[i0].position;
+    Vector3 v1 = meshData->vertices[i1].position;
+    Vector3 v2 = meshData->vertices[i2].position;
+
+    Vector3 faceNormal = Vector3CrossProduct(
+        Vector3Subtract(v1, v0),
+        Vector3Subtract(v2, v0)
+    );
+
+    meshData->vertices[i0].normal = Vector3Add(meshData->vertices[i0].normal, faceNormal);
+    meshData->vertices[i1].normal = Vector3Add(meshData->vertices[i1].normal, faceNormal);
+    meshData->vertices[i2].normal = Vector3Add(meshData->vertices[i2].normal, faceNormal);
+}
+
+void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
+{
+    if (meshData == NULL || meshData->vertices == NULL || meshData->vertexCount == 0) {
+        return;
+    }
+
+    if (type == R3D_PRIMITIVE_POINTS ||  type == R3D_PRIMITIVE_LINES ||
+        type == R3D_PRIMITIVE_LINE_STRIP ||  type == R3D_PRIMITIVE_LINE_LOOP) {
+        for (int i = 0; i < meshData->vertexCount; i++) {
+            meshData->vertices[i].normal = (Vector3) {0.0f, 0.0f, 1.0f};
+        }
+        return;
+    }
 
     for (int i = 0; i < meshData->vertexCount; i++) {
         meshData->vertices[i].normal = (Vector3) {0};
     }
 
-    if (meshData->indexCount > 0 && meshData->indices != NULL) {
-        for (int i = 0; i < meshData->indexCount; i += 3)
-        {
-            uint32_t i0 = meshData->indices[i];
-            uint32_t i1 = meshData->indices[i + 1];
-            uint32_t i2 = meshData->indices[i + 2];
+    int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
 
-            Vector3 v0 = meshData->vertices[i0].position;
-            Vector3 v1 = meshData->vertices[i1].position;
-            Vector3 v2 = meshData->vertices[i2].position;
-
-            Vector3 edge1 = Vector3Subtract(v1, v0);
-            Vector3 edge2 = Vector3Subtract(v2, v0);
-            Vector3 faceNormal = Vector3CrossProduct(edge1, edge2);
-
-            meshData->vertices[i0].normal = Vector3Add(meshData->vertices[i0].normal, faceNormal);
-            meshData->vertices[i1].normal = Vector3Add(meshData->vertices[i1].normal, faceNormal);
-            meshData->vertices[i2].normal = Vector3Add(meshData->vertices[i2].normal, faceNormal);
+    switch (type) {
+    case R3D_PRIMITIVE_TRIANGLES: {
+        for (int i = 0; i + 2 < count; i += 3) {
+            accumulate_face_normal(meshData,
+                get_index(meshData, i),
+                get_index(meshData, i + 1),
+                get_index(meshData, i + 2)
+            );
         }
-    }
-    else {
-        for (int i = 0; i < meshData->vertexCount; i += 3)
-        {
-            Vector3 v0 = meshData->vertices[i].position;
-            Vector3 v1 = meshData->vertices[i + 1].position;
-            Vector3 v2 = meshData->vertices[i + 2].position;
-
-            Vector3 edge1 = Vector3Subtract(v1, v0);
-            Vector3 edge2 = Vector3Subtract(v2, v0);
-            Vector3 faceNormal = Vector3CrossProduct(edge1, edge2);
-
-            meshData->vertices[i + 0].normal = Vector3Add(meshData->vertices[i + 0].normal, faceNormal);
-            meshData->vertices[i + 1].normal = Vector3Add(meshData->vertices[i + 1].normal, faceNormal);
-            meshData->vertices[i + 2].normal = Vector3Add(meshData->vertices[i + 2].normal, faceNormal);
+    } break;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP: {
+        for (int i = 0; i + 2 < count; i++) {
+            uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
+            uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
+            uint32_t i2 = get_index(meshData, i + 2);
+            accumulate_face_normal(meshData, i0, i1, i2);
         }
+    } break;
+    case R3D_PRIMITIVE_TRIANGLE_FAN: {
+        uint32_t center = get_index(meshData, 0);
+        for (int i = 1; i + 1 < count; i++) {
+            accumulate_face_normal(meshData,
+                center,
+                get_index(meshData, i),
+                get_index(meshData, i + 1)
+            );
+        }
+    } break;
+    default:
+        break;
     }
 
     for (int i = 0; i < meshData->vertexCount; i++) {
@@ -1924,9 +2027,69 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData)
     }
 }
 
-void R3D_GenMeshDataTangents(R3D_MeshData* meshData)
+static void process_triangle_tangents(R3D_MeshData* meshData, Vector3* bitangents, uint32_t i0, uint32_t i1, uint32_t i2)
 {
-    if (meshData == NULL || meshData->vertices == NULL) return;
+    Vector3 v0 = meshData->vertices[i0].position;
+    Vector3 v1 = meshData->vertices[i1].position;
+    Vector3 v2 = meshData->vertices[i2].position;
+
+    Vector2 uv0 = meshData->vertices[i0].texcoord;
+    Vector2 uv1 = meshData->vertices[i1].texcoord;
+    Vector2 uv2 = meshData->vertices[i2].texcoord;
+
+    Vector3 edge1 = Vector3Subtract(v1, v0);
+    Vector3 edge2 = Vector3Subtract(v2, v0);
+
+    Vector2 deltaUV1 = Vector2Subtract(uv1, uv0);
+    Vector2 deltaUV2 = Vector2Subtract(uv2, uv0);
+
+    float det = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;
+    if (fabsf(det) < 1e-6f) return;
+
+    float invDet = 1.0f / det;
+
+    Vector3 tangent = {
+        invDet * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),
+        invDet * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),
+        invDet * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z)
+    };
+
+    Vector3 bitangent = {
+        invDet * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x),
+        invDet * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y),
+        invDet * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z)
+    };
+
+    meshData->vertices[i0].tangent.x += tangent.x;
+    meshData->vertices[i0].tangent.y += tangent.y;
+    meshData->vertices[i0].tangent.z += tangent.z;
+
+    meshData->vertices[i1].tangent.x += tangent.x;
+    meshData->vertices[i1].tangent.y += tangent.y;
+    meshData->vertices[i1].tangent.z += tangent.z;
+
+    meshData->vertices[i2].tangent.x += tangent.x;
+    meshData->vertices[i2].tangent.y += tangent.y;
+    meshData->vertices[i2].tangent.z += tangent.z;
+
+    bitangents[i0] = Vector3Add(bitangents[i0], bitangent);
+    bitangents[i1] = Vector3Add(bitangents[i1], bitangent);
+    bitangents[i2] = Vector3Add(bitangents[i2], bitangent);
+}
+
+void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
+{
+    if (meshData == NULL || meshData->vertices == NULL || meshData->vertexCount == 0) {
+        return;
+    }
+
+    if (type == R3D_PRIMITIVE_POINTS || type == R3D_PRIMITIVE_LINES ||
+        type == R3D_PRIMITIVE_LINE_STRIP || type == R3D_PRIMITIVE_LINE_LOOP) {
+        for (int i = 0; i < meshData->vertexCount; i++) {
+            meshData->vertices[i].tangent = (Vector4){ 1.0f, 0.0f, 0.0f, 1.0f };
+        }
+        return;
+    }
 
     Vector3* bitangents = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
     if (bitangents == NULL) {
@@ -1938,84 +2101,41 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData)
         meshData->vertices[i].tangent = (Vector4) {0};
     }
 
-    #define PROCESS_TRIANGLE(i0, i1, i2)                                \
-    do {                                                                \
-        Vector3 v0 = meshData->vertices[i0].position;                   \
-        Vector3 v1 = meshData->vertices[i1].position;                   \
-        Vector3 v2 = meshData->vertices[i2].position;                   \
-                                                                        \
-        Vector2 uv0 = meshData->vertices[i0].texcoord;                  \
-        Vector2 uv1 = meshData->vertices[i1].texcoord;                  \
-        Vector2 uv2 = meshData->vertices[i2].texcoord;                  \
-                                                                        \
-        Vector3 edge1 = Vector3Subtract(v1, v0);                        \
-        Vector3 edge2 = Vector3Subtract(v2, v0);                        \
-                                                                        \
-        Vector2 deltaUV1 = Vector2Subtract(uv1, uv0);                   \
-        Vector2 deltaUV2 = Vector2Subtract(uv2, uv0);                   \
-                                                                        \
-        float det = deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y;  \
-                                                                        \
-        /* Skip the degenerate cases (collinear UVs) */                 \
-        if (fabsf(det) < 1e-6f) {                                       \
-            break;                                                      \
-        }                                                               \
-                                                                        \
-        float invDet = 1.0f / det;                                      \
-                                                                        \
-        Vector3 tangent = {                                             \
-            invDet * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x),     \
-            invDet * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y),     \
-            invDet * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z)      \
-        };                                                              \
-                                                                        \
-        Vector3 bitangent = {                                           \
-            invDet * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x),    \
-            invDet * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y),    \
-            invDet * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z)     \
-        };                                                              \
-                                                                        \
-        meshData->vertices[i0].tangent.x += tangent.x;                  \
-        meshData->vertices[i0].tangent.y += tangent.y;                  \
-        meshData->vertices[i0].tangent.z += tangent.z;                  \
-                                                                        \
-        meshData->vertices[i1].tangent.x += tangent.x;                  \
-        meshData->vertices[i1].tangent.y += tangent.y;                  \
-        meshData->vertices[i1].tangent.z += tangent.z;                  \
-                                                                        \
-        meshData->vertices[i2].tangent.x += tangent.x;                  \
-        meshData->vertices[i2].tangent.y += tangent.y;                  \
-        meshData->vertices[i2].tangent.z += tangent.z;                  \
-                                                                        \
-        bitangents[i0].x += bitangent.x;                                \
-        bitangents[i0].y += bitangent.y;                                \
-        bitangents[i0].z += bitangent.z;                                \
-                                                                        \
-        bitangents[i1].x += bitangent.x;                                \
-        bitangents[i1].y += bitangent.y;                                \
-        bitangents[i1].z += bitangent.z;                                \
-                                                                        \
-        bitangents[i2].x += bitangent.x;                                \
-        bitangents[i2].y += bitangent.y;                                \
-        bitangents[i2].z += bitangent.z;                                \
-    } while(0);
+    int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
 
-    if (meshData->indexCount > 0 && meshData->indices != NULL) {
-        for (int i = 0; i < meshData->indexCount; i += 3) {
-            PROCESS_TRIANGLE(
-                meshData->indices[i],
-                meshData->indices[i + 1],
-                meshData->indices[i + 2]
+    switch (type) {
+    case R3D_PRIMITIVE_TRIANGLES: {
+        for (int i = 0; i + 2 < count; i += 3) {
+            process_triangle_tangents(
+                meshData, bitangents,
+                get_index(meshData, i),
+                get_index(meshData, i + 1),
+                get_index(meshData, i + 2)
             );
         }
-    }
-    else {
-        for (int i = 0; i < meshData->vertexCount; i += 3) {
-            PROCESS_TRIANGLE(i, i + 1, i + 2);
+    } break;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP: {
+        for (int i = 0; i + 2 < count; i++) {
+            uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
+            uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
+            uint32_t i2 = get_index(meshData, i + 2);
+            process_triangle_tangents(meshData, bitangents, i0, i1, i2);
         }
+    } break;
+    case R3D_PRIMITIVE_TRIANGLE_FAN: {
+        uint32_t center = get_index(meshData, 0);
+        for (int i = 1; i + 1 < count; i++) {
+            process_triangle_tangents(
+                meshData, bitangents,
+                center,
+                get_index(meshData, i),
+                get_index(meshData, i + 1)
+            );
+        }
+    } break;
+    default:
+        break;
     }
-
-    #undef PROCESS_TRIANGLE
 
     // Orthogonalization (Gram-Schmidt) and handedness calculation
     for (int i = 0; i < meshData->vertexCount; i++)
@@ -2085,74 +2205,4 @@ bool alloc_mesh(R3D_MeshData* meshData, int vertexCount, int indexCount)
     meshData->indexCount = indexCount;
 
     return true;
-}
-
-void gen_cube_face(
-    R3D_Vertex **vertexPtr,
-    uint32_t **indexPtr,
-    uint32_t *vertexOffset,
-    Vector3 origin,
-    Vector3 uAxis,
-    Vector3 vAxis,
-    float uSize,
-    float vSize,
-    int uRes,
-    int vRes,
-    Vector3 normal,
-    Vector3 tangent
-)
-{
-    float invU = 1.0f / (float)uRes;
-    float invV = 1.0f / (float)vRes;
-    Vector4 tangent4 = {tangent.x, tangent.y, tangent.z, 1.0f};
-
-    uint32_t faceVertStart = *vertexOffset;
-    R3D_Vertex *vertex = *vertexPtr;
-    uint32_t *index = *indexPtr;
-
-    for (int v = 0; v <= vRes; v++)
-    {
-        float vt = v * invV;
-        float localV = (vt - 0.5f) * vSize;
-
-        for (int u = 0; u <= uRes; u++)
-        {
-            float ut = u * invU;
-            float localU = (ut - 0.5f) * uSize;
-
-            vertex->position = (Vector3){
-                origin.x + localU * uAxis.x + localV * vAxis.x,
-                origin.y + localU * uAxis.y + localV * vAxis.y,
-                origin.z + localU * uAxis.z + localV * vAxis.z
-            };
-
-            vertex->texcoord = (Vector2){ut, vt};
-            vertex->normal   = normal;
-            vertex->color    = WHITE;
-            vertex->tangent  = tangent4;
-
-            vertex++;
-            (*vertexOffset)++;
-        }
-    }
-
-    for (int v = 0; v < vRes; v++)
-    {
-        uint32_t rowStart     = faceVertStart + v * (uRes + 1);
-        uint32_t nextRowStart = rowStart + (uRes + 1);
-
-        for (int u = 0; u < uRes; u++)
-        {
-            uint32_t i0 = rowStart + u;
-            uint32_t i1 = i0 + 1;
-            uint32_t i2 = nextRowStart + u;
-            uint32_t i3 = i2 + 1;
-
-            *index++ = i0; *index++ = i1; *index++ = i2;
-            *index++ = i2; *index++ = i1; *index++ = i3;
-        }
-    }
-
-    *vertexPtr = vertex;
-    *indexPtr  = index;
 }

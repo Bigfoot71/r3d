@@ -19,6 +19,23 @@
  */
 
 // ========================================
+// ENUMS TYPES
+// ========================================
+
+/**
+ * @brief Defines the geometric primitive type.
+ */
+typedef enum R3D_PrimitiveType {
+    R3D_PRIMITIVE_POINTS,           ///< Each vertex represents a single point.
+    R3D_PRIMITIVE_LINES,            ///< Each pair of vertices forms an independent line segment.
+    R3D_PRIMITIVE_LINE_STRIP,       ///< Connected series of line segments sharing vertices.
+    R3D_PRIMITIVE_LINE_LOOP,        ///< Closed loop of connected line segments.
+    R3D_PRIMITIVE_TRIANGLES,        ///< Each set of three vertices forms an independent triangle.
+    R3D_PRIMITIVE_TRIANGLE_STRIP,   ///< Connected strip of triangles sharing vertices.
+    R3D_PRIMITIVE_TRIANGLE_FAN      ///< Fan of triangles sharing the first vertex.
+} R3D_PrimitiveType;
+
+// ========================================
 // STRUCTS TYPES
 // ========================================
 
@@ -406,14 +423,18 @@ R3DAPI void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData);
 /**
  * @brief Computes vertex normals from triangle geometry.
  * @param meshData Mesh data to modify.
+ * @param type Primitive type of the mesh. Points and line primitives are not
+ *             supported and will default to a front-facing normal (0, 0, 1).
  */
-R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData);
+R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type);
 
 /**
  * @brief Computes vertex tangents based on existing normals and UVs.
  * @param meshData Mesh data to modify.
+ * @param type Primitive type of the mesh. Points and line primitives are not
+ *             supported and will default to a front-facing tangent (1, 0, 0, 1).
  */
-R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData);
+R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type);
 
 /**
  * @brief Calculates the axis-aligned bounding box of the mesh.

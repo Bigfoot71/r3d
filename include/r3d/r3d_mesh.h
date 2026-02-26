@@ -33,19 +33,6 @@ typedef enum R3D_MeshUsage {
 } R3D_MeshUsage;
 
 /**
- * @brief Defines the geometric primitive type.
- */
-typedef enum R3D_PrimitiveType {
-    R3D_PRIMITIVE_POINTS,           ///< Each vertex represents a single point.
-    R3D_PRIMITIVE_LINES,            ///< Each pair of vertices forms an independent line segment.
-    R3D_PRIMITIVE_LINE_STRIP,       ///< Connected series of line segments sharing vertices.
-    R3D_PRIMITIVE_LINE_LOOP,        ///< Closed loop of connected line segments.
-    R3D_PRIMITIVE_TRIANGLES,        ///< Each set of three vertices forms an independent triangle.
-    R3D_PRIMITIVE_TRIANGLE_STRIP,   ///< Connected strip of triangles sharing vertices.
-    R3D_PRIMITIVE_TRIANGLE_FAN      ///< Fan of triangles sharing the first vertex.
-} R3D_PrimitiveType;
-
-/**
  * @brief Shadow casting modes for objects.
  *
  * Controls how an object interacts with the shadow mapping system.
