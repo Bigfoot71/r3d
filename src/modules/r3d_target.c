@@ -31,29 +31,34 @@ typedef struct {
 } target_format_t;
 
 typedef enum {
-    FORMAT_R8U,  FORMAT_RG8U,  FORMAT_RGB8U,  FORMAT_RGBA8U,
-    FORMAT_R16U, FORMAT_RG16U, FORMAT_RGB16U, FORMAT_RGBA16U,
+    FORMAT_R8,   FORMAT_RG8,   FORMAT_RGB8,   FORMAT_RGBA8,
+    FORMAT_R16,  FORMAT_RG16,  FORMAT_RGB16,  FORMAT_RGBA16,
+    FORMAT_R8UI, FORMAT_RG8UI, FORMAT_RGB8UI, FORMAT_RGBA8UI,
     FORMAT_R16F, FORMAT_RG16F, FORMAT_RGB16F, FORMAT_RGBA16F,
     FORMAT_R32F, FORMAT_RG32F, FORMAT_RGB32F, FORMAT_RGBA32F,
 } target_format_enum_t;
 
 static const target_format_t TARGET_FORMAT[] = {
-    [FORMAT_R8U]     = { GL_R8,        GL_RED,  GL_UNSIGNED_BYTE },
-    [FORMAT_RG8U]    = { GL_RG8,       GL_RG,   GL_UNSIGNED_BYTE },
-    [FORMAT_RGB8U]   = { GL_RGB8,      GL_RGB,  GL_UNSIGNED_BYTE },
-    [FORMAT_RGBA8U]  = { GL_RGBA8,     GL_RGBA, GL_UNSIGNED_BYTE },
-    [FORMAT_R16U]    = { GL_R16,       GL_RED,  GL_UNSIGNED_SHORT },
-    [FORMAT_RG16U]   = { GL_RG16,      GL_RG,   GL_UNSIGNED_SHORT },
-    [FORMAT_RGB16U]  = { GL_RGB16,     GL_RGB,  GL_UNSIGNED_SHORT },
-    [FORMAT_RGBA16U] = { GL_RGBA16,    GL_RGBA, GL_UNSIGNED_SHORT },
-    [FORMAT_R16F]    = { GL_R16F,      GL_RED,  GL_HALF_FLOAT },
-    [FORMAT_RG16F]   = { GL_RG16F,     GL_RG,   GL_HALF_FLOAT },
-    [FORMAT_RGB16F]  = { GL_RGB16F,    GL_RGB,  GL_HALF_FLOAT },
-    [FORMAT_RGBA16F] = { GL_RGBA16F,   GL_RGBA, GL_HALF_FLOAT },
-    [FORMAT_R32F]    = { GL_R32F,      GL_RED,  GL_FLOAT },
-    [FORMAT_RG32F]   = { GL_RG32F,     GL_RG,   GL_FLOAT },
-    [FORMAT_RGB32F]  = { GL_RGB32F,    GL_RGB,  GL_FLOAT },
-    [FORMAT_RGBA32F] = { GL_RGBA32F,   GL_RGBA, GL_FLOAT },
+    [FORMAT_R8]      = { GL_R8,        GL_RED,          GL_UNSIGNED_BYTE },
+    [FORMAT_RG8]     = { GL_RG8,       GL_RG,           GL_UNSIGNED_BYTE },
+    [FORMAT_RGB8]    = { GL_RGB8,      GL_RGB,          GL_UNSIGNED_BYTE },
+    [FORMAT_RGBA8]   = { GL_RGBA8,     GL_RGBA,         GL_UNSIGNED_BYTE },
+    [FORMAT_R16]     = { GL_R16,       GL_RED,          GL_UNSIGNED_SHORT },
+    [FORMAT_RG16]    = { GL_RG16,      GL_RG,           GL_UNSIGNED_SHORT },
+    [FORMAT_RGB16]   = { GL_RGB16,     GL_RGB,          GL_UNSIGNED_SHORT },
+    [FORMAT_RGBA16]  = { GL_RGBA16,    GL_RGBA,         GL_UNSIGNED_SHORT },
+    [FORMAT_R8UI]    = { GL_R8UI,      GL_RED_INTEGER,  GL_UNSIGNED_BYTE },
+    [FORMAT_RG8UI]   = { GL_RG8UI,     GL_RG_INTEGER,   GL_UNSIGNED_BYTE },
+    [FORMAT_RGB8UI]  = { GL_RGB8UI,    GL_RGB_INTEGER,  GL_UNSIGNED_BYTE },
+    [FORMAT_RGBA8UI] = { GL_RGBA8UI,   GL_RGBA_INTEGER, GL_UNSIGNED_BYTE },
+    [FORMAT_R16F]    = { GL_R16F,      GL_RED,          GL_HALF_FLOAT },
+    [FORMAT_RG16F]   = { GL_RG16F,     GL_RG,           GL_HALF_FLOAT },
+    [FORMAT_RGB16F]  = { GL_RGB16F,    GL_RGB,          GL_HALF_FLOAT },
+    [FORMAT_RGBA16F] = { GL_RGBA16F,   GL_RGBA,         GL_HALF_FLOAT },
+    [FORMAT_R32F]    = { GL_R32F,      GL_RED,          GL_FLOAT },
+    [FORMAT_RG32F]   = { GL_RG32F,     GL_RG,           GL_FLOAT },
+    [FORMAT_RGB32F]  = { GL_RGB32F,    GL_RGB,          GL_FLOAT },
+    [FORMAT_RGBA32F] = { GL_RGBA32F,   GL_RGBA,         GL_FLOAT },
 };
 
 // ========================================
@@ -70,15 +75,16 @@ typedef struct {
 } target_config_t;
 
 static const target_config_t TARGET_CONFIG[] = {
-    [R3D_TARGET_ALBEDO]      = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_NORMAL]      = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_ORM]         = { FORMAT_RGB8U,   1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ALBEDO]      = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_NORMAL]      = { FORMAT_RG16,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_ORM]         = { FORMAT_RGB8,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
     [R3D_TARGET_DEPTH]       = { FORMAT_R16F,    1.0f, GL_NEAREST,              GL_NEAREST, 2, {65504.0f, 65504.0f, 65504.0f, 65504.0f} },
     [R3D_TARGET_DIFFUSE]     = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
     [R3D_TARGET_SPECULAR]    = { FORMAT_RGB16F,  1.0f, GL_NEAREST,              GL_NEAREST, 2, {0} },
-    [R3D_TARGET_GEOM_NORMAL] = { FORMAT_RG16U,   1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
-    [R3D_TARGET_SSAO_0]      = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SSAO_1]      = { FORMAT_R8U,     0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_GEOM_NORMAL] = { FORMAT_RG16,    1.0f, GL_NEAREST,              GL_NEAREST, 1, {0} },
+    [R3D_TARGET_SELECTOR]    = { FORMAT_R8UI,    0.5f, GL_NEAREST,              GL_NEAREST, 2, {0} },
+    [R3D_TARGET_SSAO_0]      = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SSAO_1]      = { FORMAT_R8,      0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SSIL_0]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SSIL_1]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SSIL_2]      = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
@@ -90,8 +96,8 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_DOF_0]       = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_DOF_1]       = { FORMAT_RGBA16F, 0.5f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_BLOOM]       = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
-    [R3D_TARGET_SMAA_EDGES]  = { FORMAT_RG8U,    1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
-    [R3D_TARGET_SMAA_BLEND]  = { FORMAT_RGBA8U,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SMAA_EDGES]  = { FORMAT_RG8,     1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_SMAA_BLEND]  = { FORMAT_RGBA8,   1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SCENE_0]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SCENE_1]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
 };
@@ -355,6 +361,23 @@ void r3d_target_bind(const r3d_target_t* targets, int count, int level, bool dep
 
     if (count > 0) r3d_target_set_viewport(targets[0], level);
     else glViewport(0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH);
+}
+
+void r3d_target_bind_levels(const r3d_target_t* targets, int* levels, int count)
+{
+    assert(count > 0);
+
+    int fboIndex = get_or_create_fbo(targets, count, false);
+    if (fboIndex != R3D_MOD_TARGET.currentFbo) {
+        glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_TARGET.fbo[fboIndex].id);
+        R3D_MOD_TARGET.currentFbo = fboIndex;
+    }
+
+    for (int i = 0; i < count; i++) {
+        r3d_target_set_write_level(i, levels[i]);
+    }
+
+    r3d_target_set_viewport(targets[0], levels[0]);
 }
 
 void r3d_target_set_viewport(r3d_target_t target, int level)

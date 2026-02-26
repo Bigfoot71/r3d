@@ -67,6 +67,7 @@ static void pass_scene_geometry(void);
 static void pass_scene_prepass(void);
 static void pass_scene_decals(void);
 
+static void pass_prepare_depth_pyramid(void);
 static r3d_target_t pass_prepare_ssao(void);
 static r3d_target_t pass_prepare_ssil(void);
 static r3d_target_t pass_prepare_ssgi(void);
@@ -182,6 +183,10 @@ void R3D_End(void)
         bool ssil = R3D.environment.ssil.enabled;
         bool ssgi = R3D.environment.ssgi.enabled;
         bool ssr = R3D.environment.ssr.enabled;
+
+        if (ssao || ssil || ssgi || ssr) {
+            pass_prepare_depth_pyramid();
+        }
 
         if (ssao) ssaoSource = pass_prepare_ssao();
         if (ssil) ssilSource = pass_prepare_ssil();
@@ -1490,6 +1495,24 @@ void pass_scene_decals(void)
     }
 }
 
+void pass_prepare_depth_pyramid(void)
+{
+    int numLevels = r3d_target_get_num_levels(R3D_TARGET_DEPTH);
+
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
+    r3d_driver_disable(GL_BLEND);
+
+    R3D_SHADER_USE(prepare.depthPyramid);
+
+    for (int iDst = 1; iDst < numLevels; iDst++) {
+        R3D_TARGET_BIND_LEVELS(R3D_TARGET_LEVEL_LIST(iDst, iDst-1), R3D_TARGET_DEPTH, R3D_TARGET_SELECTOR);
+        R3D_SHADER_BIND_SAMPLER(prepare.depthPyramid, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, iDst - 1));
+        R3D_RENDER_SCREEN();
+    }
+}
+
 r3d_target_t pass_prepare_ssao(void)
 {
     /* --- Setup OpenGL pipeline --- */
@@ -1501,11 +1524,11 @@ r3d_target_t pass_prepare_ssao(void)
 
     /* --- Downsample G-Buffer --- */
 
-    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_NORMAL);
     R3D_SHADER_USE(prepare.ssaoInDown);
 
+    R3D_SHADER_BIND_SAMPLER(prepare.ssaoInDown, uSelectorTex, r3d_target_get_level(R3D_TARGET_SELECTOR, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssaoInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssaoInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
     R3D_RENDER_SCREEN();
 
@@ -1514,7 +1537,7 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_TARGET_BIND(false, R3D_TARGET_SSAO_0);
     R3D_SHADER_USE(prepare.ssao);
 
-    R3D_SHADER_SET_INT(prepare.ssao, uSampleCount,  R3D.environment.ssao.sampleCount);
+    R3D_SHADER_SET_INT(prepare.ssao, uSampleCount, R3D.environment.ssao.sampleCount);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uRadius,  R3D.environment.ssao.radius);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uBias, R3D.environment.ssao.bias);
     R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.environment.ssao.intensity);
@@ -1563,12 +1586,12 @@ r3d_target_t pass_prepare_ssil(void)
 
     /* --- Downsample G-Buffer --- */
 
-    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL);
     R3D_SHADER_USE(prepare.ssilInDown);
 
+    R3D_SHADER_BIND_SAMPLER(prepare.ssilInDown, uSelectorTex, r3d_target_get_level(R3D_TARGET_SELECTOR, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssilInDown, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssilInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssilInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
     R3D_RENDER_SCREEN();
 
@@ -1644,12 +1667,12 @@ r3d_target_t pass_prepare_ssgi(void)
 
     /* --- Downsample G-Buffer --- */
 
-    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_NORMAL);
     R3D_SHADER_USE(prepare.ssgiInDown);
 
+    R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uSelectorTex, r3d_target_get_level(R3D_TARGET_SELECTOR, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssgiInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
     R3D_RENDER_SCREEN();
 
@@ -1719,13 +1742,13 @@ r3d_target_t pass_prepare_ssr(void)
 
     /* --- Downsample G-Buffer --- */
 
-    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_SPECULAR, R3D_TARGET_NORMAL, R3D_TARGET_DEPTH);
+    R3D_TARGET_BIND_LEVEL(1, R3D_TARGET_DIFFUSE, R3D_TARGET_SPECULAR, R3D_TARGET_NORMAL);
     R3D_SHADER_USE(prepare.ssrInDown);
 
+    R3D_SHADER_BIND_SAMPLER(prepare.ssrInDown, uSelectorTex, r3d_target_get_level(R3D_TARGET_SELECTOR, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssrInDown, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssrInDown, uSpecularTex, r3d_target_get_level(R3D_TARGET_SPECULAR, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.ssrInDown, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssrInDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
     R3D_RENDER_SCREEN();
 
