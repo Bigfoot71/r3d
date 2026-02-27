@@ -69,7 +69,7 @@ typedef enum  {
 typedef enum {
     R3D_STM_EDGE_ON = 0, ///< Edge is traversable by travel function.
     R3D_STM_EDGE_AUTO,   ///< Edge is traversable automatically and by travel function.
-    R3D_STM_EDGE_ONCE,   ///< Edge is traversable automatically and by travel function, buy only once; edge status changes to nextStatus when traversed.
+    R3D_STM_EDGE_ONCE,   ///< Edge is traversable automatically and by travel function, but only once; edge status changes to nextStatus when traversed.
     R3D_STM_EDGE_OFF     ///< Edge is not traversable.
 } R3D_StmEdgeStatus;
 
@@ -95,7 +95,7 @@ typedef struct {
 typedef struct {
     char name[32];                          ///< Animation name (null-terminated string).
     R3D_AnimationState state;               ///< Animation state.
-    bool looper;                            ///< Flag to control if the animation is considered done when looped; yes when true.
+    bool looper;                            ///< Flag to control whether the animation is considered done when looped; yes when true.
 
     R3D_AnimationNodeCallback evalCallback; ///< Callback function to receive and modify animation transformation before been used.
     void* evalUserData;                     ///< Optional user data pointer passed to the callback.
