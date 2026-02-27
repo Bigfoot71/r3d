@@ -29,11 +29,7 @@ void r3d_anim_matrices_compute(R3D_AnimationPlayer* player);
 // ANIMATION CHANNEL FUNCTIONS
 // ========================================
 
-const R3D_AnimationChannel* r3d_anim_channel_find(const R3D_Animation* anim,
-                                                  int bone_idx);
-Transform r3d_anim_channel_lerp(const R3D_AnimationChannel* channel, float time,
-                                Transform* rest_0, Transform* rest_n);
-
+const R3D_AnimationChannel* r3d_anim_channel_find(const R3D_Animation* anim, int boneIdx);
+Transform r3d_anim_channel_lerp(const R3D_AnimationChannel* channel, float time, Transform* rest0, Transform* restN);
 
 #endif // R3D_COMMON_ANIM_H
-// EOF

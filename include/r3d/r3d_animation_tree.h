@@ -20,7 +20,7 @@
 // FORWARD DECLARATIONS
 // ========================================
 
-typedef union r3d_animtree_node R3D_AnimationTreeNode;
+typedef union R3D_AnimationTreeNode R3D_AnimationTreeNode;
 
 typedef int R3D_AnimationStmIndex;
 
@@ -501,4 +501,3 @@ R3DAPI R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton,
 /** @} */ // end of AnimationTree
 
 #endif // R3D_ANIMATION_TREE_H
-// EOF

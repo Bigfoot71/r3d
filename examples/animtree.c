@@ -157,11 +157,11 @@ int main(void)
     {
         float delta = GetFrameTime();
 
-        if(IsKeyDown(KEY_ONE))
+        if (IsKeyDown(KEY_ONE))
             switchParams.activeInput = 0;
-        if(IsKeyDown(KEY_TWO))
+        if (IsKeyDown(KEY_TWO))
             switchParams.activeInput = 1;
-        if(IsKeyDown(KEY_THREE))
+        if (IsKeyDown(KEY_THREE))
             switchParams.activeInput = 2;
         R3D_SetSwitchNodeParams(switchNode, switchParams);
 
