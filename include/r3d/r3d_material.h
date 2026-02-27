@@ -364,7 +364,7 @@ R3DAPI R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color);
  *
  * Same behavior as R3D_LoadAlbedoMap(), but reads from memory instead of disk.
  *
- * @param fileType Image format hint (e.g. "png", "jpg").
+ * @param fileType Image format hint (e.g. ".png", ".jpg").
  * @param fileData Pointer to image data.
  * @param dataSize Size of image data in bytes.
  * @param color Multiplicative tint applied in the shader.
@@ -398,7 +398,7 @@ R3DAPI R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, fl
  *
  * Same behavior as R3D_LoadEmissionMap(), but reads from memory.
  *
- * @param fileType Image format hint.
+ * @param fileType Image format hint (e.g. ".png", ".jpg").
  * @param fileData Pointer to image data.
  * @param dataSize Size of image data in bytes.
  * @param color Emission color.
@@ -432,7 +432,7 @@ R3DAPI R3D_NormalMap R3D_LoadNormalMap(const char* fileName, float scale);
  *
  * Same behavior as R3D_LoadNormalMap(), but reads from memory.
  *
- * @param fileType Image format hint.
+ * @param fileType Image format hint (e.g. ".png", ".jpg").
  * @param fileData Pointer to image data.
  * @param dataSize Size of image data in bytes.
  * @param scale Normal intensity multiplier.
@@ -467,7 +467,7 @@ R3DAPI R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float ro
  *
  * Same behavior as R3D_LoadOrmMap(), but reads from memory.
  *
- * @param fileType Image format hint.
+ * @param fileType Image format hint (e.g. ".png", ".jpg").
  * @param fileData Pointer to image data.
  * @param dataSize Size of image data in bytes.
  * @param occlusion Occlusion multiplier.
