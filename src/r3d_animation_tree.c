@@ -615,7 +615,7 @@ static bool anode_update_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t*
 
     float startTime = elapsedTime;
     bool doNext = true;
-    bool stmDone;
+    bool stmDone = false;
 
     while(doNext)
     {
@@ -687,45 +687,52 @@ static bool anode_update(const R3D_AnimationTree* atree, R3D_AnimationTreeNode a
 static bool anode_eval_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_t* node,
                             int boneIdx, Transform* out, rminfo_t* info)
 {
-    const R3D_Animation* a = node->animation;
-    const R3D_AnimationChannel* c = r3d_anim_channel_find(a, boneIdx);
-    R3D_AnimationState s = node->params.state;
+    const R3D_Animation* anim = node->animation;
+    const R3D_AnimationState state = node->params.state;
+    const R3D_AnimationChannel* channel = r3d_anim_channel_find(anim, boneIdx);
 
-    float time = s.currentTime;
-    float tps = a->ticksPerSecond;
-    *out = !c ? (Transform) {0} : r3d_anim_channel_lerp(c, time * tps, NULL, NULL);
+    *out = !channel ? (Transform){0}
+        : r3d_anim_channel_lerp(channel, state.currentTime * anim->ticksPerSecond, NULL, NULL);
 
     if (node->params.evalCallback) {
-        node->params.evalCallback(a, s, boneIdx, out, node->params.evalUserData);
+        node->params.evalCallback(anim, state, boneIdx, out, node->params.evalUserData);
     }
 
-    if (is_root_bone(atree, boneIdx)) {
-        if (info) {
-            Transform motion = {0};
-            float speed = s.speed;
-            int loops = node->root.loops;
-            if (loops > 0) {
-                motion = r3d_anim_transform_scale(r3d_anim_transform_subtr(node->root.restN, node->root.rest0), (float)loops);
-            }
-            if (loops >= 0) {
-                Transform last = node->root.last;
-                Transform rest0 = (speed > 0.0f ? node->root.rest0 : node->root.restN);
-                Transform restN = (speed > 0.0f ? node->root.restN : node->root.rest0);
-                Transform split  = r3d_anim_transform_add(
-                    r3d_anim_transform_subtr(restN, last),
-                    r3d_anim_transform_subtr(*out, rest0)
-                );
-                motion = r3d_anim_transform_add(motion, split);
-                motion.rotation = QuaternionNormalize(motion.rotation);
-                info->motion = motion;
-            }
-            else {
-                info->motion = r3d_anim_transform_subtr(*out, node->root.last);
-            }
-            info->distance = r3d_anim_transform_subtr(*out, node->root.rest0);
-        }
-        node->root.last = *out;
+    if (!is_root_bone(atree, boneIdx)) {
+        return true;
     }
+
+    if (info) {
+        Transform motion = {0};
+        const int loops = node->root.loops;
+
+        if (loops > 0) {
+            motion = r3d_anim_transform_scale(
+                r3d_anim_transform_subtr(node->root.restN, node->root.rest0),
+                (float)loops
+            );
+        }
+
+        if (loops >= 0) {
+            const bool forward = state.speed > 0.0f;
+            const Transform rest0 = forward ? node->root.rest0 : node->root.restN;
+            const Transform restN = forward ? node->root.restN : node->root.rest0;
+            const Transform split = r3d_anim_transform_add(
+                r3d_anim_transform_subtr(restN, node->root.last),
+                r3d_anim_transform_subtr(*out, rest0)
+            );
+            motion = r3d_anim_transform_add(motion, split);
+            motion.rotation = QuaternionNormalize(motion.rotation);
+            info->motion = motion;
+        }
+        else {
+            info->motion = r3d_anim_transform_subtr(*out, node->root.last);
+        }
+
+        info->distance = r3d_anim_transform_subtr(*out, node->root.rest0);
+    }
+
+    node->root.last = *out;
 
     return true;
 }
@@ -734,29 +741,34 @@ static bool anode_eval_blend2(const R3D_AnimationTree* atree, r3d_animtree_blend
                               int boneIdx, Transform* out, rminfo_t* info)
 {
     const R3D_BoneMask* bmask = node->params.boneMask;
+    const bool doBlend = !bmask || masked_bone(bmask, boneIdx);
+    const bool isRm = info && is_root_bone(atree, boneIdx);
 
-    bool doBlend = !bmask || masked_bone(bmask, boneIdx);
-    bool isRm = info && is_root_bone(atree, boneIdx);
-
-    rminfo_t rm[2];
+    rminfo_t rm[2] = {0};
     Transform in[2] = {0};
-    bool success0 = anode_eval(atree, node->inMain, boneIdx, &in[0], isRm ? &rm[0] : NULL);
-    bool success1 = (doBlend ? anode_eval(atree, node->inBlend, boneIdx, &in[1], isRm ? &rm[1] : NULL) : true);
-    if (!success0 || !success1) {
+
+    bool success = anode_eval(atree, node->inMain, boneIdx, &in[0], isRm ? &rm[0] : NULL);
+    if (!success) {
         R3D_TRACELOG(LOG_WARNING, "Failed to eval blend2 node");
         return false;
     }
 
-    float w = CLAMP(node->params.blend, 0.0f, 1.0f);
-    *out = (!doBlend ? in[0] : r3d_anim_transform_lerp(in[0], in[1], w));
+    if (doBlend) {
+        success = anode_eval(atree, node->inBlend, boneIdx, &in[1], isRm ? &rm[1] : NULL);
+        if (!success) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to eval blend2 node");
+            return false;
+        }
+    }
+
+    const float w = CLAMP(node->params.blend, 0.0f, 1.0f);
+    *out = doBlend ? r3d_anim_transform_lerp(in[0], in[1], w) : in[0];
 
     if (isRm) {
-        *info = (!doBlend ? rm[0]
-            : (rminfo_t) {
-                .motion = r3d_anim_transform_lerp(rm[0].motion, rm[1].motion, w),
-                .distance = r3d_anim_transform_lerp(rm[0].distance, rm[1].distance, w)
-            }
-        );
+        *info = doBlend ? (rminfo_t){
+            .motion   = r3d_anim_transform_lerp(rm[0].motion,   rm[1].motion,   w),
+            .distance = r3d_anim_transform_lerp(rm[0].distance, rm[1].distance, w)
+        } : rm[0];
     }
 
     return true;
@@ -766,29 +778,34 @@ static bool anode_eval_add2(const R3D_AnimationTree* atree, r3d_animtree_add2_t*
                             int boneIdx, Transform* out, rminfo_t* info)
 {
     const R3D_BoneMask* bmask = node->params.boneMask;
+    const bool doAdd = !bmask || masked_bone(bmask, boneIdx);
+    const bool isRm = info && is_root_bone(atree, boneIdx);
 
-    bool doAdd = !bmask || masked_bone(bmask, boneIdx);
-    bool isRm = info && is_root_bone(atree, boneIdx);
+    rminfo_t rm[2] = {0};
+    Transform in[2] = {0};
 
-    rminfo_t rm[2];
-    Transform in[2]  = {0};
-    bool success0 = anode_eval(atree, node->inMain, boneIdx, &in[0], isRm ? &rm[0] : NULL);
-    bool success1 = (doAdd ? anode_eval(atree, node->inAdd, boneIdx, &in[1], isRm ? &rm[1] : NULL) : true);
-    if (!success0 || !success1) {
+    bool success = anode_eval(atree, node->inMain, boneIdx, &in[0], isRm ? &rm[0] : NULL);
+    if (!success) {
         R3D_TRACELOG(LOG_WARNING, "Failed to eval add2 node");
         return false;
     }
 
-    float w = CLAMP(node->params.weight, 0.0f, 1.0f);
-    *out = (!doAdd ? in[0] : r3d_anim_transform_add_v(in[0], in[1], w));
+    if (doAdd) {
+        success = anode_eval(atree, node->inAdd, boneIdx, &in[1], isRm ? &rm[1] : NULL);
+        if (!success) {
+            R3D_TRACELOG(LOG_WARNING, "Failed to eval add2 node");
+            return false;
+        }
+    }
+
+    const float w = CLAMP(node->params.weight, 0.0f, 1.0f);
+    *out = doAdd ? r3d_anim_transform_add_v(in[0], in[1], w) : in[0];
 
     if (isRm) {
-        *info = (!doAdd ? rm[0]
-            : (rminfo_t) {
-                .motion = r3d_anim_transform_lerp(rm[0].motion, rm[1].motion, w),
-                .distance = r3d_anim_transform_lerp(rm[0].distance, rm[1].distance, w)
-            }
-        );
+        *info = doAdd ? (rminfo_t){
+            .motion   = r3d_anim_transform_lerp(rm[0].motion,   rm[1].motion,   w),
+            .distance = r3d_anim_transform_lerp(rm[0].distance, rm[1].distance, w)
+        } : rm[0];
     }
 
     return true;
@@ -797,50 +814,50 @@ static bool anode_eval_add2(const R3D_AnimationTree* atree, r3d_animtree_add2_t*
 static bool anode_eval_switch(const R3D_AnimationTree* atree, r3d_animtree_switch_t* node,
                               int boneIdx, Transform* out, rminfo_t* info)
 {
-    unsigned char inCount = node->inCount;
-    float wInvSum = node->weightsInvSum;
-    bool isRm = info && is_root_bone(atree, boneIdx);
+    const bool isRm = info && is_root_bone(atree, boneIdx);
+    const float wInvSum = node->weightsInvSum;
 
     rminfo_t rm = {0};
-    Transform inTrans = {0};
+    Transform result = {0};
 
-    for (int i = 0; i < inCount; i++) {
-        float w = node->inWeights[i] * wInvSum;
+    for (int i = 0; i < node->inCount; i++)
+    {
+        const float w = node->inWeights[i] * wInvSum;
         if (FloatEquals(w, 0.0f)) continue;
 
-        rminfo_t rmInfo;
-        Transform inInfo = {0};
-        bool success = anode_eval(atree, node->inList[i], boneIdx, &inInfo, isRm ? &rmInfo : NULL);
+        rminfo_t inRm = {0};
+        Transform inTr = {0};
+
+        bool success = anode_eval(atree, node->inList[i], boneIdx, &inTr, isRm ? &inRm : NULL);
         if (!success) {
             R3D_TRACELOG(LOG_WARNING, "Failed to eval switch node: input %d failed", i);
             return false;
         }
-        inTrans = r3d_anim_transform_addx_v(inTrans, inInfo, w);
+
+        result = r3d_anim_transform_addx_v(result, inTr, w);
 
         if (isRm) {
-            rm = (rminfo_t) {
-                .motion = r3d_anim_transform_addx_v(rm.motion, rmInfo.motion, w),
-                .distance = r3d_anim_transform_addx_v(rm.distance, rmInfo.distance, w)
-            };
+            rm.motion = r3d_anim_transform_addx_v(rm.motion,   inRm.motion,   w);
+            rm.distance = r3d_anim_transform_addx_v(rm.distance, inRm.distance, w);
         }
     }
-    *out = inTrans;
 
+    *out = result;
     if (isRm) *info = rm;
 
     return true;
 }
 
-
 static bool anode_eval_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t* node,
                            int boneIdx, Transform* out, rminfo_t* info)
 {
-    R3D_AnimationStmIndex activeIdx = node->activeIdx;
-    bool isRm = info && is_root_bone(atree, boneIdx);
+    const R3D_AnimationStmIndex activeIdx = node->activeIdx;
+    const bool isRm = info && is_root_bone(atree, boneIdx);
 
-    rminfo_t s_rm;
-    Transform s_tr = {0};
-    bool success = anode_eval(atree, node->nodeList[activeIdx], boneIdx, &s_tr, isRm ? &s_rm : NULL);
+    rminfo_t activeRm = {0};
+    Transform activeTr = {0};
+
+    bool success = anode_eval(atree, node->nodeList[activeIdx], boneIdx, &activeTr, isRm ? &activeRm : NULL);
     if (!success) {
         R3D_TRACELOG(LOG_WARNING, "Failed to eval stm state %d", activeIdx);
         return false;
@@ -848,28 +865,29 @@ static bool anode_eval_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t* n
 
     const r3d_stmedge_t* edge = node->stateList[activeIdx].activeIn;
 
-    if (edge) {
-        rminfo_t e_rm;
-        Transform e_tr = {0};
-        success = anode_eval(atree, node->nodeList[edge->beginIdx], boneIdx, &e_tr, isRm ? &e_rm : NULL);
-        if (!success) {
-            R3D_TRACELOG(LOG_WARNING, "Failed to eval stm state %d", edge->beginIdx);
-            return false;
-        }
-
-        float e_endw = CLAMP(edge->endWeight, 0.0f, 1.0f);
-        *out = r3d_anim_transform_lerp(e_tr, s_tr, e_endw);
-
-        if (isRm) {
-            *info = (rminfo_t) {
-                .motion = r3d_anim_transform_lerp(e_rm.motion, s_rm.motion, e_endw),
-                .distance = r3d_anim_transform_lerp(e_rm.distance, s_rm.distance, e_endw)
-            };
-        }
+    if (!edge) {
+        *out = activeTr;
+        if (isRm) *info = activeRm;
+        return true;
     }
-    else {
-        *out = s_tr;
-        if (isRm) *info = s_rm;
+
+    rminfo_t edgeRm = {0};
+    Transform edgeTr = {0};
+
+    success = anode_eval(atree, node->nodeList[edge->beginIdx], boneIdx, &edgeTr, isRm ? &edgeRm : NULL);
+    if (!success) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to eval stm state %d", edge->beginIdx);
+        return false;
+    }
+
+    const float endWeight = CLAMP(edge->endWeight, 0.0f, 1.0f);
+    *out = r3d_anim_transform_lerp(edgeTr, activeTr, endWeight);
+
+    if (isRm) {
+        *info = (rminfo_t){
+            .motion   = r3d_anim_transform_lerp(edgeRm.motion,   activeRm.motion,   endWeight),
+            .distance = r3d_anim_transform_lerp(edgeRm.distance, activeRm.distance, endWeight)
+        };
     }
 
     return true;
