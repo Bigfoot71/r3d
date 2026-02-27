@@ -522,7 +522,7 @@ static bool anode_update_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_
         else {
             float tClamp = CLAMP(s->currentTime, 0.0f, duration);
             float tDelta = s->currentTime - tClamp;
-            elapsedTime = (!FloatEquals(tInc, 0.0f) ? elapsedTime * (1.0f - tDelta/tInc) : elapsedTime);
+            elapsedTime = (!FloatEquals(tInc, 0.0f) ? elapsedTime * (1.0f - tDelta/tInc) : 0.0f);
             s->currentTime = tClamp;
         }
         node->root.loops = (int)(elapsedTime / duration);
