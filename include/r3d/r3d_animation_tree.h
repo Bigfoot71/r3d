@@ -457,6 +457,14 @@ R3DAPI R3D_StmEdgeParams R3D_GetStmNodeEdgeParams(R3D_AnimationTreeNode* node,
                                                   R3D_AnimationStmIndex edgeIndex);
 
 /**
+ * @brief Gets active state index of State Machine.
+ *
+ * @param node Animation node of type State Machine.
+ * @return Index of current active state.
+ */
+R3DAPI R3D_AnimationStmIndex R3D_GetStmStateActiveIndex(R3D_AnimationTreeNode* node);
+
+/**
  * @brief Sets travel path inside State Machine, from current state to target.
  *
  * If travel path is not found, target is set as current state instantly (teleport).

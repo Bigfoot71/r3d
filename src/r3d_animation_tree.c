@@ -1354,6 +1354,11 @@ R3D_StmEdgeParams R3D_GetStmNodeEdgeParams(R3D_AnimationTreeNode* node, R3D_Anim
     return node->stm->edgeList[edgeIndex].params;
 }
 
+R3D_AnimationStmIndex R3D_GetStmStateActiveIndex(R3D_AnimationTreeNode* node)
+{
+    return node->stm->activeIdx;
+}
+
 void R3D_TravelToStmState(R3D_AnimationTreeNode* node, R3D_AnimationStmIndex targetStateIndex)
 {
     atree_travel(node->stm, targetStateIndex);
