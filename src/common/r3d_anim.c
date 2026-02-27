@@ -14,26 +14,29 @@
 
 static void find_key_frames(const float* times, uint32_t count, float time,
                             uint32_t* outIdx0, uint32_t* outIdx1,
-                            float* out_t)
+                            float* outT)
 {
     // No keys
     if (count == 0) {
         *outIdx0 = *outIdx1 = 0;
-        *out_t = 0.0f;
+        *outT = 0.0f;
         return;
     }
+
     // Single key or before first
     if (count == 1 || time <= times[0]) {
         *outIdx0 = *outIdx1 = 0;
-        *out_t = 0.0f;
+        *outT = 0.0f;
         return;
     }
+
     // After last
     if (time >= times[count - 1]) {
         *outIdx0 = *outIdx1 = count - 1;
-        *out_t = 0.0f;
+        *outT = 0.0f;
         return;
     }
+
     // Binary search
     uint32_t left = 0;
     uint32_t right = count - 1;
@@ -42,13 +45,15 @@ static void find_key_frames(const float* times, uint32_t count, float time,
         if (times[mid] <= time) left  = mid;
         else right = mid;
     }
+
     *outIdx0 = left;
     *outIdx1 = right;
 
-    const float t0 = times[left];
-    const float t1 = times[right];
-    const float dt = t1 - t0;
-    *out_t = (dt > 0.0f) ? (time - t0) / dt : 0.0f;
+    float t0 = times[left];
+    float t1 = times[right];
+    float dt = t1 - t0;
+
+    *outT = (dt > 0.0f) ? (time - t0) / dt : 0.0f;
 }
 
 // ========================================
