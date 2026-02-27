@@ -124,7 +124,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color)
 
     bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_REPEAT, R3D.textureFilter, srgb);
+    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
     map.color = color;
 
     if (map.texture.id != 0) {
