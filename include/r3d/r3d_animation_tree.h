@@ -83,8 +83,8 @@ typedef enum {
  * Bone mask structure, can by created by R3D_ComputeBoneMask.
  */
 typedef struct {
-    int32_t mask[8];   ///< Bit mask buffer for maximum of 256 bones (32bits * 8).
-    int     boneCount; ///< Actual bones count.
+    int32_t mask[8];    ///< Bit mask buffer for maximum of 256 bones (32bits * 8).
+    int boneCount;      ///< Actual bones count.
 } R3D_BoneMask;
 
 /**
@@ -93,12 +93,12 @@ typedef struct {
  * Animation is a leaf node, holding the R3D_Animation structure.
  */
 typedef struct {
-    char               name[32]; ///< Animation name (null-terminated string).
-    R3D_AnimationState state;    ///< Animation state.
-    bool               looper;   ///< Flag to control if the animation is considered done when looped; yes when true.
+    char name[32];                          ///< Animation name (null-terminated string).
+    R3D_AnimationState state;               ///< Animation state.
+    bool looper;                            ///< Flag to control if the animation is considered done when looped; yes when true.
 
     R3D_AnimationNodeCallback evalCallback; ///< Callback function to receive and modify animation transformation before been used.
-    void*                     evalUserData; ///< Optional user data pointer passed to the callback.
+    void* evalUserData;                     ///< Optional user data pointer passed to the callback.
 } R3D_AnimationNodeParams;
 
 /**
@@ -107,8 +107,8 @@ typedef struct {
  * Blend2 node blends channels of any two animation nodes together, with respecting optional bone mask.
  */
 typedef struct {
-    R3D_BoneMask*  boneMask; ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
-    float          blend;    ///< Blend weight value, can be in interval from 0.0 to 1.0.
+    R3D_BoneMask* boneMask; ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
+    float blend;            ///< Blend weight value, can be in interval from 0.0 to 1.0.
 } R3D_Blend2NodeParams;
 
 /**
@@ -117,8 +117,8 @@ typedef struct {
  * Add2 node adds channels of any two animation nodes together, with respecting optional bone mask.
  */
 typedef struct {
-    R3D_BoneMask*  boneMask; ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
-    float          weight;   ///< Add weight value, can be in interval from 0.0 to 1.0.
+    R3D_BoneMask* boneMask; ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
+    float weight;           ///< Add weight value, can be in interval from 0.0 to 1.0.
 } R3D_Add2NodeParams;
 
 /**
@@ -127,19 +127,19 @@ typedef struct {
  * Switch node allows instant or blended/faded transition between any animation nodes connected to inputs.
  */
 typedef struct {
-    bool         synced;      ///< Flag to control input animation nodes synchronization; activated input is reset when false.
-    unsigned int activeInput; ///< Active input zero-based index.
-    float        xFadeTime;   ///< Animation nodes cross fade blending time, in seconds.
+    bool synced;                ///< Flag to control input animation nodes synchronization; activated input is reset when false.
+    unsigned int activeInput;   ///< Active input zero-based index.
+    float xFadeTime;            ///< Animation nodes cross fade blending time, in seconds.
 } R3D_SwitchNodeParams;
 
 /**
  * @brief Parameters for animation state machine edge.
  */
 typedef struct {
-    R3D_StmEdgeMode   mode;       ///< Operation mode.
-    R3D_StmEdgeStatus status;     ///< Current travel status.
-    R3D_StmEdgeStatus nextStatus; ///< Travel status used after machine traversed thru this edge with status set to R3D_STM_EDGE_ONCE.
-    float             xFadeTime;  ///< Cross fade blending time between connected animation nodes, in seconds.
+    R3D_StmEdgeMode mode;           ///< Operation mode.
+    R3D_StmEdgeStatus status;       ///< Current travel status.
+    R3D_StmEdgeStatus nextStatus;   ///< Travel status used after machine traversed thru this edge with status set to R3D_STM_EDGE_ONCE.
+    float xFadeTime;                ///< Cross fade blending time between connected animation nodes, in seconds.
 } R3D_StmEdgeParams;
 
 /**
@@ -150,15 +150,15 @@ typedef struct {
  * Switch and State Machine. It also fully supports root motion and bone masking in Blend2/Add2.
  */
 typedef struct {
-    R3D_AnimationPlayer    player;          ///< Animation player and skeleton used by all animation nodes.
+    R3D_AnimationPlayer player;             ///< Animation player and skeleton used by all animation nodes.
     R3D_AnimationTreeNode* rootNode;        ///< Pointer to root animation node of the tree.
     R3D_AnimationTreeNode* nodePool;        ///< Animation node pool of size nodePoolMaxSize.
-    unsigned int           nodePoolSize;    ///< Current animation node pool size.
-    unsigned int           nodePoolMaxSize; ///< Maximum number of animation nodes, defined during load.
-    int                    rootBone;        ///< Optional root bone index, -1 if not defined.
+    unsigned int nodePoolSize;              ///< Current animation node pool size.
+    unsigned int nodePoolMaxSize;           ///< Maximum number of animation nodes, defined during load.
+    int rootBone;                           ///< Optional root bone index, -1 if not defined.
 
-    R3D_AnimationTreeCallback updateCallback; ///< Callback function to receive and modify final animation transformation.
-    void*                     updateUserData; ///< Optional user data pointer passed to the callback.
+    R3D_AnimationTreeCallback updateCallback;   ///< Callback function to receive and modify final animation transformation.
+    void* updateUserData;                       ///< Optional user data pointer passed to the callback.
 } R3D_AnimationTree;
 
 // ========================================
@@ -178,8 +178,7 @@ extern "C" {
  * @param maxSize Size of the animation nodes pool; maximum number of animation nodes in the tree.
  * @return Newly created animation tree, or a zeroed struct on failure.
  */
-R3DAPI R3D_AnimationTree R3D_LoadAnimationTree(R3D_AnimationPlayer player,
-                                               int maxSize);
+R3DAPI R3D_AnimationTree R3D_LoadAnimationTree(R3D_AnimationPlayer player, int maxSize);
 
 /**
  * @brief Creates an animation tree using given animation player, with optional root motion support.
@@ -191,8 +190,7 @@ R3DAPI R3D_AnimationTree R3D_LoadAnimationTree(R3D_AnimationPlayer player,
  * @param rootBone Root bone index; set -1 to disable root motion.
  * @return Newly created animation tree, or a zeroed struct on failure.
  */
-R3DAPI R3D_AnimationTree R3D_LoadAnimationTreeEx(R3D_AnimationPlayer player,
-                                                 int maxSize, int rootBone);
+R3DAPI R3D_AnimationTree R3D_LoadAnimationTreeEx(R3D_AnimationPlayer player, int maxSize, int rootBone);
 
 /**
  * @brief Creates an animation tree using given animation player, with optional root motion support and callback.
@@ -206,10 +204,8 @@ R3DAPI R3D_AnimationTree R3D_LoadAnimationTreeEx(R3D_AnimationPlayer player,
  * @param updateUserdata User data pointer passed to the callback, can be NULL.
  * @return Newly created animation tree, or a zeroed struct on failure.
  */
-R3DAPI R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player,
-                                                  int maxSize, int rootBone,
-                                                  R3D_AnimationTreeCallback updateCallback,
-                                                  void* updateUserData);
+R3DAPI R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player, int maxSize, int rootBone,
+                                                  R3D_AnimationTreeCallback updateCallback, void* updateUserData);
 
 /**
  * @brief Releases all resources used by an animation tree, including all animation nodes.
@@ -246,8 +242,7 @@ R3DAPI void R3D_UpdateAnimationTreeEx(R3D_AnimationTree* tree, float dt,
  * @param tree Animation tree.
  * @param node Root animation node.
  */
-R3DAPI void R3D_AddRootAnimationNode(R3D_AnimationTree* tree,
-                                     R3D_AnimationTreeNode* node);
+R3DAPI void R3D_AddRootAnimationNode(R3D_AnimationTree* tree, R3D_AnimationTreeNode* node);
 
 /**
  * @brief Connects two animation nodes of animation tree hierarchy.
@@ -257,10 +252,7 @@ R3DAPI void R3D_AddRootAnimationNode(R3D_AnimationTree* tree,
  * @param inputIndex Index of the parent node input used for connection.
  * @return True on success; false if parent node or inputIndex is invalid.
  */
-R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent,
-                                 R3D_AnimationTreeNode* node,
-                                 unsigned int inputIndex);
-
+R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* node, unsigned int inputIndex);
 
 /**
  * @brief Creates animation node of type Animation.
@@ -271,8 +263,7 @@ R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent,
  * @param params Animation node initial parameters.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded or animation name is not found.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree,
-                                                      R3D_AnimationNodeParams params);
+R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree, R3D_AnimationNodeParams params);
 
 /**
  * @brief Creates animation node of type Blend2.
@@ -283,8 +274,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree,
  * @param params Blend2 node initial parameters.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree,
-                                                   R3D_Blend2NodeParams params);
+R3DAPI R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree, R3D_Blend2NodeParams params);
 
 /**
  * @brief Creates animation node of type Add2.
@@ -295,8 +285,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree,
  * @param params Add2 node initial parameters.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree,
-                                                 R3D_Add2NodeParams params);
+R3DAPI R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree, R3D_Add2NodeParams params);
 
 /**
  * @brief Creates animation node of type Switch.
@@ -308,8 +297,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree,
  * @param params Switch node initial parameters.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree,
-                                                   unsigned int inputCount,
+R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, unsigned int inputCount,
                                                    R3D_SwitchNodeParams params);
 
 /**

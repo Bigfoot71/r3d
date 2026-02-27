@@ -330,7 +330,7 @@ static int expand_path(r3d_animtree_stm_t* node, r3d_stmedge_t** edges, r3d_stme
     return added;
 }
 
-static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex target_idx)
+static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex targetIdx)
 {
     unsigned int maxPathLen = node->maxStates;
     r3d_stmedge_t** openPaths = node->path.open;
@@ -350,7 +350,7 @@ static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex target
         int nextCount = 0;
         for (int pIdx = 0; pIdx < pathsCount; pIdx++) {
             R3D_AnimationStmIndex stateIdx = openPaths[pIdx*maxPathLen + pathLen-1]->endIdx;
-            if (stateIdx == target_idx) {
+            if (stateIdx == targetIdx) {
                 memcpy(node->path.edges, &openPaths[pIdx*maxPathLen], pathLen * sizeof(r3d_stmedge_t*));
                 node->path.idx = 0;
                 node->path.len = pathLen;
@@ -1173,16 +1173,16 @@ failure:
     R3D_UploadAnimationPlayerPose(player);
 }
 
-static void atree_travel(r3d_animtree_stm_t* node, R3D_AnimationStmIndex target_idx)
+static void atree_travel(r3d_animtree_stm_t* node, R3D_AnimationStmIndex targetIdx)
 {
-    if (node->activeIdx == target_idx) return;
+    if (node->activeIdx == targetIdx) return;
 
-    bool found = stm_find_path(node, target_idx);
+    bool found = stm_find_path(node, targetIdx);
     if (!found) {
-        r3d_stmstate_t* state = &node->stateList[target_idx];
-        R3D_AnimationTreeNode anode = node->nodeList[target_idx];
+        r3d_stmstate_t* state = &node->stateList[targetIdx];
+        R3D_AnimationTreeNode anode = node->nodeList[targetIdx];
         state->activeIn = NULL;
-        node->activeIdx = target_idx;
+        node->activeIdx = targetIdx;
         node->path.len = 0;
         anode_reset(anode);
     }
