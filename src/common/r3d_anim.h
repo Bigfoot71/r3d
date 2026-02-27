@@ -17,11 +17,11 @@
 // TRANSFORM/MATRIX FUNCTIONS
 // ========================================
 
-Transform r3d_anim_transform_lerp(Transform tf_a, Transform tf_b, float value);
-Transform r3d_anim_transform_add(Transform tf_a, Transform tf_b);
-Transform r3d_anim_transform_add_v(Transform tf_a, Transform tf_b, float value);
-Transform r3d_anim_transform_addx_v(Transform tf_a, Transform tf_b, float value);
-Transform r3d_anim_transform_subtr(Transform tf_a, Transform tf_b);
+Transform r3d_anim_transform_lerp(Transform a, Transform b, float value);
+Transform r3d_anim_transform_add(Transform a, Transform b);
+Transform r3d_anim_transform_add_v(Transform a, Transform b, float value);
+Transform r3d_anim_transform_addx_v(Transform a, Transform b, float value);
+Transform r3d_anim_transform_subtr(Transform a, Transform b);
 Transform r3d_anim_transform_scale(Transform tf, float val);
 void r3d_anim_matrices_compute(R3D_AnimationPlayer* player);
 

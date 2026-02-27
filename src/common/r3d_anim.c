@@ -55,48 +55,48 @@ static void find_key_frames(const float* times, uint32_t count, float time,
 // TRANSFORM/MATRIX FUNCTIONS
 // ========================================
 
-Transform r3d_anim_transform_lerp(Transform tf_a, Transform tf_b, float value)
+Transform r3d_anim_transform_lerp(Transform a, Transform b, float value)
 {
     Transform result;
-    result.translation = Vector3Lerp(tf_a.translation, tf_b.translation, value);
-    result.rotation = QuaternionSlerp(tf_a.rotation, tf_b.rotation, value);
-    result.scale = Vector3Lerp(tf_a.scale, tf_b.scale, value);
+    result.translation = Vector3Lerp(a.translation, b.translation, value);
+    result.rotation = QuaternionSlerp(a.rotation, b.rotation, value);
+    result.scale = Vector3Lerp(a.scale, b.scale, value);
     return result;
 }
 
-Transform r3d_anim_transform_add(Transform tf_a, Transform tf_b)
+Transform r3d_anim_transform_add(Transform a, Transform b)
 {
     Transform result;
-    result.translation = Vector3Add(tf_a.translation, tf_b.translation);
-    result.rotation = QuaternionAdd(tf_a.rotation, tf_b.rotation);
-    result.scale = Vector3Add(tf_a.scale, tf_b.scale);
+    result.translation = Vector3Add(a.translation, b.translation);
+    result.rotation = QuaternionAdd(a.rotation, b.rotation);
+    result.scale = Vector3Add(a.scale, b.scale);
     return result;
 }
 
-Transform r3d_anim_transform_add_v(Transform tf_a, Transform tf_b, float value)
+Transform r3d_anim_transform_add_v(Transform a, Transform b, float value)
 {
     Transform result;
-    result.translation = Vector3Add(tf_a.translation, Vector3Scale(tf_b.translation, value));
-    result.rotation = QuaternionAdd(tf_a.rotation, QuaternionScale(tf_b.rotation, value));
-    result.scale = Vector3Add(tf_a.scale, Vector3Scale(tf_b.scale, value));
+    result.translation = Vector3Add(a.translation, Vector3Scale(b.translation, value));
+    result.rotation = QuaternionAdd(a.rotation, QuaternionScale(b.rotation, value));
+    result.scale = Vector3Add(a.scale, Vector3Scale(b.scale, value));
     return result;
 }
 
-Transform r3d_anim_transform_addx_v(Transform tf_a, Transform tf_b, float value)
+Transform r3d_anim_transform_addx_v(Transform a, Transform b, float value)
 {
     Transform result;
-    result.translation = Vector3Add(tf_a.translation, Vector3Scale(tf_b.translation, value));
-    result.rotation = QuaternionSlerp(tf_a.rotation, tf_b.rotation, value);
-    result.scale = Vector3Add(tf_a.scale, Vector3Scale(tf_b.scale, value));
+    result.translation = Vector3Add(a.translation, Vector3Scale(b.translation, value));
+    result.rotation = QuaternionSlerp(a.rotation, b.rotation, value);
+    result.scale = Vector3Add(a.scale, Vector3Scale(b.scale, value));
     return result;
 }
 
-Transform r3d_anim_transform_subtr(Transform tf_a, Transform tf_b)
+Transform r3d_anim_transform_subtr(Transform a, Transform b)
 {
     Transform result;
-    result.translation = Vector3Subtract(tf_a.translation, tf_b.translation);
-    result.rotation = QuaternionSubtract(tf_a.rotation, tf_b.rotation);
-    result.scale = Vector3Subtract(tf_a.scale, tf_b.scale);
+    result.translation = Vector3Subtract(a.translation, b.translation);
+    result.rotation = QuaternionSubtract(a.rotation, b.rotation);
+    result.scale = Vector3Subtract(a.scale, b.scale);
     return result;
 }
 
