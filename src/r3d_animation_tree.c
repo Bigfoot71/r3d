@@ -438,7 +438,7 @@ static void anode_reset_switch(r3d_animtree_switch_t* node)
     node->inWeights[activeIn] = 1.0f;
 
     for (int i = 0; i < inCount; i++) {
-        anode_reset(node->inList[activeIn]);
+        anode_reset(node->inList[i]);
     }
 }
 
