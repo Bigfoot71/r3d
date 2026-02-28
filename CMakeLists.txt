@@ -252,6 +252,7 @@ add_library(${PROJECT_NAME}
     # Importer
     ${R3D_IMPORTER_SOURCES}
     # Common
+    "${R3D_ROOT_PATH}/src/common/r3d_anim.c"
     "${R3D_ROOT_PATH}/src/common/r3d_frustum.c"
     "${R3D_ROOT_PATH}/src/common/r3d_helper.c"
     "${R3D_ROOT_PATH}/src/common/r3d_image.c"
@@ -266,6 +267,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/modules/r3d_env.c"
     # Core
     "${R3D_ROOT_PATH}/src/r3d_animation_player.c"
+    "${R3D_ROOT_PATH}/src/r3d_animation_tree.c"
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"

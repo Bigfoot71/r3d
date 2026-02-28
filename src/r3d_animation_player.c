@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <glad.h>
 
-#include "./common/r3d_math.h"
+#include "./common/r3d_anim.h"
 
 // ========================================
 // INTERNAL FUNCTIONS DECLARATIONS
@@ -19,7 +19,6 @@
 
 static void emit_event(R3D_AnimationPlayer* player, R3D_AnimationEvent event, int animIndex);
 static void compute_local_matrices(R3D_AnimationPlayer* player, float totalWeight);
-static void compute_model_matrices(R3D_AnimationPlayer* player);
 
 // ========================================
 // PUBLIC API
@@ -218,7 +217,7 @@ void R3D_CalculateAnimationPlayerModelPose(R3D_AnimationPlayer* player)
         }
     }
 
-    if (hasWeight) compute_model_matrices(player);
+    if (hasWeight) r3d_anim_matrices_compute(player);
     else memcpy(player->modelPose, player->skeleton.modelBind, boneCount * sizeof(Matrix));
 }
 
@@ -236,7 +235,7 @@ void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
 
     if (totalWeight > 0.0f) {
         compute_local_matrices(player, totalWeight);
-        compute_model_matrices(player);
+        r3d_anim_matrices_compute(player);
     }
     else {
         memcpy(player->localPose, player->skeleton.localBind, boneCount * sizeof(Matrix));
@@ -275,120 +274,6 @@ void emit_event(R3D_AnimationPlayer* player, R3D_AnimationEvent event, int animI
     }
 }
 
-static void find_key_frames(
-    const float* times, uint32_t count, float time,
-    uint32_t* outIdx0, uint32_t* outIdx1, float* outT)
-{
-    // No keys
-    if (count == 0) {
-        *outIdx0 = *outIdx1 = 0;
-        *outT = 0.0f;
-        return;
-    }
-
-    // Single key or before first
-    if (count == 1 || time <= times[0]) {
-        *outIdx0 = *outIdx1 = 0;
-        *outT = 0.0f;
-        return;
-    }
-
-    // After last
-    if (time >= times[count - 1]) {
-        *outIdx0 = *outIdx1 = count - 1;
-        *outT = 0.0f;
-        return;
-    }
-
-    // Binary search
-    uint32_t left = 0;
-    uint32_t right = count - 1;
-
-    while (right - left > 1) {
-        uint32_t mid = (left + right) >> 1;
-        if (times[mid] <= time) left = mid;
-        else right = mid;
-    }
-
-    *outIdx0 = left;
-    *outIdx1 = right;
-
-    const float t0 = times[left];
-    const float t1 = times[right];
-    const float dt = t1 - t0;
-
-    *outT = (dt > 0.0f) ? (time - t0) / dt : 0.0f;
-}
-
-static Transform interpolate_channel(const R3D_AnimationChannel* channel, float time)
-{
-    Transform result = {
-        .translation = { 0.0f, 0.0f, 0.0f },
-        .rotation    = { 0.0f, 0.0f, 0.0f, 1.0f },
-        .scale       = { 1.0f, 1.0f, 1.0f }
-    };
-
-    // Translation
-    if (channel->translation.count > 0) {
-        uint32_t i0, i1;
-        float t;
-
-        find_key_frames(
-            channel->translation.times,
-            channel->translation.count,
-            time,
-            &i0, &i1, &t
-        );
-
-        const Vector3* values = (const Vector3*)channel->translation.values;
-        result.translation = Vector3Lerp(values[i0], values[i1], t);
-    }
-
-    // Rotation
-    if (channel->rotation.count > 0) {
-        uint32_t i0, i1;
-        float t;
-
-        find_key_frames(
-            channel->rotation.times,
-            channel->rotation.count,
-            time,
-            &i0, &i1, &t
-        );
-
-        const Quaternion* values = (const Quaternion*)channel->rotation.values;
-        result.rotation = QuaternionSlerp(values[i0], values[i1], t);
-    }
-
-    // Scale
-    if (channel->scale.count > 0) {
-        uint32_t i0, i1;
-        float t;
-
-        find_key_frames(
-            channel->scale.times,
-            channel->scale.count,
-            time,
-            &i0, &i1, &t
-        );
-
-        const Vector3* values = (const Vector3*)channel->scale.values;
-        result.scale = Vector3Lerp(values[i0], values[i1], t);
-    }
-
-    return result;
-}
-
-static const R3D_AnimationChannel* find_channel_for_bone(const R3D_Animation* anim, int iBone)
-{
-    for (int i = 0; i < anim->channelCount; i++) {
-        if (anim->channels[i].boneIndex == iBone) {
-            return &anim->channels[i];
-        }
-    }
-    return NULL;
-}
-
 void compute_local_matrices(R3D_AnimationPlayer* player, float totalWeight)
 {
     int boneCount = player->skeleton.boneCount;
@@ -410,16 +295,15 @@ void compute_local_matrices(R3D_AnimationPlayer* player, float totalWeight)
             const R3D_AnimationState* state = &player->states[iAnim];
             if (state->weight <= 0.0f) continue;
 
-            const R3D_AnimationChannel* channel = find_channel_for_bone(anim, iBone);
+            const R3D_AnimationChannel* channel = r3d_anim_channel_find(anim, iBone);
             if (!channel) continue;
             isAnimated = true;
 
-            Transform local = interpolate_channel(channel, state->currentTime * anim->ticksPerSecond);
+            Transform local = r3d_anim_channel_lerp(channel, state->currentTime * anim->ticksPerSecond,
+                                                    NULL, NULL);
             float w = state->weight * invTotalWeight;
 
-            blended.translation = Vector3Add(blended.translation, Vector3Scale(local.translation, w));
-            blended.rotation = QuaternionAdd(blended.rotation, QuaternionScale(local.rotation, w));
-            blended.scale = Vector3Add(blended.scale, Vector3Scale(local.scale, w));
+            blended = r3d_anim_transform_addx_v(blended, local, w);
         }
 
         if (!isAnimated) {
@@ -429,20 +313,5 @@ void compute_local_matrices(R3D_AnimationPlayer* player, float totalWeight)
 
         blended.rotation = QuaternionNormalize(blended.rotation);
         localPose[iBone] = r3d_matrix_srt_quat(blended.scale, blended.rotation, blended.translation);
-    }
-}
-
-void compute_model_matrices(R3D_AnimationPlayer* player)
-{
-    const R3D_BoneInfo* bones = player->skeleton.bones;
-    const Matrix* rootBind = &player->skeleton.rootBind;
-    const Matrix* localPose = player->localPose;
-    Matrix* modelPose = player->modelPose;
-
-    int boneCount = player->skeleton.boneCount;
-
-    for (int iBone = 0; iBone < boneCount; iBone++) {
-        int iParent = bones[iBone].parent;
-        modelPose[iBone] = MatrixMultiply(localPose[iBone], (iParent >= 0) ? modelPose[iParent] : *rootBind);
     }
 }
