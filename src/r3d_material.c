@@ -124,7 +124,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMap(const char* fileName, Color color)
 
     bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, srgb);
     map.color = color;
 
     if (map.texture.id != 0) {
@@ -151,7 +151,7 @@ R3D_AlbedoMap R3D_LoadAlbedoMapFromMemory(const char* fileType, const void* file
 
     bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, srgb);
     map.color = color;
 
     if (map.texture.id != 0) {
@@ -187,7 +187,7 @@ R3D_EmissionMap R3D_LoadEmissionMap(const char* fileName, Color color, float ene
 
     bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, srgb);
     map.color = color;
     map.energy = energy;
 
@@ -215,7 +215,7 @@ R3D_EmissionMap R3D_LoadEmissionMapFromMemory(const char* fileType, const void* 
 
     bool srgb = (R3D.colorSpace == R3D_COLORSPACE_SRGB);
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, srgb);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, srgb);
     map.color = color;
     map.energy = energy;
 
@@ -250,7 +250,7 @@ R3D_NormalMap R3D_LoadNormalMap(const char* fileName, float scale)
         return map;
     }
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, false);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, false);
     map.scale = scale;
 
     if (map.texture.id != 0) {
@@ -275,7 +275,7 @@ R3D_NormalMap R3D_LoadNormalMapFromMemory(const char* fileType, const void* file
         return map;
     }
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, false);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, false);
     map.scale = scale;
 
     if (map.texture.id != 0) {
@@ -309,7 +309,7 @@ R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness
         return map;
     }
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, false);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, false);
     map.occlusion = occlusion;
     map.roughness = roughness;
     map.metalness = metalness;
@@ -337,7 +337,7 @@ R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, 
         return map;
     }
 
-    map.texture = r3d_image_upload(&image, TEXTURE_WRAP_CLAMP, R3D.textureFilter, false);
+    map.texture = r3d_image_upload(&image, R3D.textureWrap, R3D.textureFilter, false);
     map.occlusion = occlusion;
     map.roughness = roughness;
     map.metalness = metalness;

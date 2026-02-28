@@ -53,6 +53,7 @@ extern struct r3d_core_state {
     R3D_DownscaleMode downscaleMode;    //< Downscaling mode used during the final blit
     R3D_OutputMode outputMode;          //< Defines which buffer we should output in R3D_End()
     TextureFilter textureFilter;        //< Default texture filter for model loading
+    TextureWrap textureWrap;            //< Default texture wrap for material map loading
     R3D_ColorSpace colorSpace;          //< Color space that must be considered for supplied colors or surface colors
     Matrix matCubeViews[6];             //< Pre-computed view matrices for cubemap faces
     R3D_Layer layers;                   //< Active rendering layers
