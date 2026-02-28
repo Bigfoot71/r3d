@@ -201,8 +201,8 @@ static r3d_stmedge_t* stm_find_edge(const r3d_animtree_stm_t* node, const r3d_st
     }
     else {
         unsigned int edgesCount = state->outCount;
-        for (int e_idx = 0; e_idx < edgesCount; e_idx++) {
-            r3d_stmedge_t* edge = state->outList[e_idx];
+        for (int edgeIdx = 0; edgeIdx < edgesCount; edgeIdx++) {
+            r3d_stmedge_t* edge = state->outList[edgeIdx];
             R3D_StmEdgeStatus status = edge->params.status;
             bool open = (status == R3D_STM_EDGE_AUTO || status == R3D_STM_EDGE_ONCE);
             if (open) return edge;
@@ -310,8 +310,8 @@ static int expand_path(r3d_animtree_stm_t* node, r3d_stmedge_t** edges, r3d_stme
     unsigned int outCount = state->outCount;
 
     int added = 0;
-    for (int e_idx = 0; e_idx < outCount; e_idx++) {
-        r3d_stmedge_t* edge = state->outList[e_idx];
+    for (int edgeIdx = 0; edgeIdx < outCount; edgeIdx++) {
+        r3d_stmedge_t* edge = state->outList[edgeIdx];
 
         bool closed = edge->params.status == R3D_STM_EDGE_OFF;
         if (closed) continue;
@@ -623,7 +623,7 @@ static bool anode_update_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t*
             R3D_TRACELOG(LOG_WARNING, "Failed to update stm: cycle detected, aborted");
             return false;
         }
-        visited[activeIdx] = (r3d_stmvisit_t){.yes  = true, .when = elapsedTime};
+        visited[activeIdx] = (r3d_stmvisit_t){.yes = true, .when = elapsedTime};
 
         float consumedTime;
         if (!stm_update_state(atree, node, elapsedTime, &consumedTime, &activeIdx, &doNext, &stmDone)) {
@@ -766,7 +766,7 @@ static bool anode_eval_blend2(const R3D_AnimationTree* atree, r3d_animtree_blend
 
     if (isRm) {
         *info = doBlend ? (rminfo_t){
-            .motion   = r3d_anim_transform_lerp(rm[0].motion,   rm[1].motion,   w),
+            .motion = r3d_anim_transform_lerp(rm[0].motion, rm[1].motion, w),
             .distance = r3d_anim_transform_lerp(rm[0].distance, rm[1].distance, w)
         } : rm[0];
     }
@@ -803,7 +803,7 @@ static bool anode_eval_add2(const R3D_AnimationTree* atree, r3d_animtree_add2_t*
 
     if (isRm) {
         *info = doAdd ? (rminfo_t){
-            .motion   = r3d_anim_transform_lerp(rm[0].motion,   rm[1].motion,   w),
+            .motion = r3d_anim_transform_lerp(rm[0].motion, rm[1].motion, w),
             .distance = r3d_anim_transform_lerp(rm[0].distance, rm[1].distance, w)
         } : rm[0];
     }
@@ -837,7 +837,7 @@ static bool anode_eval_switch(const R3D_AnimationTree* atree, r3d_animtree_switc
         result = r3d_anim_transform_addx_v(result, inTr, w);
 
         if (isRm) {
-            rm.motion = r3d_anim_transform_addx_v(rm.motion,   inRm.motion,   w);
+            rm.motion = r3d_anim_transform_addx_v(rm.motion, inRm.motion, w);
             rm.distance = r3d_anim_transform_addx_v(rm.distance, inRm.distance, w);
         }
     }
@@ -885,7 +885,7 @@ static bool anode_eval_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t* n
 
     if (isRm) {
         *info = (rminfo_t){
-            .motion   = r3d_anim_transform_lerp(edgeRm.motion,   activeRm.motion,   endWeight),
+            .motion = r3d_anim_transform_lerp(edgeRm.motion, activeRm.motion, endWeight),
             .distance = r3d_anim_transform_lerp(edgeRm.distance, activeRm.distance, endWeight)
         };
     }
