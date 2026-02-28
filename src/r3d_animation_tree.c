@@ -179,12 +179,12 @@ static bool valid_root_bone(int boneIdx)
     return boneIdx >= 0;
 }
 
-static bool masked_bone(const R3D_BoneMask* bmask, int boneIdx)
+static bool masked_bone(const R3D_BoneMask* bMask, int boneIdx)
 {
-    int maskb = (sizeof(bmask->mask[0]) * 8);
-    int part = boneIdx / maskb;
-    int bit = boneIdx % maskb;
-    return (bmask->mask[part] & (1 << bit)) != 0;
+    int maskBits = (sizeof(bMask->mask[0]) * 8);
+    int part = boneIdx / maskBits;
+    int bit = boneIdx % maskBits;
+    return (bMask->mask[part] & (1 << bit)) != 0;
 }
 
 // ========================================
@@ -217,7 +217,7 @@ static bool stm_update_edge(const R3D_AnimationTree* atree, r3d_animtree_stm_t* 
                             bool* done)
 {
     float xFade = edge->params.xFadeTime;
-    bool  doXFade = (xFade > elapsedTime);
+    bool doXFade = (xFade > elapsedTime);
 
     if (doXFade) {
         float wInc = Remap(elapsedTime, 0.0f, xFade, 0.0f, 1.0f);
@@ -409,7 +409,7 @@ static R3D_AnimationTreeNode* anode_create(R3D_AnimationTree* atree, r3d_animtre
 static void anode_reset_anim(r3d_animtree_anim_t* node)
 {
     const R3D_Animation* a = node->animation;
-    R3D_AnimationState*  s = &node->params.state;
+    R3D_AnimationState* s = &node->params.state;
 
     float duration = a->duration / a->ticksPerSecond;
     s->currentTime = (s->speed >= 0.0f) ? 0.0f : duration;
@@ -429,7 +429,7 @@ static void anode_reset_add2(r3d_animtree_add2_t* node)
 
 static void anode_reset_switch(r3d_animtree_switch_t* node)
 {
-    unsigned char inCount  = node->inCount;
+    unsigned char inCount = node->inCount;
     unsigned char activeIn = node->params.activeInput;
 
     for (int i = 0; i < inCount; i++) {
@@ -447,9 +447,7 @@ static void anode_reset_stm(r3d_animtree_stm_t* node)
     node->activeIdx = 0;
     node->path.idx = 0;
     node->path.len = 0;
-
-    r3d_stmedge_t* edge = node->stateList[0].activeIn;
-    if (edge) edge->endWeight = 0.0f;
+    node->stateList[0].activeIn = NULL;
 
     anode_reset(node->nodeList[0]);
 }
@@ -458,8 +456,8 @@ static void anode_reset_stm(r3d_animtree_stm_t* node)
 /*
 static void anode_reset_stm(r3d_animtree_stm_t* node)
 {
-    unsigned int   activeIdx = node->activeIdx;
-    r3d_stmedge_t* edge    = node->stateList[activeIdx].activeIn;
+    unsigned int activeIdx = node->activeIdx;
+    r3d_stmedge_t* edge = node->stateList[activeIdx].activeIn;
     if (edge) edge->endWeight = 0.0f;
 
     anode_reset(node->nodeList[activeIdx]);
@@ -534,7 +532,7 @@ static bool anode_update_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_
     if (info) {
         float xFade = info->xFade;
         float durXFade = CLAMP(duration - xFade, 0.0f, duration);
-        bool  crossXFade = ((speed < 0.0f && tCur <= xFade) || (speed > 0.0f && tCur >= durXFade));
+        bool crossXFade = ((speed < 0.0f && tCur <= xFade) || (speed > 0.0f && tCur >= durXFade));
         *info = (upinfo_t) {
             .anodeDone = crossXFade ? node->params.looper : false,
             .xFade = xFade,
@@ -590,10 +588,10 @@ static bool anode_update_switch(const R3D_AnimationTree* atree, r3d_animtree_swi
         node->inWeights[activeIn] = 1.0f;
     }
     else {
-        float w_fade = Remap(elapsedTime, 0.0f, xFade, 0.0f, 1.0f);
+        float wFade = Remap(elapsedTime, 0.0f, xFade, 0.0f, 1.0f);
         for (int i = 0; i < inCount; i++) {
-            float w_sign = (i == activeIn) ? 1.0f : -1.0f;
-            node->inWeights[i] = CLAMP(node->inWeights[i] + w_sign*w_fade, 0.0f, 1.0f);
+            float wSign = (i == activeIn) ? 1.0f : -1.0f;
+            node->inWeights[i] = CLAMP(node->inWeights[i] + wSign*wFade, 0.0f, 1.0f);
         }
     }
 
@@ -1388,7 +1386,7 @@ R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton, const char* boneN
         for (int bIdx = 0; bIdx < bCount; bIdx++)
             if (!strncmp(name, bones[bIdx].name, sizeof(bones[bIdx].name))) {
                 int part = bIdx / maskBits;
-                int bit  = bIdx % maskBits;
+                int bit = bIdx % maskBits;
                 bMask.mask[part] |= 1 << bit;
                 found = true;
                 break;
