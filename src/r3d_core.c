@@ -8,11 +8,9 @@
 
 #include <r3d/r3d_core.h>
 #include <raymath.h>
+#include <float.h>
 #include <rlgl.h>
 #include <glad.h>
-
-#include <assimp/cimport.h>
-#include <float.h>
 
 #include "./r3d_core_state.h"
 
@@ -23,7 +21,6 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
-#include "common/r3d_helper.h"
 
 // ========================================
 // SHARED CORE STATE
