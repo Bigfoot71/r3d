@@ -538,7 +538,7 @@ static bool anode_update_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_
         *info = (upinfo_t) {
             .anodeDone = crossXFade ? node->params.looper : false,
             .xFade = xFade,
-            .consumedTime = elapsedTime
+            .consumedTime = !FloatEquals(speed, 0.0f) ? elapsedTime : 0.0f
         };
     }
 
@@ -1066,6 +1066,9 @@ static R3D_AnimationStmIndex atree_state_create(r3d_animtree_stm_t* node, R3D_An
         .activeIn = NULL
     };
 
+    // TODO: Is this reset needed? It sets correct currentTime for animation with negative speed,
+    // but may be dangerous for uncomplete animation nodes, like Switch with not yet connected input
+    // anode_reset(anode);
     node->nodeList[nextIdx] = anode;
     node->statesCount += 1;
 
