@@ -21,7 +21,6 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
-#include "raylib.h"
 
 // ========================================
 // SHARED CORE STATE
