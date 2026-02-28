@@ -20,6 +20,7 @@ int main(void)
 
     R3D_Init(GetScreenWidth(), GetScreenHeight());
     R3D_SetTextureFilter(TEXTURE_FILTER_ANISOTROPIC_8X);
+    R3D_SetTextureWrap(TEXTURE_WRAP_REPEAT);
 
     R3D_Cubemap sky = R3D_GenProceduralSky(1024, R3D_PROCEDURAL_SKY_BASE);
     R3D_AmbientMap ambient = R3D_GenAmbientMap(sky, R3D_AMBIENT_ILLUMINATION | R3D_AMBIENT_REFLECTION);
