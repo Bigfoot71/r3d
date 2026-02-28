@@ -9,7 +9,7 @@
 #ifndef R3D_ANIMATION_TREE_H
 #define R3D_ANIMATION_TREE_H
 
-#include <r3d/r3d_animation_player.h>
+#include "./r3d_animation_player.h"
 
 /**
  * @defgroup AnimationTree
