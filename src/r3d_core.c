@@ -54,6 +54,7 @@ bool R3D_Init(int resWidth, int resHeight)
     R3D.outputMode = R3D_OUTPUT_SCENE;
 
     R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
+    R3D.textureWrap = TEXTURE_WRAP_CLAMP;
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
     R3D.layers = R3D_LAYER_ALL;
 
@@ -159,6 +160,11 @@ void R3D_SetOutputMode(R3D_OutputMode mode)
 void R3D_SetTextureFilter(TextureFilter filter)
 {
     R3D.textureFilter = filter;
+}
+
+void R3D_SetTextureWrap(TextureWrap wrap)
+{
+    R3D.textureWrap = wrap;
 }
 
 void R3D_SetColorSpace(R3D_ColorSpace space)
