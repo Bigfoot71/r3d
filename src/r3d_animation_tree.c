@@ -953,7 +953,7 @@ static bool atree_switch_add(r3d_animtree_switch_t* parent, R3D_AnimationTreeNod
     return false;
 }
 
-static R3D_AnimationTreeNode* atree_anim_create(R3D_AnimationTree* atree, R3D_AnimationNodeParams params)
+static R3D_AnimationTreeNode* atree_anim_create(R3D_AnimationTree* atree, R3D_AnimationNodeParams params, bool reset)
 {
     const R3D_Animation* a = R3D_GetAnimation(atree->player.animLib, params.name);
     if (!a) {
@@ -966,6 +966,7 @@ static R3D_AnimationTreeNode* atree_anim_create(R3D_AnimationTree* atree, R3D_An
     r3d_animtree_anim_t* anim = anode->anim;
     anim->animation = a;
     anim->params = params;
+    if (reset) anode_reset_anim(anim);
 
     int boneIdx = atree->rootBone;
     if (valid_root_bone(boneIdx)) {
@@ -1066,9 +1067,6 @@ static R3D_AnimationStmIndex atree_state_create(r3d_animtree_stm_t* node, R3D_An
         .activeIn = NULL
     };
 
-    // TODO: Is this reset needed? It sets correct currentTime for animation with negative speed,
-    // but may be dangerous for uncomplete animation nodes, like Switch with not yet connected input
-    // anode_reset(anode);
     node->nodeList[nextIdx] = anode;
     node->statesCount += 1;
 
@@ -1263,7 +1261,12 @@ bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* 
 
 R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree, R3D_AnimationNodeParams params)
 {
-    return atree_anim_create(tree, params);
+    return atree_anim_create(tree, params, false);
+}
+
+R3D_AnimationTreeNode* R3D_CreateAnimationNodeEx(R3D_AnimationTree* tree, R3D_AnimationNodeParams params, bool setTime)
+{
+    return atree_anim_create(tree, params, setTime);
 }
 
 R3D_AnimationTreeNode* R3D_CreateBlend2Node(R3D_AnimationTree* tree, R3D_Blend2NodeParams params)

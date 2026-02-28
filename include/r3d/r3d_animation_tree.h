@@ -266,6 +266,19 @@ R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTre
 R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNode(R3D_AnimationTree* tree, R3D_AnimationNodeParams params);
 
 /**
+ * @brief Creates animation node of type Animation, optionally sets animation currentTime.
+ *
+ * Animation is a leaf node, holding the R3D_Animation structure.
+ *
+ * @param tree Animation tree.
+ * @param params Animation node initial parameters.
+ * @param setTime Flag to set currentTime value based on animation speed; useful for animations with negative speed in State Machine.
+ * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded or animation name is not found.
+ */
+R3DAPI R3D_AnimationTreeNode* R3D_CreateAnimationNodeEx(R3D_AnimationTree* tree, R3D_AnimationNodeParams params,
+                                                        bool setTime);
+
+/**
  * @brief Creates animation node of type Blend2.
  *
  * Blend2 node blends channels of any two animation nodes together, with respecting optional bone mask.
