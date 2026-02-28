@@ -29,7 +29,7 @@ typedef int R3D_AnimationStmIndex;
 // ========================================
 
 /**
- * @brief Callback type for manipulating with animation before been used by the animation tree.
+ * @brief Callback type for manipulating the animation before it is used by the animation tree.
  *
  * @param animation Pointer to the processed animation.
  * @param state Current animation state.
@@ -41,7 +41,7 @@ typedef void (*R3D_AnimationNodeCallback)(const R3D_Animation* animation, R3D_An
                                           int boneIndex, Transform* out, void* userData);
 
 /**
- * @brief Callback type for manipulating with final animation.
+ * @brief Callback type for manipulating the final animation.
  *
  * @param player Pointer to the animation player used by the animation tree.
  * @param boneIndex Index of the processed bone.
@@ -138,7 +138,7 @@ typedef struct {
 typedef struct {
     R3D_StmEdgeMode mode;           ///< Operation mode.
     R3D_StmEdgeStatus status;       ///< Current travel status.
-    R3D_StmEdgeStatus nextStatus;   ///< Travel status used after machine traversed thru this edge with status set to R3D_STM_EDGE_ONCE.
+    R3D_StmEdgeStatus nextStatus;   ///< Travel status used after machine traversed through this edge with status set to R3D_STM_EDGE_ONCE.
     float xFadeTime;                ///< Cross fade blending time between connected animation nodes, in seconds.
 } R3D_StmEdgeParams;
 
@@ -201,7 +201,7 @@ R3DAPI R3D_AnimationTree R3D_LoadAnimationTreeEx(R3D_AnimationPlayer player, int
  * @param maxSize Size of the animation nodes pool; maximum number of animation nodes in the tree.
  * @param rootBone Root bone index; set -1 to disable root motion.
  * @param updateCallback Callback function pointer to receive and modify final animation transformation, can be NULL.
- * @param updateUserdata User data pointer passed to the callback, can be NULL.
+ * @param updateUserData User data pointer passed to the callback, can be NULL.
  * @return Newly created animation tree, or a zeroed struct on failure.
  */
 R3DAPI R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player, int maxSize, int rootBone,
@@ -215,7 +215,7 @@ R3DAPI R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player, in
 R3DAPI void R3D_UnloadAnimationTree(R3D_AnimationTree tree);
 
 /**
- * @brief Updates the animation tree: calculates blended pose, sets and uploads the pose thru associated animation player.
+ * @brief Updates the animation tree: calculates blended pose, sets and uploads the pose through associated animation player.
  *
  * @param tree Animation tree.
  * @param dt Delta time in seconds.
@@ -223,10 +223,10 @@ R3DAPI void R3D_UnloadAnimationTree(R3D_AnimationTree tree);
 R3DAPI void R3D_UpdateAnimationTree(R3D_AnimationTree* tree, float dt);
 
 /**
- * @brief Updates the animation tree: calculates blended pose, sets and uploads the pose thru associated animation player.
+ * @brief Updates the animation tree: calculates blended pose, sets and uploads the pose through associated animation player.
  *
  * Set the rootMotion and/or rootDistance pointers to get root motion information.
- * Divide rootMotion translation vector with dt to get root bone speed.
+ * Divide rootMotion translation vector by dt to get root bone speed.
  *
  * @param tree Animation tree.
  * @param dt Delta time in seconds.
@@ -344,7 +344,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree,
 /**
  * @brief Creates animation node of type State Machine Stop/Done (StmX).
  *
- * StmX is a helper animation node, that allows to stop state machine evaluation in current update.
+ * StmX is a helper animation node, that allows stopping state machine evaluation in the current update.
  * Sets animation node done status of the state machine to true.
  *
  * @param tree Animation tree.
@@ -496,7 +496,7 @@ R3DAPI void R3D_TravelToStmState(R3D_AnimationTreeNode* node,
  *
  * @param skeleton Skeleton of associated animation player.
  * @param boneNames Array of pointers to null-terminated strings with bone names.
- * @param boneNamesCount Count of strings in boneNames array.
+ * @param boneNameCount Count of strings in boneNames array.
  * @return Calculated bone mask, or zeroed structure on failure.
  */
 R3DAPI R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton,
