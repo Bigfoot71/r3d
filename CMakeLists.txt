@@ -239,6 +239,7 @@ endif()
 
 if(R3D_SUPPORT_ASSIMP)
     set(R3D_IMPORTER_SOURCES
+        "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
@@ -288,8 +289,6 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_sky.c"
     "${R3D_ROOT_PATH}/src/r3d_utils.c"
     "${R3D_ROOT_PATH}/src/r3d_visibility.c"
-    # External
-    "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
 )
 
 # ========================================
@@ -379,7 +378,10 @@ target_include_directories(${PROJECT_NAME}
 )
 
 if(R3D_SUPPORT_ASSIMP)
-    target_link_libraries(${PROJECT_NAME} PRIVATE "${R3D_ASSIMP_LIB}")
+    target_include_directories(${PROJECT_NAME}
+        PRIVATE
+            "${R3D_ASSIMP_INC}"
+    )
 endif()
 
 # ========================================
@@ -392,7 +394,10 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if(R3D_SUPPORT_ASSIMP)
-    target_include_directories(${PROJECT_NAME} PRIVATE "${R3D_ASSIMP_INC}")
+    target_link_libraries(${PROJECT_NAME}
+        PRIVATE
+            "${R3D_ASSIMP_LIB}"
+    )
 endif()
 
 check_library_exists(m cos "" HAVE_LIB_M)
