@@ -7,6 +7,8 @@
  */
 
 #include "./r3d_frustum.h"
+#include "r3d_math.h"
+#include "raylib.h"
 
 #include <raymath.h>
 #include <float.h>
@@ -83,11 +85,8 @@ r3d_frustum_t r3d_frustum_create(Matrix viewProj)
     return frustum;
 }
 
-BoundingBox r3d_frustum_get_bounding_box(Matrix viewProj)
+BoundingBox r3d_frustum_get_bounding_box(Matrix invViewProj)
 {
-    Matrix matInv = MatrixInvert(viewProj);
-
-    // Points in clip space with correct w component
     Vector4 clipCorners[8] = {
         {-1, -1, -1, 1}, {1, -1, -1, 1}, {1, 1, -1, 1}, {-1, 1, -1, 1}, // Near
         {-1, -1,  1, 1}, {1, -1,  1, 1}, {1, 1,  1, 1}, {-1, 1,  1, 1}  // Far
@@ -99,31 +98,37 @@ BoundingBox r3d_frustum_get_bounding_box(Matrix viewProj)
     };
 
     for (int i = 0; i < 8; i++) {
-        Vector4 p = clipCorners[i];
-
-        // Transform to world space
-        float x = p.x * matInv.m0 + p.y * matInv.m4 + p.z * matInv.m8 + p.w * matInv.m12;
-        float y = p.x * matInv.m1 + p.y * matInv.m5 + p.z * matInv.m9 + p.w * matInv.m13;
-        float z = p.x * matInv.m2 + p.y * matInv.m6 + p.z * matInv.m10 + p.w * matInv.m14;
-        float w = p.x * matInv.m3 + p.y * matInv.m7 + p.z * matInv.m11 + p.w * matInv.m15;
-
-        // Perspective divide
-        if (fabsf(w) > 1e-6f) {  // Avoid division by very small numbers
-            x /= w;
-            y /= w;
-            z /= w;
+        Vector4 p = r3d_vector4_transform(clipCorners[i], &invViewProj);
+        if (fabsf(p.w) > 1e-6f) {
+            float invW = 1.0f / p.w;
+            p.x *= invW;
+            p.y *= invW;
+            p.z *= invW;
         }
-
-        // Update bounding box
-        bbox.min.x = fminf(bbox.min.x, x);
-        bbox.min.y = fminf(bbox.min.y, y);
-        bbox.min.z = fminf(bbox.min.z, z);
-        bbox.max.x = fmaxf(bbox.max.x, x);
-        bbox.max.y = fmaxf(bbox.max.y, y);
-        bbox.max.z = fmaxf(bbox.max.z, z);
+        bbox.min = Vector3Min(bbox.min, (Vector3) {p.x, p.y, p.z});
+        bbox.max = Vector3Max(bbox.max, (Vector3) {p.x, p.y, p.z});
     }
 
     return bbox;
+}
+
+void r3d_frustum_get_corners(Matrix invViewProj, Vector3* corners)
+{
+    Vector4 clipCorners[8] = {
+        {-1, -1, -1, 1}, {1, -1, -1, 1}, {1, 1, -1, 1}, {-1, 1, -1, 1}, // Near
+        {-1, -1,  1, 1}, {1, -1,  1, 1}, {1, 1,  1, 1}, {-1, 1,  1, 1}  // Far
+    };
+
+    for (int i = 0; i < 8; i++) {
+        Vector4 p = r3d_vector4_transform(clipCorners[i], &invViewProj);
+        if (fabsf(p.w) > 1e-6f) {
+            float invW = 1.0f / p.w;
+            p.x *= invW;
+            p.y *= invW;
+            p.z *= invW;
+        }
+        corners[i] = (Vector3) {p.x, p.y, p.z};
+    }
 }
 
 bool r3d_frustum_is_point_in(const r3d_frustum_t* frustum, Vector3 position)

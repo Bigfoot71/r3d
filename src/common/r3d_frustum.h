@@ -36,7 +36,8 @@ typedef struct {
 /* === Functions === */
 
 r3d_frustum_t r3d_frustum_create(Matrix viewProj);
-BoundingBox r3d_frustum_get_bounding_box(Matrix viewProj);
+BoundingBox r3d_frustum_get_bounding_box(Matrix invViewProj);
+void r3d_frustum_get_corners(Matrix invViewProj, Vector3 corners[8]);
 
 bool r3d_frustum_is_point_in(const r3d_frustum_t* frustum, Vector3 position);
 bool r3d_frustum_is_points_in(const r3d_frustum_t* frustum, const Vector3* positions, int count);

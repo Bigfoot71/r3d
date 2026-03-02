@@ -393,7 +393,7 @@ static void update_light_bounding_box(r3d_light_t* light)
         light->aabb.max = Vector3AddValue(light->position, +light->range);
         break;
     case R3D_LIGHT_SPOT:
-        light->aabb = r3d_frustum_get_bounding_box(light->viewProj[0]);
+        light->aabb = r3d_frustum_get_bounding_box(MatrixInvert(light->viewProj[0]));
         break;
     case R3D_LIGHT_DIR:
         light->aabb.min = (Vector3) {-FLT_MAX, -FLT_MAX, -FLT_MAX};
