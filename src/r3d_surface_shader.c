@@ -237,7 +237,8 @@ void R3D_UnloadSurfaceShader(R3D_SurfaceShader* shader)
     DELETE_PROGRAM(shader->program.scene.forward.id);
     DELETE_PROGRAM(shader->program.scene.depth.id);
     DELETE_PROGRAM(shader->program.scene.depthCube.id);
-    DELETE_PROGRAM(shader->program.scene.probe.id);
+    DELETE_PROGRAM(shader->program.scene.probeForward.id);
+    DELETE_PROGRAM(shader->program.scene.probeUnlit.id);
     DELETE_PROGRAM(shader->program.scene.decal.id);
 
     RL_FREE(shader);
@@ -381,13 +382,14 @@ bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
         usage_hint_t condition;
         r3d_shader_loader_func func;
     } variants[] = {
-        {"geometry",  USAGE_HINT_OPAQUE | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.geometry},
-        {"forward",   USAGE_HINT_PREPASS | USAGE_HINT_TRANSPARENT, R3D_MOD_SHADER_LOADER.scene.forward},
-        {"unlit",     USAGE_HINT_UNLIT,                            R3D_MOD_SHADER_LOADER.scene.unlit},
-        {"depth",     USAGE_HINT_SHADOW | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.depth},
-        {"depthCube", USAGE_HINT_SHADOW,                           R3D_MOD_SHADER_LOADER.scene.depthCube},
-        {"decal",     USAGE_HINT_DECAL,                            R3D_MOD_SHADER_LOADER.scene.decal},
-        {"probe",     USAGE_HINT_PROBE,                            R3D_MOD_SHADER_LOADER.scene.probe}
+        {"geometry",      USAGE_HINT_OPAQUE | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.geometry},
+        {"forward",       USAGE_HINT_PREPASS | USAGE_HINT_TRANSPARENT, R3D_MOD_SHADER_LOADER.scene.forward},
+        {"unlit",         USAGE_HINT_UNLIT,                            R3D_MOD_SHADER_LOADER.scene.unlit},
+        {"depth",         USAGE_HINT_SHADOW | USAGE_HINT_PREPASS,      R3D_MOD_SHADER_LOADER.scene.depth},
+        {"depth-cube",    USAGE_HINT_SHADOW,                           R3D_MOD_SHADER_LOADER.scene.depthCube},
+        {"decal",         USAGE_HINT_DECAL,                            R3D_MOD_SHADER_LOADER.scene.decal},
+        {"probe-forward", USAGE_HINT_PROBE,                            R3D_MOD_SHADER_LOADER.scene.probeForward},
+        {"probe-unlit",   USAGE_HINT_PROBE | USAGE_HINT_UNLIT,         R3D_MOD_SHADER_LOADER.scene.probeUnlit},
     };
 
     for (int i = 0; i < 6; i++) {

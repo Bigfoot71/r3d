@@ -11,12 +11,15 @@
 /* === Includes === */
 
 #include "../include/blocks/frame.glsl"
+#include "../include/blocks/fog.glsl"
 
 /* === Varyings === */
 
 smooth in vec3 vPosition;       //< For custom shaders
 smooth in vec2 vTexCoord;
 smooth in vec4 vColor;
+
+smooth in float vLinearDepth;
 
 /* === Uniforms === */
 
@@ -36,5 +39,7 @@ layout(location = 0) out vec4 FragColor;
 void main()
 {
     SceneFragment(vTexCoord, mat3(1.0), uAlphaCutoff);
+
     FragColor = vec4(ALBEDO, ALPHA);
+    FragColor = FogColorMix(FragColor, vLinearDepth);
 }

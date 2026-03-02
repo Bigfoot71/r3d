@@ -59,13 +59,16 @@ static void upload_light_array_block_for_mesh(const r3d_render_call_t* call, boo
 static void upload_frame_block(void);
 static void upload_view_block(void);
 static void upload_env_block(void);
+static void upload_fog_block(void);
 
 static void raster_depth(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light);
 static void raster_depth_cube(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light);
+static void raster_probe_forward(const r3d_render_call_t* call, const r3d_env_probe_t* probe, int face);
+static void raster_probe_unlit(const r3d_render_call_t* call, const r3d_env_probe_t* probe, int face);
 static void raster_geometry(const r3d_render_call_t* call, bool matchPrepass);
 static void raster_decal(const r3d_render_call_t* call);
 static void raster_forward(const r3d_render_call_t* call);
-static void raster_unlit(const r3d_render_call_t* call, const Matrix* invView, const Matrix* viewProj);
+static void raster_unlit(const r3d_render_call_t* call);
 
 static void pass_scene_shadow(void);
 static void pass_scene_probes(void);
@@ -82,12 +85,12 @@ static r3d_target_t pass_prepare_ssr(void);
 static void pass_deferred_lights(void);
 static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssgiSource);
 static void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource);
+static void pass_deferred_fog(r3d_target_t sceneTarget);
 
 static void pass_scene_forward(r3d_target_t sceneTarget);
 static void pass_scene_background(r3d_target_t sceneTarget);
 
 static r3d_target_t pass_post_setup(r3d_target_t sceneTarget);
-static r3d_target_t pass_post_fog(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
@@ -129,6 +132,7 @@ void R3D_End(void)
     upload_frame_block();
     upload_view_block();
     upload_env_block();
+    upload_fog_block();
 
     /* --- Update all visible lights and render their shadow maps --- */
 
@@ -201,6 +205,10 @@ void R3D_End(void)
 
         if (ssr) ssrSource = pass_prepare_ssr();
         pass_deferred_compose(sceneTarget, ssrSource);
+
+        if (R3D.environment.fog.mode != R3D_FOG_DISABLED) {
+            pass_deferred_fog(sceneTarget);
+        }
     }
     else {
         r3d_target_clear(NULL, 0, 0, true);
@@ -217,10 +225,6 @@ void R3D_End(void)
     /* --- Applying effects over the scene and final blit --- */
 
     sceneTarget = pass_post_setup(sceneTarget);
-
-    if (R3D.environment.fog.mode != R3D_FOG_DISABLED) {
-        sceneTarget = pass_post_fog(sceneTarget);
-    }
 
     if (R3D.environment.dof.mode != R3D_DOF_DISABLED) {
         sceneTarget = pass_post_dof(sceneTarget);
@@ -691,8 +695,8 @@ void upload_view_block(void)
 
 void upload_env_block(void)
 {
-    R3D_EnvBackground* background = &R3D.environment.background;
-    R3D_EnvAmbient* ambient = &R3D.environment.ambient;
+    const R3D_EnvBackground* background = &R3D.environment.background;
+    const R3D_EnvAmbient* ambient = &R3D.environment.ambient;
 
     r3d_shader_block_env_t env = {0};
 
@@ -720,6 +724,28 @@ void upload_env_block(void)
     env.uNumProbes = iProbe;
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env);
+}
+
+void upload_fog_block(void)
+{
+    const R3D_EnvFog* fog = &R3D.environment.fog;
+    static r3d_shader_block_fog_t prevFog = {0};
+    r3d_shader_block_fog_t currFog = {0};
+
+    currFog.color = r3d_color_to_linear_vec3(fog->color, R3D.colorSpace);
+    currFog.start = fog->start;
+    currFog.end = fog->end;
+    currFog.density = fog->density;
+    currFog.skyAffect = fog->skyAffect;
+    currFog.mode = fog->mode;
+
+    if (memcmp(&prevFog, &currFog, sizeof(currFog)) != 0) {
+        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FOG, &currFog);
+        prevFog = currFog;
+    }
+    else {
+        r3d_shader_bind_uniform_block(R3D_SHADER_BLOCK_FOG);
+    }
 }
 
 void raster_depth(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light)
@@ -879,7 +905,7 @@ void raster_depth_cube(const r3d_render_call_t* call, const Matrix* viewProj, r3
     }
 }
 
-void raster_probe(const r3d_render_call_t* call, const Matrix* invView, const Matrix* viewProj, r3d_env_probe_t* probe)
+void raster_probe_forward(const r3d_render_call_t* call, const r3d_env_probe_t* probe, int face)
 {
     assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
@@ -890,60 +916,61 @@ void raster_probe(const r3d_render_call_t* call, const Matrix* invView, const Ma
     /* --- Use shader --- */
 
     R3D_SurfaceShader* shader = call->mesh.material.shader;
-    R3D_SHADER_USE_SELECT(scene.probe, shader);
+    R3D_SHADER_USE_SELECT(scene.probeForward, shader);
 
     /* --- Set probe related data --- */
 
-    R3D_SHADER_SET_VEC3_SELECT(scene.probe, shader, uViewPosition, probe->position);
-    R3D_SHADER_SET_INT_SELECT(scene.probe, shader, uProbeInterior, probe->interior);
+    R3D_SHADER_SET_VEC3_SELECT(scene.probeForward, shader, uViewPosition, probe->position);
+    R3D_SHADER_SET_INT_SELECT(scene.probeForward, shader, uProbeInterior, probe->interior);
 
     /* --- Send matrices --- */
 
     Matrix matNormal = r3d_matrix_normal(&group->transform);
 
-    R3D_SHADER_SET_MAT4_SELECT(scene.probe, shader, uMatInvView, *invView);
-    R3D_SHADER_SET_MAT4_SELECT(scene.probe, shader, uMatModel, group->transform);
-    R3D_SHADER_SET_MAT4_SELECT(scene.probe, shader, uMatNormal, matNormal);
-    R3D_SHADER_SET_MAT4_SELECT(scene.probe, shader, uMatViewProj, *viewProj);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeForward, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeForward, shader, uMatNormal, matNormal);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeForward, shader, uMatView, probe->view[face]);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeForward, shader, uMatInvView, probe->invView[face]);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeForward, shader, uMatViewProj, probe->viewProj[face]);
 
     /* --- Send skinning related data --- */
 
     if (group->skinTexture > 0) {
-        R3D_SHADER_BIND_SAMPLER_SELECT(scene.probe, shader, uBoneMatricesTex, group->skinTexture);
-        R3D_SHADER_SET_INT_SELECT(scene.probe, shader, uSkinning, true);
+        R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeForward, shader, uBoneMatricesTex, group->skinTexture);
+        R3D_SHADER_SET_INT_SELECT(scene.probeForward, shader, uSkinning, true);
     }
     else {
-        R3D_SHADER_SET_INT_SELECT(scene.probe, shader, uSkinning, false);
+        R3D_SHADER_SET_INT_SELECT(scene.probeForward, shader, uSkinning, false);
     }
 
     /* --- Send billboard related data --- */
 
-    R3D_SHADER_SET_INT_SELECT(scene.probe, shader, uBillboard, material->billboardMode);
+    R3D_SHADER_SET_INT_SELECT(scene.probeForward, shader, uBillboard, material->billboardMode);
 
     /* --- Set factor material maps --- */
 
-    R3D_SHADER_SET_FLOAT_SELECT(scene.probe, shader, uEmissionEnergy, material->emission.energy);
-    R3D_SHADER_SET_FLOAT_SELECT(scene.probe, shader, uNormalScale, material->normal.scale);
-    R3D_SHADER_SET_FLOAT_SELECT(scene.probe, shader, uOcclusion, material->orm.occlusion);
-    R3D_SHADER_SET_FLOAT_SELECT(scene.probe, shader, uRoughness, material->orm.roughness);
-    R3D_SHADER_SET_FLOAT_SELECT(scene.probe, shader, uMetalness, material->orm.metalness);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uEmissionEnergy, material->emission.energy);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uNormalScale, material->normal.scale);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uOcclusion, material->orm.occlusion);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uRoughness, material->orm.roughness);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uMetalness, material->orm.metalness);
 
     /* --- Set texcoord offset/scale --- */
 
-    R3D_SHADER_SET_VEC2_SELECT(scene.probe, shader, uTexCoordOffset, material->uvOffset);
-    R3D_SHADER_SET_VEC2_SELECT(scene.probe, shader, uTexCoordScale, material->uvScale);
+    R3D_SHADER_SET_VEC2_SELECT(scene.probeForward, shader, uTexCoordOffset, material->uvOffset);
+    R3D_SHADER_SET_VEC2_SELECT(scene.probeForward, shader, uTexCoordScale, material->uvScale);
 
     /* --- Set color material maps --- */
 
-    R3D_SHADER_SET_COL4_SELECT(scene.probe, shader, uAlbedoColor, R3D.colorSpace, material->albedo.color);
-    R3D_SHADER_SET_COL3_SELECT(scene.probe, shader, uEmissionColor, R3D.colorSpace, material->emission.color);
+    R3D_SHADER_SET_COL4_SELECT(scene.probeForward, shader, uAlbedoColor, R3D.colorSpace, material->albedo.color);
+    R3D_SHADER_SET_COL3_SELECT(scene.probeForward, shader, uEmissionColor, R3D.colorSpace, material->emission.color);
 
     /* --- Bind active texture maps --- */
 
-    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probe, shader, uAlbedoMap, R3D_TEXTURE_SELECT(material->albedo.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probe, shader, uNormalMap, R3D_TEXTURE_SELECT(material->normal.texture.id, NORMAL));
-    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probe, shader, uEmissionMap, R3D_TEXTURE_SELECT(material->emission.texture.id, WHITE));
-    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probe, shader, uOrmMap, R3D_TEXTURE_SELECT(material->orm.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeForward, shader, uAlbedoMap, R3D_TEXTURE_SELECT(material->albedo.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeForward, shader, uNormalMap, R3D_TEXTURE_SELECT(material->normal.texture.id, NORMAL));
+    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeForward, shader, uEmissionMap, R3D_TEXTURE_SELECT(material->emission.texture.id, WHITE));
+    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeForward, shader, uOrmMap, R3D_TEXTURE_SELECT(material->orm.texture.id, WHITE));
 
     /* --- Applying material parameters that are independent of shaders --- */
 
@@ -955,11 +982,84 @@ void raster_probe(const r3d_render_call_t* call, const Matrix* invView, const Ma
     /* --- Rendering the object corresponding to the draw call --- */
 
     if (r3d_render_has_instances(group)) {
-        R3D_SHADER_SET_INT_SELECT(scene.probe, shader, uInstancing, true);
+        R3D_SHADER_SET_INT_SELECT(scene.probeForward, shader, uInstancing, true);
         r3d_render_draw_instanced(call);
     }
     else {
-        R3D_SHADER_SET_INT_SELECT(scene.probe, shader, uInstancing, false);
+        R3D_SHADER_SET_INT_SELECT(scene.probeForward, shader, uInstancing, false);
+        r3d_render_draw(call);
+    }
+}
+
+void raster_probe_unlit(const r3d_render_call_t* call, const r3d_env_probe_t* probe, int face)
+{
+    assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
+
+    const r3d_render_group_t* group = r3d_render_get_call_group(call);
+    const R3D_Material* material = &call->mesh.material;
+    const R3D_Mesh* mesh = &call->mesh.instance;
+
+    /* --- Use shader --- */
+
+    R3D_SurfaceShader* shader = call->mesh.material.shader;
+    R3D_SHADER_USE_SELECT(scene.probeUnlit, shader);
+
+    /* --- Send matrices --- */
+
+    Matrix matNormal = r3d_matrix_normal(&group->transform);
+
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeUnlit, shader, uMatModel, group->transform);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeUnlit, shader, uMatNormal, matNormal);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeUnlit, shader, uMatView, probe->view[face]);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeUnlit, shader, uMatInvView, probe->invView[face]);
+    R3D_SHADER_SET_MAT4_SELECT(scene.probeUnlit, shader, uMatViewProj, probe->viewProj[face]);
+
+    /* --- Send skinning related data --- */
+
+    if (group->skinTexture > 0) {
+        R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeUnlit, shader, uBoneMatricesTex, group->skinTexture);
+        R3D_SHADER_SET_INT_SELECT(scene.probeUnlit, shader, uSkinning, true);
+    }
+    else {
+        R3D_SHADER_SET_INT_SELECT(scene.probeUnlit, shader, uSkinning, false);
+    }
+
+    /* --- Send billboard related data --- */
+
+    R3D_SHADER_SET_INT_SELECT(scene.probeUnlit, shader, uBillboard, material->billboardMode);
+
+    /* --- Set misc material values --- */
+
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeUnlit, shader, uAlphaCutoff, material->alphaCutoff);
+
+    /* --- Set texcoord offset/scale --- */
+
+    R3D_SHADER_SET_VEC2_SELECT(scene.probeUnlit, shader, uTexCoordOffset, material->uvOffset);
+    R3D_SHADER_SET_VEC2_SELECT(scene.probeUnlit, shader, uTexCoordScale, material->uvScale);
+
+    /* --- Set color material maps --- */
+
+    R3D_SHADER_SET_COL4_SELECT(scene.probeUnlit, shader, uAlbedoColor, R3D.colorSpace, material->albedo.color);
+
+    /* --- Bind active texture maps --- */
+
+    R3D_SHADER_BIND_SAMPLER_SELECT(scene.probeUnlit, shader, uAlbedoMap, R3D_TEXTURE_SELECT(material->albedo.texture.id, WHITE));
+
+    /* --- Applying material parameters that are independent of shaders --- */
+
+    r3d_driver_set_depth_state(material->depth);
+    r3d_driver_set_stencil_state(material->stencil);
+    r3d_driver_set_blend_mode(material->blendMode, material->transparencyMode);
+    r3d_driver_set_cull_mode(material->cullMode);
+
+    /* --- Rendering the object corresponding to the draw call --- */
+
+    if (r3d_render_has_instances(group)) {
+        R3D_SHADER_SET_INT_SELECT(scene.probeUnlit, shader, uInstancing, true);
+        r3d_render_draw_instanced(call);
+    }
+    else {
+        R3D_SHADER_SET_INT_SELECT(scene.probeUnlit, shader, uInstancing, false);
         r3d_render_draw(call);
     }
 }
@@ -1210,7 +1310,7 @@ void raster_forward(const r3d_render_call_t* call)
     }
 }
 
-void raster_unlit(const r3d_render_call_t* call, const Matrix* invView, const Matrix* viewProj)
+void raster_unlit(const r3d_render_call_t* call)
 {
     assert(call->type == R3D_RENDER_CALL_MESH); //< Paranoid assert, should be fine
 
@@ -1229,9 +1329,6 @@ void raster_unlit(const r3d_render_call_t* call, const Matrix* invView, const Ma
 
     R3D_SHADER_SET_MAT4_SELECT(scene.unlit, shader, uMatModel, group->transform);
     R3D_SHADER_SET_MAT4_SELECT(scene.unlit, shader, uMatNormal, matNormal);
-
-    R3D_SHADER_SET_MAT4_SELECT(scene.unlit, shader, uMatInvView, *invView);
-    R3D_SHADER_SET_MAT4_SELECT(scene.unlit, shader, uMatViewProj, *viewProj);
 
     /* --- Send skinning related data --- */
 
@@ -1334,6 +1431,9 @@ void pass_scene_shadow(void)
 
 void pass_scene_probes(void)
 {
+    const R3D_EnvBackground* bg = &R3D.environment.background;
+    const R3D_EnvFog* fog = &R3D.environment.fog;
+
     R3D_ENV_PROBE_FOR_EACH_VISIBLE(probe)
     {
         if (!r3d_env_probe_should_be_updated(probe, true)) {
@@ -1360,11 +1460,11 @@ void pass_scene_probes(void)
 
             R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_PACKLIST_PROBE) {
                 if (call->mesh.material.unlit) {
-                    raster_unlit(call, &probe->invView[iFace], &probe->viewProj[iFace]);
+                    raster_probe_unlit(call, probe, iFace);
                 }
                 else {
                     upload_light_array_block_for_mesh(call, probe->shadows);
-                    raster_probe(call, &probe->invView[iFace], &probe->viewProj[iFace], probe);
+                    raster_probe_forward(call, probe, iFace);
                 }
             }
 
@@ -1380,23 +1480,24 @@ void pass_scene_probes(void)
             r3d_driver_set_depth_func(GL_LEQUAL);
             r3d_driver_set_depth_mask(GL_FALSE);
 
-            if (!probe->interior && R3D.environment.background.sky.texture != 0) {
+            if (bg->sky.texture != 0) {
                 R3D_SHADER_USE(scene.skybox);
-                float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
-                R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
-                R3D_SHADER_SET_FLOAT(scene.skybox, uEnergy, R3D.environment.background.energy);
-                R3D_SHADER_SET_FLOAT(scene.skybox, uLod, R3D.environment.background.skyBlur * lod);
-                R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
+                float lod = (float)r3d_get_mip_levels_1d(bg->sky.size);
+                R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, bg->sky.texture);
+                R3D_SHADER_SET_FLOAT(scene.skybox, uEnergy, bg->energy);
+                R3D_SHADER_SET_FLOAT(scene.skybox, uLod, bg->skyBlur * lod);
+                R3D_SHADER_SET_VEC4(scene.skybox, uRotation, bg->rotation);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatInvView, probe->invView[iFace]);
                 R3D_SHADER_SET_MAT4(scene.skybox, uMatInvProj, probe->invProj);
             }
             else {
-                Vector4 background = r3d_color_to_linear_scaled_vec4(
-                    R3D.environment.background.color, R3D.colorSpace,
-                    R3D.environment.background.energy
-                );
+                Vector3 bgColor = r3d_color_to_linear_scaled_vec3(bg->color, R3D.colorSpace, bg->energy);
+                if (fog->mode != R3D_FOG_DISABLED) {
+                    Vector3 fogColor = r3d_color_to_linear_vec3(fog->color, R3D.colorSpace);
+                    bgColor = Vector3Lerp(bgColor, fogColor, fog->skyAffect);
+                }
                 R3D_SHADER_USE(scene.background);
-                R3D_SHADER_SET_VEC4(scene.background, uColor, background);
+                R3D_SHADER_SET_VEC4(scene.background, uColor, (Vector4) {bgColor.x, bgColor.y, bgColor.z, 1.0f});
             }
 
             R3D_RENDER_SCREEN();
@@ -1910,8 +2011,6 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
 
 void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
 {
-    R3D_TARGET_BIND(true, sceneTarget);
-
     r3d_driver_disable(GL_STENCIL_TEST);
     r3d_driver_disable(GL_CULL_FACE);
     r3d_driver_disable(GL_BLEND);
@@ -1920,6 +2019,7 @@ void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
     r3d_driver_set_depth_func(GL_GREATER);
     r3d_driver_set_depth_mask(GL_FALSE);
 
+    R3D_TARGET_BIND(true, sceneTarget);
     R3D_SHADER_USE(deferred.compose);
 
     R3D_SHADER_BIND_SAMPLER(deferred.compose, uAlbedoTex, r3d_target_get_level(R3D_TARGET_ALBEDO, 0));
@@ -1930,6 +2030,25 @@ void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
 
     R3D_SHADER_SET_FLOAT(deferred.compose, uSsrNumLevels, (float)r3d_target_get_num_levels(R3D_TARGET_SSR));
 
+    R3D_RENDER_SCREEN();
+}
+
+void pass_deferred_fog(r3d_target_t sceneTarget)
+{
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
+
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_set_depth_func(GL_GREATER);
+    r3d_driver_set_depth_mask(GL_FALSE);
+
+    r3d_driver_enable(GL_BLEND);
+    r3d_driver_set_blend_func(GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    R3D_TARGET_BIND(false, sceneTarget);
+    R3D_SHADER_USE(deferred.fog);
+
+    R3D_SHADER_BIND_SAMPLER(deferred.fog, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_RENDER_SCREEN();
 }
 
@@ -1948,7 +2067,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     const r3d_frustum_t* frustum = &R3D.viewState.frustum;
     R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (call->mesh.material.unlit) {
-            raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
+            raster_unlit(call);
         }
     }
 
@@ -1958,7 +2077,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (call->mesh.material.unlit) {
-            raster_unlit(call, &R3D.viewState.invView, &R3D.viewState.viewProj);
+            raster_unlit(call);
         }
         else {
             upload_light_array_block_for_mesh(call, true);
@@ -1984,23 +2103,27 @@ void pass_scene_background(r3d_target_t sceneTarget)
     r3d_driver_set_depth_func(GL_LEQUAL);
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    if (R3D.environment.background.sky.texture != 0) {
+    const R3D_EnvBackground* bg = &R3D.environment.background;
+    const R3D_EnvFog* fog = &R3D.environment.fog;
+
+    if (bg->sky.texture != 0) {
         R3D_SHADER_USE(scene.skybox);
-        float lod = (float)r3d_get_mip_levels_1d(R3D.environment.background.sky.size);
-        R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, R3D.environment.background.sky.texture);
-        R3D_SHADER_SET_FLOAT(scene.skybox, uEnergy, R3D.environment.background.energy);
-        R3D_SHADER_SET_FLOAT(scene.skybox, uLod, R3D.environment.background.skyBlur * lod);
-        R3D_SHADER_SET_VEC4(scene.skybox, uRotation, R3D.environment.background.rotation);
+        float lod = (float)r3d_get_mip_levels_1d(bg->sky.size);
+        R3D_SHADER_BIND_SAMPLER(scene.skybox, uSkyMap, bg->sky.texture);
+        R3D_SHADER_SET_FLOAT(scene.skybox, uEnergy, bg->energy);
+        R3D_SHADER_SET_FLOAT(scene.skybox, uLod, bg->skyBlur * lod);
+        R3D_SHADER_SET_VEC4(scene.skybox, uRotation, bg->rotation);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatInvView, R3D.viewState.invView);
         R3D_SHADER_SET_MAT4(scene.skybox, uMatInvProj, R3D.viewState.invProj);
     }
     else {
-        Vector4 background = r3d_color_to_linear_scaled_vec4(
-            R3D.environment.background.color, R3D.colorSpace,
-            R3D.environment.background.energy
-        );
+        Vector3 bgColor = r3d_color_to_linear_scaled_vec3(bg->color, R3D.colorSpace, bg->energy);
+        if (fog->mode != R3D_FOG_DISABLED) {
+            Vector3 fogColor = r3d_color_to_linear_vec3(fog->color, R3D.colorSpace);
+            bgColor = Vector3Lerp(bgColor, fogColor, fog->skyAffect);
+        }
         R3D_SHADER_USE(scene.background);
-        R3D_SHADER_SET_VEC4(scene.background, uColor, background);
+        R3D_SHADER_SET_VEC4(scene.background, uColor, (Vector4) {bgColor.x, bgColor.y, bgColor.z, 1.0f});
     }
 
     R3D_RENDER_SCREEN();
@@ -2014,26 +2137,6 @@ r3d_target_t pass_post_setup(r3d_target_t sceneTarget)
     r3d_driver_disable(GL_BLEND);
 
     return r3d_target_swap_scene(sceneTarget);
-}
-
-r3d_target_t pass_post_fog(r3d_target_t sceneTarget)
-{
-    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
-    R3D_SHADER_USE(post.fog);
-
-    R3D_SHADER_BIND_SAMPLER(post.fog, uSceneTex, r3d_target_get(sceneTarget));
-    R3D_SHADER_BIND_SAMPLER(post.fog, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
-
-    R3D_SHADER_SET_INT(post.fog, uFogMode, R3D.environment.fog.mode);
-    R3D_SHADER_SET_COL3(post.fog, uFogColor, R3D.colorSpace, R3D.environment.fog.color);
-    R3D_SHADER_SET_FLOAT(post.fog, uFogStart, R3D.environment.fog.start);
-    R3D_SHADER_SET_FLOAT(post.fog, uFogEnd, R3D.environment.fog.end);
-    R3D_SHADER_SET_FLOAT(post.fog, uFogDensity, R3D.environment.fog.density);
-    R3D_SHADER_SET_FLOAT(post.fog, uSkyAffect, R3D.environment.fog.skyAffect);
-
-    R3D_RENDER_SCREEN();
-
-    return sceneTarget;
 }
 
 r3d_target_t pass_post_dof(r3d_target_t sceneTarget)	
