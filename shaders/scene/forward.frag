@@ -25,6 +25,7 @@ flat   in vec3 vEmission;
 smooth in vec4 vColor;
 smooth in mat3 vTBN;
 
+smooth in float vLinearDepth;
 in vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 
 /* === Uniforms === */
@@ -60,6 +61,7 @@ uniform bool uProbeInterior;
 #include "../include/blocks/frame.glsl"
 #include "../include/blocks/light.glsl"
 #include "../include/blocks/env.glsl"
+#include "../include/blocks/fog.glsl"
 
 /* === Fragments === */
 
@@ -191,4 +193,5 @@ void main()
     /* Compute the final fragment color */
 
     FragColor = vec4(ALBEDO * diffuse + specular + EMISSION, ALPHA);
+    FragColor = FogColorMix(FragColor, vLinearDepth);
 }

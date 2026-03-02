@@ -21,17 +21,6 @@
 #include "../common/r3d_math.h"
 
 // ========================================
-// MODULE CONSTANTS
-// ========================================
-
-#define R3D_SHADER_BLOCK_FRAME_SLOT         0
-#define R3D_SHADER_BLOCK_VIEW_SLOT          1
-#define R3D_SHADER_BLOCK_ENV_SLOT           2
-#define R3D_SHADER_BLOCK_LIGHT_SLOT         3
-#define R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT   4
-#define R3D_SHADER_BLOCK_USER_SLOT          5
-
-// ========================================
 // SHADER MANAGEMENT MACROS
 // ========================================
 
@@ -460,7 +449,7 @@ typedef struct { Color val; R3D_ColorSpace colorSpace; int loc; } r3d_shader_uni
 typedef struct { int loc; } r3d_shader_uniform_mat4_t;
 
 // ========================================
-// UNIFORM BLOCK ENUMS
+// UNIFORM BLOCK ENUM / SLOTS
 // ========================================
 
 typedef enum {
@@ -469,8 +458,17 @@ typedef enum {
     R3D_SHADER_BLOCK_ENV,
     R3D_SHADER_BLOCK_LIGHT,
     R3D_SHADER_BLOCK_LIGHT_ARRAY,
+    R3D_SHADER_BLOCK_FOG,
     R3D_SHADER_BLOCK_COUNT
 } r3d_shader_block_t;
+
+#define R3D_SHADER_BLOCK_FRAME_SLOT         0
+#define R3D_SHADER_BLOCK_VIEW_SLOT          1
+#define R3D_SHADER_BLOCK_ENV_SLOT           2
+#define R3D_SHADER_BLOCK_LIGHT_SLOT         3
+#define R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT   4
+#define R3D_SHADER_BLOCK_FOG_SLOT           5
+#define R3D_SHADER_BLOCK_USER_SLOT          6
 
 // ========================================
 // UNIFORM BLOCK STRUCTS
@@ -547,6 +545,37 @@ typedef struct {
     alignas(16) r3d_shader_block_light_t uLights[R3D_MAX_LIGHT_FORWARD_PER_MESH];
     alignas(4) int32_t uNumLights;
 } r3d_shader_block_light_array_t;
+
+typedef struct {
+    alignas(16) Vector3 color;
+    alignas(4) float start;
+    alignas(4) float end;
+    alignas(4) float density;
+    alignas(4) float skyAffect;
+    alignas(4) int32_t mode;
+} r3d_shader_block_fog_t;
+
+// ========================================
+// UNIFORM BLOCK SIZES AND SLOTS
+// ========================================
+
+static const int R3D_SHADER_BLOCK_SIZES[R3D_SHADER_BLOCK_COUNT] = {
+    [R3D_SHADER_BLOCK_FRAME]       = sizeof(r3d_shader_block_frame_t),
+    [R3D_SHADER_BLOCK_VIEW]        = sizeof(r3d_shader_block_view_t),
+    [R3D_SHADER_BLOCK_ENV]         = sizeof(r3d_shader_block_env_t),
+    [R3D_SHADER_BLOCK_LIGHT]       = sizeof(r3d_shader_block_light_t),
+    [R3D_SHADER_BLOCK_LIGHT_ARRAY] = sizeof(r3d_shader_block_light_array_t),
+    [R3D_SHADER_BLOCK_FOG]         = sizeof(r3d_shader_block_fog_t),
+};
+
+static const int R3D_SHADER_BLOCK_SLOTS[R3D_SHADER_BLOCK_COUNT] = {
+    [R3D_SHADER_BLOCK_FRAME]       = R3D_SHADER_BLOCK_FRAME_SLOT,
+    [R3D_SHADER_BLOCK_VIEW]        = R3D_SHADER_BLOCK_VIEW_SLOT,
+    [R3D_SHADER_BLOCK_ENV]         = R3D_SHADER_BLOCK_ENV_SLOT,
+    [R3D_SHADER_BLOCK_LIGHT]       = R3D_SHADER_BLOCK_LIGHT_SLOT,
+    [R3D_SHADER_BLOCK_LIGHT_ARRAY] = R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT,
+    [R3D_SHADER_BLOCK_FOG]         = R3D_SHADER_BLOCK_FOG_SLOT,
+};
 
 // ========================================
 // BUILT-IN SHADERS STRUCTURES
@@ -841,8 +870,6 @@ typedef struct {
     r3d_shader_uniform_int_t uInstancing;
     r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_int_t uBillboard;
-    r3d_shader_uniform_mat4_t uMatInvView;
-    r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_sampler_t uAlbedoMap;
     r3d_shader_uniform_float_t uAlphaCutoff;
 } r3d_shader_scene_unlit_t;
@@ -850,8 +877,8 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
@@ -866,8 +893,8 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_vec2_t uTexCoordOffset;
@@ -884,9 +911,10 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uBoneMatricesTex;
-    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatNormal;
     r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatView;
+    r3d_shader_uniform_mat4_t uMatInvView;
     r3d_shader_uniform_mat4_t uMatViewProj;
     r3d_shader_uniform_col4_t uAlbedoColor;
     r3d_shader_uniform_col3_t uEmissionColor;
@@ -912,7 +940,25 @@ typedef struct {
     r3d_shader_uniform_float_t uMetalness;
     r3d_shader_uniform_vec3_t uViewPosition;
     r3d_shader_uniform_int_t uProbeInterior;
-} r3d_shader_scene_probe_t;
+} r3d_shader_scene_probe_forward_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uBoneMatricesTex;
+    r3d_shader_uniform_mat4_t uMatModel;
+    r3d_shader_uniform_mat4_t uMatNormal;
+    r3d_shader_uniform_mat4_t uMatView;
+    r3d_shader_uniform_mat4_t uMatInvView;
+    r3d_shader_uniform_mat4_t uMatViewProj;
+    r3d_shader_uniform_col4_t uAlbedoColor;
+    r3d_shader_uniform_vec2_t uTexCoordOffset;
+    r3d_shader_uniform_vec2_t uTexCoordScale;
+    r3d_shader_uniform_int_t uInstancing;
+    r3d_shader_uniform_int_t uSkinning;
+    r3d_shader_uniform_int_t uBillboard;
+    r3d_shader_uniform_sampler_t uAlbedoMap;
+    r3d_shader_uniform_float_t uAlphaCutoff;
+} r3d_shader_scene_probe_unlit_t;
 
 typedef struct {
     GLuint id;
@@ -996,15 +1042,8 @@ typedef struct {
 
 typedef struct {
     GLuint id;
-    r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_int_t uFogMode;
-    r3d_shader_uniform_col3_t uFogColor;
-    r3d_shader_uniform_float_t uFogStart;
-    r3d_shader_uniform_float_t uFogEnd;
-    r3d_shader_uniform_float_t uFogDensity;
-    r3d_shader_uniform_float_t uSkyAffect;
-} r3d_shader_post_fog_t;
+} r3d_shader_deferred_fog_t;
 
 typedef struct {
     GLuint id;
@@ -1073,7 +1112,8 @@ typedef struct {
             r3d_shader_scene_unlit_t unlit;
             r3d_shader_scene_depth_t depth;
             r3d_shader_scene_depth_cube_t depthCube;
-            r3d_shader_scene_probe_t probe;
+            r3d_shader_scene_probe_forward_t probeForward;
+            r3d_shader_scene_probe_unlit_t probeUnlit;
             r3d_shader_scene_decal_t decal;
         } scene;
 
@@ -1142,7 +1182,8 @@ extern struct r3d_mod_shader {
         r3d_shader_scene_skybox_t skybox;
         r3d_shader_scene_depth_t depth;
         r3d_shader_scene_depth_cube_t depthCube;
-        r3d_shader_scene_probe_t probe;
+        r3d_shader_scene_probe_forward_t probeForward;
+        r3d_shader_scene_probe_unlit_t probeUnlit;
         r3d_shader_scene_decal_t decal;
     } scene;
 
@@ -1151,11 +1192,11 @@ extern struct r3d_mod_shader {
         r3d_shader_deferred_ambient_t ambient;
         r3d_shader_deferred_lighting_t lighting;
         r3d_shader_deferred_compose_t compose;
+        r3d_shader_deferred_fog_t fog;
     } deferred;
 
     // Post shaders
     struct {
-        r3d_shader_post_fog_t fog;
         r3d_shader_post_dof_t dof;
         r3d_shader_post_bloom_t bloom;
         r3d_shader_post_output_t output;
@@ -1212,12 +1253,13 @@ bool r3d_shader_load_scene_background(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom);
-bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom);
+bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t* custom);
 bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
-bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom);
@@ -1274,7 +1316,8 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func skybox;
         r3d_shader_loader_func depth;
         r3d_shader_loader_func depthCube;
-        r3d_shader_loader_func probe;
+        r3d_shader_loader_func probeForward;
+        r3d_shader_loader_func probeUnlit;
         r3d_shader_loader_func decal;
     } scene;
 
@@ -1283,11 +1326,11 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func ambient;
         r3d_shader_loader_func lighting;
         r3d_shader_loader_func compose;
+        r3d_shader_loader_func fog;
      } deferred;
 
     // Post shaders
     struct {
-        r3d_shader_loader_func fog;
         r3d_shader_loader_func dof;
         r3d_shader_loader_func bloom;
         r3d_shader_loader_func screen;
@@ -1343,18 +1386,19 @@ static const struct r3d_shader_loader {
         .skybox = r3d_shader_load_scene_skybox,
         .depth = r3d_shader_load_scene_depth,
         .depthCube = r3d_shader_load_scene_depth_cube,
-        .probe = r3d_shader_load_scene_probe,
+        .probeForward = r3d_shader_load_scene_probe_forward,
+        .probeUnlit = r3d_shader_load_scene_probe_unlit,
         .decal = r3d_shader_load_scene_decal,
     },
 
     .deferred = {
         .ambient = r3d_shader_load_deferred_ambient,
         .lighting = r3d_shader_load_deferred_lighting,
-        .compose = r3d_shader_load_deferred_compose
+        .compose = r3d_shader_load_deferred_compose,
+        .fog = r3d_shader_load_deferred_fog,
     },
 
     .post = {
-        .fog = r3d_shader_load_post_fog,
         .dof = r3d_shader_load_post_dof,
         .bloom = r3d_shader_load_post_bloom,
         .screen = r3d_shader_load_post_screen,
@@ -1398,6 +1442,11 @@ void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture);
  * Upload and bind the specified uniform block with the provided data.
  */
 void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data);
+
+/*
+ * Only bind the specified uniform block without change its data.
+ */
+void r3d_shader_bind_uniform_block(r3d_shader_block_t block);
 
 /*
  * Sets the value of a client-side uniform, marks its state as dirty, and flags it for upload.

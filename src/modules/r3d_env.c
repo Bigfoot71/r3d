@@ -300,10 +300,10 @@ static void update_probe_matrix_frustum(r3d_env_probe_t* probe)
 
     for (int face = 0; face < 6; face++) {
         Vector3 target = Vector3Add(probe->position, dirs[face]);
-        Matrix view = MatrixLookAt(probe->position, target, ups[face]);
-        probe->viewProj[face] = MatrixMultiply(view, proj);
+        probe->view[face] = MatrixLookAt(probe->position, target, ups[face]);
+        probe->viewProj[face] = MatrixMultiply(probe->view[face], proj);
         probe->frustum[face] = r3d_frustum_create(probe->viewProj[face]);
-        probe->invView[face] = MatrixInvert(view);
+        probe->invView[face] = MatrixInvert(probe->view[face]);
     }
 }
 

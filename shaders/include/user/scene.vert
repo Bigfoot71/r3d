@@ -11,7 +11,7 @@
 #define MATRIX_MODEL    uMatModel
 #define MATRIX_NORMAL   mat3(uMatNormal)
 
-#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 #   define MATRIX_INV_VIEW          uMatInvView
 #   define MATRIX_VIEW_PROJECTION   uMatViewProj
 #else

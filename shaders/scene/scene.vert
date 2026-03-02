@@ -55,10 +55,14 @@ uniform bool uInstancing;
 uniform bool uSkinning;
 uniform int uBillboard;
 
-#if defined(UNLIT) || defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
+#if defined(PROBE)
+uniform mat4 uMatView;
+#endif // PROBE
+
+#if defined(DEPTH) || defined(DEPTH_CUBE) || defined(PROBE)
 uniform mat4 uMatInvView;   // inv view only for billboard modes
 uniform mat4 uMatViewProj;
-#endif // UNLIT || DEPTH || DEPTH_CUBE || PROBE
+#endif // DEPTH || DEPTH_CUBE || PROBE
 
 /* === Varyings === */
 
@@ -68,13 +72,13 @@ flat   out vec3 vEmission;
 smooth out vec4 vColor;
 smooth out mat3 vTBN;
 
-#if defined(GEOMETRY)
+#if defined(GEOMETRY) || defined(FORWARD) || defined(UNLIT) || defined(PROBE)
 smooth out float vLinearDepth;
-#endif // GEOMETRY
+#endif // GEOMETRY || FORWARD || UNLIT || PROBE
 
-#if defined(FORWARD) || defined(PROBE)
+#if defined(FORWARD) || defined(PROBE_FORWARD)
 smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
-#endif // FORWARD || PROBE
+#endif // FORWARD || PROBE_FORWARD
 
 #if defined(DECAL)
 smooth out mat4 vDecalProjection;
@@ -222,15 +226,17 @@ void main()
     vColor = COLOR * INSTANCE_COLOR;
     vTBN = mat3(T, B, N);
 
-#if defined(GEOMETRY)
+#if defined(GEOMETRY) || defined(FORWARD) || defined(UNLIT)
     vLinearDepth = -(uView.view * vec4(vPosition, 1.0)).z;
-#endif // GEOMETRY
+#elif defined(PROBE)
+    vLinearDepth = -(uMatView * vec4(vPosition, 1.0)).z;
+#endif // GEOMETRY || FORWARD || UNLIT || PROBE
 
-#if defined(FORWARD) || defined(PROBE)
+#if defined(FORWARD) || defined(PROBE_FORWARD)
     for (int i = 0; i < uNumLights; i++) {
         vPosLightSpace[i] = uLights[i].viewProj * vec4(vPosition, 1.0);
     }
-#endif // FORWARD || PROBE
+#endif // FORWARD || PROBE_FORWARD
 
     gl_Position = MATRIX_VIEW_PROJECTION * vec4(vPosition, 1.0);
 

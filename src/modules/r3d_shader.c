@@ -839,6 +839,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(forward, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
     SET_UNIFORM_BUFFER(forward, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
     SET_UNIFORM_BUFFER(forward, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
+    SET_UNIFORM_BUFFER(forward, FogBlock, R3D_SHADER_BLOCK_FOG_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(forward, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
@@ -903,6 +904,8 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
     RL_FREE(fsCode);
 
     SET_UNIFORM_BUFFER(unlit, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
+    SET_UNIFORM_BUFFER(unlit, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
+    SET_UNIFORM_BUFFER(unlit, FogBlock, R3D_SHADER_BLOCK_FOG_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(unlit, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
@@ -916,8 +919,6 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
     GET_LOCATION(unlit, uInstancing);
     GET_LOCATION(unlit, uSkinning);
     GET_LOCATION(unlit, uBillboard);
-    GET_LOCATION(unlit, uMatInvView);
-    GET_LOCATION(unlit, uMatViewProj);
     GET_LOCATION(unlit, uAlphaCutoff);
 
     USE_SHADER(unlit);
@@ -945,6 +946,8 @@ bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_scene_skybox_t, scene, skybox);
     LOAD_SHADER(skybox, SKYBOX_VERT, SKYBOX_FRAG);
+
+    SET_UNIFORM_BUFFER(skybox, FogBlock, R3D_SHADER_BLOCK_FOG_SLOT);
 
     GET_LOCATION(skybox, uMatInvView);
     GET_LOCATION(skybox, uMatInvProj);
@@ -986,8 +989,8 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
         SET_UNIFORM_BUFFER(depth, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
     }
 
-    GET_LOCATION(depth, uMatInvView);
     GET_LOCATION(depth, uMatModel);
+    GET_LOCATION(depth, uMatInvView);
     GET_LOCATION(depth, uMatViewProj);
     GET_LOCATION(depth, uAlbedoColor);
     GET_LOCATION(depth, uTexCoordOffset);
@@ -1036,8 +1039,8 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
         SET_UNIFORM_BUFFER(depthCube, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
     }
 
-    GET_LOCATION(depthCube, uMatInvView);
     GET_LOCATION(depthCube, uMatModel);
+    GET_LOCATION(depthCube, uMatInvView);
     GET_LOCATION(depthCube, uMatViewProj);
     GET_LOCATION(depthCube, uAlbedoColor);
     GET_LOCATION(depthCube, uTexCoordOffset);
@@ -1061,9 +1064,9 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
+bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_probe_t, scene, probe, custom);
+    DECL_SHADER_SELECT(r3d_shader_scene_probe_forward_t, scene, probeForward, custom);
 
     char defNumForwardLights[32] = {0};
     char defNumProbes[32] = {0};
@@ -1071,8 +1074,8 @@ bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
     r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_MAX_LIGHT_FORWARD_PER_MESH);
     r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
 
-    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", defNumForwardLights};
-    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", defNumForwardLights, defNumProbes};
+    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_FORWARD", defNumForwardLights};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_FORWARD", defNumForwardLights, defNumProbes};
 
     char* vsCode = inject_defines(SCENE_VERT,   VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
     char* fsCode = inject_defines(FORWARD_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
@@ -1083,55 +1086,110 @@ bool r3d_shader_load_scene_probe(r3d_shader_custom_t* custom)
         inject_user_code(&vsCode, &fsCode, userCode);
     }
 
-    LOAD_SHADER(probe, vsCode, fsCode);
+    LOAD_SHADER(probeForward, vsCode, fsCode);
 
     RL_FREE(vsCode);
     RL_FREE(fsCode);
 
-    SET_UNIFORM_BUFFER(probe, LightArrayBlock, R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT);
-    SET_UNIFORM_BUFFER(probe, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
-    SET_UNIFORM_BUFFER(probe, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
-    SET_UNIFORM_BUFFER(probe, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
+    SET_UNIFORM_BUFFER(probeForward, LightArrayBlock, R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT);
+    SET_UNIFORM_BUFFER(probeForward, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
+    SET_UNIFORM_BUFFER(probeForward, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
+    SET_UNIFORM_BUFFER(probeForward, EnvBlock, R3D_SHADER_BLOCK_ENV_SLOT);
+    SET_UNIFORM_BUFFER(probeForward, FogBlock, R3D_SHADER_BLOCK_FOG_SLOT);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
-        SET_UNIFORM_BUFFER(probe, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
+        SET_UNIFORM_BUFFER(probeForward, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
     }
 
-    GET_LOCATION(probe, uMatInvView);
-    GET_LOCATION(probe, uMatNormal);
-    GET_LOCATION(probe, uMatModel);
-    GET_LOCATION(probe, uMatViewProj);
-    GET_LOCATION(probe, uAlbedoColor);
-    GET_LOCATION(probe, uEmissionColor);
-    GET_LOCATION(probe, uEmissionEnergy);
-    GET_LOCATION(probe, uTexCoordOffset);
-    GET_LOCATION(probe, uTexCoordScale);
-    GET_LOCATION(probe, uInstancing);
-    GET_LOCATION(probe, uSkinning);
-    GET_LOCATION(probe, uBillboard);
-    GET_LOCATION(probe, uNormalScale);
-    GET_LOCATION(probe, uOcclusion);
-    GET_LOCATION(probe, uRoughness);
-    GET_LOCATION(probe, uMetalness);
-    GET_LOCATION(probe, uViewPosition);
-    GET_LOCATION(probe, uProbeInterior);
+    GET_LOCATION(probeForward, uMatNormal);
+    GET_LOCATION(probeForward, uMatModel);
+    GET_LOCATION(probeForward, uMatView);
+    GET_LOCATION(probeForward, uMatInvView);
+    GET_LOCATION(probeForward, uMatViewProj);
+    GET_LOCATION(probeForward, uAlbedoColor);
+    GET_LOCATION(probeForward, uEmissionColor);
+    GET_LOCATION(probeForward, uEmissionEnergy);
+    GET_LOCATION(probeForward, uTexCoordOffset);
+    GET_LOCATION(probeForward, uTexCoordScale);
+    GET_LOCATION(probeForward, uInstancing);
+    GET_LOCATION(probeForward, uSkinning);
+    GET_LOCATION(probeForward, uBillboard);
+    GET_LOCATION(probeForward, uNormalScale);
+    GET_LOCATION(probeForward, uOcclusion);
+    GET_LOCATION(probeForward, uRoughness);
+    GET_LOCATION(probeForward, uMetalness);
+    GET_LOCATION(probeForward, uViewPosition);
+    GET_LOCATION(probeForward, uProbeInterior);
 
-    USE_SHADER(probe);
+    USE_SHADER(probeForward);
 
-    SET_SAMPLER(probe, uBoneMatricesTex, R3D_SHADER_SAMPLER_BONE_MATRICES);
-    SET_SAMPLER(probe, uAlbedoMap, R3D_SHADER_SAMPLER_MAP_ALBEDO);
-    SET_SAMPLER(probe, uEmissionMap, R3D_SHADER_SAMPLER_MAP_EMISSION);
-    SET_SAMPLER(probe, uNormalMap, R3D_SHADER_SAMPLER_MAP_NORMAL);
-    SET_SAMPLER(probe, uOrmMap, R3D_SHADER_SAMPLER_MAP_ORM);
-    SET_SAMPLER(probe, uShadowDirTex, R3D_SHADER_SAMPLER_SHADOW_DIR);
-    SET_SAMPLER(probe, uShadowSpotTex, R3D_SHADER_SAMPLER_SHADOW_SPOT);
-    SET_SAMPLER(probe, uShadowOmniTex, R3D_SHADER_SAMPLER_SHADOW_OMNI);
-    SET_SAMPLER(probe, uIrradianceTex, R3D_SHADER_SAMPLER_IBL_IRRADIANCE);
-    SET_SAMPLER(probe, uPrefilterTex, R3D_SHADER_SAMPLER_IBL_PREFILTER);
-    SET_SAMPLER(probe, uBrdfLutTex, R3D_SHADER_SAMPLER_IBL_BRDF_LUT);
+    SET_SAMPLER(probeForward, uBoneMatricesTex, R3D_SHADER_SAMPLER_BONE_MATRICES);
+    SET_SAMPLER(probeForward, uAlbedoMap, R3D_SHADER_SAMPLER_MAP_ALBEDO);
+    SET_SAMPLER(probeForward, uEmissionMap, R3D_SHADER_SAMPLER_MAP_EMISSION);
+    SET_SAMPLER(probeForward, uNormalMap, R3D_SHADER_SAMPLER_MAP_NORMAL);
+    SET_SAMPLER(probeForward, uOrmMap, R3D_SHADER_SAMPLER_MAP_ORM);
+    SET_SAMPLER(probeForward, uShadowDirTex, R3D_SHADER_SAMPLER_SHADOW_DIR);
+    SET_SAMPLER(probeForward, uShadowSpotTex, R3D_SHADER_SAMPLER_SHADOW_SPOT);
+    SET_SAMPLER(probeForward, uShadowOmniTex, R3D_SHADER_SAMPLER_SHADOW_OMNI);
+    SET_SAMPLER(probeForward, uIrradianceTex, R3D_SHADER_SAMPLER_IBL_IRRADIANCE);
+    SET_SAMPLER(probeForward, uPrefilterTex, R3D_SHADER_SAMPLER_IBL_PREFILTER);
+    SET_SAMPLER(probeForward, uBrdfLutTex, R3D_SHADER_SAMPLER_IBL_BRDF_LUT);
 
     if (custom != NULL) {
-        set_custom_samplers(probe->id, custom);
+        set_custom_samplers(probeForward->id, custom);
+    }
+
+    return true;
+}
+
+bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
+{
+    DECL_SHADER_SELECT(r3d_shader_scene_probe_unlit_t, scene, probeUnlit, custom);
+
+    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_UNLIT"};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_UNLIT"};
+
+    char* vsCode = inject_defines(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
+    char* fsCode = inject_defines(UNLIT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    const char* userCode = custom ? custom->userCode : NULL;
+
+    if (userCode != NULL) {
+        inject_user_code(&vsCode, &fsCode, userCode);
+    }
+
+    LOAD_SHADER(probeUnlit, vsCode, fsCode);
+
+    RL_FREE(vsCode);
+    RL_FREE(fsCode);
+
+    SET_UNIFORM_BUFFER(probeUnlit, FrameBlock, R3D_SHADER_BLOCK_FRAME_SLOT);
+    SET_UNIFORM_BUFFER(probeUnlit, FogBlock, R3D_SHADER_BLOCK_FOG_SLOT);
+
+    if (userCode && strstr(userCode, "UserBlock") != NULL) {
+        SET_UNIFORM_BUFFER(probeUnlit, UserBlock, R3D_SHADER_BLOCK_USER_SLOT);
+    }
+
+    GET_LOCATION(probeUnlit, uMatNormal);
+    GET_LOCATION(probeUnlit, uMatModel);
+    GET_LOCATION(probeUnlit, uMatView);
+    GET_LOCATION(probeUnlit, uMatInvView);
+    GET_LOCATION(probeUnlit, uMatViewProj);
+    GET_LOCATION(probeUnlit, uAlbedoColor);
+    GET_LOCATION(probeUnlit, uTexCoordOffset);
+    GET_LOCATION(probeUnlit, uTexCoordScale);
+    GET_LOCATION(probeUnlit, uInstancing);
+    GET_LOCATION(probeUnlit, uSkinning);
+    GET_LOCATION(probeUnlit, uBillboard);
+    GET_LOCATION(probeUnlit, uAlphaCutoff);
+
+    USE_SHADER(probeUnlit);
+
+    SET_SAMPLER(probeUnlit, uBoneMatricesTex, R3D_SHADER_SAMPLER_BONE_MATRICES);
+    SET_SAMPLER(probeUnlit, uAlbedoMap, R3D_SHADER_SAMPLER_MAP_ALBEDO);
+
+    if (custom != NULL) {
+        set_custom_samplers(probeUnlit->id, custom);
     }
 
     return true;
@@ -1275,23 +1333,14 @@ bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_post_fog(r3d_shader_custom_t* custom)
+bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(r3d_shader_post_fog_t, post, fog);
+    DECL_SHADER(r3d_shader_deferred_fog_t, deferred, fog);
     LOAD_SHADER(fog, SCREEN_VERT, FOG_FRAG);
 
-    SET_UNIFORM_BUFFER(fog, ViewBlock, R3D_SHADER_BLOCK_VIEW_SLOT);
-
-    GET_LOCATION(fog, uFogMode);
-    GET_LOCATION(fog, uFogColor);
-    GET_LOCATION(fog, uFogStart);
-    GET_LOCATION(fog, uFogEnd);
-    GET_LOCATION(fog, uFogDensity);
-    GET_LOCATION(fog, uSkyAffect);
+    SET_UNIFORM_BUFFER(fog, FogBlock, R3D_SHADER_BLOCK_FOG_SLOT);
 
     USE_SHADER(fog);
-
-    SET_SAMPLER(fog, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(fog, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
@@ -1477,24 +1526,14 @@ bool r3d_shader_init()
 {
     memset(&R3D_MOD_SHADER, 0, sizeof(R3D_MOD_SHADER));
 
-    const int UNIFORM_BUFFER_SIZES[R3D_SHADER_BLOCK_COUNT] = {
-        [R3D_SHADER_BLOCK_FRAME] = sizeof(r3d_shader_block_frame_t),
-        [R3D_SHADER_BLOCK_VIEW] = sizeof(r3d_shader_block_view_t),
-        [R3D_SHADER_BLOCK_ENV] = sizeof(r3d_shader_block_env_t),
-        [R3D_SHADER_BLOCK_LIGHT] = sizeof(r3d_shader_block_light_t),
-        [R3D_SHADER_BLOCK_LIGHT_ARRAY] = sizeof(r3d_shader_block_light_array_t),
-    };
-
     glGenBuffers(R3D_SHADER_BLOCK_COUNT, R3D_MOD_SHADER.uniformBuffers);
-
     for (int i = 0; i < R3D_SHADER_BLOCK_COUNT; i++) {
         GLuint buffer = R3D_MOD_SHADER.uniformBuffers[i];
         glBindBuffer(GL_UNIFORM_BUFFER, R3D_MOD_SHADER.uniformBuffers[i]);
-        glBufferData(GL_UNIFORM_BUFFER, UNIFORM_BUFFER_SIZES[i], NULL, GL_DYNAMIC_DRAW);
+        glBufferData(GL_UNIFORM_BUFFER, R3D_SHADER_BLOCK_SIZES[i], NULL, GL_DYNAMIC_DRAW);
     }
 
     memcpy(R3D_MOD_SHADER.samplerTargets, R3D_MOD_SHADER_SAMPLER_TYPES, sizeof(R3D_MOD_SHADER_SAMPLER_TYPES));
-
     for (int i = 0; i < R3D_MAX_SHADER_SAMPLERS; ++i) {
         R3D_MOD_SHADER.samplerTargets[R3D_SHADER_SAMPLER_CUSTOM_1D + i] = GL_TEXTURE_1D;
         R3D_MOD_SHADER.samplerTargets[R3D_SHADER_SAMPLER_CUSTOM_2D + i] = GL_TEXTURE_2D;
@@ -1543,14 +1582,15 @@ void r3d_shader_quit()
     UNLOAD_SHADER(scene.skybox);
     UNLOAD_SHADER(scene.depth);
     UNLOAD_SHADER(scene.depthCube);
-    UNLOAD_SHADER(scene.probe);
+    UNLOAD_SHADER(scene.probeForward);
+    UNLOAD_SHADER(scene.probeUnlit);
     UNLOAD_SHADER(scene.decal);
 
     UNLOAD_SHADER(deferred.ambient);
     UNLOAD_SHADER(deferred.lighting);
     UNLOAD_SHADER(deferred.compose);
+    UNLOAD_SHADER(deferred.fog);
 
-    UNLOAD_SHADER(post.fog);
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.bloom);
     UNLOAD_SHADER(post.output);
@@ -1573,39 +1613,19 @@ void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture)
 
 void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data)
 {
-    int blockSlot = 0;
-    int blockSize = 0;
-
-    switch (block) {
-    case R3D_SHADER_BLOCK_FRAME:
-        blockSlot = R3D_SHADER_BLOCK_FRAME_SLOT;
-        blockSize = sizeof(r3d_shader_block_frame_t);
-        break;
-    case R3D_SHADER_BLOCK_VIEW:
-        blockSlot = R3D_SHADER_BLOCK_VIEW_SLOT;
-        blockSize = sizeof(r3d_shader_block_view_t);
-        break;
-    case R3D_SHADER_BLOCK_ENV:
-        blockSlot = R3D_SHADER_BLOCK_ENV_SLOT;
-        blockSize = sizeof(r3d_shader_block_env_t);
-        break;
-    case R3D_SHADER_BLOCK_LIGHT:
-        blockSlot = R3D_SHADER_BLOCK_LIGHT_SLOT;
-        blockSize = sizeof(r3d_shader_block_light_t);
-        break;
-    case R3D_SHADER_BLOCK_LIGHT_ARRAY:
-        blockSlot = R3D_SHADER_BLOCK_LIGHT_ARRAY_SLOT;
-        blockSize = sizeof(r3d_shader_block_light_array_t);
-        break;
-    case R3D_SHADER_BLOCK_COUNT:
-        return;
-    }
-
     GLuint ubo = R3D_MOD_SHADER.uniformBuffers[block];
+    int blockSlot = R3D_SHADER_BLOCK_SLOTS[block];
+    int blockSize = R3D_SHADER_BLOCK_SIZES[block];
 
     glBindBuffer(GL_UNIFORM_BUFFER, ubo);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, blockSize, data);
     glBindBufferBase(GL_UNIFORM_BUFFER, blockSlot, ubo);
+}
+
+void r3d_shader_bind_uniform_block(r3d_shader_block_t block)
+{
+    GLuint ubo = R3D_MOD_SHADER.uniformBuffers[block];
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 }
 
 bool r3d_shader_set_custom_uniform(r3d_shader_custom_t* shader, const char* name, const void* value)
