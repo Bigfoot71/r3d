@@ -404,6 +404,8 @@ static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, co
 
 static inline void sort_fill_material_data(r3d_render_sort_t* sortData, const r3d_render_call_t* call)
 {
+    memset(sortData, 0, sizeof(*sortData));
+
     switch (call->type) {
     case R3D_RENDER_CALL_MESH:
         sortData->material.shader = (uintptr_t)call->mesh.material.shader;
@@ -421,7 +423,6 @@ static inline void sort_fill_material_data(r3d_render_sort_t* sortData, const r3
         break;
 
     case R3D_RENDER_CALL_DECAL:
-        memset(&sortData->material, 0, sizeof(sortData->material));
         sortData->material.shader = (uintptr_t)call->decal.instance.shader;
         sortData->material.albedo = call->decal.instance.albedo.texture.id;
         sortData->material.normal = call->decal.instance.normal.texture.id;
@@ -545,7 +546,7 @@ bool r3d_render_init(void)
     const int DRAW_RESERVE_COUNT = 1024;
 
     #define ALLOC_AND_ASSIGN(field, logfmt, ...)  do { \
-        void* _p = RL_MALLOC(DRAW_RESERVE_COUNT * sizeof(*R3D_MOD_RENDER.field)); \
+        void* _p = RL_CALLOC(DRAW_RESERVE_COUNT, sizeof(*R3D_MOD_RENDER.field)); \
         if (_p == NULL) { \
             R3D_TRACELOG(LOG_FATAL, "Failed to init render module; " logfmt, ##__VA_ARGS__); \
             goto fail; \
