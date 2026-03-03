@@ -64,7 +64,7 @@ void R3D_ToggleLight(R3D_Light id)
     GET_LIGHT_OR_RETURN(light, id);
     light->enabled = !light->enabled;
 
-    if (light->enabled && light->enabled) {
+    if (light->enabled && light->shadowLayer >= 0) {
         light->state.shadowShouldBeUpdated = true;
     }
 }
