@@ -477,13 +477,21 @@ GLuint r3d_target_get_or_null(r3d_target_t target)
 
 void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear)
 {
-    int fboIndex = get_or_create_fbo(&target, 1, depth);
+    assert(target > R3D_TARGET_INVALID || depth);
 
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFbo);
+    int fboIndex = -1;
+    if (target > R3D_TARGET_INVALID) {
+        fboIndex = get_or_create_fbo(&target, 1, depth);
+    }
+    else {
+        fboIndex = get_or_create_fbo(NULL, 0, true);
+    }
+
     glBindFramebuffer(GL_READ_FRAMEBUFFER, R3D_MOD_TARGET.fbo[fboIndex].id);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dstFbo);
 
     if (linear) {
-        if (target > 0) {
+        if (target > R3D_TARGET_INVALID) {
             glBlitFramebuffer(
                 0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
                 dstX, dstY, dstX + dstW, dstY + dstH, GL_COLOR_BUFFER_BIT,
@@ -500,7 +508,7 @@ void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, i
     }
     else {
         GLbitfield mask = GL_NONE;
-        if (target > 0) mask |= GL_COLOR_BUFFER_BIT;
+        if (target > R3D_TARGET_INVALID) mask |= GL_COLOR_BUFFER_BIT;
         if (depth) mask |= GL_DEPTH_BUFFER_BIT;
         glBlitFramebuffer(
             0, 0, R3D_MOD_TARGET.resW, R3D_MOD_TARGET.resH,
