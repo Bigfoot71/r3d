@@ -24,8 +24,6 @@
 #include <shaders/screen.vert.h>
 #include <shaders/cubemap.vert.h>
 #include <shaders/atrous_wavelet.frag.h>
-#include <shaders/bicubic_up.frag.h>
-#include <shaders/lanczos_up.frag.h>
 #include <shaders/blur_down.frag.h>
 #include <shaders/blur_up.frag.h>
 #include <shaders/depth_pyramid.frag.h>
@@ -73,6 +71,10 @@
 #include <shaders/smaa.vert.h>
 #include <shaders/smaa.frag.h>
 #include <shaders/visualizer.frag.h>
+#include <shaders/up_bicubic.frag.h>
+#include <shaders/up_lanczos.frag.h>
+#include <shaders/down_rgss.frag.h>
+#include <shaders/down_pdss.frag.h>
 
 // ========================================
 // MODULE STATE
@@ -266,32 +268,6 @@ bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom)
     SET_SAMPLER(atrousWavelet, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
     SET_SAMPLER(atrousWavelet, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(atrousWavelet, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
-
-    return true;
-}
-
-bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER(r3d_shader_prepare_bicubic_up_t, prepare, bicubicUp);
-    LOAD_SHADER(bicubicUp, SCREEN_VERT, BICUBIC_UP_FRAG);
-
-    GET_LOCATION(bicubicUp, uSourceTexel);
-
-    USE_SHADER(bicubicUp);
-    SET_SAMPLER(bicubicUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
-
-    return true;
-}
-
-bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER(r3d_shader_prepare_lanczos_up_t, prepare, lanczosUp);
-    LOAD_SHADER(lanczosUp, SCREEN_VERT, LANCZOS_UP_FRAG);
-
-    GET_LOCATION(lanczosUp, uSourceTexel);
-
-    USE_SHADER(lanczosUp);
-    SET_SAMPLER(lanczosUp, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
 
     return true;
 }
@@ -1518,6 +1494,58 @@ bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_blit_up_bicubic(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_up_bicubic_t, blit, upBicubic);
+    LOAD_SHADER(upBicubic, SCREEN_VERT, UP_BICUBIC_FRAG);
+
+    GET_LOCATION(upBicubic, uSourceTexel);
+
+    USE_SHADER(upBicubic);
+    SET_SAMPLER(upBicubic, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+
+    return true;
+}
+
+bool r3d_shader_load_blit_up_lanczos(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_up_lanczos_t, blit, upLanczos);
+    LOAD_SHADER(upLanczos, SCREEN_VERT, UP_LANCZOS_FRAG);
+
+    GET_LOCATION(upLanczos, uSourceTexel);
+
+    USE_SHADER(upLanczos);
+    SET_SAMPLER(upLanczos, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+
+    return true;
+}
+
+bool r3d_shader_load_blit_down_rgss(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_down_rgss_t, blit, downRgss);
+    LOAD_SHADER(downRgss, SCREEN_VERT, DOWN_RGSS_FRAG);
+
+    GET_LOCATION(downRgss, uDestTexel);
+
+    USE_SHADER(downRgss);
+    SET_SAMPLER(downRgss, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+
+    return true;
+}
+
+bool r3d_shader_load_blit_down_pdss(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_down_pdss_t, blit, downPdss);
+    LOAD_SHADER(downPdss, SCREEN_VERT, DOWN_PDSS_FRAG);
+
+    GET_LOCATION(downPdss, uDestTexel);
+
+    USE_SHADER(downPdss);
+    SET_SAMPLER(downPdss, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+
+    return true;
+}
+
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
@@ -1549,8 +1577,6 @@ void r3d_shader_quit()
     glDeleteBuffers(R3D_SHADER_BLOCK_COUNT, R3D_MOD_SHADER.uniformBuffers);
 
     UNLOAD_SHADER(prepare.atrousWavelet);
-    UNLOAD_SHADER(prepare.bicubicUp);
-    UNLOAD_SHADER(prepare.lanczosUp);
     UNLOAD_SHADER(prepare.blurDown);
     UNLOAD_SHADER(prepare.blurUp);
     UNLOAD_SHADER(prepare.depthPyramid);
@@ -1597,6 +1623,11 @@ void r3d_shader_quit()
     UNLOAD_SHADERS(post.fxaa);
     UNLOAD_SHADERS(post.smaa);
     UNLOAD_SHADER(post.visualizer);
+
+    UNLOAD_SHADER(blit.upBicubic);
+    UNLOAD_SHADER(blit.upLanczos);
+    UNLOAD_SHADER(blit.downRgss);
+    UNLOAD_SHADER(blit.downPdss);
 }
 
 void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture)

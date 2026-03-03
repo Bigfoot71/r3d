@@ -1,4 +1,4 @@
-/* bicubic_up.frag -- Catmull-Rom bicubic upscaling fragment shader
+/* up_bicubic.frag -- Catmull-Rom bicubic upscaling fragment shader
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *

@@ -1,4 +1,4 @@
-/* lanczos_up.frag -- Lanczos-2 upscaling fragment shader
+/* up_lanczos.frag -- Lanczos-2 upscaling fragment shader
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *

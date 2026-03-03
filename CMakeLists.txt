@@ -304,8 +304,6 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/generic/cubemap.vert"
     # Prepare
     "${R3D_ROOT_PATH}/shaders/prepare/atrous_wavelet.frag"
-    "${R3D_ROOT_PATH}/shaders/prepare/bicubic_up.frag"
-    "${R3D_ROOT_PATH}/shaders/prepare/lanczos_up.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/smaa_blending_weigths.vert"
     "${R3D_ROOT_PATH}/shaders/prepare/smaa_blending_weigths.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/smaa_edge_detection.vert"
@@ -356,6 +354,11 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/post/smaa.vert"
     "${R3D_ROOT_PATH}/shaders/post/smaa.frag"
     "${R3D_ROOT_PATH}/shaders/post/visualizer.frag"
+    # Blit
+    "${R3D_ROOT_PATH}/shaders/blit/up_bicubic.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/up_lanczos.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/down_rgss.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/down_pdss.frag"
 )
 
 embed_assets(${PROJECT_NAME}
