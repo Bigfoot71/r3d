@@ -137,7 +137,7 @@ void R3D_End(void)
     /* --- Update all visible lights and render their shadow maps --- */
 
     bool hasVisibleShadows = false;
-    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.camera.position, &hasVisibleShadows);
+    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.camera, &hasVisibleShadows);
 
     if (hasVisibleShadows) {
         pass_scene_shadow();

@@ -279,41 +279,45 @@ static void update_light_shadow_state(r3d_light_t* light)
     }
 }
 
-static void update_light_dir_matrix(r3d_light_t* light, Vector3 viewPosition)
+static void update_light_dir_matrix(r3d_light_t* light, r3d_camera_t camera)
 {
     assert(light->type == R3D_LIGHT_DIR);
 
-    Vector3 lightDir = light->direction;
-    float extent = light->range;
+    camera.near = 0.05f;
+    camera.far = light->range;
 
-    // Create orthonormal basis
-    Vector3 up = (fabsf(Vector3DotProduct(lightDir, (Vector3) {0, 1, 0})) > 0.99f) ? (Vector3) {0, 0, 1} : (Vector3) {0, 1, 0};
+    float farH = camera.far * tanf(camera.fovy * (DEG2RAD * 0.5f));
+    float halfDepth = (camera.far - camera.near) * 0.5f;
+    float radius = sqrtf(farH * farH * (1.0f + camera.aspect * camera.aspect) + halfDepth * halfDepth);
+
+    Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 frustumCenter = Vector3Add(camera.position, Vector3Scale(forward, (camera.near + camera.far) * 0.5f));
+
+    Vector3 lightDir = Vector3Normalize(light->direction);
+    Vector3 up = fabsf(lightDir.y) > 0.999f ? (Vector3){0,0,1} : (Vector3){0,1,0};
     Vector3 lightRight = Vector3Normalize(Vector3CrossProduct(up, lightDir));
     Vector3 lightUp = Vector3CrossProduct(lightDir, lightRight);
 
-    // Project camera position into light space
-    float camX = Vector3DotProduct(viewPosition, lightRight);
-    float camY = Vector3DotProduct(viewPosition, lightUp);
-    float camZ = Vector3DotProduct(viewPosition, lightDir);
+    float texelSize = (radius * 2.0f) / R3D_SHADOW_MAP_DIRECTIONAL_SIZE;
+    float cx = floorf(Vector3DotProduct(frustumCenter, lightRight) / texelSize) * texelSize;
+    float cy = floorf(Vector3DotProduct(frustumCenter, lightUp) / texelSize) * texelSize;
+    float cz = Vector3DotProduct(frustumCenter, lightDir);
 
-    // Snap to texel grid to reduce shadow shimmering
-    float worldUnitsPerTexel = (2.0f * extent) / R3D_SHADOW_MAP_DIRECTIONAL_SIZE;
-    float snappedX = floorf(camX / worldUnitsPerTexel) * worldUnitsPerTexel;
-    float snappedY = floorf(camY / worldUnitsPerTexel) * worldUnitsPerTexel;
+    Vector3 snappedCenter = Vector3Add(
+        Vector3Add(
+            Vector3Scale(lightRight, cx),
+            Vector3Scale(lightUp, cy)
+        ),
+        Vector3Scale(lightDir, cz)
+    );
 
-    // Reconstruct snapped world position
-    Vector3 lightPosition = {
-        lightRight.x * snappedX + lightUp.x * snappedY + lightDir.x * camZ,
-        lightRight.y * snappedX + lightUp.y * snappedY + lightDir.y * camZ,
-        lightRight.z * snappedX + lightUp.z * snappedY + lightDir.z * camZ
-    };
+    const float zExtension = 100.0f; // Extent to capture objects behind the camera
+    Vector3 eye = Vector3Subtract(snappedCenter, Vector3Scale(lightDir, radius + zExtension));
+    Matrix view = MatrixLookAt(eye, snappedCenter, lightUp);
 
-    Matrix view = MatrixLookAt(lightPosition, Vector3Add(lightPosition, lightDir), lightUp);
-    Matrix proj = MatrixOrtho(-extent, extent, -extent, extent, -extent, extent);
-    light->viewProj[0] = MatrixMultiply(view, proj);
-
-    light->near = -extent;
-    light->far = extent;
+    light->near = 0.0f;
+    light->far = zExtension + radius * 2.0f;
+    light->viewProj[0] = MatrixMultiply(view, MatrixOrtho(-radius, radius, -radius, radius, light->near, light->far));
 }
 
 static void update_light_spot_matrix(r3d_light_t* light)
@@ -360,11 +364,11 @@ static void update_light_omni_matrix(r3d_light_t* light)
     }
 }
 
-static void update_light_matrix(r3d_light_t* light, Vector3 viewPosition)
+static void update_light_matrix(r3d_light_t* light, r3d_camera_t camera)
 {
     switch (light->type) {
     case R3D_LIGHT_DIR:
-        update_light_dir_matrix(light, viewPosition);
+        update_light_dir_matrix(light, camera);
         break;
     case R3D_LIGHT_SPOT:
         update_light_spot_matrix(light);
@@ -633,7 +637,7 @@ void r3d_light_disable_shadows(r3d_light_t* light)
     }
 }
 
-void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPosition, bool* hasVisibleShadows)
+void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, r3d_camera_t camera, bool* hasVisibleShadows)
 {
     r3d_light_array_t* visibleLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VISIBLE];
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
@@ -656,7 +660,7 @@ void r3d_light_update_and_cull(const r3d_frustum_t* viewFrustum, Vector3 viewPos
             : light->state.matrixShouldBeUpdated;
 
         if (shouldUpdateMatrix) {
-            update_light_matrix(light, viewPosition);
+            update_light_matrix(light, camera);
             update_light_frustum(light);
             if (!isDirectional) {
                 update_light_bounding_box(light);
