@@ -137,7 +137,7 @@ void R3D_End(void)
     /* --- Update all visible lights and render their shadow maps --- */
 
     bool hasVisibleShadows = false;
-    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.position, &hasVisibleShadows);
+    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.camera.position, &hasVisibleShadows);
 
     if (hasVisibleShadows) {
         pass_scene_shadow();
@@ -162,13 +162,13 @@ void R3D_End(void)
 
     r3d_render_cull_groups(&R3D.viewState.frustum);
 
-    r3d_render_sort_list(R3D_RENDER_LIST_OPAQUE, R3D.viewState.position, R3D_RENDER_SORT_FRONT_TO_BACK);
-    r3d_render_sort_list(R3D_RENDER_LIST_TRANSPARENT, R3D.viewState.position, R3D_RENDER_SORT_BACK_TO_FRONT);
-    r3d_render_sort_list(R3D_RENDER_LIST_DECAL, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_OPAQUE, R3D.viewState.camera.position, R3D_RENDER_SORT_FRONT_TO_BACK);
+    r3d_render_sort_list(R3D_RENDER_LIST_TRANSPARENT, R3D.viewState.camera.position, R3D_RENDER_SORT_BACK_TO_FRONT);
+    r3d_render_sort_list(R3D_RENDER_LIST_DECAL, R3D.viewState.camera.position, R3D_RENDER_SORT_MATERIAL_ONLY);
 
-    r3d_render_sort_list(R3D_RENDER_LIST_OPAQUE_INST, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
-    r3d_render_sort_list(R3D_RENDER_LIST_TRANSPARENT_INST, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
-    r3d_render_sort_list(R3D_RENDER_LIST_DECAL_INST, R3D.viewState.position, R3D_RENDER_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_OPAQUE_INST, R3D.viewState.camera.position, R3D_RENDER_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_TRANSPARENT_INST, R3D.viewState.camera.position, R3D_RENDER_SORT_MATERIAL_ONLY);
+    r3d_render_sort_list(R3D_RENDER_LIST_DECAL_INST, R3D.viewState.camera.position, R3D_RENDER_SORT_MATERIAL_ONLY);
 
     /* --- Deferred path for opaques and decals --- */
 
@@ -588,34 +588,17 @@ void update_view_state(Camera3D camera, double near, double far)
         break;
     }
 
-    double aspect = (double)resW / resH;
-
-    Matrix view = MatrixLookAt(camera.position, camera.target, camera.up);
-    Matrix proj = R3D_MATRIX_IDENTITY;
-
-    if (camera.projection == CAMERA_PERSPECTIVE) {
-        proj = MatrixPerspective(camera.fovy * DEG2RAD, aspect, near, far);
-    }
-    else if (camera.projection == CAMERA_ORTHOGRAPHIC) {
-        double top = camera.fovy / 2.0, right = top * aspect;
-        proj = MatrixOrtho(-right, right, -top, top, near, far);
-    }
-
+    R3D.viewState.camera = r3d_camera_init(camera, resW, resH);
+    Matrix view = r3d_camera_view(R3D.viewState.camera);
+    Matrix proj = r3d_camera_proj(R3D.viewState.camera);
     Matrix viewProj = MatrixMultiply(view, proj);
 
     R3D.viewState.frustum = r3d_frustum_create(viewProj);
-    R3D.viewState.position = camera.position;
-
     R3D.viewState.view = view;
     R3D.viewState.proj = proj;
     R3D.viewState.invView = MatrixInvert(view);
     R3D.viewState.invProj = MatrixInvert(proj);
     R3D.viewState.viewProj = viewProj;
-
-    R3D.viewState.projMode = camera.projection;
-    R3D.viewState.aspect = (float)aspect;
-    R3D.viewState.near = (float)near;
-    R3D.viewState.far = (float)far;
 }
 
 void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow)
@@ -678,16 +661,16 @@ void upload_frame_block(void)
 void upload_view_block(void)
 {
     r3d_shader_block_view_t view = {
-        .position = R3D.viewState.position,
+        .position = R3D.viewState.camera.position,
         .view = MatrixTranspose(R3D.viewState.view),
         .invView = MatrixTranspose(R3D.viewState.invView),
         .proj = MatrixTranspose(R3D.viewState.proj),
         .invProj = MatrixTranspose(R3D.viewState.invProj),
         .viewProj = MatrixTranspose(R3D.viewState.viewProj),
-        .projMode = R3D.viewState.projMode,
-        .aspect = R3D.viewState.aspect,
-        .near = R3D.viewState.near,
-        .far = R3D.viewState.far,
+        .projMode = R3D.viewState.camera.projection,
+        .aspect = R3D.viewState.camera.aspect,
+        .near = R3D.viewState.camera.near,
+        .far = R3D.viewState.camera.far,
     };
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view);
@@ -1243,7 +1226,7 @@ void raster_forward(const r3d_render_call_t* call)
     /* --- Set view related data --- */
 
     // NOTE: We don't use the UBO view position because this shader is reused by probes with their own view position
-    R3D_SHADER_SET_VEC3_SELECT(scene.forward, shader, uViewPosition, R3D.viewState.position);
+    R3D_SHADER_SET_VEC3_SELECT(scene.forward, shader, uViewPosition, R3D.viewState.camera.position);
 
     /* --- Send matrices --- */
 

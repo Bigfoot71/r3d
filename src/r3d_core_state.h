@@ -17,6 +17,7 @@
 #include <raylib.h>
 
 #include "./common/r3d_frustum.h"
+#include "./common/r3d_camera.h"
 
 // ========================================
 // CORE STATE
@@ -26,15 +27,11 @@
  * Current view state including view frustum and transforms.
  */
 typedef struct {
+    r3d_camera_t camera;    //< Complete camera data
     r3d_frustum_t frustum;  //< View frustum for culling
-    Vector3 position;       //< Camera position in world space
     Matrix view, invView;   //< View matrix and its inverse
     Matrix proj, invProj;   //< Projection matrix and its inverse
     Matrix viewProj;        //< Combined view-projection matrix
-    int projMode;           //< CameraProjection from raylib
-    float aspect;           //< Projection aspect
-    float near;             //< Near cull distance
-    float far;              //< Far cull distance
 } r3d_core_view_t;
 
 /*
