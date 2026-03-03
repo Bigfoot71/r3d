@@ -153,7 +153,7 @@ void main()
 
         if (light.shadowLayer >= 0) {
             switch (light.type) {
-            case LIGHT_DIR:  shadow = L_SampleShadowDir(i, vPosLightSpace[i], cNdotL, diskRot); break;
+            case LIGHT_DIR:  shadow = L_SampleShadowDir(i, vPosLightSpace[i], vLinearDepth, cNdotL, diskRot); break;
             case LIGHT_SPOT: shadow = L_SampleShadowSpot(i, vPosLightSpace[i], cNdotL, diskRot); break;
             case LIGHT_OMNI: shadow = L_SampleShadowOmni(i, vPosition, cNdotL, diskRot); break;
             }

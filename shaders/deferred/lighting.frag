@@ -61,7 +61,9 @@ void main()
 
     /* Get position and normal in world space */
 
-    vec3 P = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
+    float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord), 0).r;
+
+    vec3 P = V_GetWorldPosition(vTexCoord, depth);
     vec3 N = V_GetWorldNormal(uNormalTex, ivec2(gl_FragCoord.xy));
 
     /* Compute view direction and the dot product of the normal and view direction */
@@ -109,7 +111,7 @@ void main()
     if (uLight.shadowLayer >= 0) {
         mat2 diskRot  = L_ShadowDebandingMatrix(gl_FragCoord.xy);
         switch (uLight.type) {
-        case LIGHT_DIR:  shadow = L_SampleShadowDir(P, cNdotL, diskRot); break;
+        case LIGHT_DIR:  shadow = L_SampleShadowDir(P, depth, cNdotL, diskRot); break;
         case LIGHT_SPOT: shadow = L_SampleShadowSpot(P, cNdotL, diskRot); break;
         case LIGHT_OMNI: shadow = L_SampleShadowOmni(P, cNdotL, diskRot); break;
         }

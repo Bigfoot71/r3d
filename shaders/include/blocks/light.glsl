@@ -14,12 +14,14 @@
 /* === Macros === */
 
 #if defined(NUM_FORWARD_LIGHTS)
-#   define SAMPLE_SHADOW_PROJ(name) float name(int lightIndex, vec4 Pls, float cNdotL, mat2 diskRot)
-#   define SAMPLE_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float cNdotL, mat2 diskRot)
+#   define DECL_SHADOW_DIR(name)  float name(int lightIndex, vec4 Pls, float Zvs, float cNdotL, mat2 diskRot)
+#   define DECL_SHADOW_SPOT(name) float name(int lightIndex, vec4 Pls, float cNdotL, mat2 diskRot)
+#   define DECL_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float cNdotL, mat2 diskRot)
 #   define LIGHT uLights[lightIndex]
 #else
-#   define SAMPLE_SHADOW_PROJ(name) float name(vec3 Pws, float cNdotL, mat2 diskRot)
-#   define SAMPLE_SHADOW_OMNI(name) float name(vec3 Pws, float cNdotL, mat2 diskRot)
+#   define DECL_SHADOW_DIR(name)  float name(vec3 Pws, float Zvs, float cNdotL, mat2 diskRot)
+#   define DECL_SHADOW_SPOT(name) float name(vec3 Pws, float cNdotL, mat2 diskRot)
+#   define DECL_SHADOW_OMNI(name) float name(vec3 Pws, float cNdotL, mat2 diskRot)
 #   define LIGHT uLight
 #endif
 
@@ -115,7 +117,7 @@ mat2 L_ShadowDebandingMatrix(vec2 fragCoord)
     return mat2(vec2(cr, -sr), vec2(sr, cr));
 }
 
-SAMPLE_SHADOW_PROJ(L_SampleShadowDir)
+DECL_SHADOW_DIR(L_SampleShadowDir)
 {
 #if !defined(NUM_FORWARD_LIGHTS)
     vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
@@ -133,13 +135,14 @@ SAMPLE_SHADOW_PROJ(L_SampleShadowDir)
     shadow /= float(SHADOW_SAMPLES);
 
     vec3 distToBorder = min(projCoords, 1.0 - projCoords);
-    float edgeFade = smoothstep(0.0, 0.15, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
-    shadow = mix(1.0, shadow, edgeFade);
+    float edgeFade = smoothstep(0.0, 0.05, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
+    float distFade = smoothstep(LIGHT.range, LIGHT.range * 0.75, Zvs);
+    shadow = mix(1.0, shadow, edgeFade * distFade);
 
     return shadow;
 }
 
-SAMPLE_SHADOW_PROJ(L_SampleShadowSpot)
+DECL_SHADOW_SPOT(L_SampleShadowSpot)
 {
 #if !defined(NUM_FORWARD_LIGHTS)
     vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
@@ -158,7 +161,7 @@ SAMPLE_SHADOW_PROJ(L_SampleShadowSpot)
    return shadow / float(SHADOW_SAMPLES);
 }
 
-SAMPLE_SHADOW_OMNI(L_SampleShadowOmni)
+DECL_SHADOW_OMNI(L_SampleShadowOmni)
 {
     vec3 lightToFrag = Pws - LIGHT.position;
     float currentDepth = length(lightToFrag);
