@@ -357,6 +357,8 @@ embed_shaders(${PROJECT_NAME}
     # Blit
     "${R3D_ROOT_PATH}/shaders/blit/up_bicubic.frag"
     "${R3D_ROOT_PATH}/shaders/blit/up_lanczos.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/down_rgss.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/down_pdss.frag"
 )
 
 embed_assets(${PROJECT_NAME}

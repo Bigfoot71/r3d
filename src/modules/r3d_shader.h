@@ -1094,6 +1094,18 @@ typedef struct {
     r3d_shader_uniform_vec2_t uSourceTexel;
 } r3d_shader_blit_up_lanczos_t;
 
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uDestTexel;
+} r3d_shader_blit_down_rgss_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uDestTexel;
+} r3d_shader_blit_down_pdss_t;
+
 // ========================================
 // CUSTOM SHADERS STRUCTURES
 // ========================================
@@ -1207,6 +1219,8 @@ extern struct r3d_mod_shader {
     struct {
         r3d_shader_blit_up_bicubic_t upBicubic;
         r3d_shader_blit_up_lanczos_t upLanczos;
+        r3d_shader_blit_down_rgss_t downRgss;
+        r3d_shader_blit_down_pdss_t downPdss;
     } blit;
 
 } R3D_MOD_SHADER;
@@ -1277,6 +1291,8 @@ bool r3d_shader_load_post_smaa_ultra(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
 bool r3d_shader_load_blit_up_bicubic(r3d_shader_custom_t* custom);
 bool r3d_shader_load_blit_up_lanczos(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_down_rgss(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_down_pdss(r3d_shader_custom_t* custom);
 
 static const struct r3d_shader_loader {
 
@@ -1346,6 +1362,8 @@ static const struct r3d_shader_loader {
     struct {
         r3d_shader_loader_func upBicubic;
         r3d_shader_loader_func upLanczos;
+        r3d_shader_loader_func downRgss;
+        r3d_shader_loader_func downPdss;
     } blit;
 
 } R3D_MOD_SHADER_LOADER = {
@@ -1423,6 +1441,8 @@ static const struct r3d_shader_loader {
     .blit = {
         .upBicubic = r3d_shader_load_blit_up_bicubic,
         .upLanczos = r3d_shader_load_blit_up_lanczos,
+        .downRgss = r3d_shader_load_blit_down_rgss,
+        .downPdss = r3d_shader_load_blit_down_pdss,
     },
 
 };

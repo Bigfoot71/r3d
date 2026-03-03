@@ -73,6 +73,8 @@
 #include <shaders/visualizer.frag.h>
 #include <shaders/up_bicubic.frag.h>
 #include <shaders/up_lanczos.frag.h>
+#include <shaders/down_rgss.frag.h>
+#include <shaders/down_pdss.frag.h>
 
 // ========================================
 // MODULE STATE
@@ -1518,6 +1520,32 @@ bool r3d_shader_load_blit_up_lanczos(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_blit_down_rgss(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_down_rgss_t, blit, downRgss);
+    LOAD_SHADER(downRgss, SCREEN_VERT, DOWN_RGSS_FRAG);
+
+    GET_LOCATION(downRgss, uDestTexel);
+
+    USE_SHADER(downRgss);
+    SET_SAMPLER(downRgss, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+
+    return true;
+}
+
+bool r3d_shader_load_blit_down_pdss(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_down_pdss_t, blit, downPdss);
+    LOAD_SHADER(downPdss, SCREEN_VERT, DOWN_PDSS_FRAG);
+
+    GET_LOCATION(downPdss, uDestTexel);
+
+    USE_SHADER(downPdss);
+    SET_SAMPLER(downPdss, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+
+    return true;
+}
+
 // ========================================
 // MODULE FUNCTIONS
 // ========================================
@@ -1598,6 +1626,8 @@ void r3d_shader_quit()
 
     UNLOAD_SHADER(blit.upBicubic);
     UNLOAD_SHADER(blit.upLanczos);
+    UNLOAD_SHADER(blit.downRgss);
+    UNLOAD_SHADER(blit.downPdss);
 }
 
 void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture)

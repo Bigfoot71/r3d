@@ -2432,44 +2432,46 @@ void blit_to_screen(r3d_target_t source)
     }
 
     if (greater) {
-        float txlW, txlH;
-        r3d_target_get_texel_size(&txlW, &txlH, source, 0);
-
         glBindFramebuffer(GL_FRAMEBUFFER, dstId);
         glViewport(dstX, dstY, dstW, dstH);
-
         switch (R3D.upscaleMode) {
         case R3D_UPSCALE_BICUBIC:
             R3D_SHADER_USE(blit.upBicubic);
-            R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
             R3D_SHADER_BIND_SAMPLER(blit.upBicubic, uSourceTex, r3d_target_get(source));
             break;
         case R3D_UPSCALE_LANCZOS:
             R3D_SHADER_USE(blit.upLanczos);
-            R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
             R3D_SHADER_BIND_SAMPLER(blit.upLanczos, uSourceTex, r3d_target_get(source));
             break;
         default:
             break;
         }
-
         R3D_RENDER_SCREEN();
-
-        r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
+        r3d_target_blit(-1, true, dstId, dstX, dstY, dstW, dstH, false);
         return;
     }
 
-    if (smaller && R3D.downscaleMode == R3D_DOWNSCALE_BOX) {
+    if (smaller) {
         glBindFramebuffer(GL_FRAMEBUFFER, dstId);
         glViewport(dstX, dstY, dstW, dstH);
-
-        R3D_SHADER_USE(prepare.blurDown);
-        R3D_SHADER_SET_INT(prepare.blurDown, uSourceLod, 0);
-        R3D_SHADER_BIND_SAMPLER(prepare.blurDown, uSourceTex, r3d_target_get(source));
-
+        switch (R3D.downscaleMode) {
+        case R3D_DOWNSCALE_RGSS:
+            R3D_SHADER_USE(blit.downRgss);
+            R3D_SHADER_SET_VEC2(blit.downRgss, uDestTexel, (Vector2) {1.0f/dstW, 1.0f/dstH});
+            R3D_SHADER_BIND_SAMPLER(blit.downRgss, uSourceTex, r3d_target_get(source));
+            break;
+        case R3D_DOWNSCALE_PDSS:
+            R3D_SHADER_USE(blit.downPdss);
+            R3D_SHADER_SET_VEC2(blit.downPdss, uDestTexel, (Vector2) {1.0f/dstW, 1.0f/dstH});
+            R3D_SHADER_BIND_SAMPLER(blit.downPdss, uSourceTex, r3d_target_get(source));
+            break;
+        default:
+            break;
+        }
         R3D_RENDER_SCREEN();
-
-        r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
+        r3d_target_blit(-1, true, dstId, dstX, dstY, dstW, dstH, false);
         return;
     }
 }
@@ -2509,7 +2511,7 @@ void visualize_to_screen(r3d_target_t source)
 
     R3D_RENDER_SCREEN();
 
-    r3d_target_blit(0, true, dstId, dstX, dstY, dstW, dstH, false);
+    r3d_target_blit(-1, true, dstId, dstX, dstY, dstW, dstH, false);
 }
 
 void cleanup_after_render(void)
