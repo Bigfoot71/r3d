@@ -595,18 +595,6 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
-    r3d_shader_uniform_vec2_t uSourceTexel;
-} r3d_shader_prepare_bicubic_up_t;
-
-typedef struct {
-    GLuint id;
-    r3d_shader_uniform_sampler_t uSourceTex;
-    r3d_shader_uniform_vec2_t uSourceTexel;
-} r3d_shader_prepare_lanczos_up_t;
-
-typedef struct {
-    GLuint id;
-    r3d_shader_uniform_sampler_t uSourceTex;
     r3d_shader_uniform_int_t uSourceLod;
 } r3d_shader_prepare_blur_down_t;
 
@@ -1094,6 +1082,18 @@ typedef struct {
     r3d_shader_uniform_int_t uOutputMode;
 } r3d_shader_post_visualizer_t;
 
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uSourceTexel;
+} r3d_shader_blit_up_bicubic_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_vec2_t uSourceTexel;
+} r3d_shader_blit_up_lanczos_t;
+
 // ========================================
 // CUSTOM SHADERS STRUCTURES
 // ========================================
@@ -1146,8 +1146,6 @@ extern struct r3d_mod_shader {
     // Prepare shaders
     struct {
         r3d_shader_prepare_atrous_wavelet_t atrousWavelet;
-        r3d_shader_prepare_bicubic_up_t bicubicUp;
-        r3d_shader_prepare_lanczos_up_t lanczosUp;
         r3d_shader_prepare_blur_down_t blurDown;
         r3d_shader_prepare_blur_up_t blurUp;
         r3d_shader_prepare_depth_pyramid_t depthPyramid;
@@ -1205,6 +1203,12 @@ extern struct r3d_mod_shader {
         r3d_shader_post_visualizer_t visualizer;
     } post;
 
+    // Blit shaders
+    struct {
+        r3d_shader_blit_up_bicubic_t upBicubic;
+        r3d_shader_blit_up_lanczos_t upLanczos;
+    } blit;
+
 } R3D_MOD_SHADER;
 
 // ========================================
@@ -1214,8 +1218,6 @@ extern struct r3d_mod_shader {
 typedef bool (*r3d_shader_loader_func)(r3d_shader_custom_t* custom);
 
 bool r3d_shader_load_prepare_atrous_wavelet(r3d_shader_custom_t* custom);
-bool r3d_shader_load_prepare_bicubic_up(r3d_shader_custom_t* custom);
-bool r3d_shader_load_prepare_lanczos_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_blur_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_blur_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_depth_pyramid(r3d_shader_custom_t* custom);
@@ -1273,14 +1275,14 @@ bool r3d_shader_load_post_smaa_medium(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_smaa_high(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_smaa_ultra(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_up_bicubic(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_up_lanczos(r3d_shader_custom_t* custom);
 
 static const struct r3d_shader_loader {
 
     // Prepare shaders
     struct {
         r3d_shader_loader_func atrousWavelet;
-        r3d_shader_loader_func bicubicUp;
-        r3d_shader_loader_func lanczosUp;
         r3d_shader_loader_func blurDown;
         r3d_shader_loader_func blurUp;
         r3d_shader_loader_func depthPyramid;
@@ -1340,12 +1342,16 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func visualizer;
     } post;
 
+    // Blit shaders
+    struct {
+        r3d_shader_loader_func upBicubic;
+        r3d_shader_loader_func upLanczos;
+    } blit;
+
 } R3D_MOD_SHADER_LOADER = {
 
     .prepare = {
         .atrousWavelet = r3d_shader_load_prepare_atrous_wavelet,
-        .bicubicUp = r3d_shader_load_prepare_bicubic_up,
-        .lanczosUp = r3d_shader_load_prepare_lanczos_up,
         .blurDown = r3d_shader_load_prepare_blur_down,
         .blurUp = r3d_shader_load_prepare_blur_up,
         .depthPyramid = r3d_shader_load_prepare_depth_pyramid,
@@ -1412,6 +1418,11 @@ static const struct r3d_shader_loader {
         .smaa[2] = r3d_shader_load_post_smaa_high,
         .smaa[3] = r3d_shader_load_post_smaa_ultra,
         .visualizer = r3d_shader_load_post_visualizer,
+    },
+
+    .blit = {
+        .upBicubic = r3d_shader_load_blit_up_bicubic,
+        .upLanczos = r3d_shader_load_blit_up_lanczos,
     },
 
 };

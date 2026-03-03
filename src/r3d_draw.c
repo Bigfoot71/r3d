@@ -2440,14 +2440,14 @@ void blit_to_screen(r3d_target_t source)
 
         switch (R3D.upscaleMode) {
         case R3D_UPSCALE_BICUBIC:
-            R3D_SHADER_USE(prepare.bicubicUp);
-            R3D_SHADER_SET_VEC2(prepare.bicubicUp, uSourceTexel, (Vector2) {txlW, txlH});
-            R3D_SHADER_BIND_SAMPLER(prepare.bicubicUp, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_USE(blit.upBicubic);
+            R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_BIND_SAMPLER(blit.upBicubic, uSourceTex, r3d_target_get(source));
             break;
         case R3D_UPSCALE_LANCZOS:
-            R3D_SHADER_USE(prepare.lanczosUp);
-            R3D_SHADER_SET_VEC2(prepare.lanczosUp, uSourceTexel, (Vector2) {txlW, txlH});
-            R3D_SHADER_BIND_SAMPLER(prepare.lanczosUp, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_USE(blit.upLanczos);
+            R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {txlW, txlH});
+            R3D_SHADER_BIND_SAMPLER(blit.upLanczos, uSourceTex, r3d_target_get(source));
             break;
         default:
             break;
