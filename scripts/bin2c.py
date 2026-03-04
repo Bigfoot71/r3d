@@ -117,11 +117,11 @@ def write_text_array(f, data, array_name, chunk_size=16000):
         return
 
     text_size = len(data)
-    escaped_text = escape_c_string(text)
 
     f.write(f'static const char {array_name}[] =\n')
-    for i in range(0, len(escaped_text), chunk_size):
-        f.write(f'    "{escaped_text[i:i + chunk_size]}"\n')
+    for i in range(0, len(text), chunk_size):
+        escaped_chunk = escape_c_string(text[i:i + chunk_size])
+        f.write(f'    "{escaped_chunk}"\n')
     f.write(';\n\n')
     f.write(f"#define {array_name}_SIZE {text_size}\n\n")
 
