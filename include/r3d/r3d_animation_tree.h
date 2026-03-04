@@ -107,8 +107,8 @@ typedef struct {
  * Blend2 node blends channels of any two animation nodes together, with respecting optional bone mask.
  */
 typedef struct {
-    R3D_BoneMask* boneMask; ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
-    float blend;            ///< Blend weight value, can be in interval from 0.0 to 1.0.
+    R3D_BoneMask* boneMask;     ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
+    float blend;                ///< Blend weight value, can be in interval from 0.0 to 1.0.
 } R3D_Blend2NodeParams;
 
 /**
@@ -117,8 +117,8 @@ typedef struct {
  * Add2 node adds channels of any two animation nodes together, with respecting optional bone mask.
  */
 typedef struct {
-    R3D_BoneMask* boneMask; ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
-    float weight;           ///< Add weight value, can be in interval from 0.0 to 1.0.
+    R3D_BoneMask* boneMask;     ///< Pointer to bone mask structure, can be NULL; calculated by R3D_ComputeBoneMask().
+    float weight;               ///< Add weight value, can be in interval from 0.0 to 1.0.
 } R3D_Add2NodeParams;
 
 /**
@@ -150,12 +150,12 @@ typedef struct {
  * Switch and State Machine. It also fully supports root motion and bone masking in Blend2/Add2.
  */
 typedef struct {
-    R3D_AnimationPlayer player;             ///< Animation player and skeleton used by all animation nodes.
-    R3D_AnimationTreeNode* rootNode;        ///< Pointer to root animation node of the tree.
-    R3D_AnimationTreeNode* nodePool;        ///< Animation node pool of size nodePoolMaxSize.
-    unsigned int nodePoolSize;              ///< Current animation node pool size.
-    unsigned int nodePoolMaxSize;           ///< Maximum number of animation nodes, defined during load.
-    int rootBone;                           ///< Optional root bone index, -1 if not defined.
+    R3D_AnimationPlayer player;                 ///< Animation player and skeleton used by all animation nodes.
+    R3D_AnimationTreeNode* rootNode;            ///< Pointer to root animation node of the tree.
+    R3D_AnimationTreeNode* nodePool;            ///< Animation node pool of size nodePoolMaxSize.
+    unsigned int nodePoolSize;                  ///< Current animation node pool size.
+    unsigned int nodePoolMaxSize;               ///< Maximum number of animation nodes, defined during load.
+    int rootBone;                               ///< Optional root bone index, -1 if not defined.
 
     R3D_AnimationTreeCallback updateCallback;   ///< Callback function to receive and modify final animation transformation.
     void* updateUserData;                       ///< Optional user data pointer passed to the callback.
