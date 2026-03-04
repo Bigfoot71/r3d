@@ -260,9 +260,6 @@ void r3d_target_resize(int resW, int resH)
     R3D_MOD_TARGET.txlW = 1.0f / resW;
     R3D_MOD_TARGET.txlH = 1.0f / resH;
 
-    // TODO: Avoid reallocating targets if the new dimensions
-    //       are smaller than the allocated dimensions?
-
     alloc_depth_stencil_renderbuffer(resW, resH);
 
     for (int i = 0; i < R3D_TARGET_COUNT; i++) {

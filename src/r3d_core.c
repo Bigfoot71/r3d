@@ -84,8 +84,8 @@ void R3D_Close(void)
 
 void R3D_GetResolution(int* width, int* height)
 {
-    if (width) *width = R3D_TARGET_WIDTH;
-    if (height) *height = R3D_TARGET_HEIGHT;
+    if (width) *width = R3D_TARGET_SIZE_W;
+    if (height) *height = R3D_TARGET_SIZE_H;
 }
 
 void R3D_SetResolution(int width, int height)
