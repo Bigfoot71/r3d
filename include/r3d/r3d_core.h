@@ -203,7 +203,7 @@ R3DAPI void R3D_GetResolution(int* width, int* height);
  * 
  * @warning This function may be slow due to the destruction and recreation of framebuffers.
  */
-R3DAPI void R3D_UpdateResolution(int width, int height);
+R3DAPI void R3D_SetResolution(int width, int height);
 
 /**
  * @brief Retrieves the current anti-aliasing mode used for rendering.
