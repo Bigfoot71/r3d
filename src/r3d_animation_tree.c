@@ -488,7 +488,7 @@ static void anode_reset(R3D_AnimationTreeNode anode)
 // TREE NODE UPDATE FUNCTIONS
 // ========================================
 
-static bool anode_update_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_t* node, float elapsedTime, upinfo_t* info)
+static bool anode_update_anim(r3d_animtree_anim_t* node, float elapsedTime, upinfo_t* info)
 {
     const R3D_Animation* a = node->animation;
 
@@ -572,7 +572,8 @@ static bool anode_update_switch(const R3D_AnimationTree* atree, r3d_animtree_swi
     if (reset) anode_reset(node->inList[activeIn]);
 
     for (int i = 0; i < inCount; i++) {
-        if (!anode_update(atree, node->inList[i], elapsedTime, NULL)) {
+        if (!anode_update(atree, node->inList[i], elapsedTime,
+                          (i == activeIn) ? info : NULL)) {
             return false;
         }
     }
@@ -665,7 +666,7 @@ static bool anode_update_stm_x(const R3D_AnimationTree* atree, r3d_animtree_stm_
 static bool anode_update(const R3D_AnimationTree* atree, R3D_AnimationTreeNode anode, float elapsedTime, upinfo_t* info)
 {
     switch(anode.base->type) {
-    case R3D_ANIMTREE_ANIM:   return anode_update_anim(atree, anode.anim, elapsedTime, info);
+    case R3D_ANIMTREE_ANIM:   return anode_update_anim(anode.anim, elapsedTime, info);
     case R3D_ANIMTREE_BLEND2: return anode_update_blend2(atree, anode.bln2, elapsedTime, info);
     case R3D_ANIMTREE_ADD2:   return anode_update_add2(atree, anode.add2, elapsedTime, info);
     case R3D_ANIMTREE_SWITCH: return anode_update_switch(atree, anode.swch, elapsedTime, info);
