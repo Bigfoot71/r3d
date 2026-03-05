@@ -87,40 +87,39 @@ typedef enum {
 // HELPER MACROS
 // ========================================
 
-#define R3D_TARGET_WIDTH        R3D_MOD_TARGET.resW
-#define R3D_TARGET_HEIGHT       R3D_MOD_TARGET.resH
+#define R3D_TARGET_SIZE_W   R3D_MOD_TARGET.resW
+#define R3D_TARGET_SIZE_H   R3D_MOD_TARGET.resH
+#define R3D_TARGET_TEXEL_W  R3D_MOD_TARGET.txlW
+#define R3D_TARGET_TEXEL_H  R3D_MOD_TARGET.txlH
 
-#define R3D_TARGET_TEXEL_WIDTH  R3D_MOD_TARGET.txlW
-#define R3D_TARGET_TEXEL_HEIGHT R3D_MOD_TARGET.txlH
-
-#define R3D_TARGET_LEVEL_LIST(...) (int[]){ __VA_ARGS__ }
+#define R3D_TARGET_LEVEL_LIST(...) (int[]) {__VA_ARGS__}
 
 #define R3D_TARGET_CLEAR(depth, ...)                                    \
     r3d_target_clear(                                                   \
-        (r3d_target_t[]){ __VA_ARGS__ },                                \
-        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        (r3d_target_t[]) {__VA_ARGS__},                                 \
+        sizeof((r3d_target_t[]) {__VA_ARGS__}) / sizeof(r3d_target_t),  \
         0, (depth)                                                      \
     )
 
 #define R3D_TARGET_BIND(depth, ...)                                     \
     r3d_target_bind(                                                    \
         (r3d_target_t[]){ __VA_ARGS__ },                                \
-        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        sizeof((r3d_target_t[]) {__VA_ARGS__}) / sizeof(r3d_target_t),  \
         0, (depth)                                                      \
     )
 
 #define R3D_TARGET_BIND_LEVEL(level, ...)                               \
     r3d_target_bind(                                                    \
-        (r3d_target_t[]){ __VA_ARGS__ },                                \
-        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t), \
+        (r3d_target_t[]) {__VA_ARGS__},                                 \
+        sizeof((r3d_target_t[]) {__VA_ARGS__}) / sizeof(r3d_target_t),  \
         (level), false                                                  \
     )
 
 #define R3D_TARGET_BIND_LEVELS(levelsArr, ...)                          \
     r3d_target_bind_levels(                                             \
-        (r3d_target_t[]){ __VA_ARGS__ },                                \
+        (r3d_target_t[]) {__VA_ARGS__},                                 \
         (levelsArr),                                                    \
-        sizeof((r3d_target_t[]){ __VA_ARGS__ }) / sizeof(r3d_target_t)  \
+        sizeof((r3d_target_t[]) {__VA_ARGS__}) / sizeof(r3d_target_t)   \
     )
 
 /*

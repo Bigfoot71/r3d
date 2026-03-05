@@ -193,17 +193,16 @@ R3DAPI void R3D_Close(void);
 R3DAPI void R3D_GetResolution(int* width, int* height);
 
 /**
- * @brief Updates the internal resolution.
- * 
- * This function changes the internal resolution of the rendering engine. Note that 
- * this process destroys and recreates all framebuffers, which may be a slow operation.
- * 
- * @param width The new width for the internal resolution.
- * @param height The new height for the internal resolution.
- * 
- * @warning This function may be slow due to the destruction and recreation of framebuffers.
+ * @brief Sets the internal rendering resolution.
+ *
+ * Reallocates all internal render targets to the new resolution.
+ * This operation may cause a stall, this is acceptable when called
+ * infrequently (like window resize events), but should never be called per-frame.
+ *
+ * @param width New internal width in pixels.
+ * @param height New internal height in pixels.
  */
-R3DAPI void R3D_UpdateResolution(int width, int height);
+R3DAPI void R3D_SetResolution(int width, int height);
 
 /**
  * @brief Retrieves the current anti-aliasing mode used for rendering.

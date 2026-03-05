@@ -649,8 +649,8 @@ void upload_frame_block(void)
     static int frameIndex = 0;
 
     r3d_shader_block_frame_t frame = {
-        .screenSize = (Vector2) {(float)R3D_TARGET_WIDTH, (float)R3D_TARGET_HEIGHT},
-        .texelSize = (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT},
+        .screenSize = (Vector2) {(float)R3D_TARGET_SIZE_W, (float)R3D_TARGET_SIZE_H},
+        .texelSize = (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H},
         .time = (float)GetTime(),
         .index = frameIndex++,
     };
@@ -1919,7 +1919,7 @@ void pass_deferred_lights(void)
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
         // Set scissors rect
-        r3d_rect_t dst = {0, 0, R3D_TARGET_WIDTH, R3D_TARGET_HEIGHT};
+        r3d_rect_t dst = {0, 0, R3D_TARGET_SIZE_W, R3D_TARGET_SIZE_H};
         if (light->type != R3D_LIGHT_DIR) {
             dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, dst.w, dst.h);
             if (memcmp(&dst, &(r3d_rect_t){0}, sizeof(r3d_rect_t)) == 0) continue;
@@ -2327,13 +2327,6 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
 {
     r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
 
-    Vector4 metrics = {
-        R3D_TARGET_TEXEL_WIDTH,
-        R3D_TARGET_TEXEL_HEIGHT,
-        R3D_TARGET_WIDTH,
-        R3D_TARGET_HEIGHT
-    };
-
     /* --- Clear previous content --- */
 
     // Bind and clear the stencil buffer. Since AA is the last post-processing
@@ -2400,7 +2393,7 @@ void blit_to_screen(r3d_target_t source)
 
     int dstX = 0, dstY = 0;
     if (R3D.aspectMode == R3D_ASPECT_KEEP) {
-        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+        float srcRatio = (float)R3D_TARGET_SIZE_W / R3D_TARGET_SIZE_H;
         float dstRatio = (float)dstW / dstH;
         if (srcRatio > dstRatio) {
             int newH = (int)(dstW / srcRatio + 0.5f);
@@ -2437,12 +2430,12 @@ void blit_to_screen(r3d_target_t source)
         switch (R3D.upscaleMode) {
         case R3D_UPSCALE_BICUBIC:
             R3D_SHADER_USE(blit.upBicubic);
-            R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
+            R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H});
             R3D_SHADER_BIND_SAMPLER(blit.upBicubic, uSourceTex, r3d_target_get(source));
             break;
         case R3D_UPSCALE_LANCZOS:
             R3D_SHADER_USE(blit.upLanczos);
-            R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {(float)R3D_TARGET_TEXEL_WIDTH, (float)R3D_TARGET_TEXEL_HEIGHT});
+            R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H});
             R3D_SHADER_BIND_SAMPLER(blit.upLanczos, uSourceTex, r3d_target_get(source));
             break;
         default:
@@ -2488,7 +2481,7 @@ void visualize_to_screen(r3d_target_t source)
 
     int dstX = 0, dstY = 0;
     if (R3D.aspectMode == R3D_ASPECT_KEEP) {
-        float srcRatio = (float)R3D_MOD_TARGET.resW / R3D_MOD_TARGET.resH;
+        float srcRatio = (float)R3D_TARGET_SIZE_W / R3D_TARGET_SIZE_H;
         float dstRatio = (float)dstW / dstH;
         if (srcRatio > dstRatio) {
             int newH = (int)(dstW / srcRatio + 0.5f);

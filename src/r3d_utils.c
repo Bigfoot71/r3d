@@ -53,8 +53,8 @@ Texture2D R3D_GetBufferNormal(void)
 {
     Texture2D texture = { 0 };
     texture.id = r3d_target_get(R3D_TARGET_NORMAL);
-    texture.width = R3D_TARGET_WIDTH;
-    texture.height = R3D_TARGET_HEIGHT;
+    texture.width = R3D_TARGET_SIZE_W;
+    texture.height = R3D_TARGET_SIZE_H;
     texture.mipmaps = 1;
     texture.format = PIXELFORMAT_UNCOMPRESSED_R32;
     return texture;
@@ -64,8 +64,8 @@ Texture2D R3D_GetBufferDepth(void)
 {
     Texture2D texture = { 0 };
     texture.id = r3d_target_get(R3D_TARGET_DEPTH);
-    texture.width = R3D_TARGET_WIDTH;
-    texture.height = R3D_TARGET_HEIGHT;
+    texture.width = R3D_TARGET_SIZE_W;
+    texture.height = R3D_TARGET_SIZE_H;
     texture.mipmaps = 1;
     texture.format = PIXELFORMAT_UNCOMPRESSED_R16;
     return texture;
