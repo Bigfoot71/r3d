@@ -472,12 +472,12 @@ static void anode_reset_stm_x(r3d_animtree_stm_x_t* node)
 static void anode_reset(R3D_AnimationTreeNode anode)
 {
     switch(anode.base->type) {
-    case R3D_ANIMTREE_ANIM:   return anode_reset_anim(anode.anim);
-    case R3D_ANIMTREE_BLEND2: return anode_reset_blend2(anode.bln2);
-    case R3D_ANIMTREE_ADD2:   return anode_reset_add2(anode.add2);
-    case R3D_ANIMTREE_SWITCH: return anode_reset_switch(anode.swch);
-    case R3D_ANIMTREE_STM:    return anode_reset_stm(anode.stm);
-    case R3D_ANIMTREE_STM_X:  return anode_reset_stm_x(anode.stmx);
+    case R3D_ANIMTREE_ANIM:   anode_reset_anim(anode.anim); break;
+    case R3D_ANIMTREE_BLEND2: anode_reset_blend2(anode.bln2); break;
+    case R3D_ANIMTREE_ADD2:   anode_reset_add2(anode.add2); break;
+    case R3D_ANIMTREE_SWITCH: anode_reset_switch(anode.swch); break;
+    case R3D_ANIMTREE_STM:    anode_reset_stm(anode.stm); break;
+    case R3D_ANIMTREE_STM_X:  anode_reset_stm_x(anode.stmx); break;
     default:
         R3D_TRACELOG(LOG_WARNING, "Failed to reset node: invalid type %d", anode.base->type);
         break;
