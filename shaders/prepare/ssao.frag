@@ -84,7 +84,7 @@ void main()
     // Here we use an IGN instead of the hash from the HPG12 AlchemyAO paper.
     // The result is much more pleasing and blurs much better.
 
-    float spin = M_TAU * M_HashIGN(gl_FragCoord.xy);
+    float spin = M_TAU * M_Bayer8(gl_FragCoord.xy);
     int numSpiralTurns = ROTATIONS[clamp(uSampleCount - 1, 0, 97)];
 
     float aoSum = 0.0;

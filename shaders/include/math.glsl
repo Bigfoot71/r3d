@@ -87,3 +87,18 @@ float M_HashIGN(vec2 pos, float frame)
     vec3 magic = vec3(0.06711056, 0.00583715, 52.9829189);
     return fract(magic.z * fract(dot(vec3(pos, frame), magic)));
 }
+
+float M_Bayer8(vec2 p)
+{
+    uvec2 r = uvec2(p) & 7u;
+    r.x ^= r.y;
+
+    uint v = (r.x & 1u) << 5u
+           | (r.y & 1u) << 4u
+           | (r.x & 2u) << 2u
+           | (r.y & 2u) << 1u
+           | (r.x & 4u) >> 1u
+           | (r.y & 4u) >> 2u;
+
+    return float(v) / 64.0;
+}
