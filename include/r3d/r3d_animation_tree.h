@@ -127,9 +127,9 @@ typedef struct {
  * Switch node allows instant or blended/faded transition between any animation nodes connected to inputs.
  */
 typedef struct {
-    bool synced;                ///< Flag to control input animation nodes synchronization; activated input is reset when false.
-    unsigned int activeInput;   ///< Active input zero-based index.
-    float xFadeTime;            ///< Animation nodes cross fade blending time, in seconds.
+    bool synced;       ///< Flag to control input animation nodes synchronization; activated input is reset when false.
+    int activeInput;   ///< Active input zero-based index.
+    float xFadeTime;   ///< Animation nodes cross fade blending time, in seconds.
 } R3D_SwitchNodeParams;
 
 /**
@@ -150,12 +150,12 @@ typedef struct {
  * Switch and State Machine. It also fully supports root motion and bone masking in Blend2/Add2.
  */
 typedef struct {
-    R3D_AnimationPlayer player;                 ///< Animation player and skeleton used by all animation nodes.
-    R3D_AnimationTreeNode* rootNode;            ///< Pointer to root animation node of the tree.
-    R3D_AnimationTreeNode* nodePool;            ///< Animation node pool of size nodePoolMaxSize.
-    unsigned int nodePoolSize;                  ///< Current animation node pool size.
-    unsigned int nodePoolMaxSize;               ///< Maximum number of animation nodes, defined during load.
-    int rootBone;                               ///< Optional root bone index, -1 if not defined.
+    R3D_AnimationPlayer player;        ///< Animation player and skeleton used by all animation nodes.
+    R3D_AnimationTreeNode* rootNode;   ///< Pointer to root animation node of the tree.
+    R3D_AnimationTreeNode* nodePool;   ///< Animation node pool of size nodePoolMaxSize.
+    int nodePoolSize;                  ///< Current animation node pool size.
+    int nodePoolMaxSize;               ///< Maximum number of animation nodes, defined during load.
+    int rootBone;                      ///< Optional root bone index, -1 if not defined.
 
     R3D_AnimationTreeCallback updateCallback;   ///< Callback function to receive and modify final animation transformation.
     void* updateUserData;                       ///< Optional user data pointer passed to the callback.
@@ -252,7 +252,7 @@ R3DAPI void R3D_AddRootAnimationNode(R3D_AnimationTree* tree, R3D_AnimationTreeN
  * @param inputIndex Index of the parent node input used for connection.
  * @return True on success; false if parent node or inputIndex is invalid.
  */
-R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* node, unsigned int inputIndex);
+R3DAPI bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* node, int inputIndex);
 
 /**
  * @brief Creates animation node of type Animation.
@@ -310,7 +310,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree, R3D_Ad
  * @param params Switch node initial parameters.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, unsigned int inputCount,
+R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, int inputCount,
                                                    R3D_SwitchNodeParams params);
 
 /**
@@ -323,9 +323,8 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, unsi
  * @param edgesCount Maximum number of edges in the state machine.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree,
-                                                unsigned int statesCount,
-                                                unsigned int edgesCount);
+R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree, int statesCount,
+                                                int edgesCount);
 
 /**
  * @brief Creates animation node of type State Machine (Stm), with option to disable travel feature (enabled by default).
@@ -336,10 +335,8 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree,
  * @param enableTravel Flag to enable or disable travel feature; enabled when set true.
  * @return Pointer to created animation node; NULL if maximum number of nodes was exceeded.
  */
-R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree,
-                                                  unsigned int statesCount,
-                                                  unsigned int edgesCount,
-                                                  bool enableTravel);
+R3DAPI R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree, int statesCount,
+                                                  int edgesCount, bool enableTravel);
 
 /**
  * @brief Creates animation node of type State Machine Stop/Done (StmX).
@@ -364,7 +361,7 @@ R3DAPI R3D_AnimationTreeNode* R3D_CreateStmXNode(R3D_AnimationTree* tree,
  */
 R3DAPI R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNode,
                                                     R3D_AnimationTreeNode* stateNode,
-                                                    unsigned int outEdgesCount);
+                                                    int outEdgesCount);
 
 /**
  * @brief Creates edge in a State Machine animation node.
@@ -499,9 +496,8 @@ R3DAPI void R3D_TravelToStmState(R3D_AnimationTreeNode* node,
  * @param boneNameCount Count of strings in boneNames array.
  * @return Calculated bone mask, or zeroed structure on failure.
  */
-R3DAPI R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton,
-                                        const char* boneNames[],
-                                        unsigned int boneNameCount);
+R3DAPI R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton, const char* boneNames[],
+                                        int boneNameCount);
 
 #ifdef __cplusplus
 } // extern "C"
