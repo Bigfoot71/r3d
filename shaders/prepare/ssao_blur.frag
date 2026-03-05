@@ -24,31 +24,29 @@ layout(location = 0) out float FragColor;
 
 /* === Constants === */
 
-const float DEPTH_SHARPNESS = 200.0;
+const float DEPTH_SHARPNESS = 600.0;
 
 // Generated using the Two-pass Gaussian blur coeffifients generator made by Lisyarus
 // Link: https://lisyarus.github.io/blog/posts/blur-coefficients-generator.html
 
 // Used parameters:
-// Blur radius: 4
-// Blur sigma: 2
+// Blur radius: 3
+// Blur sigma: 4
 
-const int SAMPLE_COUNT = 5;
+const int SAMPLE_COUNT = 4;
 
-const float OFFSETS[5] = float[5](
-    -3.2979348079914823,
-    -1.409199877085212,
-    0.469433779698372,
-    2.351564403533789,
-    4
+const float OFFSETS[4] = float[4](
+    -2.4225046348141883,
+    -0.4843800842769843,
+    1.453261848015386,
+    3
 );
 
-const float WEIGHTS[5] = float[5](
-    0.095766798098283,
-    0.3030531945966437,
-    0.3814038792275628,
-    0.19124386547413952,
-    0.02853226260337099
+const float WEIGHTS[4] = float[4](
+    0.24185531173974772,
+    0.3478148096900533,
+    0.3081448884057253,
+    0.10218499016447377
 );
 
 /* === Main Functions === */
