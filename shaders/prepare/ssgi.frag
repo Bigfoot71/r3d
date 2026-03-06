@@ -63,7 +63,10 @@ vec3 FibonacciHemisphere(float fidx, float invTotal, vec2 cpOffset)
     float cosT = sqrt(1.0 - u);
     float sinT = sqrt(u);
 
-    return vec3(cos(phi) * sinT, sin(phi) * sinT, cosT);
+    float cosPhi = cos(phi);
+    float sinPhi = sin(phi);
+
+    return vec3(cosPhi * sinT, sinPhi * sinT, cosT);
 }
 
 vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
