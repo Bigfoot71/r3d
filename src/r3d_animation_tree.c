@@ -57,8 +57,8 @@ typedef struct {
 } r3d_stmedge_t;
 
 typedef struct {
-    unsigned int outCount;
-    unsigned int maxOut;
+    int outCount;
+    int maxOut;
     r3d_stmedge_t** outList;
     r3d_stmedge_t* activeIn;
 } r3d_stmstate_t;
@@ -106,18 +106,18 @@ struct r3d_animtree_switch {
     r3d_animtree_type_t type;
     R3D_AnimationTreeNode* inList;
     float* inWeights;
-    unsigned int inCount;
-    unsigned int prevIn;
+    int inCount;
+    int prevIn;
     float weightsInvSum;
     R3D_SwitchNodeParams params;
 };
 
 struct r3d_animtree_stm {
     r3d_animtree_type_t type;
-    unsigned int statesCount;
-    unsigned int edgesCount;
-    unsigned int maxStates;
-    unsigned int maxEdges;
+    int statesCount;
+    int edgesCount;
+    int maxStates;
+    int maxEdges;
     R3D_AnimationStmIndex activeIdx;
     R3D_AnimationTreeNode* nodeList;
     r3d_stmedge_t* edgeList;
@@ -125,8 +125,8 @@ struct r3d_animtree_stm {
     r3d_stmvisit_t* visitList;
     struct {
         r3d_stmedge_t** edges;
-        unsigned int idx;
-        unsigned int len;
+        int idx;
+        int len;
         r3d_stmedge_t** open;
         r3d_stmedge_t** next;
         bool* mark;
@@ -193,14 +193,14 @@ static bool masked_bone(const R3D_BoneMask* bMask, int boneIdx)
 
 static r3d_stmedge_t* stm_find_edge(const r3d_animtree_stm_t* node, const r3d_stmstate_t* state)
 {
-    unsigned int pathLen = node->path.len;
-    unsigned int pathIdx = node->path.idx;
+    int pathLen = node->path.len;
+    int pathIdx = node->path.idx;
 
     if (pathIdx < pathLen) {
         return node->path.edges[pathIdx];
     }
     else {
-        unsigned int edgesCount = state->outCount;
+        int edgesCount = state->outCount;
         for (int edgeIdx = 0; edgeIdx < edgesCount; edgeIdx++) {
             r3d_stmedge_t* edge = state->outList[edgeIdx];
             R3D_StmEdgeStatus status = edge->params.status;
@@ -303,11 +303,11 @@ static bool stm_update_state(const R3D_AnimationTree* atree, r3d_animtree_stm_t*
 }
 
 static int expand_path(r3d_animtree_stm_t* node, r3d_stmedge_t** edges, r3d_stmedge_t** next,
-                       int nextCount, unsigned int pathLen, const r3d_stmstate_t* state)
+                       int nextCount, int pathLen, const r3d_stmstate_t* state)
 {
-    unsigned int maxOpenPaths = node->maxEdges;
-    unsigned int maxPathLen = node->maxStates;
-    unsigned int outCount = state->outCount;
+    int maxOpenPaths = node->maxEdges;
+    int maxPathLen = node->maxStates;
+    int outCount = state->outCount;
 
     int added = 0;
     for (int edgeIdx = 0; edgeIdx < outCount; edgeIdx++) {
@@ -332,7 +332,7 @@ static int expand_path(r3d_animtree_stm_t* node, r3d_stmedge_t** edges, r3d_stme
 
 static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex targetIdx)
 {
-    unsigned int maxPathLen = node->maxStates;
+    int maxPathLen = node->maxStates;
     r3d_stmedge_t** openPaths = node->path.open;
     r3d_stmedge_t** nextPaths = node->path.next;
     bool* marked = node->path.mark;
@@ -345,7 +345,7 @@ static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex target
         &node->stateList[node->activeIdx]
     );
 
-    unsigned int pathLen = 1;
+    int pathLen = 1;
     while(pathsCount > 0) {
         int nextCount = 0;
         for (int pIdx = 0; pIdx < pathsCount; pIdx++) {
@@ -388,7 +388,7 @@ static R3D_AnimationTreeNode* anode_create(R3D_AnimationTree* atree, r3d_animtre
 {
     R3D_AnimationTreeNode* node;
 
-    unsigned int poolSize = atree->nodePoolSize;
+    int poolSize = atree->nodePoolSize;
     if (poolSize < atree->nodePoolMaxSize) {
         node = &atree->nodePool[poolSize];
         node->base = RL_CALLOC(1, node_size);
@@ -429,8 +429,8 @@ static void anode_reset_add2(r3d_animtree_add2_t* node)
 
 static void anode_reset_switch(r3d_animtree_switch_t* node)
 {
-    unsigned char inCount = node->inCount;
-    unsigned char activeIn = node->params.activeInput;
+    int inCount = node->inCount;
+    int activeIn = node->params.activeInput;
 
     for (int i = 0; i < inCount; i++) {
         node->inWeights[i] = 0.0f;
@@ -456,7 +456,7 @@ static void anode_reset_stm(r3d_animtree_stm_t* node)
 /*
 static void anode_reset_stm(r3d_animtree_stm_t* node)
 {
-    unsigned int activeIdx = node->activeIdx;
+    int activeIdx = node->activeIdx;
     r3d_stmedge_t* edge = node->stateList[activeIdx].activeIn;
     if (edge) edge->endWeight = 0.0f;
 
@@ -561,9 +561,9 @@ static bool anode_update_add2(const R3D_AnimationTree* atree, r3d_animtree_add2_
 
 static bool anode_update_switch(const R3D_AnimationTree* atree, r3d_animtree_switch_t* node, float elapsedTime, upinfo_t* info)
 {
-    unsigned int inCount = node->inCount;
-    unsigned int activeIn = node->params.activeInput;
-    if (activeIn >= inCount) {
+    int inCount = node->inCount;
+    int activeIn = node->params.activeInput;
+    if (activeIn < 0 || activeIn >= inCount) {
         R3D_TRACELOG(LOG_WARNING, "Failed to update switch: active input %d out of range (%d)", activeIn, inCount);
         return false;
     }
@@ -631,8 +631,8 @@ static bool anode_update_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t*
         elapsedTime -= consumedTime;
 
         if (doNext) {
-            unsigned int pathLen = node->path.len;
-            unsigned int pathIdx = node->path.idx;
+            int pathLen = node->path.len;
+            int pathIdx = node->path.idx;
             if (pathIdx < pathLen) node->path.idx += 1;
         }
 
@@ -919,7 +919,7 @@ static bool anode_eval(const R3D_AnimationTree* atree, R3D_AnimationTreeNode ano
 // INTERNAL ANIMATION TREE FUNCTIONS
 // ========================================
 
-static bool atree_blend2_add(r3d_animtree_blend2_t* parent, R3D_AnimationTreeNode anode, unsigned int in_idx)
+static bool atree_blend2_add(r3d_animtree_blend2_t* parent, R3D_AnimationTreeNode anode, int in_idx)
 {
     switch(in_idx) {
     case 0: parent->inMain = anode; return true;
@@ -931,7 +931,7 @@ static bool atree_blend2_add(r3d_animtree_blend2_t* parent, R3D_AnimationTreeNod
     return false;
 }
 
-static bool atree_add2_add(r3d_animtree_add2_t* parent, R3D_AnimationTreeNode anode, unsigned int in_idx)
+static bool atree_add2_add(r3d_animtree_add2_t* parent, R3D_AnimationTreeNode anode, int in_idx)
 {
     switch(in_idx) {
     case 0: parent->inMain = anode; return true;
@@ -942,7 +942,7 @@ static bool atree_add2_add(r3d_animtree_add2_t* parent, R3D_AnimationTreeNode an
     return false;
 }
 
-static bool atree_switch_add(r3d_animtree_switch_t* parent, R3D_AnimationTreeNode anode, unsigned int in_idx)
+static bool atree_switch_add(r3d_animtree_switch_t* parent, R3D_AnimationTreeNode anode, int in_idx)
 {
     if (in_idx < parent->inCount) {
         parent->inList[in_idx] = anode;
@@ -1005,7 +1005,7 @@ static R3D_AnimationTreeNode* atree_add2_create(R3D_AnimationTree* atree, R3D_Ad
     return anode;
 }
 
-static R3D_AnimationTreeNode* atree_switch_create(R3D_AnimationTree* atree, unsigned int inCount, R3D_SwitchNodeParams params)
+static R3D_AnimationTreeNode* atree_switch_create(R3D_AnimationTree* atree, int inCount, R3D_SwitchNodeParams params)
 {
     R3D_AnimationTreeNode* anode = anode_create(
         atree, R3D_ANIMTREE_SWITCH,
@@ -1023,7 +1023,7 @@ static R3D_AnimationTreeNode* atree_switch_create(R3D_AnimationTree* atree, unsi
     return anode;
 }
 
-static R3D_AnimationTreeNode* atree_stm_create(R3D_AnimationTree* atree, unsigned int statesCount, unsigned int edgesCount, bool travel)
+static R3D_AnimationTreeNode* atree_stm_create(R3D_AnimationTree* atree, int statesCount, int edgesCount, bool travel)
 {
     R3D_AnimationTreeNode* anode = anode_create(atree, R3D_ANIMTREE_STM, sizeof(r3d_animtree_stm_t));
     if (!anode) return NULL;
@@ -1053,7 +1053,7 @@ static R3D_AnimationTreeNode* atree_stm_x_create(R3D_AnimationTree* atree, R3D_A
     return anode;
 }
 
-static R3D_AnimationStmIndex atree_state_create(r3d_animtree_stm_t* node, R3D_AnimationTreeNode anode, unsigned int edgesCount)
+static R3D_AnimationStmIndex atree_state_create(r3d_animtree_stm_t* node, R3D_AnimationTreeNode anode, int edgesCount)
 {
     R3D_AnimationStmIndex nextIdx = node->statesCount;
     if (nextIdx >= node->maxStates) return -1;
@@ -1087,7 +1087,7 @@ static R3D_AnimationStmIndex atree_edge_create(r3d_animtree_stm_t* node, R3D_Ani
     };
 
     r3d_stmstate_t* beginState = &node->stateList[beginIdx];
-    unsigned int outCount = beginState->outCount;
+    int outCount = beginState->outCount;
     if (outCount >= beginState->maxOut) return -1;
     beginState->outList[outCount] = edge;
     beginState->outCount += 1;
@@ -1242,7 +1242,7 @@ void R3D_AddRootAnimationNode(R3D_AnimationTree* tree, R3D_AnimationTreeNode* no
     tree->rootNode = node;
 }
 
-bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* node, unsigned int inputIndex)
+bool R3D_AddAnimationNode(R3D_AnimationTreeNode* parent, R3D_AnimationTreeNode* node, int inputIndex)
 {
     switch(parent->base->type) {
     case R3D_ANIMTREE_ANIM:
@@ -1278,17 +1278,17 @@ R3D_AnimationTreeNode* R3D_CreateAdd2Node(R3D_AnimationTree* tree, R3D_Add2NodeP
     return atree_add2_create(tree, params);
 }
 
-R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, unsigned int inputCount, R3D_SwitchNodeParams params)
+R3D_AnimationTreeNode* R3D_CreateSwitchNode(R3D_AnimationTree* tree, int inputCount, R3D_SwitchNodeParams params)
 {
     return atree_switch_create(tree, inputCount, params);
 }
 
-R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree, unsigned int statesCount, unsigned int edgesCount)
+R3D_AnimationTreeNode* R3D_CreateStmNode(R3D_AnimationTree* tree, int statesCount, int edgesCount)
 {
     return atree_stm_create(tree, statesCount, edgesCount, false);
 }
 
-R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree, unsigned int statesCount, unsigned int edgesCount, bool enableTravel)
+R3D_AnimationTreeNode* R3D_CreateStmNodeEx(R3D_AnimationTree* tree, int statesCount, int edgesCount, bool enableTravel)
 {
     return atree_stm_create(tree, statesCount, edgesCount, enableTravel);
 }
@@ -1298,7 +1298,7 @@ R3D_AnimationTreeNode* R3D_CreateStmXNode(R3D_AnimationTree* tree, R3D_Animation
     return atree_stm_x_create(tree, *nestedNode);
 }
 
-R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNode, R3D_AnimationTreeNode* stateNode, unsigned int outEdgesCount)
+R3D_AnimationStmIndex R3D_CreateStmNodeState(R3D_AnimationTreeNode* stmNode, R3D_AnimationTreeNode* stateNode, int outEdgesCount)
 {
     return atree_state_create(stmNode->stm, *stateNode, outEdgesCount);
 }
@@ -1369,13 +1369,13 @@ void R3D_TravelToStmState(R3D_AnimationTreeNode* node, R3D_AnimationStmIndex tar
     atree_travel(node->stm, targetStateIndex);
 }
 
-R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton, const char* boneNames[], unsigned int boneNameCount)
+R3D_BoneMask R3D_ComputeBoneMask(const R3D_Skeleton* skeleton, const char* boneNames[], int boneNameCount)
 {
     const R3D_BoneInfo* bones = skeleton->bones;
     const int bCount = skeleton->boneCount;
     R3D_BoneMask bMask = {.boneCount = bCount};
 
-    if (bCount > sizeof(bMask.mask) * 8) {
+    if ((size_t)bCount > sizeof(bMask.mask) * 8) {
         R3D_TRACELOG(LOG_WARNING, "Failed to compute bone mask: max bone count exceeded (%d)", sizeof(bMask.mask) * 8);
         return (R3D_BoneMask){0};
     }
