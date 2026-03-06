@@ -89,6 +89,7 @@
             .stepSize = 0.125f,                         \
             .thickness = 1.0f,                          \
             .maxDistance = 4.0f,                        \
+            .intensity = 3.0f,                          \
             .fadeStart = 8.0f,                          \
             .fadeEnd = 16.0f,                           \
             .denoiseSteps = 5,                          \
@@ -259,6 +260,7 @@ typedef struct R3D_EnvSSGI {
     float stepSize;         ///< Ray step size (default: 0.125)
     float thickness;        ///< Depth tolerance for valid hits (default: 1.0)
     float maxDistance;      ///< Maximum ray distance (default: 4.0)
+    float intensity;        ///< GI intensity multiplier (default: 3.0)
     float fadeStart;        ///< Distance at which the GI fade begins (default: 8.0)
     float fadeEnd;          ///< Distance at which GI is fully faded (default: 16.0)
     int denoiseSteps;       ///< Number of denoiser iterations (default: 5)

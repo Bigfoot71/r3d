@@ -2018,6 +2018,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsaoPower, R3D.environment.ssao.power);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilIntensity, R3D.environment.ssil.intensity);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilAoPower, R3D.environment.ssil.aoPower);
+    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsgiIntensity, R3D.environment.ssgi.intensity);
 
     R3D_RENDER_SCREEN();
 }

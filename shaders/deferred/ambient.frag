@@ -38,6 +38,7 @@ uniform sampler2D uBrdfLutTex;
 uniform float uSsaoPower;
 uniform float uSsilIntensity;
 uniform float uSsilAoPower;
+uniform float uSsgiIntensity;
 
 /* === Blocks === */
 
@@ -76,7 +77,9 @@ void main()
     E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, P, N, V, NdotV);
 
     // Apply AO to SSGI to restore contrast lost in far/blurred regions
-    vec3 gi = kD * (ssil.rgb * uSsilIntensity + ssgi.rgb * orm.x);
+    vec3 gi = ssgi.rgb * uSsgiIntensity * orm.x;
+    gi += ssil.rgb * uSsilIntensity;
+    gi *= kD;
 
     FragDiffuse = vec4(diffuse + gi, 1.0);
     FragSpecular = vec4(specular, 1.0);

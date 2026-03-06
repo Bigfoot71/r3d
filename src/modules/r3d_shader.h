@@ -1004,6 +1004,7 @@ typedef struct {
     r3d_shader_uniform_float_t uSsaoPower;
     r3d_shader_uniform_float_t uSsilIntensity;
     r3d_shader_uniform_float_t uSsilAoPower;
+    r3d_shader_uniform_float_t uSsgiIntensity;
 } r3d_shader_deferred_ambient_t;
 
 typedef struct {
