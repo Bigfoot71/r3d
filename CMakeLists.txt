@@ -363,7 +363,6 @@ embed_shaders(${PROJECT_NAME}
 
 embed_assets(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/assets/brdf_lut_512_rg16_float.raw"
-    "${R3D_ROOT_PATH}/assets/ssgi_lut_4096_rgba16_float.raw"
     "${R3D_ROOT_PATH}/assets/smaa_area_160x560_rg8.raw"
     "${R3D_ROOT_PATH}/assets/smaa_search_64x16_r8.raw"
 )

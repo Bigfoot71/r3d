@@ -23,7 +23,6 @@ uniform sampler2D uHistoryTex;
 uniform sampler2D uDiffuseTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-uniform sampler1D uLutTex;
 
 uniform int uSampleCount;
 uniform int uMaxRaySteps;
@@ -35,26 +34,10 @@ uniform float uFadeEnd;
 
 /* === Constants === */
 
-// These constants are related to the LUT, do not modify them.
-
-const uint TILE_LOG2 = 2u;
-const uint TILE_SIZE = 1u << TILE_LOG2;
-const uint TILE_MASK = TILE_SIZE - 1u;
-
-const uint AZIM_COUNT = 16u;
-const uint RING_COUNT = 4u;
-const uint AZIM_STEP = 5u;
-const uint RING_STEP = 3u;
-
-const uint ROT_PHASES = 64u;
-const uint ROT_BITS = 8u;
-
-const uint AZIM_MASK = AZIM_COUNT - 1u;
-const uint RING_MASK = RING_COUNT - 1u;
-const uint ROT_MASK  = ROT_PHASES - 1u;
-
-const uint LUT_RING_STRIDE  = AZIM_COUNT;
-const uint LUT_PHASE_STRIDE = AZIM_COUNT * RING_COUNT;
+const uint TILE_LOG2       = 2u; // 1u
+const uint TILE_SIZE       = 1u << TILE_LOG2;
+const uint TILE_MASK       = TILE_SIZE - 1u;
+const uint PIXELS_PER_TILE = TILE_SIZE * TILE_SIZE; // 16
 
 /* === Fragments === */
 
@@ -62,16 +45,24 @@ out vec4 FragColor;
 
 /* === Helper Functions === */
 
-uint TileCellHash(uvec2 cell, uint bits)
+vec2 TileCranelyPatterson(uvec2 cell)
 {
-    uint n = cell.x * 0x9E3779B9u + cell.y * 0xBB67AE85u;
-    return n >> (32u - bits);
+    uint a = cell.x * 0x9E3779B9u ^ cell.y * 0x85EBCA6Bu;
+    uint b = cell.y * 0xC2B2AE35u ^ cell.x * 0xBF58476Du;
+    a ^= a >> 16u;
+    b ^= b >> 16u;
+    return vec2(a, b) * (1.0 / 4294967296.0);
 }
 
-vec3 DirFromLUT(uint phase, uint ring, uint az)
+vec3 FibonacciHemisphere(uint idx, uint total, vec2 cpOffset)
 {
-    uint index = phase * LUT_PHASE_STRIDE + ring * LUT_RING_STRIDE + az;
-    return texelFetch(uLutTex, int(index), 0).xyz;
+    float u = fract((float(idx) + 0.5) / float(total) + cpOffset.x);
+    float phi = fract(float(idx) * (M_PHI - 1.0) + cpOffset.y) * M_TAU;
+
+    float cosT = sqrt(1.0 - u);
+    float sinT = sqrt(u);
+
+    return vec3(cos(phi) * sinT, sin(phi) * sinT, cosT);
 }
 
 vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
@@ -127,27 +118,22 @@ void main()
     vec3 Pvs = V_GetViewPosition(vTexCoord, depth);
     mat3 TBN = M_OrthonormalBasis(Nvs);
 
-    uint idx = (uint(pix.x) & TILE_MASK) | ((uint(pix.y) & TILE_MASK) << TILE_LOG2);
-
-    uint baseAz = idx & AZIM_MASK;
-    uint baseRing = idx & RING_MASK;
+    uint tileIdx = (uint(pix.x) & TILE_MASK) | ((uint(pix.y) & TILE_MASK) << TILE_LOG2);
 
     uvec2 cell = uvec2(pix) >> TILE_LOG2;
-    uint h = TileCellHash(cell, ROT_BITS) & ROT_MASK;
+    vec2 cpOffset = TileCranelyPatterson(cell);
+
+    uint S = uint(max(uSampleCount, 1));
+    uint totalDir = PIXELS_PER_TILE * S;
 
     vec3 gi = vec3(0.0);
 
-    for (int i = 0; i < uSampleCount; i++)
-    {
-        uint s = uint(i);
-        uint az = (baseAz + s * AZIM_STEP) & AZIM_MASK;
-        uint ring = (baseRing + s * RING_STEP) & RING_MASK;
-        uint phase = (h + s) & ROT_MASK;
-
-        vec3 dirLocal = DirFromLUT(phase, ring, az);
+    for (uint s = 0u; s < S; s++) {
+        uint idx = tileIdx + s * PIXELS_PER_TILE;
+        vec3 dirLocal = FibonacciHemisphere(idx, totalDir, cpOffset);
         gi += TraceRay(Pvs, TBN * dirLocal);
     }
 
     float fade = smoothstep(uFadeEnd, uFadeStart, depth);
-    FragColor = vec4(gi * (1.0 / float(uSampleCount)) * fade, 1.0);
+    FragColor = vec4(gi * (1.0 / float(S)) * fade, 1.0);
 }
