@@ -1789,8 +1789,8 @@ r3d_target_t pass_prepare_ssgi(void)
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 1.3333333333333333f);  // 1.0f / 0.75f
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 0.5714285714285714f);   // 1.0f / 1.75f
+    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 2.5f);
+    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 20.0f);
 
     r3d_target_t* src = &SSGI_RAW;
     r3d_target_t* dst = &SSGI_FILTERED;
