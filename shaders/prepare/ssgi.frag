@@ -34,10 +34,11 @@ uniform float uFadeEnd;
 
 /* === Constants === */
 
-const uint TILE_LOG2       = 2u; // 1u
-const uint TILE_SIZE       = 1u << TILE_LOG2;
-const uint TILE_MASK       = TILE_SIZE - 1u;
-const uint PIXELS_PER_TILE = TILE_SIZE * TILE_SIZE; // 16
+const uint TILE_LOG2          = 2u; // 1u
+const uint TILE_SIZE          = 1u << TILE_LOG2;
+const uint TILE_MASK          = TILE_SIZE - 1u;
+const uint PIXELS_PER_TILE    = TILE_SIZE * TILE_SIZE; // 16
+const float F_PIXELS_PER_TILE = float(PIXELS_PER_TILE);
 
 /* === Fragments === */
 
@@ -54,10 +55,10 @@ vec2 TileCranelyPatterson(uvec2 cell)
     return vec2(a, b) * (1.0 / 4294967296.0);
 }
 
-vec3 FibonacciHemisphere(uint idx, uint total, vec2 cpOffset)
+vec3 FibonacciHemisphere(float fidx, float invTotal, vec2 cpOffset)
 {
-    float u = fract((float(idx) + 0.5) / float(total) + cpOffset.x);
-    float phi = fract(float(idx) * (M_PHI - 1.0) + cpOffset.y) * M_TAU;
+    float u = fract((fidx + 0.5) * invTotal + cpOffset.x);
+    float phi = fract(fidx * M_PHI_FRAC + cpOffset.y) * M_TAU;
 
     float cosT = sqrt(1.0 - u);
     float sinT = sqrt(u);
@@ -119,21 +120,23 @@ void main()
     mat3 TBN = M_OrthonormalBasis(Nvs);
 
     uint tileIdx = (uint(pix.x) & TILE_MASK) | ((uint(pix.y) & TILE_MASK) << TILE_LOG2);
+    float fidx = float(tileIdx);
 
     uvec2 cell = uvec2(pix) >> TILE_LOG2;
     vec2 cpOffset = TileCranelyPatterson(cell);
 
     uint S = uint(max(uSampleCount, 1));
-    uint totalDir = PIXELS_PER_TILE * S;
+    float invTotal = 1.0 / float(PIXELS_PER_TILE * S);
+    float invS = 1.0 / float(S);
 
     vec3 gi = vec3(0.0);
 
     for (uint s = 0u; s < S; s++) {
-        uint idx = tileIdx + s * PIXELS_PER_TILE;
-        vec3 dirLocal = FibonacciHemisphere(idx, totalDir, cpOffset);
-        gi += TraceRay(Pvs, TBN * dirLocal);
+        vec3 localDir = FibonacciHemisphere(fidx, invTotal, cpOffset);
+        gi += TraceRay(Pvs, TBN * localDir);
+        fidx += F_PIXELS_PER_TILE;
     }
 
     float fade = smoothstep(uFadeEnd, uFadeStart, depth);
-    FragColor = vec4(gi * (1.0 / float(S)) * fade, 1.0);
+    FragColor  = vec4(gi * invS * fade, 1.0);
 }

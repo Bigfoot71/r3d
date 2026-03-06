@@ -13,6 +13,7 @@
 #define M_TAU           6.2831853071795862
 #define M_INV_PI        0.3183098861837907
 #define M_PHI           1.6180339887498949
+#define M_PHI_FRAC      0.6180339887498949
 #define M_GOLDEN_ANGLE  2.3999632297286535
 
 /* === Functions === */
