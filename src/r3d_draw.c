@@ -1785,7 +1785,30 @@ r3d_target_t pass_prepare_ssgi(void)
 
     R3D_RENDER_SCREEN();
 
-    /* --- Atrous denoise: RAW -> FILTERED --- */
+    /*
+        A-trous step schedule (largest -> smallest).
+
+        We use a fixed pyramid: {32, 16, 8, 4, 2, 1}.
+        When fewer iterations are requested we simply truncate the list.
+
+        The largest steps are what stabilize the filter in motion.
+        The small ones mostly refine the result and hide the pattern left
+        by the large kernels.
+
+        If we derived the pyramid from the iteration count (e.g. 16,8,4,2,1
+        for 5 steps), the max radius would shrink and the result becomes
+        noticeably less stable when the camera moves.
+
+        Keeping the same large radii and only dropping the final refinement
+        passes preserves the temporal stability of the 6-step filter while
+        allowing cheaper configurations.
+
+        Examples:
+            6 steps : 32 16  8  4  2  1
+            5 steps : 32 16  8  4  2
+            4 steps : 32 16  8  4
+            3 steps : 32 16  8
+    */
 
     r3d_target_t* src = &SSGI_RAW;
     r3d_target_t* dst = &SSGI_FILTERED;
@@ -1802,15 +1825,17 @@ r3d_target_t pass_prepare_ssgi(void)
         R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 2.5f);
         R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 20.0f);
 
+        int stepWidth[] = {32, 16, 8, 4, 2, 1};
+        steps = MIN(steps, ARRAY_SIZE(stepWidth));
+
         for (int i = 0; i < steps; i++)
         {
-            int stepWidth = 1 << ((steps - 1) - i);
-            float invStepWidth2 = 1.0f / (stepWidth*stepWidth);
+            float invStepWidth2 = 1.0f / (stepWidth[i]*stepWidth[i]);
 
             R3D_TARGET_BIND(false, *dst);
             R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
             R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvStepWidth2, invStepWidth2);
-            R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, stepWidth);
+            R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, stepWidth[i]);
             R3D_RENDER_SCREEN();
 
             SWAP(r3d_target_t, *src, *dst);
