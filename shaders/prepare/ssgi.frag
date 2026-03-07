@@ -88,7 +88,7 @@ vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
         vec2 uv = V_ViewToScreen(posVS);
         if (V_OffScreen(uv)) break;
 
-        float sceneZ = -textureLod(uDepthTex, uv, 0).r;
+        float sceneZ = -textureLod(uDepthTex, uv, 0.0).r;
         float dz = sceneZ - posVS.z;
 
         if (dz > 0.0 && dz < uThickness) {
@@ -103,8 +103,8 @@ vec3 TraceRay(vec3 startViewPos, vec3 dirVS)
 
     if (!hit) return vec3(0.0);
 
-    vec3 hist = textureLod(uHistoryTex, hitUV, 0).rgb;
-    vec3 diff = textureLod(uDiffuseTex, hitUV, 0).rgb;
+    vec3 hist = textureLod(uHistoryTex, hitUV, 0.0).rgb;
+    vec3 diff = textureLod(uDiffuseTex, hitUV, 0.0).rgb;
 
     float distFade = 1.0 - smoothstep(0.0, uMaxDistance, sqrt(distSq));
     return (diff + hist) * distFade;
