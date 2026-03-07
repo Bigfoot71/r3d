@@ -1712,8 +1712,8 @@ r3d_target_t pass_prepare_ssil(void)
         R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
         R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 12.5f);
-        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 25.0f);
+        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 25.0f);
+        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 50.0f);
 
         for (int i = 0; i < steps; i++)
         {
