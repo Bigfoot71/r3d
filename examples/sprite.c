@@ -65,8 +65,8 @@ int main(void)
 
         // Update sprite UVs
         // We multiply by the sign of the X direction to invert the uvScale.x
-        float currentFrame = 10.0f * GetTime();
-        GetTexCoordScaleOffset(&matSprite.uvScale, &matSprite.uvOffset, 4 * birdDirX, 1, currentFrame);
+        float currentFrame = 10.0f * (float)GetTime();
+        GetTexCoordScaleOffset(&matSprite.uvScale, &matSprite.uvOffset, (int)(4 * birdDirX), 1, currentFrame);
 
         BeginDrawing();
             ClearBackground(RAYWHITE);

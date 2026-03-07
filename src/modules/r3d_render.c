@@ -204,10 +204,10 @@ static void disable_instances(R3D_InstanceFlags flags)
 // INTERNAL ARRAY FUNCTIONS
 // ========================================
 
-static inline size_t get_draw_call_index(const r3d_render_call_t* call)
+static inline int get_draw_call_index(const r3d_render_call_t* call)
 {
     assert(call >= R3D_MOD_RENDER.calls);
-    return (size_t)(call - R3D_MOD_RENDER.calls);
+    return (int)(call - R3D_MOD_RENDER.calls);
 }
 
 static inline int get_last_group_index(void)

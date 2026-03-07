@@ -406,7 +406,7 @@ void r3d_target_set_write_level(int attachment, int level)
 
 void r3d_target_set_read_level(r3d_target_t target, int level)
 {
-    return r3d_target_set_read_levels(target, level, level);
+    r3d_target_set_read_levels(target, level, level);
 }
 
 void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel)

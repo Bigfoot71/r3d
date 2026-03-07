@@ -668,9 +668,9 @@ void upload_view_block(void)
         .invProj = MatrixTranspose(R3D.viewState.invProj),
         .viewProj = MatrixTranspose(R3D.viewState.viewProj),
         .projMode = R3D.viewState.camera.projection,
-        .aspect = R3D.viewState.camera.aspect,
-        .near = R3D.viewState.camera.near,
-        .far = R3D.viewState.camera.far,
+        .aspect = (float)R3D.viewState.camera.aspect,
+        .near = (float)R3D.viewState.camera.near,
+        .far = (float)R3D.viewState.camera.far,
     };
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view);

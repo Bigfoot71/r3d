@@ -88,7 +88,7 @@ int main(void)
             float angleRad = cameraAngle * DEG2RAD;
             Vector3 right = {cosf(angleRad), 0, -sinf(angleRad)};
             Vector3 forward = {sinf(angleRad), 0, cosf(angleRad)};
-            moveInput = Vector3Normalize(Vector3Add(Vector3Scale(right, dx), Vector3Scale(forward, dz)));
+            moveInput = Vector3Normalize(Vector3Add(Vector3Scale(right, (float)dx), Vector3Scale(forward, (float)dz)));
         }
 
         // Check grounded

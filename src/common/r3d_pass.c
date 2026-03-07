@@ -57,8 +57,8 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
 
     R3D_SHADER_BIND_SAMPLER(prepare.cubemapPrefilter, uSourceTex, srcCubemap);
 
-    R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceNumLevels, srcNumLevels);
-    R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceFaceSize, srcSize);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceNumLevels, (float)srcNumLevels);
+    R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceFaceSize, (float)srcSize);
     R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatProj, matProj);
 
     int numLevels = r3d_get_mip_levels_1d(R3D_CUBEMAP_PREFILTER_SIZE);
