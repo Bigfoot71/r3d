@@ -46,7 +46,7 @@ out vec4 FragColor;
 
 /* === Helper Functions === */
 
-vec2 TileCranelyPatterson(uvec2 cell)
+vec2 TileCranleyPatterson(uvec2 cell)
 {
     uint a = cell.x * 0x9E3779B9u ^ cell.y * 0x85EBCA6Bu;
     uint b = cell.y * 0xC2B2AE35u ^ cell.x * 0xBF58476Du;
