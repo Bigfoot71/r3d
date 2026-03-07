@@ -1700,31 +1700,34 @@ r3d_target_t pass_prepare_ssil(void)
 
     /* --- Atrous denoise: RAW -> FILTERED --- */
 
-    R3D_SHADER_USE(prepare.atrousWavelet);
-
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 12.5f);    // 1.0f / 0.08f
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 25.0f);     // 1.0f / 0.04f
-
     r3d_target_t* src = &SSIL_RAW;
     r3d_target_t* dst = &SSIL_FILTERED;
 
     int steps = R3D.environment.ssil.denoiseSteps;
 
-    for (int i = 0; i < steps; i++)
+    if (steps > 0)
     {
-        int stepWidth = 1 << ((steps - 1) - i);
-        float invStepWidth2 = 1.0f / (stepWidth*stepWidth);
+        R3D_SHADER_USE(prepare.atrousWavelet);
 
-        R3D_TARGET_BIND(false, *dst);
-        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
-        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvStepWidth2, invStepWidth2);
-        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, stepWidth);
-        R3D_RENDER_SCREEN();
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-        SWAP(r3d_target_t, *src, *dst);
+        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 12.5f);
+        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 25.0f);
+
+        for (int i = 0; i < steps; i++)
+        {
+            int stepWidth = 1 << ((steps - 1) - i);
+            float invStepWidth2 = 1.0f / (stepWidth*stepWidth);
+
+            R3D_TARGET_BIND(false, *dst);
+            R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
+            R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvStepWidth2, invStepWidth2);
+            R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, stepWidth);
+            R3D_RENDER_SCREEN();
+
+            SWAP(r3d_target_t, *src, *dst);
+        }
     }
 
     SWAP(r3d_target_t, SSIL_HISTORY, *src);
@@ -1771,7 +1774,6 @@ r3d_target_t pass_prepare_ssgi(void)
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-    R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uLutTex, r3d_texture_get(R3D_TEXTURE_SSGI_LUT));
 
     R3D_SHADER_SET_INT(prepare.ssgi, uSampleCount, R3D.environment.ssgi.sampleCount);
     R3D_SHADER_SET_INT(prepare.ssgi, uMaxRaySteps, R3D.environment.ssgi.maxRaySteps);
@@ -1783,33 +1785,61 @@ r3d_target_t pass_prepare_ssgi(void)
 
     R3D_RENDER_SCREEN();
 
-    /* --- Atrous denoise: RAW -> FILTERED --- */
+    /*
+        A-trous step schedule (largest -> smallest).
 
-    R3D_SHADER_USE(prepare.atrousWavelet);
+        We use a fixed pyramid: {32, 16, 8, 4, 2, 1}.
+        When fewer iterations are requested we simply truncate the list.
 
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
-    R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
+        The largest steps are what stabilize the filter in motion.
+        The small ones mostly refine the result and hide the pattern left
+        by the large kernels.
 
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 1.3333333333333333f);  // 1.0f / 0.75f
-    R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 0.5714285714285714f);   // 1.0f / 1.75f
+        If we derived the pyramid from the iteration count (e.g. 16,8,4,2,1
+        for 5 steps), the max radius would shrink and the result becomes
+        noticeably less stable when the camera moves.
+
+        Keeping the same large radii and only dropping the final refinement
+        passes preserves the temporal stability of the 6-step filter while
+        allowing cheaper configurations.
+
+        Examples:
+            6 steps : 32 16  8  4  2  1
+            5 steps : 32 16  8  4  2
+            4 steps : 32 16  8  4
+            3 steps : 32 16  8
+    */
 
     r3d_target_t* src = &SSGI_RAW;
     r3d_target_t* dst = &SSGI_FILTERED;
 
     int steps = R3D.environment.ssgi.denoiseSteps;
 
-    for (int i = 0; i < steps; i++)
+    if (steps > 0)
     {
-        int stepWidth = 1 << ((steps - 1) - i);
-        float invStepWidth2 = 1.0f / (stepWidth*stepWidth);
+        R3D_SHADER_USE(prepare.atrousWavelet);
 
-        R3D_TARGET_BIND(false, *dst);
-        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
-        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvStepWidth2, invStepWidth2);
-        R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, stepWidth);
-        R3D_RENDER_SCREEN();
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
+        R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
-        SWAP(r3d_target_t, *src, *dst);
+        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvNormalSharp, 2.5f);
+        R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvDepthSharp, 20.0f);
+
+        int stepWidth[] = {32, 16, 8, 4, 2, 1};
+        steps = MIN(steps, ARRAY_SIZE(stepWidth));
+
+        for (int i = 0; i < steps; i++)
+        {
+            float invStepWidth2 = 1.0f / (stepWidth[i]*stepWidth[i]);
+
+            R3D_TARGET_BIND(false, *dst);
+            R3D_SHADER_BIND_SAMPLER(prepare.atrousWavelet, uSourceTex, r3d_target_get(*src));
+            R3D_SHADER_SET_FLOAT(prepare.atrousWavelet, uInvStepWidth2, invStepWidth2);
+            R3D_SHADER_SET_INT(prepare.atrousWavelet, uStepWidth, stepWidth[i]);
+            R3D_RENDER_SCREEN();
+
+            SWAP(r3d_target_t, *src, *dst);
+        }
     }
 
     SWAP(r3d_target_t, SSGI_HISTORY, *src);
@@ -1988,6 +2018,7 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsaoPower, R3D.environment.ssao.power);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilIntensity, R3D.environment.ssil.intensity);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilAoPower, R3D.environment.ssil.aoPower);
+    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsgiIntensity, R3D.environment.ssgi.intensity);
 
     R3D_RENDER_SCREEN();
 }

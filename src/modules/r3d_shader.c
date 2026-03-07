@@ -425,7 +425,6 @@ bool r3d_shader_load_prepare_ssgi(r3d_shader_custom_t* custom)
     SET_SAMPLER(ssgi, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssgi, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssgi, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
-    SET_SAMPLER(ssgi, uLutTex, R3D_SHADER_SAMPLER_SOURCE_1D_0);
 
     return true;
 }
@@ -1251,6 +1250,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     GET_LOCATION(ambient, uSsaoPower);
     GET_LOCATION(ambient, uSsilIntensity);
     GET_LOCATION(ambient, uSsilAoPower);
+    GET_LOCATION(ambient, uSsgiIntensity);
 
     USE_SHADER(ambient);
 
