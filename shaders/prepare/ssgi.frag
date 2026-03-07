@@ -126,7 +126,7 @@ void main()
     float fidx = float(tileIdx);
 
     uvec2 cell = uvec2(pix) >> TILE_LOG2;
-    vec2 cpOffset = TileCranelyPatterson(cell);
+    vec2 cpOffset = TileCranleyPatterson(cell);
 
     uint S = uint(max(uSampleCount, 1));
     float invTotal = 1.0 / float(PIXELS_PER_TILE * S);
