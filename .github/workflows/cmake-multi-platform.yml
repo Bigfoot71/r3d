@@ -125,12 +125,10 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ^
             -DCMAKE_C_COMPILER_LAUNCHER=ccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ^
+            -DCMAKE_CXX_FLAGS_INIT="/Brepro /Zc:inline" ^
+            -DCMAKE_C_FLAGS_INIT="/Brepro /Zc:inline" ^
             -DBUILD_SHARED_LIBS=OFF ^
             -DASSIMP_INSTALL_PDB=OFF ^
-            -DCMAKE_CXX_FLAGS_RELEASE="/O2 /Ob2 /DNDEBUG" ^
-            -DCMAKE_C_FLAGS_RELEASE="/O2 /Ob2 /DNDEBUG" ^
-            -DCMAKE_STATIC_LINKER_FLAGS_RELEASE="" ^
-            -DCMAKE_SHARED_LINKER_FLAGS_RELEASE="" ^
             -DR3D_RAYLIB_VENDORED=ON ^
             -DR3D_ASSIMP_VENDORED=ON ^
             -DR3D_BUILD_EXAMPLES=ON ^
