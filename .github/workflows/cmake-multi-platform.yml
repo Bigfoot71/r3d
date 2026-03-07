@@ -185,6 +185,12 @@ jobs:
         working-directory: build
         run: ctest --build-config ${{ matrix.build_type }}
 
+      - name: Inspect assimp.lib
+        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
+        shell: cmd
+        run: |
+          dumpbin /headers build\lib\assimp-vc143-mt.lib | findstr /i "debug pdb Z7 Zi section size"
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
