@@ -125,13 +125,14 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ^
             -DCMAKE_C_COMPILER_LAUNCHER=ccache ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache ^
+            -DCMAKE_C_FLAGS_INIT="/Brepro" ^
+            -DCMAKE_CXX_FLAGS_INIT="/Brepro" ^
             -DBUILD_SHARED_LIBS=OFF ^
             -DASSIMP_INSTALL_PDB=OFF ^
             -DR3D_RAYLIB_VENDORED=ON ^
             -DR3D_ASSIMP_VENDORED=ON ^
             -DR3D_BUILD_EXAMPLES=ON ^
-            -DR3D_BUILD_DOCS=OFF ^
-            -DCMAKE_VERBOSE_MAKEFILE=ON
+            -DR3D_BUILD_DOCS=OFF
 
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
@@ -158,7 +159,7 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake --build build --config ${{ matrix.build_type }} --parallel 2>&1 | findstr /i "assimp.*cl "
+          cmake --build build --config ${{ matrix.build_type }} --parallel
 
       - name: Build (Linux)
         if: runner.os == 'Linux'
@@ -184,13 +185,6 @@ jobs:
         if: runner.os == 'Linux'
         working-directory: build
         run: ctest --build-config ${{ matrix.build_type }}
-
-      - name: Inspect assimp.lib
-        if: runner.os == 'Windows' && matrix.c_compiler == 'cl'
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          dumpbin /headers build\lib\assimp-vc143-mt.lib | findstr /c:".debug" | find /c ".debug"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
