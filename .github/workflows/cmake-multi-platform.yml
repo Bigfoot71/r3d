@@ -130,7 +130,8 @@ jobs:
             -DR3D_RAYLIB_VENDORED=ON ^
             -DR3D_ASSIMP_VENDORED=ON ^
             -DR3D_BUILD_EXAMPLES=ON ^
-            -DR3D_BUILD_DOCS=OFF
+            -DR3D_BUILD_DOCS=OFF ^
+            -DCMAKE_VERBOSE_MAKEFILE=ON
 
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
@@ -157,7 +158,7 @@ jobs:
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake --build build --config ${{ matrix.build_type }} --parallel
+          cmake --build build --config ${{ matrix.build_type }} --parallel 2>&1 | findstr /i "assimp.*cl "
 
       - name: Build (Linux)
         if: runner.os == 'Linux'
