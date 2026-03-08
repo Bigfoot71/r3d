@@ -146,7 +146,7 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
 
 bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Material** materials, int* materialCount, r3d_importer_texture_cache_t* textureCache)
 {
-    if (!materials || !materialCount || !importer || !textureCache || !r3d_importer_is_valid(importer)) {
+    if (!materials || !materialCount || !importer || !r3d_importer_is_valid(importer)) {
         R3D_TRACELOG(LOG_ERROR, "Invalid parameters for material loading");
         return false;
     }

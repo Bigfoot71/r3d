@@ -371,7 +371,11 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
     TextureFilter filter)
 {
     if (!importer || !r3d_importer_is_valid(importer)) {
-        R3D_TRACELOG(LOG_ERROR, "Invalid importer for texture loading");
+        R3D_TRACELOG(LOG_WARNING, "Invalid importer for texture loading");
+        return NULL;
+    }
+
+    if (r3d_importer_get_texture_count(importer) <= 0) {
         return NULL;
     }
 

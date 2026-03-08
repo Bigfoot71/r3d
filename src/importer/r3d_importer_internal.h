@@ -119,7 +119,8 @@ bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model);
 bool r3d_importer_load_skeleton(const R3D_Importer* importer, R3D_Skeleton* skeleton);
 
 /**
- * Load all materials from the importer into the model
+ * Load all materials from the importer into the material array
+ * The textureCache can be NULL, detault textures will be used
  * Returns true on success, false on failure
  */
 bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Material** materials, int* materialCount, r3d_importer_texture_cache_t* textureCache);

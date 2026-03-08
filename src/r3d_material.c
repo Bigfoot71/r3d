@@ -87,7 +87,10 @@ R3D_Material* R3D_LoadMaterialsFromImporter(const R3D_Importer* importer, int* m
 
     r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
         importer, R3D.colorSpace, R3D.textureFilter);
-    if (textureCache == NULL) return NULL;
+
+    //if (textureCache == NULL) {
+    //    R3D_TRACELOG(LOG_INFO, "The material will not have textures");
+    //}
 
     if (!r3d_importer_load_materials(importer, &materials, materialCount, textureCache)) {
         r3d_importer_unload_texture_cache(textureCache, true);

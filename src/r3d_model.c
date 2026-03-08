@@ -34,11 +34,12 @@ static bool load_model_components(R3D_Model* model, const R3D_Importer* importer
         return false;
     }
 
-    r3d_importer_texture_cache_t* textureCache = NULL;
-    textureCache = r3d_importer_load_texture_cache(importer, R3D.colorSpace, R3D.textureFilter);
-    if (textureCache == NULL) {
-        return false;
-    }
+    r3d_importer_texture_cache_t* textureCache = r3d_importer_load_texture_cache(
+        importer, R3D.colorSpace, R3D.textureFilter);
+
+    //if (textureCache == NULL) {
+    //    R3D_TRACELOG(LOG_INFO, "The model's materials will not have textures");
+    //}
 
     if (!r3d_importer_load_materials(importer, &model->materials, &model->materialCount, textureCache)) {
         r3d_importer_unload_texture_cache(textureCache, true);
