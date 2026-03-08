@@ -35,6 +35,16 @@
   Add a signed integer indicating render priority in materials, in order to control whether certain objects should be rendered before or after others.
   It should integrate easily with the existing material-based sorting.
 
+* [ ] **Add layer mask support for shadows**
+  Allows rendering an object in the scene without rendering its shadows.
+  Or rendering only the object's shadows without rendering the object itself, using the camera layer mask.
+
+* [ ] **Add shadow opacity parameter**
+  Allows controlling the transparency of shadows relative to the light.
+
+* [ ] **Add specular parameter in the ORM map**
+  Allows controlling specularity per material (in relation to metalness) instead of only through the lights.
+
 ## **Ideas (Not Planned Yet)**
 
 * [ ] Think about introducing a dedicated `R3D_Camera` that handles `cullMask` per camera (instead of using global state) and manages `near/far` parameters directly, removing the last dependency on `rlgl`.
