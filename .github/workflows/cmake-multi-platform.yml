@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         build_type: [Release]
         c_compiler: [gcc, clang, cl]
         include:
@@ -52,10 +52,18 @@ jobs:
           - os: ubuntu-latest
             c_compiler: clang
             cpp_compiler: clang++
+          - os: macos-latest
+            c_compiler: gcc
+            cpp_compiler: g++
+          - os: macos-latest
+            c_compiler: clang
+            cpp_compiler: clang++
         exclude:
           - os: windows-latest
             c_compiler: clang
           - os: ubuntu-latest
+            c_compiler: cl
+          - os: macos-latest
             c_compiler: cl
 
     steps:
@@ -134,8 +142,8 @@ jobs:
             -DR3D_BUILD_EXAMPLES=ON ^
             -DR3D_BUILD_DOCS=OFF
 
-      - name: Configure CMake (Linux)
-        if: runner.os == 'Linux'
+      - name: Configure CMake (Linux/macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: |
           cmake -B build -G "Ninja" \
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
@@ -161,8 +169,8 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           cmake --build build --config ${{ matrix.build_type }} --parallel
 
-      - name: Build (Linux)
-        if: runner.os == 'Linux'
+      - name: Build (Linux/macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         run: cmake --build build --config ${{ matrix.build_type }} --parallel
 
       - name: Print ccache statistics
@@ -181,8 +189,8 @@ jobs:
         working-directory: build
         run: ctest --build-config ${{ matrix.build_type }}
 
-      - name: Run tests (Linux)
-        if: runner.os == 'Linux'
+      - name: Run tests (Linux/macOS)
+        if: runner.os == 'Linux' || runner.os == 'macOS'
         working-directory: build
         run: ctest --build-config ${{ matrix.build_type }}
 
