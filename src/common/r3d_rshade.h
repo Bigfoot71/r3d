@@ -102,6 +102,18 @@ static inline GLenum r3d_rshade_get_sampler_target(const char* type)
     return 0;
 }
 
+/* Returns the std140 alignment requirement for a given type size */
+static inline int r3d_rshade_get_std140_alignment(int size)
+{
+    size--;
+    size |= size >> 1;
+    size |= size >> 2;
+    size |= size >> 4;
+    size |= size >> 8;
+    size |= size >> 16;
+    return size + 1;
+}
+
 /* Skip to next semicolon and advance past it */
 static inline void r3d_rshade_skip_to_semicolon(const char** ptr)
 {
@@ -254,7 +266,7 @@ static inline bool r3d_rshade_parse_uniform(const char** ptr,
 {
     char type[R3D_RSHADE_MAX_VAR_TYPE_LENGTH];
     char name[R3D_RSHADE_MAX_VAR_NAME_LENGTH];
-    
+
     if (!r3d_rshade_parse_declaration(ptr, type, name)) {
         return false;
     }
@@ -276,9 +288,10 @@ static inline bool r3d_rshade_parse_uniform(const char** ptr,
     // It's a uniform value, add to UBO with std140 alignment
     int size = r3d_rshade_get_type_size(type);
     if (size > 0 && *uniformCount < maxUniforms) {
-        int alignment = (size >= 16) ? 16 : size;
+        int size = r3d_rshade_get_type_size(type);
+        int alignment = r3d_rshade_get_std140_alignment(size);
         *currentOffset = r3d_align_offset(*currentOffset, alignment);
-        
+
         r3d_rshade_uniform_t* u = &uniforms->entries[*uniformCount];
         strncpy(u->name, name, R3D_RSHADE_MAX_VAR_NAME_LENGTH - 1);
         u->name[R3D_RSHADE_MAX_VAR_NAME_LENGTH - 1] = '\0';
@@ -286,11 +299,11 @@ static inline bool r3d_rshade_parse_uniform(const char** ptr,
         u->type[R3D_RSHADE_MAX_VAR_TYPE_LENGTH - 1] = '\0';
         u->offset = *currentOffset;
         u->size = size;
-        
+
         (*uniformCount)++;
         *currentOffset += size;
     }
-    
+
     return true;
 }
 
