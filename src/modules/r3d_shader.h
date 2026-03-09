@@ -957,7 +957,6 @@ typedef struct {
     r3d_shader_uniform_vec2_t uTexCoordOffset;
     r3d_shader_uniform_vec2_t uTexCoordScale;
     r3d_shader_uniform_int_t uInstancing;
-    r3d_shader_uniform_int_t uSkinning;
     r3d_shader_uniform_sampler_t uAlbedoMap;
     r3d_shader_uniform_sampler_t uNormalMap;
     r3d_shader_uniform_sampler_t uEmissionMap;

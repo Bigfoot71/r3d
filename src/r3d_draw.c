@@ -1159,10 +1159,6 @@ void raster_decal(const r3d_render_call_t* call)
     R3D_SHADER_SET_MAT4_SELECT(scene.decal, shader, uMatModel, group->transform);
     R3D_SHADER_SET_MAT4_SELECT(scene.decal, shader, uMatNormal, matNormal);
 
-    /* --- Skinning is never used for decals --- */
-
-    R3D_SHADER_SET_INT_SELECT(scene.decal, shader, uSkinning, false);
-
     /* --- Set factor material maps --- */
 
     R3D_SHADER_SET_FLOAT_SELECT(scene.decal, shader, uEmissionEnergy, decal->emission.energy);

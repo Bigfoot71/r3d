@@ -52,8 +52,10 @@ uniform vec2 uTexCoordOffset;
 uniform vec2 uTexCoordScale;
 uniform bool uInstancing;
 
+#if !defined(DECAL)
 uniform bool uSkinning;
 uniform int uBillboard;
+#endif // !DECAL
 
 #if defined(PROBE)
 uniform mat4 uMatView;
@@ -177,6 +179,7 @@ void main()
     vec3 localNormal = NORMAL;
     vec3 localTangent = TANGENT.xyz;
 
+#if !defined(DECAL)
     if (uSkinning) {
         mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
         mat3 sMatNormal = mat3(transpose(inverse(sMatModel)));
@@ -184,6 +187,7 @@ void main()
         localNormal = sMatNormal * localNormal;
         localTangent = sMatNormal * localTangent;
     }
+#endif // !DECAL
 
     vec3 finalPosition = vec3(MATRIX_MODEL * vec4(localPosition, 1.0));
     vec3 finalNormal = MATRIX_NORMAL * localNormal;

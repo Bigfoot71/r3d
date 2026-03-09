@@ -1206,7 +1206,6 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
     GET_LOCATION(decal, uTexCoordOffset);
     GET_LOCATION(decal, uTexCoordScale);
     GET_LOCATION(decal, uInstancing);
-    GET_LOCATION(decal, uSkinning);
     GET_LOCATION(decal, uAlphaCutoff);
     GET_LOCATION(decal, uNormalScale);
     GET_LOCATION(decal, uOcclusion);
