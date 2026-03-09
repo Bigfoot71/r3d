@@ -21,7 +21,6 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
-#include "common/r3d_math.h"
 
 // ========================================
 // SHARED CORE STATE
