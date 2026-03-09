@@ -125,6 +125,16 @@ R3DAPI Matrix R3D_GetMatrixProjection(void);
  */
 R3DAPI Matrix R3D_GetMatrixInvProjection(void);
 
+/**
+ * @brief Retrieves the view-projection matrix.
+ *
+ * This matrix represents the transformation from world space to clip space.
+ * It is updated at the last call to 'R3D_Begin'.
+ *
+ * @return The current view-projection matrix.
+ */
+R3DAPI Matrix R3D_GetMatrixViewProjection(void);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif

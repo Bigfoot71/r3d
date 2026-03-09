@@ -90,3 +90,8 @@ Matrix R3D_GetMatrixInvProjection(void)
 {
     return R3D.viewState.invProj;
 }
+
+Matrix R3D_GetMatrixViewProjection(void)
+{
+    return R3D.viewState.viewProj;
+}
