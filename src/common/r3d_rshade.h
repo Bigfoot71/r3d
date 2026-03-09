@@ -288,7 +288,6 @@ static inline bool r3d_rshade_parse_uniform(const char** ptr,
     // It's a uniform value, add to UBO with std140 alignment
     int size = r3d_rshade_get_type_size(type);
     if (size > 0 && *uniformCount < maxUniforms) {
-        int size = r3d_rshade_get_type_size(type);
         int alignment = r3d_rshade_get_std140_alignment(size);
         *currentOffset = r3d_align_offset(*currentOffset, alignment);
 
@@ -452,8 +451,9 @@ static inline void r3d_rshade_init_ubo(r3d_rshade_uniform_buffer_t* uniforms, in
 {
     if (uniforms->entries[0].name[0] == '\0') return;
 
-    // Ensure minimum UBO size of 16 bytes (OpenGL requirement)
-    int uboSize = (currentOffset < 16) ? 16 : currentOffset;
+    int uboSize = r3d_align_offset(currentOffset, 16);
+    if (uboSize < 16) uboSize = 16;
+
     uniforms->bufferSize = uboSize;
     uniforms->dirty = true;
 
