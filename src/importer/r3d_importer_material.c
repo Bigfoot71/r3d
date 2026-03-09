@@ -57,12 +57,18 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
     Texture2D* emissionTex = r3d_importer_get_loaded_texture(textureCache, index, R3D_MAP_EMISSION);
     if (emissionTex) {
         material->emission.texture = *emissionTex;
-        material->emission.energy = 1.0f;
     }
 
     struct aiColor4D emissionColor;
     if (aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_EMISSIVE, &emissionColor) == AI_SUCCESS) {
         material->emission.color = r3d_importer_cast(emissionColor);
+    }
+
+    float emissiveIntensity = 0.0f;
+    if (aiGetMaterialFloat(aiMat, AI_MATKEY_EMISSIVE_INTENSITY, &emissiveIntensity) == AI_SUCCESS) {
+        material->emission.energy = emissiveIntensity;
+    }
+    else if (emissionTex || material->emission.color.r || material->emission.color.g || material->emission.color.b) {
         material->emission.energy = 1.0f;
     }
 
