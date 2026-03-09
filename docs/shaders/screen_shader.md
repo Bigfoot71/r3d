@@ -73,11 +73,20 @@ Screen shaders provide built-in variables for screen-space operations:
 
 | Variable | Type | Description |
 |----------|------|-------------|
+| `CAMERA_POSITION` | `vec3` | Camera position in world space (read-only) |
+| `MATRIX_VIEW` | `mat4` | View matrix (read-only) |
+| `MATRIX_INV_VIEW` | `mat4` | Inverse view matrix (read-only) |
+| `MATRIX_PROJECTION` | `mat4` | Projection matrix (read-only) |
+| `MATRIX_INV_PROJECTION` | `mat4` | Inverse projection matrix (read-only) |
+| `MATRIX_VIEW_PROJECTION` | `mat4` | Combined view-projection matrix (read-only) |
+| `PROJECTION_MODE` | `int` | Projection mode (same as raylib's projection type) (read-only) |
+| `NEAR_PLANE` | `float` | Near clipping plane distance (read-only) |
+| `FAR_PLANE` | `float` | Far clipping plane distance (read-only) |
+| `RESOLUTION` | `vec2` | Screen resolution in pixels (read-only) |
+| `TEXEL_SIZE` | `vec2` | Size of one texel (1.0 / RESOLUTION) (read-only) |
+| `ASPECT` | `float` | Screen aspect ratio (read-only) |
 | `TEXCOORD` | `vec2` | Normalized texture coordinates (0.0 to 1.0) |
 | `PIXCOORD` | `ivec2` | Integer pixel coordinates (0 to resolution-1) |
-| `TEXEL_SIZE` | `vec2` | Size of one texel (1.0 / RESOLUTION) |
-| `RESOLUTION` | `vec2` | Screen resolution in pixels |
-| `ASPECT` | `float` | Screen aspect ratio |
 | `FRAME_INDEX` | `int` | Index incremented at each frame |
 | `TIME` | `float` | Time provided by the raylib's `GetTime()` |
 | `COLOR` | `vec3` | Output color (write to this) |

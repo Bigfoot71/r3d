@@ -27,15 +27,25 @@ uniform sampler2D uDepthTex;
 
 out vec4 FragColor;
 
+/* === Built-In Constants === */
+
+#define CAMERA_POSITION         uView.position
+#define MATRIX_VIEW             uView.view
+#define MATRIX_INV_VIEW         uView.invView
+#define MATRIX_PROJECTION       uView.proj
+#define MATRIX_INV_PROJECTION   uView.invProj
+#define MATRIX_VIEW_PROJECTION  uView.viewProj
+#define PROJECTION_MODE         uView.projMode
+#define NEAR_PLANE              uView.near
+#define FAR_PLANE               uView.far
+#define RESOLUTION              uFrame.screenSize
+#define TEXEL_SIZE              uFrame.texelSize
+#define ASPECT                  uFrame.aspect
+
 /* === Built-In Input Variables === */
 
-vec2 TEXCOORD   = vec2(0.0);
-ivec2 PIXCOORD  = ivec2(0);
-
-vec2 TEXEL_SIZE = vec2(0.0);
-vec2 RESOLUTION = vec2(0.0);
-float ASPECT = 0.0;
-
+vec2 TEXCOORD = vec2(0.0);
+ivec2 PIXCOORD = ivec2(0);
 int FRAME_INDEX = 0;
 float TIME = 0.0;
 
@@ -52,7 +62,7 @@ vec3 FetchColor(ivec2 pixCoord)
 
 vec3 SampleColor(vec2 texCoord)
 {
-    return texture(uSceneTex, texCoord).rgb;
+    return textureLod(uSceneTex, texCoord, 0.0).rgb;
 }
 
 float FetchDepth(ivec2 pixCoord)
@@ -62,7 +72,7 @@ float FetchDepth(ivec2 pixCoord)
 
 float SampleDepth(vec2 texCoord)
 {
-    return texture(uDepthTex, texCoord).r;
+    return textureLod(uDepthTex, texCoord, 0.0).r;
 }
 
 float FetchDepth01(ivec2 pixCoord)
@@ -73,7 +83,7 @@ float FetchDepth01(ivec2 pixCoord)
 
 float SampleDepth01(vec2 texCoord)
 {
-    float z = texture(uDepthTex, texCoord).r;
+    float z = textureLod(uDepthTex, texCoord, 0.0).r;
     return clamp((z - uView.near) / (uView.far - uView.near), 0.0, 1.0);
 }
 
@@ -105,11 +115,6 @@ void main()
 {
     TEXCOORD = vTexCoord;
     PIXCOORD = ivec2(gl_FragCoord.xy);
-
-    TEXEL_SIZE = uFrame.texelSize;
-    RESOLUTION = uFrame.screenSize;
-    ASPECT = uView.aspect;
-
     FRAME_INDEX = uFrame.index;
     TIME = uFrame.time;
 
