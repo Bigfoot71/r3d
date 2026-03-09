@@ -21,6 +21,7 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
+#include "common/r3d_math.h"
 
 // ========================================
 // SHARED CORE STATE
@@ -45,6 +46,12 @@ bool R3D_Init(int resWidth, int resHeight)
 
     R3D.environment = R3D_ENVIRONMENT_BASE;
     R3D.material = R3D_MATERIAL_BASE;
+
+    R3D.viewState.view = R3D_MATRIX_IDENTITY;
+    R3D.viewState.invView = R3D_MATRIX_IDENTITY;
+    R3D.viewState.proj = R3D_MATRIX_IDENTITY;
+    R3D.viewState.invProj = R3D_MATRIX_IDENTITY;
+    R3D.viewState.viewProj = R3D_MATRIX_IDENTITY;
 
     R3D.aaMode = R3D_ANTI_ALIASING_MODE_NONE;
     R3D.aaPreset = R3D_ANTI_ALIASING_PRESET_MEDIUM;
