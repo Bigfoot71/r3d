@@ -284,6 +284,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_screen_shader.c"
     "${R3D_ROOT_PATH}/src/r3d_sky_shader.c"
     "${R3D_ROOT_PATH}/src/r3d_material.c"
+    "${R3D_ROOT_PATH}/src/r3d_texture.c"
     "${R3D_ROOT_PATH}/src/r3d_mesh.c"
     "${R3D_ROOT_PATH}/src/r3d_mesh_data.c"
     "${R3D_ROOT_PATH}/src/r3d_model.c"
