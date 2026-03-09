@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_texture.h>
 
+#include "./modules/r3d_texture.h"
 #include "./common/r3d_image.h"
 #include "./r3d_core_state.h"
 
@@ -95,4 +96,13 @@ Texture2D R3D_LoadTextureFromMemoryEx(const char* fileType, const void* fileData
     UnloadImage(image);
 
     return texture;
+}
+
+void R3D_UnloadTexture(Texture2D texture)
+{
+    if (texture.id == 0 || r3d_texture_is_default(texture.id)) {
+        return;
+    }
+
+    UnloadTexture(texture);
 }

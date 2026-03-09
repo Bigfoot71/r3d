@@ -107,7 +107,8 @@ R3DAPI Texture2D R3D_LoadTextureFromMemoryEx(const char* fileType, const void* f
 /**
  * @brief Unloads a texture.
  *
- * This function is equivalent to raylib's `UnloadTexture` and is provided for consistency.
+ * This function calls raylib's `UnloadTexture` internally, while ensuring that
+ * the provided texture is not an internal r3d texture.
  *
  * @param texture The texture to unload.
  */
