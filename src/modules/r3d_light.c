@@ -283,10 +283,7 @@ static void update_light_dir_matrix(r3d_light_t* light, r3d_camera_t camera)
 {
     assert(light->type == R3D_LIGHT_DIR);
 
-    // REVIEW: When the FOV and aspect ratio change, this can create slight variations in the shadows.
-    //         Should we fix them to a wide constant or something else?
-
-    float camNear = 0.05f;
+    float camNear = light->range / 1000.0f;
     float camFar = light->range;
     float camFovy = (float)camera.fovy;
     float camAspect = (float)camera.aspect;
@@ -299,7 +296,8 @@ static void update_light_dir_matrix(r3d_light_t* light, r3d_camera_t camera)
     Vector3 frustumCenter = Vector3Add(camera.position, Vector3Scale(forward, (camNear + camFar) * 0.5f));
 
     Vector3 lightDir = Vector3Normalize(light->direction);
-    Vector3 up = fabsf(lightDir.y) > 0.999f ? (Vector3){0,0,1} : (Vector3){0,1,0};
+    float ax = fabsf(lightDir.x), ay = fabsf(lightDir.y), az = fabsf(lightDir.z);
+    Vector3 up = (ax <= ay && ax <= az) ? (Vector3){1,0,0} : (ay <= az) ? (Vector3){0,1,0} : (Vector3){0,0,1};
     Vector3 lightRight = Vector3Normalize(Vector3CrossProduct(up, lightDir));
     Vector3 lightUp = Vector3CrossProduct(lightDir, lightRight);
 
