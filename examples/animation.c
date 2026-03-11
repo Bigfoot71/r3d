@@ -39,7 +39,6 @@ int main(void)
     R3D_AnimationPlayer modelPlayer = R3D_LoadAnimationPlayer(model.skeleton, modelAnims);
 
     // Setup animation playing
-    R3D_SetAnimationWeight(&modelPlayer, 0, 1.0f);
     R3D_SetAnimationLoop(&modelPlayer, 0, true);
     R3D_PlayAnimation(&modelPlayer, 0);
 
