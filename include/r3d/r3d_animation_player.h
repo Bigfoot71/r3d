@@ -238,54 +238,56 @@ R3DAPI void R3D_SetAnimationLoop(R3D_AnimationPlayer* player, int animIndex, boo
  * @param player Animation player.
  * @param dt Delta time in seconds.
  */
-R3DAPI void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt);
+R3DAPI void R3D_AdvanceAnimationTime(R3D_AnimationPlayer* player, float dt);
 
 /**
- * @brief Calculates the current blended local pose of the skeleton.
+ * @brief Computes the local-space transform of each bone for the current animation.
  *
- * Interpolates keyframes and blends all active animations according to their weights,
- * but only computes the local transforms of each bone relative to its parent.
- * Does NOT advance animation time.
+ * Samples and interpolates the current animation keyframes at the current playback time,
+ * and stores the resulting bone transforms in local space into @p player->localPose.
+ * Does NOT advance animation time, and does NOT compute model-space transforms.
  *
  * @param player Animation player whose local pose will be updated.
  */
-R3DAPI void R3D_CalculateAnimationPlayerLocalPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_ComputeAnimationLocalPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Calculates the current blended model (global) pose of the skeleton.
+ * @brief Computes the model-space transform of each bone from the current local pose.
  *
- * Interpolates keyframes and blends all active animations according to their weights,
- * but only computes the global transforms of each bone in model space.
- * This assumes the local pose is already up-to-date.
- * Does NOT advance animation time.
+ * Traverses the bone hierarchy and accumulates local transforms into model-space matrices,
+ * stored into @p player->modelPose. This assumes @p player->localPose is already up-to-date.
+ * Does NOT sample animation keyframes, and does NOT advance animation time.
  *
  * @param player Animation player whose model pose will be updated.
  */
-R3DAPI void R3D_CalculateAnimationPlayerModelPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_ComputeAnimationModelPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Calculates the current blended skeleton pose (local and model).
+ * @brief Computes both the local and model-space transforms for the current animation.
  *
- * Interpolates keyframes and blends all active animations according to their weights,
- * then computes both local and model transforms for the entire skeleton.
+ * Equivalent to calling R3D_ComputeAnimationLocalPose() followed by R3D_ComputeAnimationModelPose().
  * Does NOT advance animation time.
  *
  * @param player Animation player whose local and model poses will be updated.
  */
-R3DAPI void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_ComputeAnimationPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Calculates the skinning matrices and uploads them to the GPU.
+ * @brief Computes the final skinning matrices and uploads them to the GPU.
  *
- * @param player Animation player.
+ * Multiplies each bone's model-space transform by its inverse bind matrix to produce
+ * the skinning matrices, then uploads them to the GPU skin texture.
+ * This assumes @p player->modelPose is already up-to-date.
+ *
+ * @param player Animation player whose skinning matrices will be uploaded.
  */
-R3DAPI void R3D_UploadAnimationPlayerPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_UploadAnimationPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Updates the animation player: calculates and upload blended pose, then advances time.
+ * @brief Updates the animation player: calculates and upload the current pose pose, then advances time.
  *
- * Equivalent to calling R3D_CalculateAnimationPlayerPose() followed by
- * R3D_UploadAnimationPlayerPose() and R3D_AdvanceAnimationPlayerTime().
+ * Equivalent to calling R3D_ComputeAnimationLocalPose() followed by
+ * R3D_ComputeAnimationModelPose() and R3D_AdvanceAnimationTime().
  *
  * @param player Animation player.
  * @param dt Delta time in seconds.

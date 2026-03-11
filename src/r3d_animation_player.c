@@ -171,7 +171,7 @@ void R3D_SetAnimationLoop(R3D_AnimationPlayer* player, int animIndex, bool loop)
     }
 }
 
-void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt)
+void R3D_AdvanceAnimationTime(R3D_AnimationPlayer* player, float dt)
 {
     int animIndex = player->activeAnimIndex;
     if (!is_anim_index_valid(player, animIndex)) {
@@ -198,19 +198,19 @@ void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt)
     }
 }
 
-void R3D_CalculateAnimationPlayerLocalPose(R3D_AnimationPlayer* player)
+void R3D_ComputeAnimationLocalPose(R3D_AnimationPlayer* player)
 {
     if (is_anim_index_valid(player, player->activeAnimIndex)) compute_local_matrices(player);
     else memcpy(player->localPose, player->skeleton.localBind, player->skeleton.boneCount * sizeof(Matrix));
 }
 
-void R3D_CalculateAnimationPlayerModelPose(R3D_AnimationPlayer* player)
+void R3D_ComputeAnimationModelPose(R3D_AnimationPlayer* player)
 {
     if (is_anim_index_valid(player, player->activeAnimIndex)) r3d_anim_matrices_compute(player);
     else memcpy(player->modelPose, player->skeleton.modelBind, player->skeleton.boneCount * sizeof(Matrix));
 }
 
-void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
+void R3D_ComputeAnimationPose(R3D_AnimationPlayer* player)
 {
     if (is_anim_index_valid(player, player->activeAnimIndex)) {
         compute_local_matrices(player);
@@ -222,7 +222,7 @@ void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player)
     }
 }
 
-void R3D_UploadAnimationPlayerPose(R3D_AnimationPlayer* player)
+void R3D_UploadAnimationPose(R3D_AnimationPlayer* player)
 {
     for (int i = 0; i < player->skeleton.boneCount; i++) {
         player->skinBuffer[i] = MatrixMultiply(player->skeleton.invBind[i], player->modelPose[i]);
@@ -236,10 +236,10 @@ void R3D_UploadAnimationPlayerPose(R3D_AnimationPlayer* player)
 
 void R3D_UpdateAnimationPlayer(R3D_AnimationPlayer* player, float dt)
 {
-    R3D_CalculateAnimationPlayerPose(player);
-    R3D_UploadAnimationPlayerPose(player);
+    R3D_ComputeAnimationPose(player);
+    R3D_UploadAnimationPose(player);
 
-    R3D_AdvanceAnimationPlayerTime(player, dt);
+    R3D_AdvanceAnimationTime(player, dt);
 }
 
 // ========================================
