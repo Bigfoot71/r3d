@@ -85,7 +85,7 @@ typedef struct R3D_AnimationPlayer {
     R3D_AnimationLib animLib;   ///< Animation library providing the available animations.
     R3D_Skeleton skeleton;      ///< Skeleton to animate.
 
-    R3D_AnimationState* states; ///< Array of active animation states, one per animation.
+    R3D_AnimationState* states; ///< Array of animation states, one per animation.
     int activeAnimIndex;        ///< Index of the current animation.
 
     Matrix* localPose;          ///< Array of bone transforms representing the blended local pose.
