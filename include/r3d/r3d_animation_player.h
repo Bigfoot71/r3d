@@ -63,18 +63,17 @@ typedef void (*R3D_AnimationEventCallback)(
 /**
  * @brief Describes the playback state of a single animation within a player.
  *
- * Tracks the current time, blending weight, speed, play/pause state, and looping behavior.
+ * Tracks the current time, speed, play/pause state, and looping behavior.
  */
 typedef struct R3D_AnimationState {
     float currentTime;  ///< Current playback time in animation ticks.
-    float weight;       ///< Blending weight; any positive value is valid.
     float speed;        ///< Playback speed; can be negative for reverse playback.
     bool play;          ///< Whether the animation is currently playing.
     bool loop;          ///< True to enable looping playback.
 } R3D_AnimationState;
 
 /**
- * @brief Manages playback and blending of multiple animations for a skeleton.
+ * @brief Manages playback of multiple animations for a skeleton.
  *
  * The animation player updates animation states, interpolates keyframes,
  * blends animations according to their weights, and stores the resulting
@@ -83,9 +82,11 @@ typedef struct R3D_AnimationState {
  */
 typedef struct R3D_AnimationPlayer {
 
-    R3D_AnimationState* states; ///< Array of active animation states, one per animation.
     R3D_AnimationLib animLib;   ///< Animation library providing the available animations.
     R3D_Skeleton skeleton;      ///< Skeleton to animate.
+
+    R3D_AnimationState* states; ///< Array of animation states, one per animation.
+    int activeAnimIndex;        ///< Index of the current animation.
 
     Matrix* localPose;          ///< Array of bone transforms representing the blended local pose.
     Matrix* modelPose;          ///< Array of bone transforms in model space, obtained by hierarchical accumulation.
@@ -132,13 +133,12 @@ R3DAPI void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer player);
 R3DAPI bool R3D_IsAnimationPlayerValid(R3D_AnimationPlayer player);
 
 /**
- * @brief Returns whether a given animation is currently playing.
+ * @brief Returns whether an animation is currently playing.
  *
  * @param player Animation player.
- * @param animIndex Index of the animation.
  * @return true if playing, false otherwise.
  */
-R3DAPI bool R3D_IsAnimationPlaying(R3D_AnimationPlayer player, int animIndex);
+R3DAPI bool R3D_IsAnimationPlaying(R3D_AnimationPlayer player);
 
 /**
  * @brief Starts playback of the specified animation.
@@ -149,20 +149,20 @@ R3DAPI bool R3D_IsAnimationPlaying(R3D_AnimationPlayer player, int animIndex);
 R3DAPI void R3D_PlayAnimation(R3D_AnimationPlayer* player, int animIndex);
 
 /**
- * @brief Pauses the specified animation.
+ * @brief Pauses the current animation.
  *
  * @param player Animation player.
  * @param animIndex Index of the animation to pause.
  */
-R3DAPI void R3D_PauseAnimation(R3D_AnimationPlayer* player, int animIndex);
+R3DAPI void R3D_PauseAnimation(R3D_AnimationPlayer* player);
 
 /**
- * @brief Stops the specified animation and clamps its time.
+ * @brief Stops the current animation and clamps its time.
  *
  * @param player Animation player.
  * @param animIndex Index of the animation to stop.
  */
-R3DAPI void R3D_StopAnimation(R3D_AnimationPlayer* player, int animIndex);
+R3DAPI void R3D_StopAnimation(R3D_AnimationPlayer* player);
 
 /**
  * @brief Rewinds the animation to the start or end depending on playback direction.
@@ -170,7 +170,7 @@ R3DAPI void R3D_StopAnimation(R3D_AnimationPlayer* player, int animIndex);
  * @param player Animation player.
  * @param animIndex Index of the animation to rewind.
  */
-R3DAPI void R3D_RewindAnimation(R3D_AnimationPlayer* player, int animIndex);
+R3DAPI void R3D_RewindAnimation(R3D_AnimationPlayer* player);
 
 /**
  * @brief Gets the current playback time of an animation.
@@ -189,24 +189,6 @@ R3DAPI float R3D_GetAnimationTime(R3D_AnimationPlayer player, int animIndex);
  * @param time Time in animation ticks.
  */
 R3DAPI void R3D_SetAnimationTime(R3D_AnimationPlayer* player, int animIndex, float time);
-
-/**
- * @brief Gets the blending weight of an animation.
- *
- * @param player Animation player.
- * @param animIndex Index of the animation.
- * @return Current weight.
- */
-R3DAPI float R3D_GetAnimationWeight(R3D_AnimationPlayer player, int animIndex);
-
-/**
- * @brief Sets the blending weight of an animation.
- *
- * @param player Animation player.
- * @param animIndex Index of the animation.
- * @param weight Blending weight to apply.
- */
-R3DAPI void R3D_SetAnimationWeight(R3D_AnimationPlayer* player, int animIndex, float weight);
 
 /**
  * @brief Gets the playback speed of an animation.
@@ -248,62 +230,64 @@ R3DAPI bool R3D_GetAnimationLoop(R3D_AnimationPlayer player, int animIndex);
 R3DAPI void R3D_SetAnimationLoop(R3D_AnimationPlayer* player, int animIndex, bool loop);
 
 /**
- * @brief Advances the time of all active animations.
+ * @brief Advances the time of the current animation.
  *
- * Updates all internal animation timers based on speed and delta time.
+ * Updates animation timer based on speed and delta time.
  * Does NOT recalculate the skeleton pose.
  *
  * @param player Animation player.
  * @param dt Delta time in seconds.
  */
-R3DAPI void R3D_AdvanceAnimationPlayerTime(R3D_AnimationPlayer* player, float dt);
+R3DAPI void R3D_AdvanceAnimationTime(R3D_AnimationPlayer* player, float dt);
 
 /**
- * @brief Calculates the current blended local pose of the skeleton.
+ * @brief Computes the local-space transform of each bone for the current animation.
  *
- * Interpolates keyframes and blends all active animations according to their weights,
- * but only computes the local transforms of each bone relative to its parent.
- * Does NOT advance animation time.
+ * Samples and interpolates the current animation keyframes at the current playback time,
+ * and stores the resulting bone transforms in local space into @p player->localPose.
+ * Does NOT advance animation time, and does NOT compute model-space transforms.
  *
  * @param player Animation player whose local pose will be updated.
  */
-R3DAPI void R3D_CalculateAnimationPlayerLocalPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_ComputeAnimationLocalPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Calculates the current blended model (global) pose of the skeleton.
+ * @brief Computes the model-space transform of each bone from the current local pose.
  *
- * Interpolates keyframes and blends all active animations according to their weights,
- * but only computes the global transforms of each bone in model space.
- * This assumes the local pose is already up-to-date.
- * Does NOT advance animation time.
+ * Traverses the bone hierarchy and accumulates local transforms into model-space matrices,
+ * stored into @p player->modelPose. This assumes @p player->localPose is already up-to-date.
+ * Does NOT sample animation keyframes, and does NOT advance animation time.
  *
  * @param player Animation player whose model pose will be updated.
  */
-R3DAPI void R3D_CalculateAnimationPlayerModelPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_ComputeAnimationModelPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Calculates the current blended skeleton pose (local and model).
+ * @brief Computes both the local and model-space transforms for the current animation.
  *
- * Interpolates keyframes and blends all active animations according to their weights,
- * then computes both local and model transforms for the entire skeleton.
+ * Equivalent to calling R3D_ComputeAnimationLocalPose() followed by R3D_ComputeAnimationModelPose().
  * Does NOT advance animation time.
  *
  * @param player Animation player whose local and model poses will be updated.
  */
-R3DAPI void R3D_CalculateAnimationPlayerPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_ComputeAnimationPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Calculates the skinning matrices and uploads them to the GPU.
+ * @brief Computes the final skinning matrices and uploads them to the GPU.
  *
- * @param player Animation player.
+ * Multiplies each bone's model-space transform by its inverse bind matrix to produce
+ * the skinning matrices, then uploads them to the GPU skin texture.
+ * This assumes @p player->modelPose is already up-to-date.
+ *
+ * @param player Animation player whose skinning matrices will be uploaded.
  */
-R3DAPI void R3D_UploadAnimationPlayerPose(R3D_AnimationPlayer* player);
+R3DAPI void R3D_UploadAnimationPose(R3D_AnimationPlayer* player);
 
 /**
- * @brief Updates the animation player: calculates and upload blended pose, then advances time.
+ * @brief Updates the animation player: calculates and upload the current pose pose, then advances time.
  *
- * Equivalent to calling R3D_CalculateAnimationPlayerPose() followed by
- * R3D_UploadAnimationPlayerPose() and R3D_AdvanceAnimationPlayerTime().
+ * Equivalent to calling R3D_ComputeAnimationLocalPose() followed by
+ * R3D_ComputeAnimationModelPose() and R3D_AdvanceAnimationTime().
  *
  * @param player Animation player.
  * @param dt Delta time in seconds.

@@ -1163,14 +1163,14 @@ static void atree_update(R3D_AnimationTree* atree, float elapsedTime,
     }
 
     r3d_anim_matrices_compute(player);
-    R3D_UploadAnimationPlayerPose(player);
+    R3D_UploadAnimationPose(player);
     return;
 
 failure:
     R3D_TRACELOG(LOG_ERROR, "Animation tree failed");
     memcpy(player->localPose, player->skeleton.localBind, boneCount * sizeof(Matrix));
     memcpy(player->modelPose, player->skeleton.modelBind, boneCount * sizeof(Matrix));
-    R3D_UploadAnimationPlayerPose(player);
+    R3D_UploadAnimationPose(player);
 }
 
 static void atree_travel(r3d_animtree_stm_t* node, R3D_AnimationStmIndex targetIdx)
