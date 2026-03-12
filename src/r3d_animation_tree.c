@@ -919,36 +919,36 @@ static bool anode_eval(const R3D_AnimationTree* atree, R3D_AnimationTreeNode ano
 // INTERNAL ANIMATION TREE FUNCTIONS
 // ========================================
 
-static bool atree_blend2_add(r3d_animtree_blend2_t* parent, R3D_AnimationTreeNode anode, int in_idx)
+static bool atree_blend2_add(r3d_animtree_blend2_t* parent, R3D_AnimationTreeNode anode, int inIdx)
 {
-    switch(in_idx) {
+    switch(inIdx) {
     case 0: parent->inMain = anode; return true;
     case 1: parent->inBlend = anode; return true;
     default:
-        R3D_TRACELOG(LOG_WARNING, "Failed to add node into blend2: invalid input index %d", in_idx);
+        R3D_TRACELOG(LOG_WARNING, "Failed to add node into blend2: invalid input index %d", inIdx);
         break;
     };
     return false;
 }
 
-static bool atree_add2_add(r3d_animtree_add2_t* parent, R3D_AnimationTreeNode anode, int in_idx)
+static bool atree_add2_add(r3d_animtree_add2_t* parent, R3D_AnimationTreeNode anode, int inIdx)
 {
-    switch(in_idx) {
+    switch(inIdx) {
     case 0: parent->inMain = anode; return true;
     case 1: parent->inAdd = anode; return true;
     default:
-        R3D_TRACELOG(LOG_WARNING, "Failed to add node into add2: invalid input index %d", in_idx);
+        R3D_TRACELOG(LOG_WARNING, "Failed to add node into add2: invalid input index %d", inIdx);
     };
     return false;
 }
 
-static bool atree_switch_add(r3d_animtree_switch_t* parent, R3D_AnimationTreeNode anode, int in_idx)
+static bool atree_switch_add(r3d_animtree_switch_t* parent, R3D_AnimationTreeNode anode, int inIdx)
 {
-    if (in_idx < parent->inCount) {
-        parent->inList[in_idx] = anode;
+    if (inIdx < parent->inCount) {
+        parent->inList[inIdx] = anode;
         return true;
     }
-    R3D_TRACELOG(LOG_WARNING, "Failed to add node into switch: invalid input index %d", in_idx);
+    R3D_TRACELOG(LOG_WARNING, "Failed to add node into switch: invalid input index %d", inIdx);
     return false;
 }
 
