@@ -1,30 +1,5 @@
 # R3D Roadmap
 
-## **v0.9**
-
-* [x] **Refactor internal `r3d_draw` module**
-  Centralize all drawing-related functionality and drawable objects, including VAO management, which is currently scattered.
-
-* [x] **Redesign internal shader macro system**
-  ~~Rethink the current macro-based approach for managing shaders to improve clarity and maintainability.~~
-  The subject involves much more complexity than expected, it will probably remain as it is, the naming has at least been made clearer.
-
-* [x] **Explore alternative SSGI approaches**
-  The current SSIL-VB used as a cheap SSGI solution is far from ideal and difficult to tune.
-  Investigating more stable and production-ready SSGI techniques would be beneficial.
-
-* [x] **Add more anti-aliasing options**
-  Provide higher-quality anti-aliasing solutions in addition to FXAA.
-  SMAA appears to be the most suitable next step. Techniques such as TAA currently require
-  deeper architectural changes...
-
-* [x] **Material loading/import helpers**
-  Similar to existing skeleton and animation loading utilities, it would be useful to provide
-  helper functions to import materials from files when needed.
-
-* [x] **Review skybox generation**
-  Improve parameter structure and naming, add an optional debanding setting, and support shaders for skyboxes.
-
 ## **v0.10**
 
 * [ ] **Hi-Z tracing (SSR/SSGI)**
