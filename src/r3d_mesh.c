@@ -217,18 +217,36 @@ R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices)
     return mesh;
 }
 
-R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices)
+R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices)
 {
     R3D_Mesh mesh = {0};
 
-    R3D_MeshData data = R3D_GenMeshDataCylinder(bottomRadius, topRadius, height, slices);
+    R3D_MeshData data = R3D_GenMeshDataCylinder(radius, height, slices);
+    if (!R3D_IsMeshDataValid(data)) return mesh;
+
+    BoundingBox aabb = {
+        {-radius, -height * 0.5f, -radius},
+        { radius,  height * 0.5f,  radius}
+    };
+
+    mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);
+    R3D_UnloadMeshData(data);
+
+    return mesh;
+}
+
+R3D_Mesh R3D_GenMeshCylinderEx(float bottomRadius, float topRadius, float height, int slices, int stacks, bool bottomCap, bool topCap)
+{
+    R3D_Mesh mesh = {0};
+
+    R3D_MeshData data = R3D_GenMeshDataCylinderEx(bottomRadius, topRadius, height, slices, stacks, bottomCap, topCap);
     if (!R3D_IsMeshDataValid(data)) return mesh;
 
     float radius = MAX(bottomRadius, topRadius);
 
     BoundingBox aabb = {
-        {-radius,   0.0f, -radius},
-        { radius, height,  radius}
+        {-radius, -height * 0.5f, -radius},
+        { radius,  height * 0.5f,  radius}
     };
 
     mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb, R3D_STATIC_MESH);

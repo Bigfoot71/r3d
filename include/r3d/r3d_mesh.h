@@ -198,14 +198,27 @@ R3DAPI R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices);
 
 /**
  * @brief Generate a cylinder mesh.
- * @param bottomRadius Bottom radius.
- * @param topRadius Top radius.
+ * @param radius Radius of the cylinder.
  * @param height Height along Y axis.
  * @param slices Radial subdivisions.
  * @return Mesh ready for rendering.
  * @see R3D_GenMeshDataCylinder
  */
-R3DAPI R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices);
+R3DAPI R3D_Mesh R3D_GenMeshCylinder(float radius, float height, int slices);
+
+/**
+ * @brief Generate a cylinder, cone or truncated cone mesh.
+ * @param bottomRadius Bottom radius.
+ * @param topRadius Top radius.
+ * @param height Height along Y axis.
+ * @param slices Radial subdivisions.
+ * @param stacks Vertical subdivisions.
+ * @param bottomCap Generate bottom cap.
+ * @param topCap Generate top cap.
+ * @return Mesh ready for rendering.
+ * @see R3D_GenMeshDataCylinderEx
+ */
+R3DAPI R3D_Mesh R3D_GenMeshCylinderEx(float bottomRadius, float topRadius, float height, int slices, int stacks, bool bottomCap, bool topCap);
 
 /**
  * @brief Generate a capsule mesh.
