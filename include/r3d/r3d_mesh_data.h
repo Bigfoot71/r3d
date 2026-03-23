@@ -79,16 +79,24 @@ extern "C" {
 #endif
 
 /**
- * @brief Creates an empty mesh data container.
+ * @brief Allocates a mesh data container with the given capacity.
  *
- * Allocates memory for vertex and index buffers. All allocated buffers
- * are zero-initialized.
+ * This function allocates CPU-side buffers for vertices and indices, but does NOT
+ * initialize the mesh with any actual data. The returned R3D_MeshData has:
  *
- * @param vertexCount Number of vertices to allocate. Must be non-zero.
- * @param indexCount Number of indices to allocate. May be zero.
- *                   If zero, no index buffer is allocated.
+ * - vertexCapacity and indexCapacity set to the requested sizes
+ * - vertexCount and indexCount set to 0
  *
- * @return A new R3D_MeshData instance with allocated memory.
+ * You must manually set vertexCount/indexCount after filling the buffers,
+ * or use helper functions like R3D_AppendMeshData() to populate the mesh.
+ *
+ * All allocated memory is zero-initialized.
+ *
+ * @param vertexCount Number of vertices to allocate (capacity). Must be > 0.
+ * @param indexCount Number of indices to allocate (capacity). May be 0.
+ *                   If 0, no index buffer is allocated.
+ *
+ * @return A new R3D_MeshData with allocated buffers and zero element counts.
  */
 R3DAPI R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount);
 
