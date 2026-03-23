@@ -17,7 +17,7 @@ int main(void)
     // Create meshes
     R3D_Mesh plane = R3D_GenMeshPlane(5.0f, 5.0f, 1, 1);
     R3D_Mesh sphere = R3D_GenMeshSphere(0.5f, 64, 64);
-    R3D_Mesh cylinder = R3D_GenMeshCylinder(0.5f, 0.5f, 1, 64);
+    R3D_Mesh cylinder = R3D_GenMeshCylinder(0.5f, 1, 64);
     R3D_Material material = R3D_GetDefaultMaterial();
     material.albedo.color = GRAY;
 
