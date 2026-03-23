@@ -884,7 +884,7 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
 {
     R3D_MeshData meshData = {0};
 
-    if (bottomRadius < 0.0f || topRadius < 0.0f ||  height <= 0.0f || slices < 3 || stacks < 1) {
+    if (bottomRadius < 0.0f || topRadius < 0.0f || height <= 0.0f || slices < 3 || stacks < 1) {
         return meshData;
     }
 
@@ -898,11 +898,11 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
     int ringCount = stacks + 1;
     int ringStride = slices + 1;
     int bodyVertCount = ringCount * ringStride;
-    int capVertCount = (hasBottom ? 1 + slices : 0) + (hasTop   ? 1 + slices : 0);
+    int capVertCount = (hasBottom ? 1 + slices : 0) + (hasTop ? 1 + slices : 0);
     int totalVertCount = bodyVertCount + capVertCount;
 
     int bodyIndexCount = stacks * slices * 6;
-    int capIndexCount = (hasBottom ? slices * 3 : 0) + (hasTop   ? slices * 3 : 0);
+    int capIndexCount = (hasBottom ? slices * 3 : 0) + (hasTop ? slices * 3 : 0);
     int totalIndexCount = bodyIndexCount + capIndexCount;
 
     if (!alloc_mesh(&meshData, totalVertCount, totalIndexCount)) {
