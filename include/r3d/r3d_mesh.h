@@ -202,10 +202,11 @@ R3DAPI R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices);
  * @param topRadius Top radius.
  * @param height Height along Y axis.
  * @param slices Radial subdivisions.
+ * @param stacks Vertical subdivisions.
  * @return Mesh ready for rendering.
  * @see R3D_GenMeshDataCylinder
  */
-R3DAPI R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices);
+R3DAPI R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices, int stacks);
 
 /**
  * @brief Generate a capsule mesh.

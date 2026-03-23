@@ -217,11 +217,11 @@ R3D_Mesh R3D_GenMeshHemiSphere(float radius, int rings, int slices)
     return mesh;
 }
 
-R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices)
+R3D_Mesh R3D_GenMeshCylinder(float bottomRadius, float topRadius, float height, int slices, int stacks)
 {
     R3D_Mesh mesh = {0};
 
-    R3D_MeshData data = R3D_GenMeshDataCylinder(bottomRadius, topRadius, height, slices);
+    R3D_MeshData data = R3D_GenMeshDataCylinder(bottomRadius, topRadius, height, slices, stacks);
     if (!R3D_IsMeshDataValid(data)) return mesh;
 
     float radius = MAX(bottomRadius, topRadius);

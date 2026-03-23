@@ -875,11 +875,11 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
     return meshData;
 }
 
-R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices)
+R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices, int stacks)
 {
     R3D_MeshData meshData = {0};
 
-    if (bottomRadius < 0.0f || topRadius < 0.0f || height <= 0.0f || slices < 3) {
+    if (bottomRadius < 0.0f || topRadius < 0.0f ||  height <= 0.0f || slices < 3 || stacks < 1) {
         return meshData;
     }
 
@@ -887,17 +887,17 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
         return meshData;
     }
 
-    int vertCountPerRing = slices + 1;
-    int bodyVertCount = 2 * vertCountPerRing;
-    int capVertCount = 0;
-    if (bottomRadius > 0.0f) capVertCount += 1 + slices;
-    if (topRadius > 0.0f) capVertCount += 1 + slices;
-    
+    bool hasBottom = bottomRadius > 0.0f;
+    bool hasTop = topRadius > 0.0f;
+
+    int ringCount = stacks + 1;
+    int ringStride = slices + 1;
+    int bodyVertCount = ringCount * ringStride;
+    int capVertCount = (hasBottom ? 1 + slices : 0) + (hasTop   ? 1 + slices : 0);
     int totalVertCount = bodyVertCount + capVertCount;
-    int bodyIndexCount = slices * 6;
-    int capIndexCount = 0;
-    if (bottomRadius > 0.0f) capIndexCount += slices * 3;
-    if (topRadius > 0.0f) capIndexCount += slices * 3;
+
+    int bodyIndexCount = stacks * slices * 6;
+    int capIndexCount = (hasBottom ? slices * 3 : 0) + (hasTop   ? slices * 3 : 0);
     int totalIndexCount = bodyIndexCount + capIndexCount;
 
     if (!alloc_mesh(&meshData, totalVertCount, totalIndexCount)) {
@@ -907,53 +907,49 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
     float halfHeight = height * 0.5f;
     float sliceStep = 2.0f * PI / slices;
     float invSlices = 1.0f / slices;
+    float invStacks = 1.0f / stacks;
+
+    float slopeR = height;
+    float slopeY = bottomRadius - topRadius;
+    float invLen = 1.0f / sqrtf(slopeR * slopeR + slopeY * slopeY);
+    float normalR = slopeR * invLen;
+    float normalY = slopeY * invLen;
 
     R3D_Vertex* vertex = meshData.vertices;
 
-    for (int slice = 0; slice <= slices; slice++, vertex++)
+    for (int stack = 0; stack <= stacks; stack++)
     {
-        float theta = slice * sliceStep;
-        float cosTheta = cosf(theta);
-        float sinTheta = sinf(theta);
+        float t = stack * invStacks;
+        float radius = bottomRadius + (topRadius - bottomRadius) * t;
+        float y = -halfHeight + height * t;
 
-        float x = bottomRadius * cosTheta;
-        float z = -bottomRadius * sinTheta;
+        for (int slice = 0; slice <= slices; slice++, vertex++)
+        {
+            float theta = slice * sliceStep;
+            float cosTheta = cosf(theta);
+            float sinTheta = sinf(theta);
 
-        vertex->position = (Vector3){x, -halfHeight, z};
-        vertex->texcoord = (Vector2){slice * invSlices, 0.0f};
-        vertex->normal = (Vector3){cosTheta, 0.0f, -sinTheta};
-        vertex->color = WHITE;
-        vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
-    }
-
-    for (int slice = 0; slice <= slices; slice++, vertex++)
-    {
-        float theta = slice * sliceStep;
-        float cosTheta = cosf(theta);
-        float sinTheta = sinf(theta);
-
-        float x = topRadius * cosTheta;
-        float z = -topRadius * sinTheta;
-
-        vertex->position = (Vector3){x, halfHeight, z};
-        vertex->texcoord = (Vector2){slice * invSlices, 1.0f};
-        vertex->normal = (Vector3){cosTheta, 0.0f, -sinTheta};
-        vertex->color = WHITE;
-        vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+            vertex->position = (Vector3){radius * cosTheta, y, -radius * sinTheta};
+            vertex->texcoord = (Vector2){slice * invSlices, t};
+            vertex->normal = (Vector3){normalR * cosTheta, normalY, -normalR * sinTheta};
+            vertex->color = WHITE;
+            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+        }
     }
 
     uint32_t bottomCapStart = 0;
     uint32_t topCapStart = 0;
 
-    if (bottomRadius > 0.0f)
+    if (hasBottom)
     {
-        bottomCapStart = bodyVertCount;
+        bottomCapStart = (uint32_t)bodyVertCount;
+
         *vertex++ = (R3D_Vertex){
-            .position = {0.0f, -halfHeight, 0.0f},
-            .texcoord = {0.5f, 0.5f},
-            .normal = {0.0f, -1.0f, 0.0f},
+            .position = {0.0f, -halfHeight, 0.0f },
+            .texcoord = {0.5f, 0.5f },
+            .normal = {0.0f, -1.0f, 0.0f },
             .color = WHITE,
-            .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
+            .tangent = {1.0f, 0.0f, 0.0f, 1.0f }
         };
 
         for (int slice = 0; slice < slices; slice++, vertex++)
@@ -962,10 +958,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
             float cosTheta = cosf(theta);
             float sinTheta = sinf(theta);
 
-            float x = bottomRadius * cosTheta;
-            float z = -bottomRadius * sinTheta;
-
-            vertex->position = (Vector3){x, -halfHeight, z};
+            vertex->position = (Vector3){bottomRadius * cosTheta, -halfHeight, -bottomRadius * sinTheta};
             vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
             vertex->normal = (Vector3){0.0f, -1.0f, 0.0f};
             vertex->color = WHITE;
@@ -973,9 +966,12 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
         }
     }
 
-    if (topRadius > 0.0f)
+    if (hasTop)
     {
-        topCapStart = bottomRadius > 0.0f ? bottomCapStart + 1 + slices : bodyVertCount;
+        topCapStart = hasBottom
+            ? bottomCapStart + 1 + (uint32_t)slices
+            : (uint32_t)bodyVertCount;
+
         *vertex++ = (R3D_Vertex){
             .position = {0.0f, halfHeight, 0.0f},
             .texcoord = {0.5f, 0.5f},
@@ -990,10 +986,7 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
             float cosTheta = cosf(theta);
             float sinTheta = sinf(theta);
 
-            float x = topRadius * cosTheta;
-            float z = -topRadius * sinTheta;
-
-            vertex->position = (Vector3){x, halfHeight, z};
+            vertex->position = (Vector3){topRadius * cosTheta, halfHeight, -topRadius * sinTheta};
             vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
             vertex->normal = (Vector3){0.0f, 1.0f, 0.0f};
             vertex->color = WHITE;
@@ -1003,36 +996,34 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
 
     uint32_t* index = meshData.indices;
 
-    for (int slice = 0; slice < slices; slice++) {
-        uint32_t i0 = slice;
-        uint32_t i1 = slice + 1;
-        uint32_t i2 = vertCountPerRing + slice;
-        uint32_t i3 = vertCountPerRing + slice + 1;
-        *index++ = i0; *index++ = i1; *index++ = i3;
-        *index++ = i0; *index++ = i3; *index++ = i2;
-    }
-
-    if (bottomRadius > 0.0f) {
-        uint32_t centerIdx = bottomCapStart;
-        uint32_t perimeterStart = bottomCapStart + 1;
+    for (int stack = 0; stack < stacks; stack++) {
         for (int slice = 0; slice < slices; slice++) {
-            uint32_t current = perimeterStart + slice;
-            uint32_t next = perimeterStart + (slice + 1) % slices;
-            *index++ = centerIdx;
-            *index++ = next;
-            *index++ = current;
+            uint32_t b0 = (uint32_t)(stack * ringStride + slice);
+            uint32_t b1 = b0 + 1;
+            uint32_t t0 = b0 + (uint32_t)ringStride;
+            uint32_t t1 = t0 + 1;
+            *index++ = b0; *index++ = b1; *index++ = t1;
+            *index++ = b0; *index++ = t1; *index++ = t0;
         }
     }
 
-    if (topRadius > 0.0f) {
-        uint32_t centerIdx = topCapStart;
-        uint32_t perimeterStart = topCapStart + 1;
+    if (hasBottom) {
+        uint32_t center = bottomCapStart;
+        uint32_t peri = bottomCapStart + 1;
         for (int slice = 0; slice < slices; slice++) {
-            uint32_t current = perimeterStart + slice;
-            uint32_t next = perimeterStart + (slice + 1) % slices;
-            *index++ = centerIdx;
-            *index++ = current;
-            *index++ = next;
+            *index++ = center;
+            *index++ = peri + (slice + 1) % slices;
+            *index++ = peri + slice;
+        }
+    }
+
+    if (hasTop) {
+        uint32_t center = topCapStart;
+        uint32_t peri = topCapStart + 1;
+        for (int slice = 0; slice < slices; slice++) {
+            *index++ = center;
+            *index++ = peri + slice;
+            *index++ = peri + (slice + 1) % slices;
         }
     }
 

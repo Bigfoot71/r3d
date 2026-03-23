@@ -251,20 +251,22 @@ R3DAPI R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices);
 R3DAPI R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices);
 
 /**
- * @brief Generate a cylinder mesh with specified parameters.
+ * @brief Generates a cylinder or cone mesh centered at the origin along the Y axis.
  *
- * Creates a mesh centered at the origin, extending along the Y axis.
- * The mesh includes top and bottom caps and smooth side surfaces.
- * A cone is produced when bottomRadius and topRadius differ.
+ * The mesh origin is at the center: the bottom cap sits at Y = -height/2
+ * and the top cap at Y = +height/2. Setting one radius to 0 produces a cone.
+ * Caps are omitted for zero-radius ends.
  *
- * @param bottomRadius Radius of the bottom cap.
- * @param topRadius Radius of the top cap.
- * @param height Height of the shape along the Y axis.
- * @param slices Number of radial subdivisions around the shape.
+ * @param bottomRadius Radius of the bottom cap. Must be >= 0.
+ * @param topRadius Radius of the top cap. Must be >= 0. Cannot both be 0.
+ * @param height Total height along the Y axis. Must be > 0.
+ * @param slices Radial subdivisions around the circumference. Must be >= 3.
+ * @param stacks Vertical subdivisions along the height. Must be >= 1.
+ *               Higher values reduce faceting, especially on cones.
  *
- * @return Generated mesh structure.
+ * @return The generated mesh data, or an empty mesh on invalid input.
  */
-R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices);
+R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices, int stacks);
 
 /**
  * @brief Generate a capsule mesh with specified parameters.
