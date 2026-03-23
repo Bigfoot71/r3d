@@ -875,7 +875,12 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
     return meshData;
 }
 
-R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices, int stacks)
+R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices)
+{
+    return R3D_GenMeshDataCylinderEx(radius, radius, height, slices, 1, true, true);
+}
+
+R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, float height, int slices, int stacks, bool bottomCap, bool topCap)
 {
     R3D_MeshData meshData = {0};
 
@@ -887,8 +892,8 @@ R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float 
         return meshData;
     }
 
-    bool hasBottom = bottomRadius > 0.0f;
-    bool hasTop = topRadius > 0.0f;
+    bool hasBottom = bottomCap && (bottomRadius > 0.0f);
+    bool hasTop = topCap && (topRadius > 0.0f);
 
     int ringCount = stacks + 1;
     int ringStride = slices + 1;

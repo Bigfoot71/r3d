@@ -251,22 +251,37 @@ R3DAPI R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices);
 R3DAPI R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices);
 
 /**
- * @brief Generates a cylinder or cone mesh centered at the origin along the Y axis.
+ * @brief Generates a cylinder mesh centered at the origin along the Y axis.
  *
- * The mesh origin is at the center: the bottom cap sits at Y = -height/2
- * and the top cap at Y = +height/2. Setting one radius to 0 produces a cone.
- * Caps are omitted for zero-radius ends.
+ * Both caps are included. For a cone or truncated cone, use R3D_GenMeshDataCylinderEx.
  *
- * @param bottomRadius Radius of the bottom cap. Must be >= 0.
- * @param topRadius Radius of the top cap. Must be >= 0. Cannot both be 0.
+ * @param radius Radius of the cylinder. Must be > 0.
+ * @param height Total height along the Y axis. Must be > 0.
+ * @param slices Radial subdivisions around the circumference. Must be >= 3.
+ *
+ * @return The generated mesh data, or an empty mesh on invalid input.
+ * @see R3D_GenMeshDataCylinderEx
+ */
+R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float radius, float height, int slices);
+
+/**
+ * @brief Generates a cylinder, cone, or truncated cone mesh centered at the origin along the Y axis.
+ *
+ * The bottom cap sits at Y = -height/2 and the top cap at Y = +height/2.
+ * Setting one radius to 0 produces a cone; caps can be toggled independently.
+ *
+ * @param bottomRadius Radius of the bottom end. Must be >= 0. Cannot both be 0.
+ * @param topRadius Radius of the top end. Must be >= 0. Cannot both be 0.
  * @param height Total height along the Y axis. Must be > 0.
  * @param slices Radial subdivisions around the circumference. Must be >= 3.
  * @param stacks Vertical subdivisions along the height. Must be >= 1.
  *               Higher values reduce faceting, especially on cones.
+ * @param bottomCap Whether to generate the bottom cap.
+ * @param topCap Whether to generate the top cap.
  *
  * @return The generated mesh data, or an empty mesh on invalid input.
  */
-R3DAPI R3D_MeshData R3D_GenMeshDataCylinder(float bottomRadius, float topRadius, float height, int slices, int stacks);
+R3DAPI R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, float height, int slices, int stacks, bool bottomCap, bool topCap);
 
 /**
  * @brief Generate a capsule mesh with specified parameters.
