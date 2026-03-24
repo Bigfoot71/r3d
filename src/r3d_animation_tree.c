@@ -690,8 +690,12 @@ static bool anode_eval_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_t*
     const R3D_AnimationState state = node->params.state;
     const R3D_AnimationChannel* channel = r3d_anim_channel_find(anim, boneIdx);
 
-    *out = !channel ? (Transform){0}
-        : r3d_anim_channel_lerp(channel, state.currentTime * anim->ticksPerSecond, NULL, NULL);
+    if (!channel) {
+        MatrixDecompose(atree->player.skeleton.localBind[boneIdx], &out->translation, &out->rotation, &out->scale);
+        return true;
+    }
+
+    *out = r3d_anim_channel_lerp(channel, state.currentTime * anim->ticksPerSecond, NULL, NULL);
 
     if (node->params.evalCallback) {
         node->params.evalCallback(anim, state, boneIdx, out, node->params.evalUserData);
