@@ -35,11 +35,13 @@ R3D_AnimationPlayer R3D_LoadAnimationPlayer(R3D_Skeleton skeleton, R3D_Animation
     player.skeleton = skeleton;
     player.animLib = animLib;
 
+    // Allocate the required memory
     player.states = RL_MALLOC(animLib.count * sizeof(*player.states));
-    player.localPose = RL_CALLOC(skeleton.boneCount, sizeof(*player.localPose));
-    player.modelPose = RL_CALLOC(skeleton.boneCount, sizeof(*player.modelPose));
-    player.skinBuffer = RL_CALLOC(skeleton.boneCount, sizeof(*player.skinBuffer));
+    player.localPose = RL_MALLOC(skeleton.boneCount * sizeof(*player.localPose));
+    player.modelPose = RL_MALLOC(skeleton.boneCount * sizeof(*player.modelPose));
+    player.skinBuffer = RL_MALLOC(skeleton.boneCount * sizeof(*player.skinBuffer));
 
+    // Initialize animation states
     for (int i = 0; i < animLib.count; i++) {
         player.states[i] = (R3D_AnimationState) {
             .currentTime = 0.0f,
@@ -50,9 +52,17 @@ R3D_AnimationPlayer R3D_LoadAnimationPlayer(R3D_Skeleton skeleton, R3D_Animation
     }
     player.activeAnimIndex = -1;
 
+    // Load default poses for each space
+    memcpy(player.localPose, player.skeleton.localBind, player.skeleton.boneCount * sizeof(Matrix));
+    memcpy(player.modelPose, player.skeleton.modelBind, player.skeleton.boneCount * sizeof(Matrix));
+    for (int i = 0; i < player.skeleton.boneCount; i++) {
+        player.skinBuffer[i] = MatrixMultiply(player.skeleton.invBind[i], player.modelPose[i]);
+    }
+
+    // Generate the skinning texture then uploading the computed matrices
     glGenTextures(1, &player.skinTexture);
     glBindTexture(GL_TEXTURE_1D, player.skinTexture);
-    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4 * skeleton.boneCount, 0, GL_RGBA, GL_FLOAT, NULL);
+    glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA16F, 4 * skeleton.boneCount, 0, GL_RGBA, GL_FLOAT, player.skinBuffer);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
