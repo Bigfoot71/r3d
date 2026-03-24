@@ -701,41 +701,39 @@ static bool anode_eval_anim(const R3D_AnimationTree* atree, r3d_animtree_anim_t*
         node->params.evalCallback(anim, state, boneIdx, out, node->params.evalUserData);
     }
 
-    if (!is_root_bone(atree, boneIdx)) {
-        return true;
+    if (channel && is_root_bone(atree, boneIdx)) {
+        if (info) {
+            Transform motion = {0};
+            const int loops = node->root.loops;
+
+            if (loops > 0) {
+                motion = r3d_anim_transform_scale(
+                    r3d_anim_transform_subtr(node->root.restN, node->root.rest0),
+                    (float)loops
+                );
+            }
+
+            if (loops >= 0) {
+                const bool forward = state.speed > 0.0f;
+                const Transform rest0 = forward ? node->root.rest0 : node->root.restN;
+                const Transform restN = forward ? node->root.restN : node->root.rest0;
+                const Transform split = r3d_anim_transform_add(
+                    r3d_anim_transform_subtr(restN, node->root.last),
+                    r3d_anim_transform_subtr(*out, rest0)
+                );
+                motion = r3d_anim_transform_add(motion, split);
+                motion.rotation = QuaternionNormalize(motion.rotation);
+                info->motion = motion;
+            }
+            else {
+                info->motion = r3d_anim_transform_subtr(*out, node->root.last);
+            }
+
+            info->distance = r3d_anim_transform_subtr(*out, node->root.rest0);
+        }
+
+        node->root.last = *out;
     }
-
-    if (channel && info) {
-        Transform motion = {0};
-        const int loops = node->root.loops;
-
-        if (loops > 0) {
-            motion = r3d_anim_transform_scale(
-                r3d_anim_transform_subtr(node->root.restN, node->root.rest0),
-                (float)loops
-            );
-        }
-
-        if (loops >= 0) {
-            const bool forward = state.speed > 0.0f;
-            const Transform rest0 = forward ? node->root.rest0 : node->root.restN;
-            const Transform restN = forward ? node->root.restN : node->root.rest0;
-            const Transform split = r3d_anim_transform_add(
-                r3d_anim_transform_subtr(restN, node->root.last),
-                r3d_anim_transform_subtr(*out, rest0)
-            );
-            motion = r3d_anim_transform_add(motion, split);
-            motion.rotation = QuaternionNormalize(motion.rotation);
-            info->motion = motion;
-        }
-        else {
-            info->motion = r3d_anim_transform_subtr(*out, node->root.last);
-        }
-
-        info->distance = r3d_anim_transform_subtr(*out, node->root.rest0);
-    }
-
-    node->root.last = *out;
 
     return true;
 }
@@ -975,10 +973,22 @@ static R3D_AnimationTreeNode* atree_anim_create(R3D_AnimationTree* atree, R3D_An
     if (valid_root_bone(boneIdx)) {
         const R3D_AnimationState* s = &anim->params.state;
         const R3D_AnimationChannel* c = r3d_anim_channel_find(a, boneIdx);
-        if (c) anim->root.last = r3d_anim_channel_lerp(
-            c, s->currentTime * a->ticksPerSecond,
-            &anim->root.rest0, &anim->root.restN
-        );
+        if (c) {
+            anim->root.last = r3d_anim_channel_lerp(
+                c, s->currentTime * a->ticksPerSecond,
+                &anim->root.rest0, &anim->root.restN
+            );
+        }
+        else {
+            Transform bind;
+            MatrixDecompose(
+                atree->player.skeleton.localBind[boneIdx],
+                &bind.translation, &bind.rotation, &bind.scale
+            );
+            anim->root.last = bind;
+            anim->root.rest0 = bind;
+            anim->root.restN = bind;
+        }
         anim->root.loops = -1;
     }
 
