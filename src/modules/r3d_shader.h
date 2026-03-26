@@ -700,12 +700,12 @@ typedef struct {
     r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_float_t uFocusPoint;
     r3d_shader_uniform_float_t uFocusScale;
+    r3d_shader_uniform_float_t uNearScale;
 } r3d_shader_prepare_dof_coc_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_sampler_t uCoCTex;
 } r3d_shader_prepare_dof_down_t;
 

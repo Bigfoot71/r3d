@@ -181,9 +181,9 @@ void R3D_End(void)
     r3d_driver_set_depth_mask(GL_TRUE);
     r3d_driver_set_stencil_mask(0xFF);
 
-    if (r3d_render_has_deferred() || r3d_render_has_prepass()) {
-        R3D_TARGET_CLEAR(true, R3D_TARGET_ALL_DEFERRED);
+    R3D_TARGET_CLEAR(true, R3D_TARGET_ALL_DEFERRED);
 
+    if (r3d_render_has_deferred() || r3d_render_has_prepass()) {
         if (r3d_render_has_deferred()) pass_scene_geometry();
         if (r3d_render_has_prepass()) pass_scene_prepass();
         if (r3d_render_has_decal()) pass_scene_decals();
@@ -193,8 +193,9 @@ void R3D_End(void)
         bool ssil = R3D.environment.ssil.enabled;
         bool ssgi = R3D.environment.ssgi.enabled;
         bool ssr = R3D.environment.ssr.enabled;
+        bool dof = R3D.environment.dof.mode;
 
-        if (ssao || ssil || ssgi || ssr) {
+        if (ssao || ssil || ssgi || ssr || dof) {
             pass_prepare_depth_pyramid();
         }
 
@@ -211,7 +212,10 @@ void R3D_End(void)
         }
     }
     else {
-        r3d_target_clear(NULL, 0, 0, true);
+        int numLevels = r3d_target_get_num_levels(R3D_TARGET_DEPTH);
+        for (int i = 1; i < numLevels; i++) {
+            R3D_TARGET_CLEAR_LEVEL(i, R3D_TARGET_DEPTH);
+        }
     }
 
     /* --- Then background and transparent rendering --- */
@@ -2159,17 +2163,16 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER(prepare.dofCoc, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_SHADER_SET_FLOAT(prepare.dofCoc, uFocusPoint, R3D.environment.dof.focusPoint);
     R3D_SHADER_SET_FLOAT(prepare.dofCoc, uFocusScale, R3D.environment.dof.focusScale);
+    R3D_SHADER_SET_FLOAT(prepare.dofCoc, uNearScale, R3D.environment.dof.nearScale);
 
     R3D_RENDER_SCREEN();
 
     /* --- Downsample CoC to half resolution --- */
 
-    R3D_TARGET_BIND(false, R3D_TARGET_DOF_0, R3D_TARGET_DEPTH);
-    r3d_target_set_write_level(1, 1);
+    R3D_TARGET_BIND(false, R3D_TARGET_DOF_0);
 
     R3D_SHADER_USE(prepare.dofDown);
     R3D_SHADER_BIND_SAMPLER(prepare.dofDown, uSceneTex, r3d_target_get(r3d_target_swap_scene(sceneTarget)));
-    R3D_SHADER_BIND_SAMPLER(prepare.dofDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.dofDown, uCoCTex, r3d_target_get(R3D_TARGET_DOF_COC));
 
     R3D_RENDER_SCREEN();

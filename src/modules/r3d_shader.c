@@ -474,6 +474,7 @@ bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom)
 
     GET_LOCATION(dofCoc, uFocusPoint);
     GET_LOCATION(dofCoc, uFocusScale);
+    GET_LOCATION(dofCoc, uNearScale);
 
     USE_SHADER(dofCoc);
     SET_SAMPLER(dofCoc, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
@@ -487,8 +488,8 @@ bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom)
     LOAD_SHADER(dofDown, SCREEN_VERT, DOF_DOWN_FRAG);
 
     USE_SHADER(dofDown);
+
     SET_SAMPLER(dofDown, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
-    SET_SAMPLER(dofDown, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
     SET_SAMPLER(dofDown, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
 
     return true;

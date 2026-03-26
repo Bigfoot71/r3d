@@ -60,6 +60,6 @@ void main()
     // Compute a Gaussian-like weight from the central CoC to produce a blur probability for this pixel.
     // After extensive testing, this gives the most physically plausible blending while remaining simple.
 
-    float w = 1.0 - exp(-0.5 * centerSize * centerSize);
+    float w = exp(-0.5 * centerSize * centerSize);
     FragColor = vec4(color / tot, clamp(w, 0.0, 1.0));
 }

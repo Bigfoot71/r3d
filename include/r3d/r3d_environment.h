@@ -124,6 +124,7 @@
             .mode = R3D_DOF_DISABLED,                   \
             .focusPoint = 10.0f,                        \
             .focusScale = 1.0f,                         \
+            .nearScale = 1.0f,                          \
             .maxBlurSize = 20.0f,                       \
         },                                              \
         .tonemap = {                                    \
@@ -317,6 +318,7 @@ typedef struct R3D_EnvDoF {
     R3D_DoF mode;           ///< Enable/disable state (default: R3D_DOF_DISABLED)
     float focusPoint;       ///< Focus distance in meters from camera (default: 10.0)
     float focusScale;       ///< Depth of field depth: lower = shallower (default: 1.0)
+    float nearScale;        ///< Near blur intensity: 0.0 = disabled, 1.0 = symmetric to far (default: 1.0)
     float maxBlurSize;      ///< Maximum blur radius, similar to aperture (default: 20.0)
 } R3D_EnvDoF;
 
