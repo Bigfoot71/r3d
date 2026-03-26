@@ -33,15 +33,6 @@ typedef uint32_t usage_hint_t;
 #define USAGE_HINT_PROBE         (1 << 6)   //< Build: probe
 
 // ========================================
-// OPAQUE STRUCTS
-// ========================================
-
-struct R3D_SurfaceShader {
-    r3d_shader_custom_t program;
-    char userCode[R3D_MAX_SHADER_CODE_LENGTH];
-};
-
-// ========================================
 // INTERNAL FUNCTIONS
 // ========================================
 
@@ -85,7 +76,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
         return NULL;
     }
 
-    R3D_SurfaceShader* shader = RL_CALLOC(1, sizeof(R3D_SurfaceShader));
+    R3D_SurfaceShader* shader = r3d_shader_custom_alloc();
     if (!shader) {
         R3D_TRACELOG(LOG_ERROR, "Bad alloc during surface shader loading");
         return NULL;
@@ -128,8 +119,8 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
         if (r3d_rshade_match_keyword(ptr, "uniform", 7)) {
             ptr += 7;
             r3d_rshade_parse_uniform(&ptr,
-                shader->program.samplers,
-                &shader->program.uniforms,
+                shader->data.samplers,
+                &shader->data.uniforms,
                 &samplerCount,
                 &uniformCount,
                 &currentOffset,
@@ -170,8 +161,8 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     /* --- PHASE 2: Generate transformed shader code --- */
 
     // Write uniform block and samplers
-    outPtr = r3d_rshade_write_uniform_block(outPtr, shader->program.uniforms.entries, uniformCount);
-    outPtr = r3d_rshade_write_samplers(outPtr, shader->program.samplers, samplerCount);
+    outPtr = r3d_rshade_write_uniform_block(outPtr, shader->data.uniforms.entries, uniformCount);
+    outPtr = r3d_rshade_write_samplers(outPtr, shader->data.samplers, samplerCount);
 
     // Copy global code (excluding pragma, comments, uniforms, varyings, entry points)
     outPtr = r3d_rshade_copy_global_code(outPtr, code, true, &vertexFunc, &fragmentFunc);
@@ -199,7 +190,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
         return NULL;
     }
 
-    memcpy(shader->userCode, output, finalLen + 1);
+    memcpy(shader->program->userCode, output, finalLen + 1);
     RL_FREE(output);
 
     /* --- PHASE 3: Pre-compile needed shader variants --- */
@@ -211,7 +202,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
 
     /* --- PHASE 4: Initialize uniform buffer --- */
 
-    r3d_rshade_init_ubo(&shader->program.uniforms, currentOffset);
+    r3d_shader_custom_init_uniforms(shader, currentOffset);
 
     R3D_TRACELOG(LOG_INFO, "Surface shader loaded successfully");
     R3D_TRACELOG(LOG_INFO, "    > Usage hints: %s", get_usage_hint_string(usage));
@@ -222,28 +213,19 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
     return shader;
 }
 
+R3D_SurfaceShader* R3D_LoadSurfaceShaderAlias(R3D_SurfaceShader* shader)
+{
+    R3D_SurfaceShader* alias = r3d_shader_custom_clone(shader);
+    if (!alias) {
+        R3D_TRACELOG(LOG_ERROR, "Bad alloc during surface shader alias loading");
+        return NULL;
+    }
+    return alias;
+}
+
 void R3D_UnloadSurfaceShader(R3D_SurfaceShader* shader)
 {
-    #define DELETE_PROGRAM(id) \
-        do { if ((id) != 0) glDeleteProgram((id)); } while(0)
-
-    if (shader == NULL) return;
-
-    if (shader->program.uniforms.bufferId != 0) {
-        glDeleteBuffers(1, &shader->program.uniforms.bufferId);
-    }
-
-    DELETE_PROGRAM(shader->program.scene.geometry.id);
-    DELETE_PROGRAM(shader->program.scene.forward.id);
-    DELETE_PROGRAM(shader->program.scene.depth.id);
-    DELETE_PROGRAM(shader->program.scene.depthCube.id);
-    DELETE_PROGRAM(shader->program.scene.probeForward.id);
-    DELETE_PROGRAM(shader->program.scene.probeUnlit.id);
-    DELETE_PROGRAM(shader->program.scene.decal.id);
-
-    RL_FREE(shader);
-
-#undef DELETE_PROGRAM
+    r3d_shader_custom_free(shader);
 }
 
 void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* name, const void* value)
@@ -253,7 +235,7 @@ void R3D_SetSurfaceShaderUniform(R3D_SurfaceShader* shader, const char* name, co
         return;
     }
 
-    if (!r3d_shader_set_custom_uniform(&shader->program, name, value)) {
+    if (!r3d_shader_custom_set_uniform(shader, name, value)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom uniform '%s'", name);
     }
 }
@@ -265,7 +247,7 @@ void R3D_SetSurfaceShaderSampler(R3D_SurfaceShader* shader, const char* name, Te
         return;
     }
 
-    if (!r3d_shader_set_custom_sampler(&shader->program, name, texture)) {
+    if (!r3d_shader_custom_set_sampler(shader, name, texture)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom sampler '%s'", name);
     }
 }
@@ -366,11 +348,8 @@ const char* get_usage_hint_string(usage_hint_t hints)
 
 bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
 {
-    // Store reference to the user code in custom shader struct
-    shader->program.userCode = shader->userCode;
-
     if (usage == 0) {
-        bool ok = R3D_MOD_SHADER_LOADER.scene.geometry(&shader->program);
+        bool ok = R3D_MOD_SHADER_LOADER.scene.geometry(shader);
         if (!ok) {
             R3D_TRACELOG(LOG_ERROR, "Failed to compile surface shader");
         }
@@ -394,7 +373,7 @@ bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
 
     for (int i = 0; i < 6; i++) {
         if (BIT_TEST_ANY(usage, variants[i].condition)) {
-            if (!variants[i].func(&shader->program)) {
+            if (!variants[i].func(shader)) {
                 R3D_TRACELOG(LOG_ERROR, "Failed to compile surface shader (variant: '%s')", variants[i].name);
                 return false;
             }

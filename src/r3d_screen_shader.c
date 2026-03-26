@@ -19,15 +19,6 @@
 #include "./r3d_core_state.h"
 
 // ========================================
-// OPAQUE STRUCTS
-// ========================================
-
-struct R3D_ScreenShader {
-    r3d_shader_custom_t program;
-    char userCode[R3D_MAX_SHADER_CODE_LENGTH];
-};
-
-// ========================================
 // INTERNAL FUNCTIONS
 // ========================================
 
@@ -64,7 +55,7 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
         return NULL;
     }
 
-    R3D_ScreenShader* shader = RL_CALLOC(1, sizeof(R3D_ScreenShader));
+    R3D_ScreenShader* shader = r3d_shader_custom_alloc();
     if (!shader) {
         R3D_TRACELOG(LOG_ERROR, "Bad alloc during screen shader loading");
         return NULL;
@@ -97,8 +88,8 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
         if (r3d_rshade_match_keyword(ptr, "uniform", 7)) {
             ptr += 7;
             r3d_rshade_parse_uniform(&ptr,
-                shader->program.samplers,
-                &shader->program.uniforms,
+                shader->data.samplers,
+                &shader->data.uniforms,
                 &samplerCount,
                 &uniformCount,
                 &currentOffset,
@@ -126,8 +117,8 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
     /* --- PHASE 2: Generate transformed shader code --- */
 
     // Write uniform block and samplers
-    outPtr = r3d_rshade_write_uniform_block(outPtr, shader->program.uniforms.entries, uniformCount);
-    outPtr = r3d_rshade_write_samplers(outPtr, shader->program.samplers, samplerCount);
+    outPtr = r3d_rshade_write_uniform_block(outPtr, shader->data.uniforms.entries, uniformCount);
+    outPtr = r3d_rshade_write_samplers(outPtr, shader->data.samplers, samplerCount);
 
     // Copy global code (excluding comments, uniforms, fragment()) then write fragment stage section
     outPtr = r3d_rshade_copy_global_code(outPtr, code, false, NULL, &fragmentFunc);
@@ -144,7 +135,7 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
         return NULL;
     }
 
-    memcpy(shader->userCode, output, finalLen + 1);
+    memcpy(shader->program->userCode, output, finalLen + 1);
     RL_FREE(output);
 
     /* --- PHASE 3: Compile shader --- */
@@ -156,7 +147,7 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
 
     /* --- PHASE 4: Initialize uniform buffer --- */
 
-    r3d_rshade_init_ubo(&shader->program.uniforms, currentOffset);
+    r3d_shader_custom_init_uniforms(shader, currentOffset);
 
     R3D_TRACELOG(LOG_INFO, "Screen shader loaded successfully");
     R3D_TRACELOG(LOG_INFO, "    > Sampler count: %i", samplerCount);
@@ -165,19 +156,19 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
     return shader;
 }
 
+R3D_ScreenShader* R3D_LoadScreenShaderAlias(R3D_ScreenShader* shader)
+{
+    R3D_ScreenShader* alias = r3d_shader_custom_clone(shader);
+    if (!alias) {
+        R3D_TRACELOG(LOG_ERROR, "Bad alloc during screen shader alias loading");
+        return NULL;
+    }
+    return alias;
+}
+
 void R3D_UnloadScreenShader(R3D_ScreenShader* shader)
 {
-    if (!shader) return;
-
-    if (shader->program.uniforms.bufferId != 0) {
-        glDeleteBuffers(1, &shader->program.uniforms.bufferId);
-    }
-
-    if (shader->program.post.screen.id != 0) {
-        glDeleteProgram(shader->program.post.screen.id);
-    }
-
-    RL_FREE(shader);
+    r3d_shader_custom_free(shader);
 }
 
 void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* name, const void* value)
@@ -187,7 +178,7 @@ void R3D_SetScreenShaderUniform(R3D_ScreenShader* shader, const char* name, cons
         return;
     }
 
-    if (!r3d_shader_set_custom_uniform(&shader->program, name, value)) {
+    if (!r3d_shader_custom_set_uniform(shader, name, value)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom uniform '%s'", name);
     }
 }
@@ -199,7 +190,7 @@ void R3D_SetScreenShaderSampler(R3D_ScreenShader* shader, const char* name, Text
         return;
     }
 
-    if (!r3d_shader_set_custom_sampler(&shader->program, name, texture)) {
+    if (!r3d_shader_custom_set_sampler(shader, name, texture)) {
         R3D_TRACELOG(LOG_WARNING, "Failed to set custom sampler '%s'", name);
     }
 }
@@ -225,10 +216,7 @@ void R3D_SetScreenShaderChain(R3D_ScreenShader** shaders, int count)
 
 bool compile_shader(R3D_ScreenShader* shader)
 {
-    // Store reference to the user code in custom shader struct
-    shader->program.userCode = shader->userCode;
-
-    bool ok = R3D_MOD_SHADER_LOADER.post.screen(&shader->program);
+    bool ok = R3D_MOD_SHADER_LOADER.post.screen(shader);
     if (!ok) {
         R3D_TRACELOG(LOG_ERROR, "Failed to compile screen shader");
     }

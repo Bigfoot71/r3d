@@ -446,21 +446,4 @@ static inline char* r3d_rshade_write_shader_function(char* outPtr, const char* n
     return outPtr;
 }
 
-/* Initialize OpenGL uniform buffer object (UBO) */
-static inline void r3d_rshade_init_ubo(r3d_rshade_uniform_buffer_t* uniforms, int currentOffset)
-{
-    if (uniforms->entries[0].name[0] == '\0') return;
-
-    int uboSize = r3d_align_offset(currentOffset, 16);
-    if (uboSize < 16) uboSize = 16;
-
-    uniforms->bufferSize = uboSize;
-    uniforms->dirty = true;
-
-    glGenBuffers(1, &uniforms->bufferId);
-    glBindBuffer(GL_UNIFORM_BUFFER, uniforms->bufferId);
-    glBufferData(GL_UNIFORM_BUFFER, uboSize, uniforms->buffer, GL_DYNAMIC_DRAW);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-}
-
 #endif // R3D_RSHADE_H
