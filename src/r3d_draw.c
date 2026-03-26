@@ -2159,6 +2159,7 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_BIND_SAMPLER(prepare.dofCoc, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_SHADER_SET_FLOAT(prepare.dofCoc, uFocusPoint, R3D.environment.dof.focusPoint);
     R3D_SHADER_SET_FLOAT(prepare.dofCoc, uFocusScale, R3D.environment.dof.focusScale);
+    R3D_SHADER_SET_FLOAT(prepare.dofCoc, uNearScale, R3D.environment.dof.nearScale);
 
     R3D_RENDER_SCREEN();
 

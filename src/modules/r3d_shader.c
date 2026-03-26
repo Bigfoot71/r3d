@@ -474,6 +474,7 @@ bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom)
 
     GET_LOCATION(dofCoc, uFocusPoint);
     GET_LOCATION(dofCoc, uFocusScale);
+    GET_LOCATION(dofCoc, uNearScale);
 
     USE_SHADER(dofCoc);
     SET_SAMPLER(dofCoc, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
