@@ -101,6 +101,13 @@ typedef enum {
         0, (depth)                                                      \
     )
 
+#define R3D_TARGET_CLEAR_LEVEL(level, ...)                              \
+    r3d_target_clear(                                                   \
+        (r3d_target_t[]) {__VA_ARGS__},                                 \
+        sizeof((r3d_target_t[]) {__VA_ARGS__}) / sizeof(r3d_target_t),  \
+        (level), false                                                  \
+    )
+
 #define R3D_TARGET_BIND(depth, ...)                                     \
     r3d_target_bind(                                                    \
         (r3d_target_t[]){ __VA_ARGS__ },                                \

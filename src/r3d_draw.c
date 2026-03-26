@@ -181,9 +181,9 @@ void R3D_End(void)
     r3d_driver_set_depth_mask(GL_TRUE);
     r3d_driver_set_stencil_mask(0xFF);
 
-    if (r3d_render_has_deferred() || r3d_render_has_prepass()) {
-        R3D_TARGET_CLEAR(true, R3D_TARGET_ALL_DEFERRED);
+    R3D_TARGET_CLEAR(true, R3D_TARGET_ALL_DEFERRED);
 
+    if (r3d_render_has_deferred() || r3d_render_has_prepass()) {
         if (r3d_render_has_deferred()) pass_scene_geometry();
         if (r3d_render_has_prepass()) pass_scene_prepass();
         if (r3d_render_has_decal()) pass_scene_decals();
@@ -212,7 +212,10 @@ void R3D_End(void)
         }
     }
     else {
-        r3d_target_clear(NULL, 0, 0, true);
+        int numLevels = r3d_target_get_num_levels(R3D_TARGET_DEPTH);
+        for (int i = 1; i < numLevels; i++) {
+            R3D_TARGET_CLEAR_LEVEL(i, R3D_TARGET_DEPTH);
+        }
     }
 
     /* --- Then background and transparent rendering --- */
