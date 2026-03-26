@@ -24,5 +24,5 @@ void main()
     vec4 sharp = texelFetch(uSceneTex, ivec2(gl_FragCoord), 0);
     vec4 blur = texture(uBlurTex, vTexCoord);
 
-    FragColor = vec4(mix(sharp.rgb, blur.rgb, blur.a), 1.0);
+    FragColor = vec4(mix(blur.rgb, sharp.rgb, blur.a), 1.0);
 }
