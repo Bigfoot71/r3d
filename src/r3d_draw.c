@@ -193,8 +193,9 @@ void R3D_End(void)
         bool ssil = R3D.environment.ssil.enabled;
         bool ssgi = R3D.environment.ssgi.enabled;
         bool ssr = R3D.environment.ssr.enabled;
+        bool dof = R3D.environment.dof.mode;
 
-        if (ssao || ssil || ssgi || ssr) {
+        if (ssao || ssil || ssgi || ssr || dof) {
             pass_prepare_depth_pyramid();
         }
 
@@ -2165,12 +2166,10 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
 
     /* --- Downsample CoC to half resolution --- */
 
-    R3D_TARGET_BIND(false, R3D_TARGET_DOF_0, R3D_TARGET_DEPTH);
-    r3d_target_set_write_level(1, 1);
+    R3D_TARGET_BIND(false, R3D_TARGET_DOF_0);
 
     R3D_SHADER_USE(prepare.dofDown);
     R3D_SHADER_BIND_SAMPLER(prepare.dofDown, uSceneTex, r3d_target_get(r3d_target_swap_scene(sceneTarget)));
-    R3D_SHADER_BIND_SAMPLER(prepare.dofDown, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
     R3D_SHADER_BIND_SAMPLER(prepare.dofDown, uCoCTex, r3d_target_get(R3D_TARGET_DOF_COC));
 
     R3D_RENDER_SCREEN();

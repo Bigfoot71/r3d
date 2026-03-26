@@ -706,7 +706,6 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_sampler_t uCoCTex;
 } r3d_shader_prepare_dof_down_t;
 
