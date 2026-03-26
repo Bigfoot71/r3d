@@ -21,7 +21,7 @@
 // OPAQUE TYPES
 // ========================================
 
-typedef struct R3D_SurfaceShader R3D_SurfaceShader;
+typedef struct R3D_ShaderCustom R3D_SurfaceShader;
 
 // ========================================
 // PUBLIC API
@@ -54,7 +54,30 @@ R3DAPI R3D_SurfaceShader* R3D_LoadSurfaceShader(const char* filePath);
 R3DAPI R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code);
 
 /**
+ * @brief Creates an alias of an existing surface shader.
+ *
+ * The alias shares the same compiled program shaders as the original but holds
+ * its own independent sampler and uniform data. This allows the same shader
+ * to be used multiple times within a single frame with different values,
+ * for example when several materials rely on the same shader but each draw
+ * call requires distinct uniform values or texture bindings.
+ *
+ * @note The alias does not own the program shaders. Unloading the original shader
+ *       while an alias is still in use results in undefined behavior.
+ *       Always unload all aliases before unloading the original.
+ *
+ * @param shader The original surface shader to alias.
+ * @return Pointer to the alias, or NULL on failure.
+ */
+R3DAPI R3D_SurfaceShader* R3D_LoadSurfaceShaderAlias(R3D_SurfaceShader* shader);
+
+/**
  * @brief Unloads and destroys a surface shader.
+ *
+ * If the shader owns its program shaders (i.e. it was created with @ref R3D_LoadSurfaceShader
+ * or @ref R3D_LoadSurfaceShaderFromMemory), they are deleted. Aliases created from this
+ * shader via @ref R3D_LoadSurfaceShaderAlias must be unloaded beforehand, as they
+ * share the same programs and will be left with dangling references.
  *
  * @param shader Surface shader to unload.
  */

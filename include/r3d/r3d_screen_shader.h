@@ -21,7 +21,7 @@
 // OPAQUE TYPES
 // ========================================
 
-typedef struct R3D_ScreenShader R3D_ScreenShader;
+typedef struct R3D_ShaderCustom R3D_ScreenShader;
 
 // ========================================
 // PUBLIC API
@@ -56,7 +56,30 @@ R3DAPI R3D_ScreenShader* R3D_LoadScreenShader(const char* filePath);
 R3DAPI R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code);
 
 /**
+ * @brief Creates an alias of an existing screen shader.
+ *
+ * The alias shares the same compiled program shaders as the original but holds
+ * its own independent sampler and uniform data. Typical use cases include
+ * pre-configuring aliases for distinct effects (e.g. different convolution
+ * kernels), or running the same shader multiple times in the same frame's
+ * post-process chain with different parameters at each pass.
+ *
+ * @note The alias does not own the program shaders. Unloading the original shader
+ *       while an alias is still in use results in undefined behavior.
+ *       Always unload all aliases before unloading the original.
+ *
+ * @param shader The original screen shader to alias.
+ * @return Pointer to the alias, or NULL on failure.
+ */
+R3DAPI R3D_ScreenShader* R3D_LoadScreenShaderAlias(R3D_ScreenShader* shader);
+
+/**
  * @brief Unloads and destroys a screen shader.
+ *
+ * If the shader owns its program shaders (i.e. it was created with @ref R3D_LoadScreenShader
+ * or @ref R3D_LoadScreenShaderFromMemory), they are deleted. Aliases created from this
+ * shader via @ref R3D_LoadScreenShaderAlias must be unloaded beforehand, as they
+ * share the same programs and will be left with dangling references.
  *
  * @param shader Screen shader to unload.
  */
