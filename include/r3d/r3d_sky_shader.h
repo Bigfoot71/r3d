@@ -58,14 +58,18 @@ R3DAPI R3D_SkyShader* R3D_LoadSkyShaderFromMemory(const char* code);
 /**
  * @brief Creates an alias of an existing sky shader.
  *
- * The alias shares the same compiled program shaders as the original but holds
- * its own independent sampler and uniform data. A typical use case is to
- * pre-configure several aliases with different uniforms or textures, avoiding
- * the need to reconfigure the shader on every skybox switch.
+ * The alias shares the same compiled program as the original but holds its own
+ * independent uniform and sampler state. A typical use case is to pre-configure
+ * several aliases with different uniforms or textures, avoiding the need to
+ * reconfigure the shader on every skybox switch.
  *
- * @note The alias does not own the program shaders. Unloading the original shader
- *       while an alias is still in use results in undefined behavior.
- *       Always unload all aliases before unloading the original.
+ * Uniform and sampler state is copied from the original at the moment this
+ * function is called, not from the shader source defaults. Any values set
+ * on the original after compilation but before this call will be reflected
+ * in the alias; values set afterward will not.
+ *
+ * @note The alias does not own the program. Always unload all aliases before
+ *       unloading the original, or the alias program references become dangling.
  *
  * @param shader The original sky shader to alias.
  * @return Pointer to the alias, or NULL on failure.
