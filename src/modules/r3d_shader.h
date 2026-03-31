@@ -474,7 +474,8 @@ typedef struct {
     alignas(8) Vector2 screenSize;
     alignas(8) Vector2 texelSize;
     alignas(4) float time;
-    alignas(4) int index;
+    alignas(4) int32_t index;
+    alignas(4) int32_t pad0;
 } r3d_shader_block_frame_t;
 
 typedef struct {
