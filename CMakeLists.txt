@@ -431,7 +431,7 @@ if(NOT R3D_HAS_C11_THREADS)
     )
 endif()
 if(NOT R3D_HAS_C11_THREADS)
-    target_compile_definitions(r3d PRIVATE R3D_NO_C11_THREADS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE R3D_NO_C11_THREADS)
 endif()
 
 # ========================================
