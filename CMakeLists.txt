@@ -430,6 +430,7 @@ endif()
 # ========================================
 
 cmake_push_check_state(RESET)
+    set(CMAKE_REQUIRED_FLAGS "-std=c11")
     check_c_source_compiles("
         #include <threads.h>
         int dummy_thread(void *arg) { return 0; }
