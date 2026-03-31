@@ -258,7 +258,92 @@ static inline bool r3d_rshade_parse_varying(const char** ptr, r3d_rshade_varying
     return r3d_rshade_parse_declaration(ptr, varying->type, varying->name);
 }
 
-/* Parse uniform declaration and add to samplers or uniform buffer */
+/* Parse a GLSL literal value and write it into the uniform buffer at given offset.
+ * Returns true if a default value was found and parsed. */
+static inline bool r3d_rshade_parse_default_value(const char** ptr,
+    const char* type, uint8_t* buffer, int offset)
+{
+    r3d_rshade_skip_whitespace(ptr);
+    if (**ptr != '=') return false;
+
+    (*ptr)++;
+    r3d_rshade_skip_whitespace(ptr);
+
+    uint8_t* dst = buffer + offset;
+
+    // Scalars
+    if (strcmp(type, "float") == 0) {
+        float v = 0.0f; sscanf(*ptr, "%f", &v);
+        memcpy(dst, &v, 4);
+        return true;
+    }
+    if (strcmp(type, "int") == 0) {
+        int v = 0; sscanf(*ptr, "%d", &v);
+        memcpy(dst, &v, 4);
+        return true;
+    }
+    if (strcmp(type, "bool") == 0) {
+        // Accept both true/false keywords and 1/0 literals
+        int v = (strncmp(*ptr, "true", 4) == 0) ? 1
+              : (strncmp(*ptr, "false", 5) == 0) ? 0
+              : (*ptr[0] != '0');
+        memcpy(dst, &v, 4);
+        return true;
+    }
+
+    // Vectors and matrices
+    // std140: each column occupies a 16-byte slot (vec4 stride),
+    // so the byte offset of component [col][row] is: col * 16 + row * 4.
+    // For vectors (cols=1) this degenerates to simple contiguous layout.
+
+    int cols = 0, rows = 0;
+    bool isFloat = true;
+
+    if      (strcmp(type, "vec2")  == 0) { cols = 1; rows = 2; }
+    else if (strcmp(type, "vec3")  == 0) { cols = 1; rows = 3; }
+    else if (strcmp(type, "vec4")  == 0) { cols = 1; rows = 4; }
+    else if (strcmp(type, "ivec2") == 0) { cols = 1; rows = 2; isFloat = false; }
+    else if (strcmp(type, "ivec3") == 0) { cols = 1; rows = 3; isFloat = false; }
+    else if (strcmp(type, "ivec4") == 0) { cols = 1; rows = 4; isFloat = false; }
+    else if (strcmp(type, "mat2")  == 0) { cols = 2; rows = 2; }
+    else if (strcmp(type, "mat3")  == 0) { cols = 3; rows = 3; }
+    else if (strcmp(type, "mat4")  == 0) { cols = 4; rows = 4; }
+
+    if (cols == 0) return false;
+
+    // Advance past the opening parenthesis of the constructor
+    while (**ptr && **ptr != '(') (*ptr)++;
+    if (**ptr != '(') return false;
+    (*ptr)++;
+
+    // Parse components in column-major order
+    for (int c = 0; c < cols; c++) {
+        for (int r = 0; r < rows; r++) {
+            r3d_rshade_skip_whitespace(ptr);
+
+            int byteOffset = c * 16 + r * 4;
+            if (isFloat) {
+                float v = 0.0f;
+                sscanf(*ptr, "%f", &v);
+                memcpy(dst + byteOffset, &v, 4);
+            }
+            else {
+                int32_t v = 0;
+                sscanf(*ptr, "%d", &v);
+                memcpy(dst + byteOffset, &v, 4);
+            }
+
+            // Advance past this token to the next separator
+            while (**ptr && **ptr != ',' && **ptr != ')') (*ptr)++;
+            if (**ptr == ',') (*ptr)++;
+        }
+    }
+
+    return true;
+}
+
+/* Parse a 'uniform' declaration and register it as a sampler or UBO entry.
+ * The pointer must be positioned just after the 'uniform' keyword. */
 static inline bool r3d_rshade_parse_uniform(const char** ptr,
     r3d_rshade_sampler_t* samplers, r3d_rshade_uniform_buffer_t* uniforms,
     int* samplerCount, int* uniformCount, int* currentOffset,
@@ -267,42 +352,47 @@ static inline bool r3d_rshade_parse_uniform(const char** ptr,
     char type[R3D_RSHADE_MAX_VAR_TYPE_LENGTH];
     char name[R3D_RSHADE_MAX_VAR_NAME_LENGTH];
 
-    if (!r3d_rshade_parse_declaration(ptr, type, name)) {
+    // Stop before '=' or ';' so default value parsing can inspect what follows
+    if (!r3d_rshade_parse_identifier(ptr, type, R3D_RSHADE_MAX_VAR_TYPE_LENGTH) ||
+        !r3d_rshade_parse_identifier(ptr, name, R3D_RSHADE_MAX_VAR_NAME_LENGTH)) {
+        r3d_rshade_skip_to_semicolon(ptr);
         return false;
     }
 
-    // Check if it's a sampler
+    // Samplers are bound by texture unit, not stored in the UBO
     GLenum samplerTarget = r3d_rshade_get_sampler_target(type);
     if (samplerTarget != 0) {
         if (*samplerCount < maxSamplers) {
-            r3d_rshade_sampler_t* s = &samplers[*samplerCount];
+            r3d_rshade_sampler_t* s = &samplers[(*samplerCount)++];
             strncpy(s->name, name, R3D_RSHADE_MAX_VAR_NAME_LENGTH - 1);
             s->name[R3D_RSHADE_MAX_VAR_NAME_LENGTH - 1] = '\0';
             s->target = samplerTarget;
             s->texture = 0;
-            (*samplerCount)++;
         }
+        r3d_rshade_skip_to_semicolon(ptr);
         return true;
     }
 
-    // It's a uniform value, add to UBO with std140 alignment
     int size = r3d_rshade_get_type_size(type);
     if (size > 0 && *uniformCount < maxUniforms) {
-        int alignment = r3d_rshade_get_std140_alignment(size);
-        *currentOffset = r3d_align_offset(*currentOffset, alignment);
+        // Align offset per std140 before committing the slot
+        *currentOffset = r3d_align_offset(*currentOffset, r3d_rshade_get_std140_alignment(size));
 
-        r3d_rshade_uniform_t* u = &uniforms->entries[*uniformCount];
+        r3d_rshade_uniform_t* u = &uniforms->entries[(*uniformCount)++];
         strncpy(u->name, name, R3D_RSHADE_MAX_VAR_NAME_LENGTH - 1);
         u->name[R3D_RSHADE_MAX_VAR_NAME_LENGTH - 1] = '\0';
         strncpy(u->type, type, R3D_RSHADE_MAX_VAR_TYPE_LENGTH - 1);
         u->type[R3D_RSHADE_MAX_VAR_TYPE_LENGTH - 1] = '\0';
         u->offset = *currentOffset;
         u->size = size;
-
-        (*uniformCount)++;
         *currentOffset += size;
+
+        if (r3d_rshade_parse_default_value(ptr, type, uniforms->buffer, u->offset)) {
+            uniforms->dirty = true; // Just for security, but the data is necessarily uploaded when the buffer is created afterwards
+        }
     }
 
+    r3d_rshade_skip_to_semicolon(ptr);
     return true;
 }
 
