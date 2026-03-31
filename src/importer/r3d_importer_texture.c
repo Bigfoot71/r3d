@@ -22,7 +22,7 @@
 #   undef far
 #endif
 
-#if defined(_MSC_VER)
+#if defined(R3D_NO_C11_THREADS)
 #   include <tinycthread.h>
 #else
 #   include <threads.h>

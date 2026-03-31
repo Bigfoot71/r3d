@@ -229,6 +229,7 @@ endif()
 # ========================================
 
 include(CheckLibraryExists)
+include(CheckIncludeFile)
 include(EmbedShaders)
 include(EmbedAssets)
 
@@ -245,12 +246,6 @@ if(R3D_SUPPORT_ASSIMP)
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
     )
-    if(MSVC)
-        set(R3D_IMPORTER_SOURCES
-            ${R3D_IMPORTER_SOURCES}
-            "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
-        )
-    endif()
 endif()
 
 add_library(${PROJECT_NAME}
@@ -427,6 +422,16 @@ endif()
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /experimental:c11atomics)
     target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
+check_include_file("threads.h" R3D_HAS_C11_THREADS)
+if(NOT R3D_HAS_C11_THREADS)
+    list(APPEND R3D_IMPORTER_SOURCES
+        "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
+    )
+endif()
+if(NOT R3D_HAS_C11_THREADS)
+    target_compile_definitions(r3d PRIVATE R3D_NO_C11_THREADS)
 endif()
 
 # ========================================
