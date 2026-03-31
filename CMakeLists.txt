@@ -438,6 +438,8 @@ cmake_push_check_state(RESET)
             thrd_t t;
             thrd_create(&t, dummy_thread, NULL);
             thrd_join(t, NULL);
+            struct timespec ts = {0, 0};
+            thrd_sleep(&ts, NULL);
             mtx_t m;
             mtx_init(&m, mtx_plain);
             mtx_lock(&m);
