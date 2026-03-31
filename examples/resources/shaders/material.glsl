@@ -1,7 +1,7 @@
 #pragma usage opaque shadow
 
 uniform sampler2D u_texture;
-uniform float u_time_scale;
+uniform float u_time_scale = 2.0;
 
 flat varying float v_time;
 

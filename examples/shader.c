@@ -33,7 +33,6 @@ int main(void)
 
     // Set material custom uniform/sampler
     R3D_SetSurfaceShaderSampler(material.shader, "u_texture", texture);
-    R3D_SetSurfaceShaderUniform(material.shader, "u_time_scale", (float[]){0.75f});
 
     // Load a screen shader
     R3D_ScreenShader* shader = R3D_LoadScreenShader(RESOURCES_PATH "shaders/screen.glsl");
