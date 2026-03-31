@@ -1696,14 +1696,10 @@ r3d_shader_custom_t* r3d_shader_custom_clone(r3d_shader_custom_t* custom)
     clone->programOwner = false;
 
     memcpy(clone->data.samplers, custom->data.samplers, sizeof(custom->data.samplers));
-    for (int i = 0; i < ARRAY_SIZE(clone->data.samplers); i++) {
-        clone->data.samplers[i].texture = 0;
-    }
 
     if (custom->data.uniforms.bufferSize > 0)
     {
         memcpy(&clone->data.uniforms, &custom->data.uniforms, sizeof(r3d_rshade_uniform_buffer_t));
-        memset(clone->data.uniforms.buffer, 0, sizeof(clone->data.uniforms.buffer));
 
         clone->data.uniforms.dirty = false;
         clone->data.uniforms.bufferId = 0;
