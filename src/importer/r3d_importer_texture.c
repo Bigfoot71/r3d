@@ -22,7 +22,12 @@
 #   undef far
 #endif
 
-#include <tinycthread.h>
+#if defined(_MSC_VER)
+#   include <tinycthread.h>
+#else
+#   include <threads.h>
+#endif
+
 #include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>

@@ -239,13 +239,18 @@ endif()
 
 if(R3D_SUPPORT_ASSIMP)
     set(R3D_IMPORTER_SOURCES
-        "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_animation.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_material.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_skeleton.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_texture.c"
         "${R3D_ROOT_PATH}/src/importer/r3d_importer_mesh.c"
     )
+    if(MSVC)
+        set(R3D_IMPORTER_SOURCES
+            ${R3D_IMPORTER_SOURCES}
+            "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
+        )
+    endif()
 endif()
 
 add_library(${PROJECT_NAME}
