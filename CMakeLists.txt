@@ -451,16 +451,11 @@ cmake_push_check_state(RESET)
 cmake_pop_check_state()
 
 if(NOT R3D_HAS_C11_THREADS)
-    list(APPEND R3D_IMPORTER_SOURCES
-        "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
-    )
     message(STATUS "Threading: threads.h unavailable or incomplete, using tinycthread")
+    target_sources(${PROJECT_NAME} PRIVATE "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE R3D_NO_C11_THREADS)
 else()
     message(STATUS "Threading: using native threads.h")
-endif()
-
-if(NOT R3D_HAS_C11_THREADS)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE R3D_NO_C11_THREADS)
 endif()
 
 # ========================================
