@@ -341,22 +341,10 @@ static inline char* r3d_rshade_copy_global_code(char* outPtr, const char* code, 
 
     while (*ptr)
     {
-        // Skip single-line comments
-        if (strncmp(ptr, "//", 2) == 0) {
-            r3d_rshade_skip_to_end_of_line(&ptr);
-            continue;
-        }
-
-        // Skip multi-line comments
-        if (strncmp(ptr, "/*", 2) == 0) {
-            ptr += 2;
-            while (*ptr && strncmp(ptr, "*/", 2) != 0) ptr++;
-            if (*ptr) ptr += 2;
-            continue;
-        }
-
         const char* lineStart = ptr;
-        r3d_rshade_skip_whitespace(&ptr);
+        r3d_rshade_skip_whitespace_and_comments(&ptr);
+
+        if (!*ptr) break;
 
         // Check if line should be skipped
         if (r3d_rshade_should_skip_line(ptr, hasVaryings, vertexFunc, fragmentFunc)) {
@@ -372,12 +360,12 @@ static inline char* r3d_rshade_copy_global_code(char* outPtr, const char* code, 
             else {
                 r3d_rshade_skip_to_semicolon(&ptr);
             }
+            continue;
         }
-        else {
-            // Copy whitespace and content
-            while (lineStart < ptr) *outPtr++ = *lineStart++;
-            if (*ptr) *outPtr++ = *ptr++;
-        }
+
+        // Copy user code content
+        while (lineStart < ptr) *outPtr++ = *lineStart++;
+        if (*ptr) *outPtr++ = *ptr++;
     }
 
     return outPtr;
