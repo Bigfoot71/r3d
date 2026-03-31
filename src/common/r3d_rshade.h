@@ -228,34 +228,50 @@ static inline bool r3d_rshade_parse_declaration(const char** ptr, char* type, ch
     return true;
 }
 
-/* Parse varying declaration with optional interpolation qualifier */
-static inline bool r3d_rshade_parse_varying(const char** ptr, r3d_rshade_varying_t* varying)
+/* Count comma-separated arguments at depth 1 inside a constructor.
+ * ptr must point to the character just after the opening '('. */
+static inline int r3d_rshade_count_constructor_args(const char* ptr)
 {
-    varying->qualifier[0] = '\0';
+    int depth = 1;
+    int count = 0;
+    bool hasContent = false;
 
-    // Check for interpolation qualifier before "varying"
-    size_t qualLen = 0;
-    if      (strncmp(*ptr, "flat", 4) == 0 && isspace((*ptr)[4]))            qualLen = 4;
-    else if (strncmp(*ptr, "noperspective", 13) == 0 && isspace((*ptr)[13])) qualLen = 13;
-    else if (strncmp(*ptr, "smooth", 6) == 0 && isspace((*ptr)[6]))          qualLen = 6;
-
-    if (qualLen > 0) {
-        memcpy(varying->qualifier, *ptr, qualLen);
-        varying->qualifier[qualLen] = '\0';
-        *ptr += qualLen;
-        r3d_rshade_skip_whitespace(ptr);
-
-        // Must be followed by "varying"
-        if (!r3d_rshade_match_keyword(*ptr, "varying", 7)) {
-            r3d_rshade_skip_to_semicolon(ptr);
-            return false;
+    while (*ptr && depth > 0)
+    {
+        if (*ptr == '(') {
+            depth++;
+            hasContent = true;
         }
+        else if (*ptr == ')') {
+            if (depth == 1 && hasContent) count++;
+            depth--;
+        }
+        else if (*ptr == ',' && depth == 1) {
+            count++;
+            hasContent = false;
+        }
+        else if (!isspace((unsigned char)*ptr)) {
+            hasContent = true;
+        }
+        ptr++;
     }
 
-    // Skip "varying" keyword
-    *ptr += 7;
+    return count;
+}
 
-    return r3d_rshade_parse_declaration(ptr, varying->type, varying->name);
+/* Parse a single scalar token (float or int) from *ptr without advancing it. */
+static inline void r3d_rshade_read_scalar(const char* ptr, bool isFloat, float* fOut, int32_t* iOut)
+{
+    if (isFloat) {
+        float  v = 0.0f;
+        sscanf(ptr, "%f", &v);
+        *fOut = v;
+    }
+    else {
+        int32_t v = 0;
+        sscanf(ptr, "%d", &v);
+        *iOut = v;
+    }
 }
 
 /* Parse a GLSL literal value and write it into the uniform buffer at given offset.
@@ -286,7 +302,7 @@ static inline bool r3d_rshade_parse_default_value(const char** ptr,
         // Accept both true/false keywords and 1/0 literals
         int v = (strncmp(*ptr, "true", 4) == 0) ? 1
               : (strncmp(*ptr, "false", 5) == 0) ? 0
-              : (*ptr[0] != '0');
+              : ((*ptr)[0] != '0');
         memcpy(dst, &v, 4);
         return true;
     }
@@ -311,35 +327,97 @@ static inline bool r3d_rshade_parse_default_value(const char** ptr,
 
     if (cols == 0) return false;
 
-    // Advance past the opening parenthesis of the constructor
+    // Advance past the constructor name to '('
     while (**ptr && **ptr != '(') (*ptr)++;
     if (**ptr != '(') return false;
     (*ptr)++;
 
-    // Parse components in column-major order
-    for (int c = 0; c < cols; c++) {
-        for (int r = 0; r < rows; r++) {
-            r3d_rshade_skip_whitespace(ptr);
+    int argCount = r3d_rshade_count_constructor_args(*ptr);
 
-            int byteOffset = c * 16 + r * 4;
-            if (isFloat) {
-                float v = 0.0f;
-                sscanf(*ptr, "%f", &v);
-                memcpy(dst + byteOffset, &v, 4);
-            }
-            else {
-                int32_t v = 0;
-                sscanf(*ptr, "%d", &v);
-                memcpy(dst + byteOffset, &v, 4);
-            }
+    if (argCount == 1) {
+        // Single-scalar constructor
+        r3d_rshade_skip_whitespace(ptr);
 
-            // Advance past this token to the next separator
-            while (**ptr && **ptr != ',' && **ptr != ')') (*ptr)++;
-            if (**ptr == ',') (*ptr)++;
+        float   fScalar = 0.0f;
+        int32_t iScalar = 0;
+        r3d_rshade_read_scalar(*ptr, isFloat, &fScalar, &iScalar);
+
+        for (int c = 0; c < cols; c++) {
+            for (int r = 0; r < rows; r++) {
+                int byteOffset = c * 16 + r * 4;
+
+                /* For matrices, only the diagonal gets the scalar value.
+                 * For vectors (cols == 1), every component gets it. */
+                bool active = (cols == 1) || (r == c);
+
+                if (isFloat) {
+                    float v = active ? fScalar : 0.0f;
+                    memcpy(dst + byteOffset, &v, 4);
+                }
+                else {
+                    int32_t v = active ? iScalar : 0;
+                    memcpy(dst + byteOffset, &v, 4);
+                }
+            }
+        }
+
+        // Skip to closing ')'
+        while (**ptr && **ptr != ')') (*ptr)++;
+        if (**ptr == ')') (*ptr)++;
+    }
+    else {
+        // Full component list
+        for (int c = 0; c < cols; c++) {
+            for (int r = 0; r < rows; r++) {
+                r3d_rshade_skip_whitespace(ptr);
+
+                int byteOffset = c * 16 + r * 4;
+                if (isFloat) {
+                    float v = 0.0f; sscanf(*ptr, "%f", &v);
+                    memcpy(dst + byteOffset, &v, 4);
+                }
+                else {
+                    int32_t v = 0; sscanf(*ptr, "%d", &v);
+                    memcpy(dst + byteOffset, &v, 4);
+                }
+
+                while (**ptr && **ptr != ',' && **ptr != ')') (*ptr)++;
+                if (**ptr == ',') (*ptr)++;
+            }
         }
     }
 
     return true;
+}
+
+/* Parse varying declaration with optional interpolation qualifier */
+static inline bool r3d_rshade_parse_varying(const char** ptr, r3d_rshade_varying_t* varying)
+{
+    varying->qualifier[0] = '\0';
+
+    // Check for interpolation qualifier before "varying"
+    size_t qualLen = 0;
+    if      (strncmp(*ptr, "flat", 4) == 0 && isspace((*ptr)[4]))            qualLen = 4;
+    else if (strncmp(*ptr, "noperspective", 13) == 0 && isspace((*ptr)[13])) qualLen = 13;
+    else if (strncmp(*ptr, "smooth", 6) == 0 && isspace((*ptr)[6]))          qualLen = 6;
+
+    if (qualLen > 0) {
+        memcpy(varying->qualifier, *ptr, qualLen);
+        varying->qualifier[qualLen] = '\0';
+        *ptr += qualLen;
+        r3d_rshade_skip_whitespace(ptr);
+
+        // Must be followed by "varying"
+        if (!r3d_rshade_match_keyword(*ptr, "varying", 7)) {
+            r3d_rshade_skip_to_semicolon(ptr);
+            return false;
+        }
+    }
+
+    // Skip "varying" keyword
+    *ptr += 7;
+
+    return r3d_rshade_parse_declaration(ptr, varying->type, varying->name);
 }
 
 /* Parse a 'uniform' declaration and register it as a sampler or UBO entry.
