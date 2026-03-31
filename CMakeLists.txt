@@ -228,8 +228,8 @@ endif()
 # Library Definition
 # ========================================
 
+include(CheckCSourceCompiles)
 include(CheckLibraryExists)
-include(CheckIncludeFile)
 include(EmbedShaders)
 include(EmbedAssets)
 
@@ -424,12 +424,25 @@ if(MSVC)
     target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif()
 
-check_include_file("threads.h" R3D_HAS_C11_THREADS)
+# ========================================
+# Threading Support
+# ========================================
+
+check_c_source_compiles("
+#include <threads.h>
+int dummy_thread(void *arg) { return 0; }
+int main(void) { thrd_t t; thrd_create(&t, dummy_thread, NULL); thrd_join(t, NULL); return 0; }
+" R3D_HAS_C11_THREADS)
+
 if(NOT R3D_HAS_C11_THREADS)
     list(APPEND R3D_IMPORTER_SOURCES
         "${R3D_ROOT_PATH}/external/tinycthread/tinycthread.c"
     )
+    message(STATUS "Threading: threads.h unavailable or incomplete, using tinycthread")
+else()
+    message(STATUS "Threading: using native threads.h")
 endif()
+
 if(NOT R3D_HAS_C11_THREADS)
     target_compile_definitions(${PROJECT_NAME} PRIVATE R3D_NO_C11_THREADS)
 endif()
