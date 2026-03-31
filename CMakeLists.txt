@@ -229,6 +229,7 @@ endif()
 # ========================================
 
 include(CheckCSourceCompiles)
+include(CMakePushCheckState)
 include(CheckLibraryExists)
 include(EmbedShaders)
 include(EmbedAssets)
@@ -428,11 +429,23 @@ endif()
 # Threading Support
 # ========================================
 
-check_c_source_compiles("
-#include <threads.h>
-int dummy_thread(void *arg) { return 0; }
-int main(void) { thrd_t t; thrd_create(&t, dummy_thread, NULL); thrd_join(t, NULL); return 0; }
-" R3D_HAS_C11_THREADS)
+cmake_push_check_state(RESET)
+    check_c_source_compiles("
+        #include <threads.h>
+        int dummy_thread(void *arg) { return 0; }
+        int main(void) {
+            thrd_t t;
+            thrd_create(&t, dummy_thread, NULL);
+            thrd_join(t, NULL);
+            mtx_t m;
+            mtx_init(&m, mtx_plain);
+            mtx_lock(&m);
+            mtx_unlock(&m);
+            mtx_destroy(&m);
+            return 0;
+        }
+    " R3D_HAS_C11_THREADS)
+cmake_pop_check_state()
 
 if(NOT R3D_HAS_C11_THREADS)
     list(APPEND R3D_IMPORTER_SOURCES
