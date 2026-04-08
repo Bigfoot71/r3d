@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.8)
-project(r3d VERSION 0.9.1 LANGUAGES C CXX)
+project(r3d VERSION 0.9.2 LANGUAGES C CXX)
 
 # ========================================
 # Standards and Policies
