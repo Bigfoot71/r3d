@@ -200,7 +200,8 @@ static void coalesce_free_list(r3d_render_range_t* list, int* count)
             int end = list[write].offset + list[write].count;
             int end_i = list[i].offset + list[i].count;
             if (end_i > end) list[write].count = end_i - list[write].offset;
-        } else {
+        }
+        else {
             list[++write] = list[i];
         }
     }
@@ -222,7 +223,10 @@ static bool push_free_range(r3d_render_range_t** list, int* count, int* capacity
         *capacity = newCapacity;
     }
 
-    (*list)[(*count)++] = (r3d_render_range_t){ .offset = offset, .count = rangeCount };
+    (*list)[(*count)++] = (r3d_render_range_t) {
+        .offset = offset, .count = rangeCount
+    };
+
     return true;
 }
 
@@ -242,7 +246,8 @@ static int pop_free_range(r3d_render_range_t* list, int* count, int needed)
                 // Cut: we keep the rest in the list
                 list[i].offset += needed;
                 list[i].count  -= needed;
-            } else {
+            }
+            else {
                 // Exact match: remove the entry
                 list[i] = list[--(*count)];
             }
@@ -271,7 +276,8 @@ static bool try_extend_in_place(r3d_render_range_t* list, int* count,
         if (list[i].count == needed) {
             // Exact match: remove the entry
             list[i] = list[--(*count)];
-        } else {
+        }
+        else {
             // We consume 'needed' since the beginning of the block
             list[i].offset += needed;
             list[i].count  -= needed;
