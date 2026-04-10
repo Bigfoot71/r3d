@@ -56,10 +56,10 @@ static void reconfigure_global_vao_attribs(void)
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
 
     glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
+    glVertexAttribIPointer(5, 4, GL_UNSIGNED_BYTE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
 
     glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
+    glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
 }
 
 /*
@@ -890,10 +890,10 @@ bool r3d_render_init(void)
     glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
 
     glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_INT, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
+    glVertexAttribIPointer(5, 4, GL_UNSIGNED_BYTE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
 
     glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
+    glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
 
     // Default values ​​for instance attributes (disabled)
     glVertexAttrib3f(10, 0.0f, 0.0f, 0.0f);
