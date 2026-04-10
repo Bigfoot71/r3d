@@ -34,8 +34,7 @@
 // HELPER MACROS
 // ========================================
 
-#define IS_MESH_VALID(mesh)                     \
-    (((mesh).vao != 0) && ((mesh).vertexCount > 0))
+#define IS_MESH_VALID(mesh) ((mesh).vertexCount > 0)
 
 #define IS_MESH_DRAWABLE(mesh, cullMask)        \
     (IS_MESH_VALID(mesh) && BIT_TEST_ANY((cullMask), (mesh).layerMask))
@@ -122,6 +121,8 @@ void R3D_BeginEx(RenderTexture target, Camera3D camera)
 
 void R3D_End(void)
 {
+    r3d_render_prepare_drawing(); // bind global VAO
+
     /* --- Invalidates OpenGL cache and save some infos --- */
 
     r3d_driver_invalidate_cache();

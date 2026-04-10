@@ -240,20 +240,21 @@ R3D_Cubemap load_cubemap_from_panorama(Image image, int size)
     glBindFramebuffer(GL_FRAMEBUFFER, cubemap.fbo);
     glViewport(0, 0, size, size);
     r3d_driver_disable(GL_CULL_FACE);
+    r3d_render_prepare_drawing();
 
     for (int i = 0; i < 6; i++) {
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, cubemap.texture, 0);
-        glClear(GL_DEPTH_BUFFER_BIT);
-
         R3D_SHADER_SET_MAT4(prepare.cubemapFromEquirectangular, uMatView, R3D.matCubeViews[i]);
         R3D_RENDER_CUBE();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    UnloadTexture(panorama);
+    glBindVertexArray(0);
 
     r3d_driver_enable(GL_CULL_FACE);
     r3d_driver_restore_viewport();
+
+    UnloadTexture(panorama);
 
     return cubemap;
 }

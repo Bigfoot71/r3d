@@ -24,15 +24,6 @@
 // ========================================
 
 /**
- * @brief Hint on how a mesh will be used.
- */
-typedef enum R3D_MeshUsage {
-    R3D_STATIC_MESH,            ///< Will never be updated.
-    R3D_DYNAMIC_MESH,           ///< Will be updated occasionally.
-    R3D_STREAMED_MESH           ///< Will be update on each frame.
-} R3D_MeshUsage;
-
-/**
  * @brief Shadow casting modes for objects.
  *
  * Controls how an object interacts with the shadow mapping system.
@@ -62,16 +53,20 @@ typedef enum R3D_ShadowCastMode {
  * Can represent a static or skinned mesh.
  */
 typedef struct R3D_Mesh {
-    uint32_t vao, vbo, ebo;                 ///< OpenGL objects handles.
-    int vertexCapacity;                     ///< Number of vertices allocated in GPU buffers.
-    int indexCapacity;                      ///< Number of indices allocated in GPU buffers.
+
+    int vertexOffset;                       ///< Offset in the internal VBO.
+    int vertexCapacity;                     ///< Number of vertices allocated in the internal VBO.
     int vertexCount;                        ///< Number of vertices currently in use.
+
+    int indexOffset;                        ///< Offset in the internal EBO.
+    int indexCapacity;                      ///< Number of indices allocated in the internal EBO.
     int indexCount;                         ///< Number of indices currently in use.
+
     R3D_ShadowCastMode shadowCastMode;      ///< Shadow casting mode for the mesh.
     R3D_PrimitiveType primitiveType;        ///< Type of primitive that constitutes the vertices.
-    R3D_MeshUsage usage;                    ///< Hint about the usage of the mesh, retained in case of update if there is a reallocation.
     R3D_Layer layerMask;                    ///< Bitfield indicating the rendering layer(s) of this mesh.
     BoundingBox aabb;                       ///< Axis-Aligned Bounding Box in local space.
+
 } R3D_Mesh;
 
 // ========================================
@@ -87,11 +82,10 @@ extern "C" {
  * @param type Primitive type used to interpret vertex data.
  * @param data R3D_MeshData containing vertices and indices (can be zero initialized).
  * @param aabb Optional pointer to a bounding box. If NULL, it will be computed automatically.
- * @param usage Hint on how the mesh will be used.
  * @return Created R3D_Mesh.
  * @note The function copies all vertex and index data into GPU buffers.
  */
-R3DAPI R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingBox* aabb, R3D_MeshUsage usage);
+R3DAPI R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingBox* aabb);
 
 /**
  * @brief Destroys a 3D mesh and frees its resources.

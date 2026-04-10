@@ -153,12 +153,19 @@ typedef enum {
 // ========================================
 
 /*
+ * Interval [offset, offset+count) into the global VBO or EBO.
+ */
+typedef struct {
+    int offset;
+    int count;
+} r3d_render_range_t;
+
+/*
  * Internal structure for storing built-in shapes.
  */
 typedef struct {
-    GLuint vao, vbo, ebo;
-    int vertexCount;
-    int indexCount;
+    r3d_render_range_t vertices;
+    r3d_render_range_t elements;
 } r3d_render_shape_t;
 
 /*
@@ -270,6 +277,21 @@ typedef struct {
  */
 extern struct r3d_mod_render {
 
+    GLuint globalVao;                                   //< Single VAO shared by all mesh and shape draw calls
+    GLuint globalVbo;                                   //< Global vertex buffer holding all mesh and shape vertices
+    GLuint globalEbo;                                   //< Global index buffer holding all mesh and shape indices
+    int globalVertexCapacity;                           //< Number of vertex slots allocated in the VBO
+    int globalElementCapacity;                          //< Number of index slots allocated in the EBO
+    int globalVertexCount;                              //< High-water mark: first never-allocated vertex offset
+    int globalElementCount;                             //< High-water mark: first never-allocated index offset
+
+    r3d_render_range_t* freeVertices;                   //< Free list of released vertex ranges available for reuse
+    r3d_render_range_t* freeElements;                   //< Free list of released index ranges available for reuse
+    int numFreeVertices;                                //< Number of entries in the vertex free list
+    int numFreeElements;                                //< Number of entries in the element free list
+    int freeVertexCapacity;                             //< Allocated capacity of the vertex free list array
+    int freeElementCapacity;                            //< Allocated capacity of the element free list array
+
     r3d_render_shape_t shapes[R3D_RENDER_SHAPE_COUNT];  //< Array of built-in shapes buffers
 
     r3d_render_cluster_t* clusters;                     //< Array of render clusters
@@ -311,6 +333,56 @@ bool r3d_render_init(void);
  * Called once during `R3D_Close()`
  */
 void r3d_render_quit(void);
+
+/*
+ * Allocates 'count' vertex slots from the global VBO; returns their offset via 'outOffset'.
+ * Reuses a free block when possible, otherwise extends the buffer (growing it if needed).
+ */
+bool r3d_render_alloc_vertices(int count, int* outOffset);
+
+/*
+ * Allocates 'count' index slots from the global EBO; returns their offset via 'outOffset'.
+ * Reuses a free block when possible, otherwise extends the buffer (growing it if needed).
+ */
+bool r3d_render_alloc_elements(int count, int* outOffset);
+
+/*
+ * Resizes an existing vertex allocation to 'newCount' slots, updating '*offset' and '*count'.
+ * Shrinking always succeeds in-place. Growing tries to extend in-place before relocating;
+ * if relocated and 'keepData' is true, existing GPU data is copied to the new location.
+ */
+bool r3d_render_realloc_vertices(int* offset, int* count, int newCount, bool keepData);
+
+/*
+ * Resizes an existing element allocation to 'newCount' slots, updating '*offset' and '*count'.
+ * Shrinking always succeeds in-place. Growing tries to extend in-place before relocating;
+ * if relocated and 'keepData' is true, existing GPU data is copied to the new location.
+ */
+bool r3d_render_realloc_elements(int* offset, int* count, int newCount, bool keepData);
+
+/*
+ * Returns 'count' vertex slots starting at 'offset' to the free list.
+ * Adjacent free blocks are merged immediately to limit fragmentation.
+ */
+void r3d_render_free_vertices(int offset, int count);
+
+/*
+ * Returns 'count' index slots starting at 'offset' to the free list.
+ * Adjacent free blocks are merged immediately to limit fragmentation.
+ */
+void r3d_render_free_elements(int offset, int count);
+
+/*
+ * Uploads 'count' vertices to the global VBO at 'offset'. Does not allocate; caller must
+ * hold a valid allocation covering [offset, offset+count).
+ */
+void r3d_render_upload_vertices(int offset, const R3D_Vertex* verts, int count);
+
+/*
+ * Uploads 'count' indices to the global EBO at 'offset'. Does not allocate; caller must
+ * hold a valid allocation covering [offset, offset+count).
+ */
+void r3d_render_upload_elements(int offset, const GLuint* indices, int count);
 
 /*
  * Clear all render lists and reset the draw call buffer for the next frame.
@@ -368,6 +440,12 @@ bool r3d_render_call_is_visible(const r3d_render_call_t* call, const r3d_frustum
 void r3d_render_sort_list(r3d_render_list_enum_t list, Vector3 viewPosition, r3d_render_sort_enum_t mode);
 
 /*
+ * Binds the global VAO, making it active for all subsequent draw calls.
+ * Must be called once before any r3d_render_draw* calls in a rendering pass.
+ */
+void r3d_render_prepare_drawing(void);
+
+/*
  * Issue a non-instanced draw call.
  */
 void r3d_render_draw(const r3d_render_call_t* call);
@@ -382,15 +460,6 @@ void r3d_render_draw_instanced(const r3d_render_call_t* call);
  * Bind, draws the shape, and unbind the VAO of the shape.
  */
 void r3d_render_draw_shape(r3d_render_shape_enum_t shape);
-
-/*
- * Generate the vao/vbo/ebo and upload provided data to the buffers.
- */
-void r3d_render_create_vertex_array(
-    GLuint* vao, GLuint* vbo, GLuint* ebo,
-    const R3D_Vertex* vertices, int vertexCount,
-    const void* indices, int indexCount, int indexStride,
-    GLenum usage);
 
 // ----------------------------------------
 // INLINE QUERIES

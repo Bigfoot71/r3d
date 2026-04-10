@@ -310,7 +310,8 @@ static bool load_mesh_internal(
 
     // Upload the mesh
     R3D_PrimitiveType ptype = get_primitive_type(aiMesh->mPrimitiveTypes);
-    *outMesh = R3D_LoadMesh(ptype, data, &aabb, R3D_STATIC_MESH);
+    *outMesh = R3D_LoadMesh(ptype, data, &aabb);
+
     if (outMeshData == NULL) R3D_UnloadMeshData(data);
     else *outMeshData = data;
 
