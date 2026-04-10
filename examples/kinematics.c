@@ -50,7 +50,7 @@ int main(void)
 
     // Slope obstacle
     R3D_MeshData slopeMeshData = R3D_GenMeshDataSlope(2, 2, 2, (Vector3) {0, 1, -1});
-    R3D_Mesh slopeMesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, slopeMeshData, NULL, R3D_STATIC_MESH);
+    R3D_Mesh slopeMesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, slopeMeshData, NULL);
     Matrix slopeTransform = MatrixTranslate(0, 1, 5);
 
     // Player capsule

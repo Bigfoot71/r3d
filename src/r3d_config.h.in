@@ -108,6 +108,30 @@
 #define R3D_MAX_SCREEN_SHADERS @R3D_MAX_SCREEN_SHADERS@
 
 // ========================================
+// Render Module
+// ========================================
+
+/*
+ * Initial number of vertex slots pre-allocated in the global VBO at startup.
+ */
+#define R3D_RENDER_INITIAL_VERTICES_RESERVE (1 << 16)   // 65 536 vertices (~5.5 MB)
+
+/*
+ * Initial number of index slots pre-allocated in the global EBO at startup.
+ */
+#define R3D_RENDER_INITIAL_ELEMENTS_RESERVE (1 << 17)   // 131 072 indices (~0.5 MB)
+
+/*
+ * Initial capacity of the CPU-side draw call, group, and cluster arrays.
+ */
+#define R3D_RENDER_INITIAL_DRAW_CALL_RESERVE 1024
+
+/*
+ * Initial capacity of the vertex and element free list arrays.
+ */
+#define R3D_RENDER_INITIAL_FREE_LIST_RESERVE 128
+
+// ========================================
 // Debug
 // ========================================
 
