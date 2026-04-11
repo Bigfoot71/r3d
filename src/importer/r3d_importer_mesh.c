@@ -202,6 +202,8 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
             }
 
             uint8_t weightValue = (uint8_t)(weight->mWeight * 255.0f + 0.5f);
+            if (weightValue == 0) continue;
+
             assign_bone_weight(&data->vertices[vertexId], boneIndex, weightValue);
         }
     }
