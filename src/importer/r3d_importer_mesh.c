@@ -178,9 +178,9 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
     }
 
     // Check if the mesh has too many bones
-    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIds)) {
+    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIds) + 1) {
         R3D_TRACELOG(LOG_WARNING, "Mesh has %u bones, max %d supported",
-            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIds));
+            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIds) + 1);
         return false;
     }
 
