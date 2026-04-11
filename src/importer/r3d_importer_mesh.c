@@ -16,6 +16,7 @@
 #include <assimp/mesh.h>
 #include <float.h>
 
+#include "../common/r3d_helper.h"
 #include "../common/r3d_math.h"
 
 // ========================================
@@ -23,7 +24,6 @@
 // ========================================
 
 #define MAX_BONE_WEIGHTS 4
-#define MIN_BONE_WEIGHT_THRESHOLD 1e-3f
 
 // ========================================
 // VERTEX PROCESSING (INTERNAL)
@@ -113,16 +113,16 @@ static void process_indices(const struct aiMesh* aiMesh, R3D_MeshData* data)
 // BONE PROCESSING (INTERNAL)
 // ========================================
 
-static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, float weightValue)
+static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, uint8_t weightValue)
 {
     int emptySlot = -1;
     int minWeightSlot = 0;
-    float minWeight = vertex->weights[0];
+    uint8_t minWeight = vertex->weights[0];
 
     // Pass to find both empty slot and minimum weight
-    for (int slot = 0; slot < MAX_BONE_WEIGHTS; slot++) {
-        float w = vertex->weights[slot];
-        if (w == 0.0f && emptySlot == -1) {
+    for (int slot = 1; slot < MAX_BONE_WEIGHTS; slot++) {
+        uint8_t w = vertex->weights[slot];
+        if (w == 0 && emptySlot == -1) {
             emptySlot = slot;
         }
         if (w < minWeight) {
@@ -150,22 +150,20 @@ static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, fl
 
 static void normalize_bone_weights(R3D_Vertex* vertex)
 {
-    float w0 = vertex->weights[0];
-    float w1 = vertex->weights[1];
-    float w2 = vertex->weights[2];
-    float w3 = vertex->weights[3];
+    uint32_t sum = (uint32_t)vertex->weights[0] + (uint32_t)vertex->weights[1] +
+                   (uint32_t)vertex->weights[2] + (uint32_t)vertex->weights[3];
 
-    float totalWeight = w0 + w1 + w2 + w3;
+    if (sum == 255) return;
 
-    if (totalWeight > 0.0f) {
-        float invTotal = 1.0f / totalWeight;
-        vertex->weights[0] = w0 * invTotal;
-        vertex->weights[1] = w1 * invTotal;
-        vertex->weights[2] = w2 * invTotal;
-        vertex->weights[3] = w3 * invTotal;
+    if (sum > 0) {
+        uint32_t half = sum >> 1; // nearest rounding
+        vertex->weights[0] = (uint8_t)((vertex->weights[0] * 255 + half) / sum);
+        vertex->weights[1] = (uint8_t)((vertex->weights[1] * 255 + half) / sum);
+        vertex->weights[2] = (uint8_t)((vertex->weights[2] * 255 + half) / sum);
+        vertex->weights[3] = (uint8_t)((vertex->weights[3] * 255 + half) / sum);
     }
     else {
-        vertex->weights[0] = 1.0f;
+        vertex->weights[0] = 255;
     }
 }
 
@@ -174,9 +172,16 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
     if (aiMesh->mNumBones == 0) {
         // No bones - initialize default weights
         for (int i = 0; i < vertexCount; i++) {
-            data->vertices[i].weights[0] = 1.0f;
+            data->vertices[i].weights[0] = 255;
         }
         return true;
+    }
+
+    // Check if the mesh has too many bones
+    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIds)) {
+        R3D_TRACELOG(LOG_WARNING, "Mesh has %u bones, max %d supported",
+            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIds));
+        return false;
     }
 
     // Process each bone
@@ -188,20 +193,15 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
         for (unsigned int weightIndex = 0; weightIndex < bone->mNumWeights; weightIndex++)
         {
             const struct aiVertexWeight* weight = &bone->mWeights[weightIndex];
-            uint32_t vertexId = weight->mVertexId;
-            float weightValue = weight->mWeight;
 
             // Validate vertex ID
+            uint32_t vertexId = weight->mVertexId;
             if (vertexId >= (uint32_t)vertexCount) {
                 R3D_TRACELOG(LOG_ERROR, "Invalid vertex ID %u in bone weights (max: %d)", vertexId, vertexCount);
                 continue;
             }
 
-            // Skip negligible weights
-            if (weightValue < MIN_BONE_WEIGHT_THRESHOLD) {
-                continue;
-            }
-
+            uint8_t weightValue = (uint8_t)(weight->mWeight * 255.0f + 0.5f);
             assign_bone_weight(&data->vertices[vertexId], boneIndex, weightValue);
         }
     }
