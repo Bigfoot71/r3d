@@ -153,6 +153,18 @@ typedef enum {
 // ========================================
 
 /*
+ * Cached state of the per-instance vertex attribute bindings.
+ * Compared before each instanced draw call to avoid redundant
+ * GL attribute reconfiguration when consecutive draw calls share
+ * the same instance group.
+ */
+typedef struct {
+    GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT];
+    R3D_InstanceFlags flags;
+    int offset;
+} r3d_render_instance_state_t;
+
+/*
  * Interval [offset, offset+count) into the global VBO or EBO.
  */
 typedef struct {
@@ -292,6 +304,7 @@ extern struct r3d_mod_render {
     int freeVertexCapacity;                             //< Allocated capacity of the vertex free list array
     int freeElementCapacity;                            //< Allocated capacity of the element free list array
 
+    r3d_render_instance_state_t instanceState;          //< Cached instance binding configuration
     r3d_render_shape_t shapes[R3D_RENDER_SHAPE_COUNT];  //< Array of built-in shapes buffers
 
     r3d_render_cluster_t* clusters;                     //< Array of render clusters
