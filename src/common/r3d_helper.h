@@ -69,6 +69,22 @@
 #   define BIT_TEST(v, b) BIT_TEST_ANY(v, b)
 #endif
 
+#ifndef MAX_OF
+#   define MAX_OF(x) _Generic((x), \
+        char: CHAR_MAX, \
+        signed char: SCHAR_MAX, \
+        unsigned char: UCHAR_MAX, \
+        short: SHRT_MAX, \
+        unsigned short: USHRT_MAX, \
+        int: INT_MAX, \
+        unsigned int: UINT_MAX, \
+        long: LONG_MAX, \
+        unsigned long: ULONG_MAX, \
+        long long: LLONG_MAX, \
+        unsigned long long: ULLONG_MAX \
+    )
+#endif
+
 // ========================================
 // HELPER FUNCTIONS
 // ========================================
