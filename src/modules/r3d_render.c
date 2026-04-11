@@ -1486,7 +1486,10 @@ void r3d_render_draw_shape(r3d_render_shape_enum_t shape)
         glBindVertexArray(R3D_MOD_RENDER.globalVao);
     }
 
-    if (s->elements.count > 0) {
+    if (s->elements.count == 0) {
+        glDrawArrays(GL_TRIANGLES, s->vertices.offset, s->vertices.count);
+    }
+    else {
         glDrawElementsBaseVertex(
             GL_TRIANGLES,
             s->elements.count,
@@ -1494,8 +1497,5 @@ void r3d_render_draw_shape(r3d_render_shape_enum_t shape)
             (void*)(s->elements.offset * sizeof(GLuint)),
             s->vertices.offset
         );
-    }
-    else {
-        glDrawArrays(GL_TRIANGLES, s->vertices.offset, s->vertices.count);
     }
 }
