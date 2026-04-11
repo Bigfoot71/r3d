@@ -15,7 +15,6 @@
 #include <string.h>
 #include <assert.h>
 #include <float.h>
-#include <rlgl.h>
 #include <glad.h>
 
 #include "../common/r3d_frustum.h"
