@@ -58,7 +58,10 @@ R3D_Mesh R3D_LoadMesh(R3D_PrimitiveType type, R3D_MeshData data, const BoundingB
 
 void R3D_UnloadMesh(R3D_Mesh mesh)
 {
-    r3d_render_free_vertices(mesh.vertexOffset, mesh.vertexCapacity);
+    if (mesh.vertexCapacity > 0) {
+        r3d_render_free_vertices(mesh.vertexOffset, mesh.vertexCapacity);
+    }
+
     if (mesh.indexCapacity > 0) {
         r3d_render_free_elements(mesh.indexOffset, mesh.indexCapacity);
     }
