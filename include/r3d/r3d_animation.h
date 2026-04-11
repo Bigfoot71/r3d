@@ -30,9 +30,9 @@
  * Keys are sampled by time and interpolated at runtime.
  */
 typedef struct R3D_AnimationTrack {
-    const float* times;   ///< Keyframe times (sorted, in animation ticks).
-    const void*  values;  ///< Keyframe values (Vector3 or Quaternion).
-    int          count;   ///< Number of keyframes.
+    const float* times;     ///< Keyframe times (sorted, in animation ticks).
+    const void* values;     ///< Keyframe values (Vector3 or Quaternion).
+    int count;              ///< Number of keyframes.
 } R3D_AnimationTrack;
 
 /**
