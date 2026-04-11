@@ -32,8 +32,9 @@ struct r3d_mod_render R3D_MOD_RENDER;
 // ========================================
 
 /*
- * Reconfigures all vertex attribute pointers on the global VAO after a VBO resize.
- * Must be called with the global VAO already bound.
+ * Sets up vertex attribute pointers on the global VAO (already bound).
+ * Pass rebindVbo=true after a VBO resize to update the stored buffer ID.
+ * Pass configInstances=true only at init to set divisors and default values.
  */
 static void configure_global_vao_attributes(bool rebindVbo, bool configInstances)
 {
