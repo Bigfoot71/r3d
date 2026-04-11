@@ -16,6 +16,7 @@
 #include <assimp/mesh.h>
 #include <float.h>
 
+#include "../common/r3d_helper.h"
 #include "../common/r3d_math.h"
 
 // ========================================
@@ -119,7 +120,7 @@ static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, ui
     uint8_t minWeight = vertex->weights[0];
 
     // Pass to find both empty slot and minimum weight
-    for (int slot = 0; slot < MAX_BONE_WEIGHTS; slot++) {
+    for (int slot = 1; slot < MAX_BONE_WEIGHTS; slot++) {
         uint8_t w = vertex->weights[slot];
         if (w == 0 && emptySlot == -1) {
             emptySlot = slot;
@@ -149,9 +150,8 @@ static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, ui
 
 static void normalize_bone_weights(R3D_Vertex* vertex)
 {
-    uint32_t sum = (uint32_t)
-        vertex->weights[0] + vertex->weights[1] +
-        vertex->weights[2] + vertex->weights[3];
+    uint32_t sum = (uint32_t)vertex->weights[0] + (uint32_t)vertex->weights[1] +
+                   (uint32_t)vertex->weights[2] + (uint32_t)vertex->weights[3];
 
     if (sum == 255) return;
 
@@ -177,6 +177,13 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
         return true;
     }
 
+    // Check if the mesh has too many bones
+    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIds)) {
+        R3D_TRACELOG(LOG_WARNING, "Mesh has %u bones, max %d supported",
+            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIds));
+        return false;
+    }
+
     // Process each bone
     for (unsigned int boneIndex = 0; boneIndex < aiMesh->mNumBones; boneIndex++)
     {
@@ -194,7 +201,7 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
                 continue;
             }
 
-            uint8_t weightValue = (uint8_t)(weight->mWeight * 255);
+            uint8_t weightValue = (uint8_t)(weight->mWeight * 255.0f + 0.5f);
             assign_bone_weight(&data->vertices[vertexId], boneIndex, weightValue);
         }
     }
