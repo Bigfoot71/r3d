@@ -10,6 +10,7 @@
 #include <r3d_config.h>
 #include <raylib.h>
 #include <stddef.h>
+#include <string.h>
 #include <glad.h>
 
 #include "./common/r3d_helper.h"
@@ -56,6 +57,34 @@ R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlags flags)
 void R3D_UnloadInstanceBuffer(R3D_InstanceBuffer buffer)
 {
     glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer.buffers);
+}
+
+void R3D_ResizeInstanceBuffer(R3D_InstanceBuffer* buffer, int newCapacity, bool keepData)
+{
+    if (newCapacity <= buffer->capacity) {
+        return;
+    }
+
+    GLuint newBuffers[R3D_INSTANCE_ATTRIBUTE_COUNT] = {0};
+    glGenBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+
+    for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
+        if (!BIT_TEST(buffer->flags, 1 << i)) continue;
+
+        int newSize = newCapacity * (int)INSTANCE_ATTRIBUTE_SIZE[i];
+        glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffers[i]);
+        glBufferData(GL_COPY_WRITE_BUFFER, newSize, NULL, GL_DYNAMIC_DRAW);
+
+        if (keepData && buffer->capacity > 0) {
+            int oldSize = buffer->capacity * (int)INSTANCE_ATTRIBUTE_SIZE[i];
+            glBindBuffer(GL_COPY_READ_BUFFER, buffer->buffers[i]);
+            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, oldSize);
+        }
+    }
+
+    glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer->buffers);
+    memcpy(buffer->buffers, newBuffers, R3D_INSTANCE_ATTRIBUTE_COUNT * sizeof(GLuint));
+    buffer->capacity = newCapacity;
 }
 
 void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int offset, int count, void* data)

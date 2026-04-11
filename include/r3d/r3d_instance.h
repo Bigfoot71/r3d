@@ -10,6 +10,7 @@
 #define R3D_INSTANCE_H
 
 #include "./r3d_platform.h"
+#include <raylib.h>
 #include <stdint.h>
 
 /**
@@ -75,6 +76,20 @@ R3DAPI R3D_InstanceBuffer R3D_LoadInstanceBuffer(int capacity, R3D_InstanceFlags
  * @brief Destroy all GPU buffers owned by this instance buffer.
  */
 R3DAPI void R3D_UnloadInstanceBuffer(R3D_InstanceBuffer buffer);
+
+/**
+ * @brief Grow the GPU buffers of an instance buffer to a new capacity.
+ *
+ * Only expands; if newCapacity <= buffer->capacity the call is a no-op.
+ * All attribute buffers present in buffer->flags are reallocated and
+ * if keepData is true, their existing content is copied to the new
+ * buffers before the old ones are deleted.
+ *
+ * @param buffer Instance buffer to resize (updated in place).
+ * @param newCapacity Desired minimum capacity in number of instances.
+ * @param keepData If true, preserves existing instance data.
+ */
+R3DAPI void R3D_ResizeInstanceBuffer(R3D_InstanceBuffer* buffer, int newCapacity, bool keepData);
 
 /**
  * @brief Upload a contiguous range of instance data.
