@@ -7,14 +7,14 @@
  */
 
 #include <r3d/r3d_mesh_data.h>
+#include <r3d/r3d_vertex.h>
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
 
-#include "./common/r3d_helper.h"
-#include "common/r3d_math.h"
+#include "./common/r3d_math.h"
 
 // ========================================
 // INTERNAL FUNCTIONS
@@ -103,15 +103,13 @@ R3D_MeshData R3D_GenMeshDataQuad(float width, float length, int resX, int resZ, 
             float u = x * invResX;
             float localX = (u - 0.5f) * width;
 
-            vertex->position = (Vector3){
+            Vector3 position = {
                 localX * tangent.x + localY * bitangent.x,
                 localX * tangent.y + localY * bitangent.y,
                 localX * tangent.z + localY * bitangent.z
             };
-            vertex->texcoord = (Vector2){u, v};
-            vertex->normal = normal;
-            vertex->color = WHITE;
-            vertex->tangent = tangent4;
+
+            *vertex = R3D_MakeVertex(position, (Vector2){u, v}, normal, tangent4, WHITE);
         }
     }
 
@@ -169,13 +167,13 @@ R3D_MeshData R3D_GenMeshDataPlane(float width, float length, int resX, int resZ)
             float posX = -halfWidth + x * stepX;
             float uvX = x * invResX;
 
-            *vertex = (R3D_Vertex){
-                .position = {posX, 0.0f, posZ},
-                .texcoord = {uvX, uvZ},
-                .normal = {0.0f, 1.0f, 0.0f},
-                .color = WHITE,
-                .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
-            };
+            *vertex = R3D_MakeVertex(
+                (Vector3){posX, 0.0f, posZ},
+                (Vector2){uvX, uvZ},
+                (Vector3){0.0f, 1.0f, 0.0f},
+                (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -220,13 +218,13 @@ R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius, Vector3 frontDir)
     Vector4 tangent4 = {tangent.x, tangent.y, tangent.z, 1.0f};
     float angleStep = 2.0f * PI / sides;
 
-    meshData.vertices[0] = (R3D_Vertex){
-        .position = {0.0f, 0.0f, 0.0f},
-        .texcoord = {0.5f, 0.5f},
-        .normal = normal,
-        .color = WHITE,
-        .tangent = tangent4
-    };
+    meshData.vertices[0] = R3D_MakeVertex(
+        (Vector3){0.0f, 0.0f, 0.0f},
+        (Vector2){0.5f, 0.5f},
+        normal,
+        tangent4,
+        WHITE
+    );
 
     R3D_Vertex* vertex = &meshData.vertices[1];
     uint32_t* index = meshData.indices;
@@ -240,19 +238,18 @@ R3D_MeshData R3D_GenMeshDataPoly(int sides, float radius, Vector3 frontDir)
         float localX = radius * cosAngle;
         float localY = radius * sinAngle;
 
-        vertex->position = (Vector3){
+        Vector3 position = {
             localX * tangent.x + localY * bitangent.x,
             localX * tangent.y + localY * bitangent.y,
             localX * tangent.z + localY * bitangent.z
         };
 
-        vertex->texcoord = (Vector2){
+        Vector2 texcoord = {
             0.5f + 0.5f * cosAngle,
             0.5f + 0.5f * sinAngle
         };
-        vertex->normal = normal;
-        vertex->color = WHITE;
-        vertex->tangent = tangent4;
+
+        *vertex = R3D_MakeVertex(position, texcoord, normal, tangent4, WHITE);
 
         *index++ = 0;
         *index++ = i + 1;
@@ -286,40 +283,40 @@ R3D_MeshData R3D_GenMeshDataCube(float width, float height, float length)
     R3D_Vertex* v = meshData.vertices;
 
     // Back face (+Z)
-    *v++ = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[0], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[1], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, halfH, halfL}, uvs[2], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[3], {0.0f, 0.0f, 1.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = R3D_MakeVertex((Vector3){-halfW, -halfH, halfL}, uvs[0], (Vector3){0.0f, 0.0f, 1.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, -halfH, halfL}, uvs[1], (Vector3){0.0f, 0.0f, 1.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, halfH, halfL}, uvs[2], (Vector3){0.0f, 0.0f, 1.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, halfH, halfL}, uvs[3], (Vector3){0.0f, 0.0f, 1.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
 
     // Front face (-Z)
-    *v++ = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[0], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[1], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[2], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[3], {0.0f, 0.0f, -1.0f}, WHITE, {-1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = R3D_MakeVertex((Vector3){halfW, -halfH, -halfL}, uvs[0], (Vector3){0.0f, 0.0f, -1.0f}, (Vector4){-1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, -halfH, -halfL}, uvs[1], (Vector3){0.0f, 0.0f, -1.0f}, (Vector4){-1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, halfH, -halfL}, uvs[2], (Vector3){0.0f, 0.0f, -1.0f}, (Vector4){-1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, halfH, -halfL}, uvs[3], (Vector3){0.0f, 0.0f, -1.0f}, (Vector4){-1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
 
     // Right face (+X)
-    *v++ = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[0], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, halfH, halfL}, uvs[3], {1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, -1.0f, 1.0f}};
+    *v++ = R3D_MakeVertex((Vector3){halfW, -halfH, halfL}, uvs[0], (Vector3){1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, -1.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, -halfH, -halfL}, uvs[1], (Vector3){1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, -1.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, halfH, -halfL}, uvs[2], (Vector3){1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, -1.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, halfH, halfL}, uvs[3], (Vector3){1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, -1.0f, 1.0f}, WHITE);
 
     // Left face (-X)
-    *v++ = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[1], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[2], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], {-1.0f, 0.0f, 0.0f}, WHITE, {0.0f, 0.0f, 1.0f, 1.0f}};
+    *v++ = R3D_MakeVertex((Vector3){-halfW, -halfH, -halfL}, uvs[0], (Vector3){-1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, 1.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, -halfH, halfL}, uvs[1], (Vector3){-1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, 1.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, halfH, halfL}, uvs[2], (Vector3){-1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, 1.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, halfH, -halfL}, uvs[3], (Vector3){-1.0f, 0.0f, 0.0f}, (Vector4){0.0f, 0.0f, 1.0f, 1.0f}, WHITE);
 
     // Top face (+Y)
-    *v++ = (R3D_Vertex){{-halfW, halfH, halfL}, uvs[0], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, halfH, halfL}, uvs[1], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, halfH, -halfL}, uvs[2], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, halfH, -halfL}, uvs[3], {0.0f, 1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = R3D_MakeVertex((Vector3){-halfW, halfH, halfL}, uvs[0], (Vector3){0.0f, 1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, halfH, halfL}, uvs[1], (Vector3){0.0f, 1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, halfH, -halfL}, uvs[2], (Vector3){0.0f, 1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, halfH, -halfL}, uvs[3], (Vector3){0.0f, 1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
 
     // Bottom face (-Y)
-    *v++ = (R3D_Vertex){{-halfW, -halfH, -halfL}, uvs[0], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, -halfH, -halfL}, uvs[1], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{halfW, -halfH, halfL}, uvs[2], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
-    *v++ = (R3D_Vertex){{-halfW, -halfH, halfL}, uvs[3], {0.0f, -1.0f, 0.0f}, WHITE, {1.0f, 0.0f, 0.0f, 1.0f}};
+    *v++ = R3D_MakeVertex((Vector3){-halfW, -halfH, -halfL}, uvs[0], (Vector3){0.0f, -1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, -halfH, -halfL}, uvs[1], (Vector3){0.0f, -1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){halfW, -halfH, halfL}, uvs[2], (Vector3){0.0f, -1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
+    *v++ = R3D_MakeVertex((Vector3){-halfW, -halfH, halfL}, uvs[3], (Vector3){0.0f, -1.0f, 0.0f}, (Vector4){1.0f, 0.0f, 0.0f, 1.0f}, WHITE);
 
     // Indices
     uint32_t* index = meshData.indices;
@@ -364,16 +361,13 @@ static void gen_cube_face(
             float ut = u * invU;
             float localU = (ut - 0.5f) * uSize;
 
-            vertex->position = (Vector3){
+            Vector3 position = {
                 origin.x + localU * uAxis.x + localV * vAxis.x,
                 origin.y + localU * uAxis.y + localV * vAxis.y,
                 origin.z + localU * uAxis.z + localV * vAxis.z
             };
 
-            vertex->texcoord = (Vector2){ut, vt};
-            vertex->normal   = normal;
-            vertex->color    = WHITE;
-            vertex->tangent  = tangent4;
+            *vertex = R3D_MakeVertex(position, (Vector2){ut, vt}, normal, tangent4, WHITE);
 
             vertex++;
             (*vertexOffset)++;
@@ -551,10 +545,11 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
         if (keptInFace == 4) {
             int baseV = vertexCount;
             for (int i = 0; i < 4; i++) {
-                v[vertexCount++] = (R3D_Vertex){
-                    corners[ci[i]], uvs[i], faceNormals[f], WHITE,
-                    {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
-                };
+                v[vertexCount++] = R3D_MakeVertex(
+                    corners[ci[i]], uvs[i], faceNormals[f],
+                    (Vector4){faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f},
+                    WHITE
+                );
             }
             idx[indexCount++] = baseV; idx[indexCount++] = baseV+2; idx[indexCount++] = baseV+1;
             idx[indexCount++] = baseV+2; idx[indexCount++] = baseV; idx[indexCount++] = baseV+3;
@@ -611,10 +606,11 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
         if (polyCount >= 3) {
             int baseV = vertexCount;
             for (int i = 0; i < polyCount; i++) {
-                v[vertexCount++] = (R3D_Vertex){
-                    polygon[i], polyUVs[i], faceNormals[f], WHITE,
-                    {faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f}
-                };
+                v[vertexCount++] = R3D_MakeVertex(
+                    polygon[i], polyUVs[i], faceNormals[f],
+                    (Vector4){faceTangents[f].x, faceTangents[f].y, faceTangents[f].z, 1.0f},
+                    WHITE
+                );
             }
             for (int i = 1; i < polyCount - 1; i++) {
                 idx[indexCount++] = baseV;
@@ -685,10 +681,11 @@ R3D_MeshData R3D_GenMeshDataSlope(float width, float height, float length, Vecto
                 (projV - uvMin.y) / rangeV
             };
             
-            v[vertexCount++] = (R3D_Vertex){
-                cutPolygon[i], uv, cutNormal, WHITE,
-                {u.x, u.y, u.z, 1.0f}
-            };
+            v[vertexCount++] = R3D_MakeVertex(
+                cutPolygon[i], uv, cutNormal,
+                (Vector4){u.x, u.y, u.z, 1.0f},
+                WHITE
+            );
         }
 
         for (int i = 1; i < cutCount - 1; i++) {
@@ -742,11 +739,13 @@ R3D_MeshData R3D_GenMeshDataSphere(float radius, int rings, int slices)
             float x = ringRadius * cosTheta;
             float z = ringRadius * -sinTheta;
 
-            vertex->position = (Vector3){x, y, z};
-            vertex->texcoord = (Vector2){slice * invSlices, v};
-            vertex->normal = (Vector3){x * invRadius, y * invRadius, z * invRadius};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){x, y, z},
+                (Vector2){slice * invSlices, v},
+                (Vector3){x * invRadius, y * invRadius, z * invRadius},
+                (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -813,22 +812,24 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
             float x = ringRadius * cosTheta;
             float z = ringRadius * -sinTheta;
 
-            vertex->position = (Vector3){x, y, z};
-            vertex->texcoord = (Vector2){slice * invSlices, v};
-            vertex->normal = (Vector3){x * invRadius, y * invRadius, z * invRadius};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){x, y, z},
+                (Vector2){slice * invSlices, v},
+                (Vector3){x * invRadius, y * invRadius, z * invRadius},
+                (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f},
+                WHITE
+            );
         }
     }
 
     uint32_t baseCenterIdx = hemisphereVertCount;
-    *vertex++ = (R3D_Vertex){
-        .position = {0.0f, 0.0f, 0.0f},
-        .texcoord = {0.5f, 0.5f},
-        .normal = {0.0f, -1.0f, 0.0f},
-        .color = WHITE,
-        .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
-    };
+    *vertex++ = R3D_MakeVertex(
+        (Vector3){0.0f, 0.0f, 0.0f},
+        (Vector2){0.5f, 0.5f},
+        (Vector3){0.0f, -1.0f, 0.0f},
+        (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+        WHITE
+    );
 
     for (int slice = 0; slice <= slices; slice++, vertex++)
     {
@@ -839,11 +840,13 @@ R3D_MeshData R3D_GenMeshDataHemiSphere(float radius, int rings, int slices)
         float x = radius * cosTheta;
         float z = radius * -sinTheta;
 
-        vertex->position = (Vector3){x, 0.0f, z};
-        vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
-        vertex->normal = (Vector3){0.0f, -1.0f, 0.0f};
-        vertex->color = WHITE;
-        vertex->tangent = (Vector4){1.0f, 0.0f, 0.0f, 1.0f};
+        *vertex = R3D_MakeVertex(
+            (Vector3){x, 0.0f, z},
+            (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta},
+            (Vector3){0.0f, -1.0f, 0.0f},
+            (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+            WHITE
+        );
     }
 
     uint32_t* index = meshData.indices;
@@ -934,11 +937,13 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
             float cosTheta = cosf(theta);
             float sinTheta = sinf(theta);
 
-            vertex->position = (Vector3){radius * cosTheta, y, -radius * sinTheta};
-            vertex->texcoord = (Vector2){slice * invSlices, t};
-            vertex->normal = (Vector3){normalR * cosTheta, normalY, -normalR * sinTheta};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){radius * cosTheta, y, -radius * sinTheta},
+                (Vector2){slice * invSlices, t},
+                (Vector3){normalR * cosTheta, normalY, -normalR * sinTheta},
+                (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -949,13 +954,13 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
     {
         bottomCapStart = (uint32_t)bodyVertCount;
 
-        *vertex++ = (R3D_Vertex){
-            .position = {0.0f, -halfHeight, 0.0f },
-            .texcoord = {0.5f, 0.5f },
-            .normal = {0.0f, -1.0f, 0.0f },
-            .color = WHITE,
-            .tangent = {1.0f, 0.0f, 0.0f, 1.0f }
-        };
+        *vertex++ = R3D_MakeVertex(
+            (Vector3){0.0f, -halfHeight, 0.0f},
+            (Vector2){0.5f, 0.5f},
+            (Vector3){0.0f, -1.0f, 0.0f},
+            (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+            WHITE
+        );
 
         for (int slice = 0; slice < slices; slice++, vertex++)
         {
@@ -963,11 +968,13 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
             float cosTheta = cosf(theta);
             float sinTheta = sinf(theta);
 
-            vertex->position = (Vector3){bottomRadius * cosTheta, -halfHeight, -bottomRadius * sinTheta};
-            vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
-            vertex->normal = (Vector3){0.0f, -1.0f, 0.0f};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){1.0f, 0.0f, 0.0f, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){bottomRadius * cosTheta, -halfHeight, -bottomRadius * sinTheta},
+                (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta},
+                (Vector3){0.0f, -1.0f, 0.0f},
+                (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -977,13 +984,13 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
             ? bottomCapStart + 1 + (uint32_t)slices
             : (uint32_t)bodyVertCount;
 
-        *vertex++ = (R3D_Vertex){
-            .position = {0.0f, halfHeight, 0.0f},
-            .texcoord = {0.5f, 0.5f},
-            .normal = {0.0f, 1.0f, 0.0f},
-            .color = WHITE,
-            .tangent = {1.0f, 0.0f, 0.0f, 1.0f}
-        };
+        *vertex++ = R3D_MakeVertex(
+            (Vector3){0.0f, halfHeight, 0.0f},
+            (Vector2){0.5f, 0.5f},
+            (Vector3){0.0f, 1.0f, 0.0f},
+            (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+            WHITE
+        );
 
         for (int slice = 0; slice < slices; slice++, vertex++)
         {
@@ -991,11 +998,13 @@ R3D_MeshData R3D_GenMeshDataCylinderEx(float bottomRadius, float topRadius, floa
             float cosTheta = cosf(theta);
             float sinTheta = sinf(theta);
 
-            vertex->position = (Vector3){topRadius * cosTheta, halfHeight, -topRadius * sinTheta};
-            vertex->texcoord = (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta};
-            vertex->normal = (Vector3){0.0f, 1.0f, 0.0f};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){1.0f, 0.0f, 0.0f, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){topRadius * cosTheta, halfHeight, -topRadius * sinTheta},
+                (Vector2){0.5f + 0.5f * cosTheta, 0.5f - 0.5f * sinTheta},
+                (Vector3){0.0f, 1.0f, 0.0f},
+                (Vector4){1.0f, 0.0f, 0.0f, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -1078,12 +1087,13 @@ R3D_MeshData R3D_GenMeshDataCapsule(float radius, float height, int rings, int s
             float x = ringRadius * cosTheta;
             float z = ringRadius * sinTheta;
 
-            vertex->position = (Vector3){x, y, z};
-            vertex->texcoord = (Vector2){slice * invSlices, v};
-
-            vertex->normal = (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){x, y, z},
+                (Vector2){slice * invSlices, v},
+                (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta},
+                (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -1097,11 +1107,13 @@ R3D_MeshData R3D_GenMeshDataCapsule(float radius, float height, int rings, int s
         float x = radius * cosTheta;
         float z = radius * sinTheta;
 
-        vertex->position = (Vector3){x, -halfHeight, z};
-        vertex->texcoord = (Vector2){slice * invSlices, v};
-        vertex->normal = (Vector3){cosTheta, 0.0f, sinTheta};
-        vertex->color = WHITE;
-        vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+        *vertex = R3D_MakeVertex(
+            (Vector3){x, -halfHeight, z},
+            (Vector2){slice * invSlices, v},
+            (Vector3){cosTheta, 0.0f, sinTheta},
+            (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f},
+            WHITE
+        );
     }
 
     for (int ring = 1; ring <= rings; ring++)
@@ -1122,11 +1134,13 @@ R3D_MeshData R3D_GenMeshDataCapsule(float radius, float height, int rings, int s
             float x = ringRadius * cosTheta;
             float z = ringRadius * sinTheta;
 
-            vertex->position = (Vector3){x, y, z};
-            vertex->texcoord = (Vector2){slice * invSlices, v};
-            vertex->normal = (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta};
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f};
+            *vertex = R3D_MakeVertex(
+                (Vector3){x, y, z},
+                (Vector2){slice * invSlices, v},
+                (Vector3){cosPhi * cosTheta, sinPhi, cosPhi * sinTheta},
+                (Vector4){-sinTheta, 0.0f, cosTheta, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -1194,15 +1208,19 @@ R3D_MeshData R3D_GenMeshDataTorus(float radius, float size, int radSeg, int side
                 -sinTheta * cosPhi
             };
 
-            vertex->position = (Vector3){
+            Vector3 position = {
                 ringCenterX + size * normal.x,
                 size * normal.y,
                 ringCenterZ + size * normal.z
             };
-            vertex->texcoord = (Vector2){u, side * invSides};
-            vertex->normal = normal;
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f};
+
+            *vertex = R3D_MakeVertex(
+                position,
+                (Vector2){u, side * invSides},
+                normal,
+                (Vector4){-sinTheta, 0.0f, -cosTheta, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -1314,15 +1332,19 @@ R3D_MeshData R3D_GenMeshDataKnot(float radius, float size, int radSeg, int sides
                 normal.z * cosPhi + binormal.z * sinPhi
             };
 
-            vertex->position = (Vector3){
+            Vector3 position = {
                 knotCenter.x + size * surfaceNormal.x,
                 knotCenter.y + size * surfaceNormal.y,
                 knotCenter.z + size * surfaceNormal.z
             };
-            vertex->texcoord = (Vector2){u, side * invSides};
-            vertex->normal = surfaceNormal;
-            vertex->color = WHITE;
-            vertex->tangent = (Vector4){tangent.x, tangent.y, tangent.z, 1.0f};
+
+            *vertex = R3D_MakeVertex(
+                position,
+                (Vector2){u, side * invSides},
+                surfaceNormal,
+                (Vector4){tangent.x, tangent.y, tangent.z, 1.0f},
+                WHITE
+            );
         }
     }
 
@@ -1404,13 +1426,13 @@ R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
             Vector3 normal = Vector3Normalize((Vector3) {-gradX, 1.0f, -gradZ});
             Vector3 tangent = Vector3Normalize((Vector3) {1.0f, gradX, 0.0f});
 
-            meshData.vertices[vertexIndex] = (R3D_Vertex){
-                .position = {posX, posY, posZ},
-                .texcoord = {x * stepU, z * stepV},
-                .normal = normal,
-                .color = WHITE,
-                .tangent = (Vector4) {tangent.x, tangent.y, tangent.z, 1.0f}
-            };
+            meshData.vertices[vertexIndex] = R3D_MakeVertex(
+                (Vector3){posX, posY, posZ},
+                (Vector2){x * stepU, z * stepV},
+                normal,
+                (Vector4){tangent.x, tangent.y, tangent.z, 1.0f},
+                WHITE
+            );
             vertexIndex++;
         }
     }
@@ -1528,10 +1550,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[2].x + texUVs[2].width, texUVs[2].y}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[2], {255, 255, 255, 255}, tangents[2]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[1], normals[2], {255, 255, 255, 255}, tangents[2]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[2], {255, 255, 255, 255}, tangents[2]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[2], {255, 255, 255, 255}, tangents[2]};
+                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[2], tangents[2], WHITE);
+                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs[1], normals[2], tangents[2], WHITE);
+                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[2], tangents[2], WHITE);
+                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[2], tangents[2], WHITE);
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1554,10 +1576,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[3].x, texUVs[3].y}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[0], normals[3], {255, 255, 255, 255}, tangents[3]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[3], {255, 255, 255, 255}, tangents[3]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[2], normals[3], {255, 255, 255, 255}, tangents[3]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[3], {255, 255, 255, 255}, tangents[3]};
+                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs[0], normals[3], tangents[3], WHITE);
+                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[3], tangents[3], WHITE);
+                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs[2], normals[3], tangents[3], WHITE);
+                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[3], tangents[3], WHITE);
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1582,10 +1604,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[5].x + texUVs[5].width, texUVs[5].y + texUVs[5].height}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[5], {255, 255, 255, 255}, tangents[5]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[5], {255, 255, 255, 255}, tangents[5]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[5], {255, 255, 255, 255}, tangents[5]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[3], normals[5], {255, 255, 255, 255}, tangents[5]};
+                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[5], tangents[5], WHITE);
+                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[5], tangents[5], WHITE);
+                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[5], tangents[5], WHITE);
+                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs[3], normals[5], tangents[5], WHITE);
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1608,10 +1630,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[4].x, texUVs[4].y}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[4], {255, 255, 255, 255}, tangents[4]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[1], normals[4], {255, 255, 255, 255}, tangents[4]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[2], normals[4], {255, 255, 255, 255}, tangents[4]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[4], {255, 255, 255, 255}, tangents[4]};
+                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[4], tangents[4], WHITE);
+                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs[1], normals[4], tangents[4], WHITE);
+                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs[2], normals[4], tangents[4], WHITE);
+                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[4], tangents[4], WHITE);
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 2;
@@ -1634,10 +1656,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[0].x + texUVs[0].width, texUVs[0].y + texUVs[0].height}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[0], {255, 255, 255, 255}, tangents[0]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[0], {255, 255, 255, 255}, tangents[0]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs[2], normals[0], {255, 255, 255, 255}, tangents[0]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[0], {255, 255, 255, 255}, tangents[0]};
+                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[0], tangents[0], WHITE);
+                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[0], tangents[0], WHITE);
+                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs[2], normals[0], tangents[0], WHITE);
+                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[0], tangents[0], WHITE);
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1660,10 +1682,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                         {texUVs[1].x, texUVs[1].y + texUVs[1].height}
                     };
 
-                    vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[1], {255, 255, 255, 255}, tangents[1]};
-                    vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[1], {255, 255, 255, 255}, tangents[1]};
-                    vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[1], {255, 255, 255, 255}, tangents[1]};
-                    vertices[vertexCount + 3] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs[3], normals[1], {255, 255, 255, 255}, tangents[1]};
+                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[1], tangents[1], WHITE);
+                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[1], tangents[1], WHITE);
+                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[1], tangents[1], WHITE);
+                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs[3], normals[1], tangents[1], WHITE);
 
                     indices[indexCount + 0] = vertexCount + 0;
                     indices[indexCount + 1] = vertexCount + 1;
@@ -1686,10 +1708,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     {texUVs[2].x + texUVs[2].width, texUVs[2].y}
                 };
 
-                vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ - halfL}, uvs_top[0], normals[3], {255, 255, 255, 255}, tangents[3]};
-                vertices[vertexCount + 1] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ + halfL}, uvs_top[1], normals[3], {255, 255, 255, 255}, tangents[3]};
-                vertices[vertexCount + 2] = (R3D_Vertex){{posX - halfW, cubeSize.y, posZ + halfL}, uvs_top[2], normals[3], {255, 255, 255, 255}, tangents[3]};
-                vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, cubeSize.y, posZ - halfL}, uvs_top[3], normals[3], {255, 255, 255, 255}, tangents[3]};
+                vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs_top[0], normals[3], tangents[3], WHITE);
+                vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs_top[1], normals[3], tangents[3], WHITE);
+                vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs_top[2], normals[3], tangents[3], WHITE);
+                vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs_top[3], normals[3], tangents[3], WHITE);
 
                 indices[indexCount + 0] = vertexCount + 0;
                 indices[indexCount + 1] = vertexCount + 1;
@@ -1709,10 +1731,10 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
                     {texUVs[3].x, texUVs[3].y}
                 };
 
-                vertices[vertexCount + 0] = (R3D_Vertex){{posX - halfW, 0.0f, posZ - halfL}, uvs_bottom[0], normals[2], {255, 255, 255, 255}, tangents[2]};
-                vertices[vertexCount + 1] = (R3D_Vertex){{posX - halfW, 0.0f, posZ + halfL}, uvs_bottom[1], normals[2], {255, 255, 255, 255}, tangents[2]};
-                vertices[vertexCount + 2] = (R3D_Vertex){{posX + halfW, 0.0f, posZ + halfL}, uvs_bottom[2], normals[2], {255, 255, 255, 255}, tangents[2]};
-                vertices[vertexCount + 3] = (R3D_Vertex){{posX + halfW, 0.0f, posZ - halfL}, uvs_bottom[3], normals[2], {255, 255, 255, 255}, tangents[2]};
+                vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs_bottom[0], normals[2], tangents[2], WHITE);
+                vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs_bottom[1], normals[2], tangents[2], WHITE);
+                vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs_bottom[2], normals[2], tangents[2], WHITE);
+                vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs_bottom[3], normals[2], tangents[2], WHITE);
 
                 indices[indexCount + 0] = vertexCount + 0;
                 indices[indexCount + 1] = vertexCount + 1;
@@ -1729,6 +1751,9 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
 
     // Cleaning
     UnloadImageColors(pixels);
+
+    meshData.vertexCount = vertexCount;
+    meshData.indexCount = indexCount;
 
     return meshData;
 }
@@ -1861,13 +1886,17 @@ void R3D_TransformMeshData(R3D_MeshData* meshData, Matrix transform)
 
     Matrix matNormal = r3d_matrix_normal(&transform);
 
-    for (int i = 0; i < meshData->vertexCount; i++) {
-        R3D_Vertex* vertex = &meshData->vertices[i];
-        vertex->position = r3d_vector3_transform(vertex->position, &transform);
-        vertex->normal = r3d_vector3_transform_normal(vertex->normal, &matNormal);
-        Vector3 tangent = {vertex->tangent.x, vertex->tangent.y, vertex->tangent.z};
-        tangent = Vector3Normalize(r3d_vector3_transform_normal(tangent, &transform));
-        vertex->tangent = (Vector4) {tangent.x, tangent.y, tangent.z, vertex->tangent.w};
+    for (int i = 0; i < meshData->vertexCount; i++)
+    {
+        R3D_Vertex* v = &meshData->vertices[i];
+        v->position = r3d_vector3_transform(v->position, &transform);
+
+        Vector3 normal = R3D_DecodeNormal((int8_t*)v->normal);
+        R3D_EncodeNormal((int8_t*)v->normal, r3d_vector3_transform_normal(normal, &matNormal));
+
+        Vector4 tangent = R3D_DecodeTangent((int8_t*)v->tangent);
+        Vector3 t = Vector3Normalize(r3d_vector3_transform_normal((Vector3){tangent.x, tangent.y, tangent.z}, &matNormal));
+        R3D_EncodeTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
     }
 }
 
@@ -1888,20 +1917,16 @@ void R3D_RotateMeshData(R3D_MeshData* meshData, Quaternion rotation)
 
     for (int i = 0; i < meshData->vertexCount; i++)
     {
-        meshData->vertices[i].position = Vector3RotateByQuaternion(meshData->vertices[i].position, rotation);
-        meshData->vertices[i].normal = Vector3RotateByQuaternion(meshData->vertices[i].normal, rotation);
+        R3D_Vertex* v = &meshData->vertices[i];
 
-        // Preserve w component for handedness
-        Vector3 tangentVec = (Vector3) {
-            meshData->vertices[i].tangent.x, 
-            meshData->vertices[i].tangent.y, 
-            meshData->vertices[i].tangent.z
-        };
-        tangentVec = Vector3RotateByQuaternion(tangentVec, rotation);
+        v->position = Vector3RotateByQuaternion(v->position, rotation);
 
-        meshData->vertices[i].tangent.x = tangentVec.x;
-        meshData->vertices[i].tangent.y = tangentVec.y;
-        meshData->vertices[i].tangent.z = tangentVec.z;
+        Vector3 normal = R3D_DecodeNormal((int8_t*)v->normal);
+        R3D_EncodeNormal((int8_t*)v->normal, Vector3RotateByQuaternion(normal, rotation));
+
+        Vector4 tangent = R3D_DecodeTangent((int8_t*)v->tangent);
+        Vector3 t = Vector3RotateByQuaternion((Vector3){tangent.x, tangent.y, tangent.z}, rotation);
+        R3D_EncodeTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
     }
 }
 
@@ -1909,35 +1934,30 @@ void R3D_ScaleMeshData(R3D_MeshData* meshData, Vector3 scale)
 {
     if (meshData == NULL || meshData->vertices == NULL) return;
 
-    if (scale.x != scale.y || scale.y != scale.z) {
-        Vector3 invScale = {
-            scale.x != 0.0f ? 1.0f / scale.x : 0.0f,
-            scale.y != 0.0f ? 1.0f / scale.y : 0.0f,
-            scale.z != 0.0f ? 1.0f / scale.z : 0.0f
-        };
-        for (int i = 0; i < meshData->vertexCount; i++) {
-            R3D_Vertex* v = &meshData->vertices[i];
-            v->position.x *= scale.x;
-            v->position.y *= scale.y;
-            v->position.z *= scale.z;
-            v->normal.x *= invScale.x;
-            v->normal.y *= invScale.y;
-            v->normal.z *= invScale.z;
-            v->normal = Vector3Normalize(v->normal);
-            v->tangent.x *= scale.x;
-            v->tangent.y *= scale.y;
-            v->tangent.z *= scale.z;
-            float w = v->tangent.w;
-            Vector3 t = Vector3Normalize((Vector3){v->tangent.x, v->tangent.y, v->tangent.z});
-            v->tangent = (Vector4) {t.x, t.y, t.z, w};
-        }
-    }
-    else {
-        for (int i = 0; i < meshData->vertexCount; i++) {
-            R3D_Vertex* v = &meshData->vertices[i];
-            v->position.x *= scale.x;
-            v->position.y *= scale.y;
-            v->position.z *= scale.z;
+    bool uniform = (scale.x == scale.y && scale.y == scale.z);
+
+    Vector3 invScale = {
+        scale.x != 0.0f ? 1.0f / scale.x : 0.0f,
+        scale.y != 0.0f ? 1.0f / scale.y : 0.0f,
+        scale.z != 0.0f ? 1.0f / scale.z : 0.0f
+    };
+
+    for (int i = 0; i < meshData->vertexCount; i++)
+    {
+        R3D_Vertex* v = &meshData->vertices[i];
+
+        v->position.x *= scale.x;
+        v->position.y *= scale.y;
+        v->position.z *= scale.z;
+
+        if (!uniform) {
+            Vector3 normal = R3D_DecodeNormal((int8_t*)v->normal);
+            normal = Vector3Normalize((Vector3){ normal.x * invScale.x, normal.y * invScale.y, normal.z * invScale.z });
+            R3D_EncodeNormal((int8_t*)v->normal, normal);
+
+            Vector4 tangent = R3D_DecodeTangent((int8_t*)v->tangent);
+            Vector3 t = Vector3Normalize((Vector3){ tangent.x * scale.x, tangent.y * scale.y, tangent.z * scale.z });
+            R3D_EncodeTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
         }
     }
 }
@@ -1956,7 +1976,7 @@ void R3D_GenMeshDataUVsPlanar(R3D_MeshData* meshData, Vector2 uvScale, Vector3 a
         Vector3 pos = meshData->vertices[i].position;
         float u = Vector3DotProduct(pos, tangent) * uvScale.x;
         float v = Vector3DotProduct(pos, bitangent) * uvScale.y;
-        meshData->vertices[i].texcoord = (Vector2) {u, v};
+        R3D_EncodeTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
     }
 }
 
@@ -1968,7 +1988,7 @@ void R3D_GenMeshDataUVsSpherical(R3D_MeshData* meshData)
         Vector3 pos = Vector3Normalize(meshData->vertices[i].position);
         float u = 0.5f + atan2f(pos.z, pos.x) / (2.0f * PI);
         float v = 0.5f - asinf(pos.y) * (1.0f / PI);
-        meshData->vertices[i].texcoord = (Vector2) {u, v};
+        R3D_EncodeTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
     }
 }
 
@@ -1980,11 +2000,11 @@ void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData)
         Vector3 pos = meshData->vertices[i].position;
         float u = 0.5f + atan2f(pos.z, pos.x) / (2.0f * PI);
         float v = pos.y;
-        meshData->vertices[i].texcoord = (Vector2) {u, v};
+        R3D_EncodeTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
     }
 }
 
-static void accumulate_face_normal(R3D_MeshData* meshData, uint32_t i0, uint32_t i1, uint32_t i2)
+static void accumulate_face_normal(Vector3* normals, R3D_MeshData* meshData, uint32_t i0, uint32_t i1, uint32_t i2)
 {
     Vector3 v0 = meshData->vertices[i0].position;
     Vector3 v1 = meshData->vertices[i1].position;
@@ -1995,9 +2015,9 @@ static void accumulate_face_normal(R3D_MeshData* meshData, uint32_t i0, uint32_t
         Vector3Subtract(v2, v0)
     );
 
-    meshData->vertices[i0].normal = Vector3Add(meshData->vertices[i0].normal, faceNormal);
-    meshData->vertices[i1].normal = Vector3Add(meshData->vertices[i1].normal, faceNormal);
-    meshData->vertices[i2].normal = Vector3Add(meshData->vertices[i2].normal, faceNormal);
+    normals[i0] = Vector3Add(normals[i0], faceNormal);
+    normals[i1] = Vector3Add(normals[i1], faceNormal);
+    normals[i2] = Vector3Add(normals[i2], faceNormal);
 }
 
 void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
@@ -2009,39 +2029,39 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
     if (type == R3D_PRIMITIVE_POINTS ||  type == R3D_PRIMITIVE_LINES ||
         type == R3D_PRIMITIVE_LINE_STRIP ||  type == R3D_PRIMITIVE_LINE_LOOP) {
         for (int i = 0; i < meshData->vertexCount; i++) {
-            meshData->vertices[i].normal = (Vector3) {0.0f, 0.0f, 1.0f};
+            R3D_EncodeNormal((int8_t*)meshData->vertices[i].normal, (Vector3){0.0f, 0.0f, 1.0f});
         }
         return;
     }
 
-    for (int i = 0; i < meshData->vertexCount; i++) {
-        meshData->vertices[i].normal = (Vector3) {0};
-    }
+    // Accumulate in float to avoid precision loss
+    Vector3* normals = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
+    if (normals == NULL) return;
 
     int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
 
     switch (type) {
-    case R3D_PRIMITIVE_TRIANGLES: {
+    case R3D_PRIMITIVE_TRIANGLES:
         for (int i = 0; i + 2 < count; i += 3) {
-            accumulate_face_normal(meshData,
+            accumulate_face_normal(normals, meshData,
                 get_index(meshData, i),
                 get_index(meshData, i + 1),
                 get_index(meshData, i + 2)
             );
         }
-    } break;
-    case R3D_PRIMITIVE_TRIANGLE_STRIP: {
+        break;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP:
         for (int i = 0; i + 2 < count; i++) {
             uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
             uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
             uint32_t i2 = get_index(meshData, i + 2);
-            accumulate_face_normal(meshData, i0, i1, i2);
+            accumulate_face_normal(normals, meshData, i0, i1, i2);
         }
-    } break;
+        break;
     case R3D_PRIMITIVE_TRIANGLE_FAN: {
         uint32_t center = get_index(meshData, 0);
         for (int i = 1; i + 1 < count; i++) {
-            accumulate_face_normal(meshData,
+            accumulate_face_normal(normals, meshData,
                 center,
                 get_index(meshData, i),
                 get_index(meshData, i + 1)
@@ -2053,19 +2073,21 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
     }
 
     for (int i = 0; i < meshData->vertexCount; i++) {
-        meshData->vertices[i].normal = Vector3Normalize(meshData->vertices[i].normal);
+        R3D_EncodeNormal((int8_t*)meshData->vertices[i].normal, Vector3Normalize(normals[i]));
     }
+
+    RL_FREE(normals);
 }
 
-static void process_triangle_tangents(R3D_MeshData* meshData, Vector3* bitangents, uint32_t i0, uint32_t i1, uint32_t i2)
+static void process_triangle_tangents(Vector3* tangents, Vector3* bitangents, R3D_MeshData* meshData, uint32_t i0, uint32_t i1, uint32_t i2)
 {
     Vector3 v0 = meshData->vertices[i0].position;
     Vector3 v1 = meshData->vertices[i1].position;
     Vector3 v2 = meshData->vertices[i2].position;
 
-    Vector2 uv0 = meshData->vertices[i0].texcoord;
-    Vector2 uv1 = meshData->vertices[i1].texcoord;
-    Vector2 uv2 = meshData->vertices[i2].texcoord;
+    Vector2 uv0 = R3D_DecodeTexCoord(meshData->vertices[i0].texcoord);
+    Vector2 uv1 = R3D_DecodeTexCoord(meshData->vertices[i1].texcoord);
+    Vector2 uv2 = R3D_DecodeTexCoord(meshData->vertices[i2].texcoord);
 
     Vector3 edge1 = Vector3Subtract(v1, v0);
     Vector3 edge2 = Vector3Subtract(v2, v0);
@@ -2090,18 +2112,9 @@ static void process_triangle_tangents(R3D_MeshData* meshData, Vector3* bitangent
         invDet * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z)
     };
 
-    meshData->vertices[i0].tangent.x += tangent.x;
-    meshData->vertices[i0].tangent.y += tangent.y;
-    meshData->vertices[i0].tangent.z += tangent.z;
-
-    meshData->vertices[i1].tangent.x += tangent.x;
-    meshData->vertices[i1].tangent.y += tangent.y;
-    meshData->vertices[i1].tangent.z += tangent.z;
-
-    meshData->vertices[i2].tangent.x += tangent.x;
-    meshData->vertices[i2].tangent.y += tangent.y;
-    meshData->vertices[i2].tangent.z += tangent.z;
-
+    tangents[i0] = Vector3Add(tangents[i0], tangent);
+    tangents[i1] = Vector3Add(tangents[i1], tangent);
+    tangents[i2] = Vector3Add(tangents[i2], tangent);
     bitangents[i0] = Vector3Add(bitangents[i0], bitangent);
     bitangents[i1] = Vector3Add(bitangents[i1], bitangent);
     bitangents[i2] = Vector3Add(bitangents[i2], bitangent);
@@ -2116,47 +2129,44 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
     if (type == R3D_PRIMITIVE_POINTS || type == R3D_PRIMITIVE_LINES ||
         type == R3D_PRIMITIVE_LINE_STRIP || type == R3D_PRIMITIVE_LINE_LOOP) {
         for (int i = 0; i < meshData->vertexCount; i++) {
-            meshData->vertices[i].tangent = (Vector4){ 1.0f, 0.0f, 0.0f, 1.0f };
+            R3D_EncodeTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){ 1.0f, 0.0f, 0.0f, 1.0f });
         }
         return;
     }
 
+    Vector3* tangents = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
     Vector3* bitangents = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
-    if (bitangents == NULL) {
+    if (tangents == NULL || bitangents == NULL) {
         R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for tangent calculation");
+        RL_FREE(tangents);
+        RL_FREE(bitangents);
         return;
-    }
-
-    for (int i = 0; i < meshData->vertexCount; i++) {
-        meshData->vertices[i].tangent = (Vector4) {0};
     }
 
     int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
 
     switch (type) {
-    case R3D_PRIMITIVE_TRIANGLES: {
+    case R3D_PRIMITIVE_TRIANGLES:
         for (int i = 0; i + 2 < count; i += 3) {
-            process_triangle_tangents(
-                meshData, bitangents,
+            process_triangle_tangents(tangents, bitangents, meshData,
                 get_index(meshData, i),
                 get_index(meshData, i + 1),
                 get_index(meshData, i + 2)
             );
         }
-    } break;
-    case R3D_PRIMITIVE_TRIANGLE_STRIP: {
+        break;
+    case R3D_PRIMITIVE_TRIANGLE_STRIP:
         for (int i = 0; i + 2 < count; i++) {
             uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
             uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
             uint32_t i2 = get_index(meshData, i + 2);
-            process_triangle_tangents(meshData, bitangents, i0, i1, i2);
+            process_triangle_tangents(tangents, bitangents, meshData, i0, i1, i2);
         }
-    } break;
+        break;
     case R3D_PRIMITIVE_TRIANGLE_FAN: {
         uint32_t center = get_index(meshData, 0);
         for (int i = 1; i + 1 < count; i++) {
-            process_triangle_tangents(
-                meshData, bitangents,
+            process_triangle_tangents(tangents, bitangents, meshData,
                 center,
                 get_index(meshData, i),
                 get_index(meshData, i + 1)
@@ -2170,29 +2180,25 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
     // Orthogonalization (Gram-Schmidt) and handedness calculation
     for (int i = 0; i < meshData->vertexCount; i++)
     {
-        Vector3 n = meshData->vertices[i].normal;
-        Vector3 t = {
-            meshData->vertices[i].tangent.x,
-            meshData->vertices[i].tangent.y,
-            meshData->vertices[i].tangent.z
-        };
+        Vector3 n = R3D_DecodeNormal((int8_t*)meshData->vertices[i].normal);
+        Vector3 t = tangents[i];
 
         // Gram-Schmidt orthogonalization
         t = Vector3Subtract(t, Vector3Scale(n, Vector3DotProduct(n, t)));
         float tLength = Vector3Length(t);
         if (tLength > 1e-6f) {
             t = Vector3Scale(t, 1.0f / tLength);
-        }
-        else {
+        } else {
             // Fallback: generate an arbitrary tangent perpendicular to the normal
-            t = fabsf(n.x) < 0.9f ? (Vector3) {1.0f, 0.0f, 0.0f } : (Vector3) {0.0f, 1.0f, 0.0f };
+            t = fabsf(n.x) < 0.9f ? (Vector3){1.0f, 0.0f, 0.0f} : (Vector3){0.0f, 1.0f, 0.0f};
             t = Vector3Normalize(Vector3Subtract(t, Vector3Scale(n, Vector3DotProduct(n, t))));
         }
 
-        float handedness = (Vector3DotProduct(Vector3CrossProduct(n, t), bitangents[i]) < 0.0f) ? -1.0f : 1.0f;
-        meshData->vertices[i].tangent = (Vector4) {t.x, t.y, t.z, handedness };
+        float handedness = Vector3DotProduct(Vector3CrossProduct(n, t), bitangents[i]) < 0.0f ? -1.0f : 1.0f;
+        R3D_EncodeTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){t.x, t.y, t.z, handedness});
     }
 
+    RL_FREE(tangents);
     RL_FREE(bitangents);
 }
 

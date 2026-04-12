@@ -26,10 +26,10 @@
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec2 aTexCoord;
 layout(location = 2) in vec3 aNormal;
-layout(location = 3) in vec4 aColor;
-layout(location = 4) in vec4 aTangent;
-layout(location = 5) in ivec4 aBoneIDs;
-layout(location = 6) in vec4 aWeights;
+layout(location = 3) in vec4 aTangent;
+layout(location = 4) in vec4 aColor;
+layout(location = 5) in ivec4 aBoneIndices;
+layout(location = 6) in vec4 aBoneWeights;
 
 layout(location = 10) in vec3 iPosition;
 layout(location = 11) in vec4 iRotation;
@@ -181,7 +181,7 @@ void main()
 
 #if !defined(DECAL)
     if (uSkinning) {
-        mat4 sMatModel = SkinMatrix(aBoneIDs, aWeights);
+        mat4 sMatModel = SkinMatrix(aBoneIndices, aBoneWeights);
         mat3 sMatNormal = mat3(transpose(inverse(sMatModel)));
         localPosition = vec3(sMatModel * vec4(localPosition, 1.0));
         localNormal = sMatNormal * localNormal;
