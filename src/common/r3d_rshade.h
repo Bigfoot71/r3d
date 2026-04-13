@@ -102,7 +102,8 @@ static inline GLenum r3d_rshade_get_sampler_target(const char* type)
     return 0;
 }
 
-/* Returns the std140 alignment requirement for a given type size */
+/* Returns the std140 alignment requirement for a given type size
+ * Only supports 4-byte scalars (scalar_sz=4; max_align=scalar_sz << 2) */
 static inline int r3d_rshade_get_std140_alignment(int size)
 {
     size--;
