@@ -1388,12 +1388,6 @@ R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
         return meshData;
     }
 
-    if (!meshData.vertices || !meshData.indices) {
-        if (meshData.vertices) RL_FREE(meshData.vertices);
-        if (meshData.indices) RL_FREE(meshData.indices);
-        return meshData;
-    }
-
     const float halfSizeX = size.x * 0.5f;
     const float halfSizeZ = size.z * 0.5f;
     const float stepX     = size.x / (mapWidth - 1);
@@ -1869,7 +1863,7 @@ R3D_MeshData R3D_MergeMeshData(R3D_MeshData a, R3D_MeshData b)
 
 void R3D_AppendMeshData(R3D_MeshData* meshData, R3D_Vertex* vertices, int vertexCount, uint32_t* indices, int indexCount)
 {
-    R3D_ReserveMeshData(meshData, vertexCount, indexCount);
+    R3D_ReserveMeshData(meshData, meshData->vertexCount + vertexCount, meshData->indexCount + indexCount);
 
     for (int i = 0; i < vertexCount; i++) {
         meshData->vertices[meshData->vertexCount++] = vertices[i];
@@ -2239,6 +2233,8 @@ bool alloc_mesh(R3D_MeshData* meshData, int vertexCount, int indexCount)
 
     meshData->vertexCount = vertexCount;
     meshData->indexCount = indexCount;
+    meshData->vertexCapacity = vertexCount;
+    meshData->indexCapacity = indexCount;
 
     return true;
 }
