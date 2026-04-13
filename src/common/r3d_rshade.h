@@ -111,7 +111,8 @@ static inline int r3d_rshade_get_std140_alignment(int size)
     size |= size >> 4;
     size |= size >> 8;
     size |= size >> 16;
-    return size + 1;
+    size++;
+    return size > 16 ? 16 : size;
 }
 
 /* Skip to next semicolon and advance past it */
