@@ -46,22 +46,22 @@ static void configure_global_vao_attributes(bool rebindVbo, bool configInstances
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, position));
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
+    glVertexAttribPointer(1, 2, GL_HALF_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, texcoord));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
+    glVertexAttribPointer(2, 3, GL_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, normal));
 
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
+    glVertexAttribPointer(3, 4, GL_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
 
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, tangent));
+    glVertexAttribPointer(4, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, color));
 
     glEnableVertexAttribArray(5);
-    glVertexAttribIPointer(5, 4, GL_UNSIGNED_BYTE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIds));
+    glVertexAttribIPointer(5, 4, GL_UNSIGNED_BYTE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneIndices));
 
     glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, weights));
+    glVertexAttribPointer(6, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(R3D_Vertex), (void*)offsetof(R3D_Vertex, boneWeights));
 
     if (configInstances) {
         glVertexAttribDivisor(10, 1);
@@ -329,70 +329,79 @@ void load_shape_dummy(r3d_render_shape_t* shape)
 
 void load_shape_quad(r3d_render_shape_t* shape)
 {
-    static const R3D_Vertex VERTICES[] = {
-        {{-0.5f, 0.5f, 0}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-0.5f,-0.5f, 0}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f, 0.5f, 0}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f,-0.5f, 0}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+    const R3D_Vertex vertices[] = {
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f, 0}, (Vector2){0, 1}, (Vector3){0, 0, 1}, (Vector4){1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f, 0}, (Vector2){0, 0}, (Vector3){0, 0, 1}, (Vector4){1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f, 0}, (Vector2){1, 1}, (Vector3){0, 0, 1}, (Vector4){1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f, 0}, (Vector2){1, 0}, (Vector3){0, 0, 1}, (Vector4){1, 0, 0, 1}, WHITE),
     };
-    static const uint32_t INDICES[] = {0, 1, 2, 1, 3, 2};
 
-    r3d_render_alloc_vertices(ARRAY_SIZE(VERTICES), &shape->vertices.offset);
+    static const uint32_t INDICES[] = {
+        0, 1, 2,
+        1, 3, 2
+    };
+
+    r3d_render_alloc_vertices(ARRAY_SIZE(vertices), &shape->vertices.offset);
     r3d_render_alloc_elements(ARRAY_SIZE(INDICES), &shape->elements.offset);
 
-    r3d_render_upload_vertices(shape->vertices.offset, VERTICES, ARRAY_SIZE(VERTICES));
+    r3d_render_upload_vertices(shape->vertices.offset, vertices, ARRAY_SIZE(vertices));
     r3d_render_upload_elements(shape->elements.offset, INDICES, ARRAY_SIZE(INDICES));
 
-    shape->vertices.count = ARRAY_SIZE(VERTICES);
+    shape->vertices.count = ARRAY_SIZE(vertices);
     shape->elements.count = ARRAY_SIZE(INDICES);
 }
 
 void load_shape_cube(r3d_render_shape_t* shape)
 {
-    static const R3D_Vertex VERTICES[] = {
+    const R3D_Vertex vertices[] = {
         // Front (Z+)
-        {{-0.5f, 0.5f, 0.5f}, {0, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-0.5f,-0.5f, 0.5f}, {0, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f, 0.5f, 0.5f}, {1, 1}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f,-0.5f, 0.5f}, {1, 0}, {0, 0, 1}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f,  0.5f}, (Vector2){0, 1}, (Vector3){ 0, 0, 1}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f,  0.5f}, (Vector2){0, 0}, (Vector3){ 0, 0, 1}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f,  0.5f}, (Vector2){1, 1}, (Vector3){ 0, 0, 1}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f,  0.5f}, (Vector2){1, 0}, (Vector3){ 0, 0, 1}, (Vector4){ 1, 0, 0, 1}, WHITE),
         // Back (Z-)
-        {{-0.5f, 0.5f,-0.5f}, {1, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
-        {{-0.5f,-0.5f,-0.5f}, {1, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
-        {{ 0.5f, 0.5f,-0.5f}, {0, 1}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
-        {{ 0.5f,-0.5f,-0.5f}, {0, 0}, {0, 0,-1}, {255, 255, 255, 255}, {-1, 0, 0, 1}},
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f, -0.5f}, (Vector2){1, 1}, (Vector3){ 0, 0,-1}, (Vector4){-1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f, -0.5f}, (Vector2){1, 0}, (Vector3){ 0, 0,-1}, (Vector4){-1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f, -0.5f}, (Vector2){0, 1}, (Vector3){ 0, 0,-1}, (Vector4){-1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f, -0.5f}, (Vector2){0, 0}, (Vector3){ 0, 0,-1}, (Vector4){-1, 0, 0, 1}, WHITE),
         // Left (X-)
-        {{-0.5f, 0.5f,-0.5f}, {0, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
-        {{-0.5f,-0.5f,-0.5f}, {0, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
-        {{-0.5f, 0.5f, 0.5f}, {1, 1}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
-        {{-0.5f,-0.5f, 0.5f}, {1, 0}, {-1, 0, 0}, {255, 255, 255, 255}, {0, 0,-1, 1}},
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f, -0.5f}, (Vector2){0, 1}, (Vector3){-1, 0, 0}, (Vector4){ 0, 0,-1, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f, -0.5f}, (Vector2){0, 0}, (Vector3){-1, 0, 0}, (Vector4){ 0, 0,-1, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f,  0.5f}, (Vector2){1, 1}, (Vector3){-1, 0, 0}, (Vector4){ 0, 0,-1, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f,  0.5f}, (Vector2){1, 0}, (Vector3){-1, 0, 0}, (Vector4){ 0, 0,-1, 1}, WHITE),
         // Right (X+)
-        {{ 0.5f, 0.5f, 0.5f}, {0, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
-        {{ 0.5f,-0.5f, 0.5f}, {0, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
-        {{ 0.5f, 0.5f,-0.5f}, {1, 1}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
-        {{ 0.5f,-0.5f,-0.5f}, {1, 0}, {1, 0, 0}, {255, 255, 255, 255}, {0, 0, 1, 1}},
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f,  0.5f}, (Vector2){0, 1}, (Vector3){ 1, 0, 0}, (Vector4){ 0, 0, 1, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f,  0.5f}, (Vector2){0, 0}, (Vector3){ 1, 0, 0}, (Vector4){ 0, 0, 1, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f, -0.5f}, (Vector2){1, 1}, (Vector3){ 1, 0, 0}, (Vector4){ 0, 0, 1, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f, -0.5f}, (Vector2){1, 0}, (Vector3){ 1, 0, 0}, (Vector4){ 0, 0, 1, 1}, WHITE),
         // Top (Y+)
-        {{-0.5f, 0.5f,-0.5f}, {0, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-0.5f, 0.5f, 0.5f}, {0, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f, 0.5f,-0.5f}, {1, 0}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f, 0.5f, 0.5f}, {1, 1}, {0, 1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f, -0.5f}, (Vector2){0, 0}, (Vector3){ 0, 1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f,  0.5f,  0.5f}, (Vector2){0, 1}, (Vector3){ 0, 1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f, -0.5f}, (Vector2){1, 0}, (Vector3){ 0, 1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f,  0.5f,  0.5f}, (Vector2){1, 1}, (Vector3){ 0, 1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
         // Bottom (Y-)
-        {{-0.5f,-0.5f, 0.5f}, {0, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{-0.5f,-0.5f,-0.5f}, {0, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f,-0.5f, 0.5f}, {1, 0}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-        {{ 0.5f,-0.5f,-0.5f}, {1, 1}, {0,-1, 0}, {255, 255, 255, 255}, {1, 0, 0, 1}},
-    };
-    static const uint32_t INDICES[] = {
-        0,1,2, 2,1,3,   6,5,4, 7,5,6,   8,9,10, 10,9,11,
-        12,13,14, 14,13,15,   16,17,18, 18,17,19,   20,21,22, 22,21,23
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f,  0.5f}, (Vector2){0, 0}, (Vector3){ 0,-1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){-0.5f, -0.5f, -0.5f}, (Vector2){0, 1}, (Vector3){ 0,-1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f,  0.5f}, (Vector2){1, 0}, (Vector3){ 0,-1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
+        R3D_MakeVertex((Vector3){ 0.5f, -0.5f, -0.5f}, (Vector2){1, 1}, (Vector3){ 0,-1, 0}, (Vector4){ 1, 0, 0, 1}, WHITE),
     };
 
-    r3d_render_alloc_vertices(ARRAY_SIZE(VERTICES), &shape->vertices.offset);
+    static const uint32_t INDICES[] = {
+        0,1,2, 2,1,3,
+        6,5,4, 7,5,6,
+        8,9,10, 10,9,11,
+        12,13,14, 14,13,15,
+        16,17,18, 18,17,19,
+        20,21,22, 22,21,23
+    };
+
+    r3d_render_alloc_vertices(ARRAY_SIZE(vertices), &shape->vertices.offset);
     r3d_render_alloc_elements(ARRAY_SIZE(INDICES), &shape->elements.offset);
 
-    r3d_render_upload_vertices(shape->vertices.offset, VERTICES, ARRAY_SIZE(VERTICES));
+    r3d_render_upload_vertices(shape->vertices.offset, vertices, ARRAY_SIZE(vertices));
     r3d_render_upload_elements(shape->elements.offset, INDICES, ARRAY_SIZE(INDICES));
 
-    shape->vertices.count = ARRAY_SIZE(VERTICES);
+    shape->vertices.count = ARRAY_SIZE(vertices);
     shape->elements.count = ARRAY_SIZE(INDICES);
 }
 

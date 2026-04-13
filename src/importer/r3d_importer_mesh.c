@@ -39,10 +39,10 @@ static inline void process_vertex_position(Vector3* position, const struct aiVec
     aabb->max = Vector3Max(aabb->max, gPosition);
 }
 
-static inline void process_vertex_texcoord(Vector2* texcoord, const struct aiMesh* aiMesh, int index)
+static inline void process_vertex_texcoord(uint16_t* texcoord, const struct aiMesh* aiMesh, int index)
 {
     if (aiMesh->mTextureCoords[0] && aiMesh->mNumUVComponents[0] >= 2) {
-        *texcoord = r3d_importer_cast_to_vector2(aiMesh->mTextureCoords[0][index]);
+        R3D_EncodeTexCoord(texcoord, r3d_importer_cast_to_vector2(aiMesh->mTextureCoords[0][index]));
     }
     // NOTE: Vertices are zero-initialized
     //else {
@@ -50,23 +50,24 @@ static inline void process_vertex_texcoord(Vector2* texcoord, const struct aiMes
     //}
 }
 
-static inline void process_vertex_normal(Vector3* normal, const struct aiMesh* aiMesh, int index, const Matrix* normalMatrix, bool hasBones)
+static inline void process_vertex_normal(int8_t* normal, const struct aiMesh* aiMesh, int index, const Matrix* normalMatrix, bool hasBones)
 {
     if (aiMesh->mNormals) {
-        *normal = r3d_importer_cast(aiMesh->mNormals[index]);
+        Vector3 vec = r3d_importer_cast(aiMesh->mNormals[index]);
         if (!hasBones) {
-            *normal = r3d_vector3_transform_linear(*normal, normalMatrix);
+            vec = r3d_vector3_transform_linear(vec, normalMatrix);
         }
+        R3D_EncodeNormal(normal, vec);
     }
     else {
-        *normal = (Vector3) {0.0f, 0.0f, 1.0f};
+        R3D_EncodeNormal(normal, (Vector3){0.0f, 0.0f, 1.0f});
     }
 }
 
 static inline void process_vertex_tangent(R3D_Vertex* vertex, const struct aiMesh* aiMesh, int index, const Matrix* normalMatrix, bool hasBones)
 {
     if (aiMesh->mNormals && aiMesh->mTangents && aiMesh->mBitangents) {
-        Vector3 normal = vertex->normal;
+        Vector3 normal = R3D_DecodeNormal(vertex->normal);
         Vector3 tangent = r3d_importer_cast(aiMesh->mTangents[index]);
         Vector3 bitangent = r3d_importer_cast(aiMesh->mBitangents[index]);
 
@@ -77,10 +78,10 @@ static inline void process_vertex_tangent(R3D_Vertex* vertex, const struct aiMes
 
         Vector3 reconstructedBitangent = Vector3CrossProduct(normal, tangent);
         float handedness = Vector3DotProduct(reconstructedBitangent, bitangent);
-        vertex->tangent = (Vector4) {tangent.x, tangent.y, tangent.z, copysignf(1.0f, handedness)};
+        R3D_EncodeTangent(vertex->tangent, (Vector4){tangent.x, tangent.y, tangent.z, copysignf(1.0f, handedness)});
     }
     else {
-        vertex->tangent = (Vector4) {1.0f, 0.0f, 0.0f, 1.0f};
+        R3D_EncodeTangent(vertex->tangent, (Vector4){1.0f, 0.0f, 0.0f, 1.0f});
     }
 }
 
@@ -115,13 +116,12 @@ static void process_indices(const struct aiMesh* aiMesh, R3D_MeshData* data)
 
 static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, uint8_t weightValue)
 {
-    int emptySlot = -1;
-    int minWeightSlot = 0;
-    uint8_t minWeight = vertex->weights[0];
+    int emptySlot = -1, minWeightSlot = 0;
+    uint8_t minWeight = vertex->boneWeights[0];
 
     // Pass to find both empty slot and minimum weight
     for (int slot = 1; slot < MAX_BONE_WEIGHTS; slot++) {
-        uint8_t w = vertex->weights[slot];
+        uint8_t w = vertex->boneWeights[slot];
         if (w == 0 && emptySlot == -1) {
             emptySlot = slot;
         }
@@ -133,15 +133,15 @@ static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, ui
 
     // Use empty slot if available
     if (emptySlot != -1) {
-        vertex->weights[emptySlot] = weightValue;
-        vertex->boneIds[emptySlot] = boneIndex;
+        vertex->boneIndices[emptySlot] = boneIndex;
+        vertex->boneWeights[emptySlot] = weightValue;
         return true;
     }
 
     // All slots occupied - replace if new weight is larger
     if (weightValue > minWeight) {
-        vertex->weights[minWeightSlot] = weightValue;
-        vertex->boneIds[minWeightSlot] = boneIndex;
+        vertex->boneIndices[minWeightSlot] = boneIndex;
+        vertex->boneWeights[minWeightSlot] = weightValue;
         return true;
     }
 
@@ -150,20 +150,20 @@ static inline bool assign_bone_weight(R3D_Vertex* vertex, uint32_t boneIndex, ui
 
 static void normalize_bone_weights(R3D_Vertex* vertex)
 {
-    uint32_t sum = (uint32_t)vertex->weights[0] + (uint32_t)vertex->weights[1] +
-                   (uint32_t)vertex->weights[2] + (uint32_t)vertex->weights[3];
+    uint32_t sum = (uint32_t)vertex->boneWeights[0] + (uint32_t)vertex->boneWeights[1] +
+                   (uint32_t)vertex->boneWeights[2] + (uint32_t)vertex->boneWeights[3];
 
     if (sum == 255) return;
 
     if (sum > 0) {
         uint32_t half = sum >> 1; // nearest rounding
-        vertex->weights[0] = (uint8_t)((vertex->weights[0] * 255 + half) / sum);
-        vertex->weights[1] = (uint8_t)((vertex->weights[1] * 255 + half) / sum);
-        vertex->weights[2] = (uint8_t)((vertex->weights[2] * 255 + half) / sum);
-        vertex->weights[3] = (uint8_t)((vertex->weights[3] * 255 + half) / sum);
+        vertex->boneWeights[0] = (uint8_t)((vertex->boneWeights[0] * 255 + half) / sum);
+        vertex->boneWeights[1] = (uint8_t)((vertex->boneWeights[1] * 255 + half) / sum);
+        vertex->boneWeights[2] = (uint8_t)((vertex->boneWeights[2] * 255 + half) / sum);
+        vertex->boneWeights[3] = (uint8_t)((vertex->boneWeights[3] * 255 + half) / sum);
     }
     else {
-        vertex->weights[0] = 255;
+        vertex->boneWeights[0] = 255;
     }
 }
 
@@ -172,15 +172,15 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
     if (aiMesh->mNumBones == 0) {
         // No bones - initialize default weights
         for (int i = 0; i < vertexCount; i++) {
-            data->vertices[i].weights[0] = 255;
+            data->vertices[i].boneWeights[0] = 255;
         }
         return true;
     }
 
     // Check if the mesh has too many bones
-    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIds) + 1) {
+    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIndices) + 1) {
         R3D_TRACELOG(LOG_WARNING, "Mesh has %u bones, max %d supported",
-            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIds) + 1);
+            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIndices) + 1);
         return false;
     }
 
@@ -295,8 +295,8 @@ static bool load_mesh_internal(
     for (int i = 0; i < vertexCount; i++) {
         R3D_Vertex* vertex = &data.vertices[i];
         process_vertex_position(&vertex->position, &aiMesh->mVertices[i], &transform, hasBones, &aabb);
-        process_vertex_texcoord(&vertex->texcoord, aiMesh, i);
-        process_vertex_normal(&vertex->normal, aiMesh, i, &normalMatrix, hasBones);
+        process_vertex_texcoord(vertex->texcoord, aiMesh, i);
+        process_vertex_normal(vertex->normal, aiMesh, i, &normalMatrix, hasBones);
         process_vertex_tangent(vertex, aiMesh, i, &normalMatrix, hasBones);
         process_vertex_color(&vertex->color, aiMesh, i);
     }

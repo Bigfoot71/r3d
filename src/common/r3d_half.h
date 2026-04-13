@@ -17,7 +17,7 @@ typedef uint16_t r3d_half_t;
 
 /* === Float type 16 bits === */
 
-static inline uint16_t r3d_cvt_fhi(uint32_t ui)
+static inline uint16_t r3d_half_from_float_ui(uint32_t ui)
 {
     int32_t s = (ui >> 16) & 0x8000;
     int32_t em = ui & 0x7fffffff;
@@ -37,7 +37,7 @@ static inline uint16_t r3d_cvt_fhi(uint32_t ui)
     return (uint16_t)(s | h);
 }
 
-static inline uint32_t r3d_cvt_hfi(uint16_t h)
+static inline uint32_t r3d_half_to_float_ui(uint16_t h)
 {
     uint32_t s = (unsigned)(h & 0x8000) << 16;
     int32_t em = h & 0x7fff;
@@ -55,17 +55,17 @@ static inline uint32_t r3d_cvt_hfi(uint16_t h)
     return s | r;
 }
 
-static inline r3d_half_t r3d_cvt_fh(float i)
+static inline r3d_half_t r3d_half_from_float(float i)
 {
     union { float f; uint32_t i; } v;
     v.f = i;
-    return r3d_cvt_fhi(v.i);
+    return r3d_half_from_float_ui(v.i);
 }
 
-static inline float r3d_cvt_hf(r3d_half_t y)
+static inline float r3d_half_to_float(r3d_half_t y)
 {
     union { float f; uint32_t i; } v;
-    v.i = r3d_cvt_hfi(y);
+    v.i = r3d_half_to_float_ui(y);
     return v.f;
 }
 
