@@ -702,6 +702,7 @@ static inline void sort_fill_material_data(r3d_render_sort_t* sortData, const r3
 
     switch (call->type) {
     case R3D_RENDER_CALL_MESH:
+        sortData->material.priority = call->mesh.material.priority;
         sortData->material.shader = (uintptr_t)call->mesh.material.shader;
         sortData->material.shading = call->mesh.material.unlit;
         sortData->material.albedo = call->mesh.material.albedo.texture.id;
@@ -787,48 +788,56 @@ static void sort_fill_cache_by_material(r3d_render_list_enum_t list)
     }
 }
 
-static int compare_front_to_back(const void* a, const void* b)
+static inline int compare_i32(int32_t a, int32_t b)
 {
-    int indexA = *(int*)a;
-    int indexB = *(int*)b;
+    return (a > b) - (a < b);
+}
 
-    int materialCmp = memcmp(
-        &R3D_MOD_RENDER.sortCache[indexA].material,
-        &R3D_MOD_RENDER.sortCache[indexB].material,
-        sizeof(R3D_MOD_RENDER.sortCache[0].material)
-    );
+static inline int compare_f32(float a, float b)
+{
+    return (a > b) - (a < b);
+}
 
-    if (materialCmp != 0) {
-        return materialCmp;
+static inline int compare_material(const r3d_render_sort_t* a, const r3d_render_sort_t* b)
+{
+    // User priority first (signed)
+    if (a->material.priority != b->material.priority) {
+        return compare_i32(a->material.priority, b->material.priority);
     }
 
-    float distA = R3D_MOD_RENDER.sortCache[indexA].distance;
-    float distB = R3D_MOD_RENDER.sortCache[indexB].distance;
+    // Remaining fields via memcmp (must be all unsigned, zero-padded)
+    size_t n = sizeof(a->material) - offsetof(typeof(a->material), shader);
+    return memcmp(&a->material.shader, &b->material.shader, n);
+}
 
-    return (distA > distB) - (distA < distB);
+static int compare_front_to_back(const void* a, const void* b)
+{
+    const r3d_render_sort_t* aEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(a)];
+    const r3d_render_sort_t* bEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(b)];
+
+    int cmp = compare_material(aEntry, bEntry);
+    if (cmp != 0) return cmp;
+
+    return compare_f32(aEntry->distance, bEntry->distance);
 }
 
 static int compare_back_to_front(const void* a, const void* b)
 {
-    int indexA = *(int*)a;
-    int indexB = *(int*)b;
+    const r3d_render_sort_t* aEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(a)];
+    const r3d_render_sort_t* bEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(b)];
 
-    float distA = R3D_MOD_RENDER.sortCache[indexA].distance;
-    float distB = R3D_MOD_RENDER.sortCache[indexB].distance;
+    int cmp = compare_i32(aEntry->material.priority, bEntry->material.priority);
+    if (cmp != 0) return cmp;
 
-    return (distA < distB) - (distA > distB);
+    return compare_f32(bEntry->distance, aEntry->distance);
 }
 
 static int compare_materials_only(const void* a, const void* b)
 {
-    int indexA = *(int*)a;
-    int indexB = *(int*)b;
+    const r3d_render_sort_t* aEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(a)];
+    const r3d_render_sort_t* bEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(b)];
 
-    return memcmp(
-        &R3D_MOD_RENDER.sortCache[indexA].material,
-        &R3D_MOD_RENDER.sortCache[indexB].material,
-        sizeof(R3D_MOD_RENDER.sortCache[0].material)
-    );
+    return compare_material(aEntry, bEntry);
 }
 
 // ========================================
@@ -1402,20 +1411,20 @@ void r3d_render_sort_list(r3d_render_list_enum_t list, Vector3 viewPosition, r3d
 {
     G_sortViewPosition = viewPosition;
 
-    int (*compare_func)(const void *a, const void *b) = NULL;
+    int (*compareFunc)(const void *a, const void *b) = NULL;
     r3d_render_list_t* drawList = &R3D_MOD_RENDER.list[list];
 
     switch (mode) {
     case R3D_RENDER_SORT_FRONT_TO_BACK:
-        compare_func = compare_front_to_back;
+        compareFunc = compare_front_to_back;
         sort_fill_cache_front_to_back(list);
         break;
     case R3D_RENDER_SORT_BACK_TO_FRONT:
-        compare_func = compare_back_to_front;
+        compareFunc = compare_back_to_front;
         sort_fill_cache_back_to_front(list);
         break;
     case R3D_RENDER_SORT_MATERIAL_ONLY:
-        compare_func = compare_materials_only;
+        compareFunc = compare_materials_only;
         sort_fill_cache_by_material(list);
         break;
     }
@@ -1424,7 +1433,7 @@ void r3d_render_sort_list(r3d_render_list_enum_t list, Vector3 viewPosition, r3d
         drawList->calls,
         drawList->numCalls,
         sizeof(*drawList->calls),
-        compare_func
+        compareFunc
     );
 }
 

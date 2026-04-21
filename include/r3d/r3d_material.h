@@ -74,6 +74,7 @@
         .blendMode = R3D_BLEND_MIX,                     \
         .cullMode = R3D_CULL_BACK,                      \
         .unlit = false,                                 \
+        .priority = 0,                                  \
         .shader = 0,                                    \
     }
 
@@ -263,9 +264,9 @@ typedef struct R3D_Material {
     R3D_BillboardMode billboardMode;        ///< Billboard mode (default: DISABLED)
     R3D_BlendMode blendMode;                ///< Blend mode (default: MIX)
     R3D_CullMode cullMode;                  ///< Face culling mode (default: BACK)
-
     bool unlit;                             ///< If true, material does not participate in lighting (default: false)
 
+    int priority;                           ///< Render order priority; lower values are drawn first (default: 0)
     R3D_SurfaceShader* shader;              ///< Custom shader applied to the material (default: NULL)
 
 } R3D_Material;

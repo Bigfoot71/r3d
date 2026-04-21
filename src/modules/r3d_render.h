@@ -264,6 +264,7 @@ typedef struct {
 typedef struct {
     float distance;
     struct {
+        int32_t priority;
         uintptr_t shader;
         uint32_t shading;
         uint32_t albedo;
