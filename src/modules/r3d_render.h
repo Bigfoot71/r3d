@@ -259,25 +259,32 @@ typedef struct {
 } r3d_render_list_t;
 
 /*
- * Data stored by draw call in the sort cache.
+ * Sort key derived from a rendering state.
+ * Fields are declared in priority order: the first differing field
+ * encountered during comparison determines the sort result.
  */
 typedef struct {
+    int32_t priority;       ///< User-defined render order (signed, lower = first)
+    uintptr_t shader;       ///< Shader program pointer
+    uint32_t shading;       ///< Shading mode (lit/unlit)
+    uint32_t albedo;        ///< Albedo texture ID
+    uint32_t normal;        ///< Normal map texture ID
+    uint32_t orm;           ///< ORM texture ID
+    uint32_t emission;      ///< Emission texture ID
+    uint32_t stencil;       ///< Hashed stencil state
+    uint32_t depth;         ///< Hashed depth state
+    uint8_t blend;          ///< Blend mode
+    uint8_t cull;           ///< Cull mode
+    uint8_t transparency;   ///< Transparency mode
+    uint8_t billboard;      ///< Billboard mode
+} r3d_render_sort_state_t;
+
+/*
+ * Data stored per draw call in the sort cache.
+ */
+typedef struct {
+    r3d_render_sort_state_t state;
     float distance;
-    struct {
-        int32_t priority;
-        uintptr_t shader;
-        uint32_t shading;
-        uint32_t albedo;
-        uint32_t normal;
-        uint32_t orm;
-        uint32_t emission;
-        uint32_t stencil;
-        uint32_t depth;
-        uint8_t blend;
-        uint8_t cull;
-        uint8_t transparency;
-        uint8_t billboard;
-    } material;
 } r3d_render_sort_t;
 
 // ========================================

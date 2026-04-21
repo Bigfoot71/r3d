@@ -696,33 +696,33 @@ static inline float calculate_max_distance_to_camera(const BoundingBox* aabb, co
     return maxDistSq;
 }
 
-static inline void sort_fill_material_data(r3d_render_sort_t* sortData, const r3d_render_call_t* call)
+static inline void sort_fill_state_data(r3d_render_sort_state_t* state, const r3d_render_call_t* call)
 {
-    memset(sortData, 0, sizeof(*sortData));
+    memset(state, 0, sizeof(*state));
 
     switch (call->type) {
     case R3D_RENDER_CALL_MESH:
-        sortData->material.priority = call->mesh.material.priority;
-        sortData->material.shader = (uintptr_t)call->mesh.material.shader;
-        sortData->material.shading = call->mesh.material.unlit;
-        sortData->material.albedo = call->mesh.material.albedo.texture.id;
-        sortData->material.normal = call->mesh.material.normal.texture.id;
-        sortData->material.orm = call->mesh.material.orm.texture.id;
-        sortData->material.emission = call->mesh.material.emission.texture.id;
-        sortData->material.stencil = r3d_hash_fnv1a_32(&call->mesh.material.stencil, sizeof(call->mesh.material.stencil));
-        sortData->material.depth = r3d_hash_fnv1a_32(&call->mesh.material.depth, sizeof(call->mesh.material.depth));
-        sortData->material.blend = call->mesh.material.blendMode;
-        sortData->material.cull = call->mesh.material.cullMode;
-        sortData->material.transparency = call->mesh.material.transparencyMode;
-        sortData->material.billboard = call->mesh.material.billboardMode;
+        state->priority = call->mesh.material.priority;
+        state->shader = (uintptr_t)call->mesh.material.shader;
+        state->shading = call->mesh.material.unlit;
+        state->albedo = call->mesh.material.albedo.texture.id;
+        state->normal = call->mesh.material.normal.texture.id;
+        state->orm = call->mesh.material.orm.texture.id;
+        state->emission = call->mesh.material.emission.texture.id;
+        state->stencil = r3d_hash_fnv1a_32(&call->mesh.material.stencil, sizeof(call->mesh.material.stencil));
+        state->depth = r3d_hash_fnv1a_32(&call->mesh.material.depth, sizeof(call->mesh.material.depth));
+        state->blend = call->mesh.material.blendMode;
+        state->cull = call->mesh.material.cullMode;
+        state->transparency = call->mesh.material.transparencyMode;
+        state->billboard = call->mesh.material.billboardMode;
         break;
 
     case R3D_RENDER_CALL_DECAL:
-        sortData->material.shader = (uintptr_t)call->decal.instance.shader;
-        sortData->material.albedo = call->decal.instance.albedo.texture.id;
-        sortData->material.normal = call->decal.instance.normal.texture.id;
-        sortData->material.orm = call->decal.instance.orm.texture.id;
-        sortData->material.emission = call->decal.instance.emission.texture.id;
+        state->shader = (uintptr_t)call->decal.instance.shader;
+        state->albedo = call->decal.instance.albedo.texture.id;
+        state->normal = call->decal.instance.normal.texture.id;
+        state->orm = call->decal.instance.orm.texture.id;
+        state->emission = call->decal.instance.emission.texture.id;
         break;
     }
 }
@@ -745,7 +745,7 @@ static void sort_fill_cache_front_to_back(r3d_render_list_enum_t list)
             &call->mesh.instance.aabb, &group->transform
         );
         
-        sort_fill_material_data(sortData, call);
+        sort_fill_state_data(&sortData->state, call);
     }
 }
 
@@ -768,7 +768,7 @@ static void sort_fill_cache_back_to_front(r3d_render_list_enum_t list)
         );
 
         // For back-to-front (transparency), we don't sort by material.
-        //sort_fill_material_data(sortData, call);
+        //sort_fill_state_data(sortData, call);
     }
 }
 
@@ -784,7 +784,7 @@ static void sort_fill_cache_by_material(r3d_render_list_enum_t list)
 
         sortData->distance = 0.0f;
 
-        sort_fill_material_data(sortData, call);
+        sort_fill_state_data(&sortData->state, call);
     }
 }
 
@@ -801,13 +801,13 @@ static inline int compare_f32(float a, float b)
 static inline int compare_material(const r3d_render_sort_t* a, const r3d_render_sort_t* b)
 {
     // User priority first (signed)
-    if (a->material.priority != b->material.priority) {
-        return compare_i32(a->material.priority, b->material.priority);
+    if (a->state.priority != b->state.priority) {
+        return compare_i32(a->state.priority, b->state.priority);
     }
 
     // Remaining fields via memcmp (must be all unsigned, zero-padded)
-    size_t n = sizeof(a->material) - offsetof(typeof(a->material), shader);
-    return memcmp(&a->material.shader, &b->material.shader, n);
+    size_t n = sizeof(a->state) - offsetof(r3d_render_sort_state_t, shader);
+    return memcmp(&a->state.shader, &b->state.shader, n);
 }
 
 static int compare_front_to_back(const void* a, const void* b)
@@ -826,7 +826,7 @@ static int compare_back_to_front(const void* a, const void* b)
     const r3d_render_sort_t* aEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(a)];
     const r3d_render_sort_t* bEntry = &R3D_MOD_RENDER.sortCache[*(const int*)(b)];
 
-    int cmp = compare_i32(aEntry->material.priority, bEntry->material.priority);
+    int cmp = compare_i32(aEntry->state.priority, bEntry->state.priority);
     if (cmp != 0) return cmp;
 
     return compare_f32(bEntry->distance, aEntry->distance);
