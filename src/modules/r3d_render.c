@@ -767,8 +767,11 @@ static void sort_fill_cache_back_to_front(r3d_render_list_enum_t list)
             &call->mesh.instance.aabb, &group->transform
         );
 
-        // For back-to-front (transparency), we don't sort by material.
-        //sort_fill_state_data(sortData, call);
+        // For back-to-front sorting we just need the priority for the meshes
+        memset(&sortData->state, 0, sizeof(sortData->state));
+        if (call->type == R3D_RENDER_CALL_MESH) {
+            sortData->state.priority = call->mesh.material.priority;
+        }
     }
 }
 
@@ -783,7 +786,6 @@ static void sort_fill_cache_by_material(r3d_render_list_enum_t list)
         r3d_render_sort_t* sortData = &R3D_MOD_RENDER.sortCache[callIndex];
 
         sortData->distance = 0.0f;
-
         sort_fill_state_data(&sortData->state, call);
     }
 }
