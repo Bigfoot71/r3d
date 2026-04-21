@@ -192,6 +192,7 @@ void main()
     vec3 finalPosition = vec3(MATRIX_MODEL * vec4(localPosition, 1.0));
     vec3 finalNormal = MATRIX_NORMAL * localNormal;
     vec3 finalTangent = MATRIX_NORMAL * localTangent;
+    vec4 finalColor = COLOR;
 
 #if defined(DECAL)
     mat4 decalMatModel = MATRIX_MODEL;
@@ -204,6 +205,7 @@ void main()
         finalPosition = finalPosition + INSTANCE_POSITION;
         finalNormal = M_Rotate3D(finalNormal, INSTANCE_ROTATION);
         finalTangent = M_Rotate3D(finalTangent, INSTANCE_ROTATION);
+        finalColor *= INSTANCE_COLOR;
 
     #if defined(DECAL)
         mat4 iMatModel = MatrixTransform(INSTANCE_POSITION, INSTANCE_ROTATION, INSTANCE_SCALE);
@@ -227,7 +229,7 @@ void main()
     vPosition = finalPosition;
     vTexCoord = TEXCOORD;
     vEmission = EMISSION;
-    vColor = COLOR * INSTANCE_COLOR;
+    vColor = finalColor;
     vTBN = mat3(T, B, N);
 
 #if defined(GEOMETRY) || defined(FORWARD) || defined(UNLIT)
