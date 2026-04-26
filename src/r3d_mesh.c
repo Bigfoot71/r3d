@@ -328,9 +328,12 @@ R3D_Mesh R3D_GenMeshCubicmap(Image cubicmap, Vector3 cubeSize)
     R3D_MeshData data = R3D_GenMeshDataCubicmap(cubicmap, cubeSize);
     if (!R3D_IsMeshDataValid(data)) return mesh;
 
+    float hw = (float)cubicmap.width * cubeSize.x * 0.5f;
+    float hh = (float)cubicmap.height * cubeSize.z * 0.5f;
+
     BoundingBox aabb = {
-        {0.0f, 0.0f, 0.0f},
-        {cubicmap.width * cubeSize.x, cubeSize.y, cubicmap.height * cubeSize.z}
+        {-hw, 0.0f,       -hh},
+        { hw, cubeSize.y,  hh}
     };
 
     mesh = R3D_LoadMesh(R3D_PRIMITIVE_TRIANGLES, data, &aabb);
