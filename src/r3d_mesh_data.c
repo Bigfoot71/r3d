@@ -1457,6 +1457,20 @@ R3D_MeshData R3D_GenMeshDataHeightmap(Image heightmap, Vector3 size)
 
 R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
 {
+    #define IS_WALL(c) ((c).r >= 127)
+    #define PIXEL(x,z) pixels[(z)*W + (x)]
+    #define UV(r,u,v)  (Vector2) {texUVs[r].x + (u)*texUVs[r].w, texUVs[r].y + (v)*texUVs[r].h}
+
+    #define QUAD(v0,v1,v2,v3, uv0,uv1,uv2,uv3, ni,ti) do {                          \
+        vertices[vc+0] = R3D_MakeVertex(v0, uv0, normals[ni], tangents[ti], WHITE); \
+        vertices[vc+1] = R3D_MakeVertex(v1, uv1, normals[ni], tangents[ti], WHITE); \
+        vertices[vc+2] = R3D_MakeVertex(v2, uv2, normals[ni], tangents[ti], WHITE); \
+        vertices[vc+3] = R3D_MakeVertex(v3, uv3, normals[ni], tangents[ti], WHITE); \
+        indices[ic+0]=vc+0; indices[ic+1]=vc+1; indices[ic+2]=vc+2;                 \
+        indices[ic+3]=vc+0; indices[ic+4]=vc+2; indices[ic+5]=vc+3;                 \
+        vc += 4; ic += 6;                                                           \
+    } while(0)
+
     R3D_MeshData meshData = {0};
 
     if (cubicmap.width <= 0 || cubicmap.height <= 0) {
@@ -1470,30 +1484,25 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
     Color* pixels = LoadImageColors(cubicmap);
     if (!pixels) return meshData;
 
-    const float halfW = cubeSize.x * 0.5f;
-    const float halfH = cubeSize.y * 0.5f;
-    const float halfL = cubeSize.z * 0.5f;
+    const int W = cubicmap.width;
+    const int H = cubicmap.height;
+    const float hw = cubeSize.x * 0.5f;
+    const float hh = cubeSize.y;
+    const float hl = cubeSize.z * 0.5f;
 
-    const Vector3 normals[6] = {
-        { 1.0f,  0.0f,  0.0f},
-        {-1.0f,  0.0f,  0.0f},
-        { 0.0f,  1.0f,  0.0f},
-        { 0.0f, -1.0f,  0.0f},
-        { 0.0f,  0.0f, -1.0f},
-        { 0.0f,  0.0f,  1.0f}
+    static const Vector3 normals[6] = {
+        { 1, 0, 0}, {-1, 0, 0},
+        { 0, 1, 0}, { 0,-1, 0},
+        { 0, 0,-1}, { 0, 0, 1}
+    };
+    static const Vector4 tangents[6] = {
+        { 0, 0,-1, 1}, { 0, 0, 1, 1},
+        { 1, 0, 0, 1}, { 1, 0, 0, 1},
+        {-1, 0, 0, 1}, { 1, 0, 0, 1}
     };
 
-    const Vector4 tangents[6] = {
-        { 0.0f,  0.0f, -1.0f,  1.0f},
-        { 0.0f,  0.0f,  1.0f,  1.0f},
-        { 1.0f,  0.0f,  0.0f,  1.0f},
-        { 1.0f,  0.0f,  0.0f,  1.0f},
-        {-1.0f,  0.0f,  0.0f,  1.0f},
-        { 1.0f,  0.0f,  0.0f,  1.0f}
-    };
-
-    typedef struct { float x, y, width, height; } RectangleF;
-    const RectangleF texUVs[6] = {
+    struct UVRect { float x, y, w, h; };
+    static const struct UVRect texUVs[6] = {
         {0.0f, 0.0f, 0.5f, 0.5f},
         {0.5f, 0.0f, 0.5f, 0.5f},
         {0.0f, 0.5f, 0.5f, 0.5f},
@@ -1502,14 +1511,9 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
         {0.0f, 0.0f, 0.5f, 0.5f}
     };
 
-    // Estimate the maximum number of faces needed
     int maxFaces = 0;
-    for (int z = 0; z < cubicmap.height; z++) {
-        for (int x = 0; x < cubicmap.width; x++) {
-            Color pixel = pixels[z * cubicmap.width + x];
-            if (pixel.r >= 127) maxFaces += 6;  // (white) complete cube
-            else maxFaces += 2;                 // (black) floor and ceiling only
-        }
+    for (int i = 0; i < W * H; i++) {
+        maxFaces += IS_WALL(pixels[i]) ? 6 : 2;
     }
 
     if (!alloc_mesh(&meshData, maxFaces * 4, maxFaces * 6)) {
@@ -1518,236 +1522,47 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
     }
 
     R3D_Vertex* vertices = meshData.vertices;
-    uint32_t* indices = meshData.indices;
+    uint32_t*   indices  = meshData.indices;
+    int vc = 0, ic = 0;
 
-    int vertexCount = 0;
-    int indexCount = 0;
+    for (int z = 0; z < H; z++) {
+        for (int x = 0; x < W; x++) {
+            Color px = PIXEL(x, z);
 
-    for (int z = 0; z < cubicmap.height; z++) {
-        for (int x = 0; x < cubicmap.width; x++)
-        {
-            Color pixel = pixels[z * cubicmap.width + x];
+            float cx = cubeSize.x * (x - W * 0.5f + 0.5f);
+            float cz = cubeSize.z * (z - H * 0.5f + 0.5f);
 
-            // Position of the center of the cube
-            float posX = cubeSize.x * (x - cubicmap.width * 0.5f + 0.5f);
-            float posZ = cubeSize.z * (z - cubicmap.height * 0.5f + 0.5f);
+            Vector3 TLF={cx-hw,hh,cz-hl}, TRF={cx+hw,hh,cz-hl};
+            Vector3 TLB={cx-hw,hh,cz+hl}, TRB={cx+hw,hh,cz+hl};
+            Vector3 BLF={cx-hw, 0,cz-hl}, BRF={cx+hw, 0,cz-hl};
+            Vector3 BLB={cx-hw, 0,cz+hl}, BRB={cx+hw, 0,cz+hl};
 
-            if (ColorIsEqual(pixel, WHITE))
-            {
-                // Face up (always generated for white cubes)
-                if (true)
-                {
-                    Vector2 uvs[4] = {
-                        {texUVs[2].x, texUVs[2].y},
-                        {texUVs[2].x, texUVs[2].y + texUVs[2].height},
-                        {texUVs[2].x + texUVs[2].width, texUVs[2].y + texUVs[2].height},
-                        {texUVs[2].x + texUVs[2].width, texUVs[2].y}
-                    };
+            if (IS_WALL(px)) {
+                // Wall top / bottom
+                QUAD(TLF,TLB,TRB,TRF,  UV(2,0,0),UV(2,0,1),UV(2,1,1),UV(2,1,0),  2,2);
+                QUAD(BRF,BRB,BLB,BLF,  UV(3,1,0),UV(3,1,1),UV(3,0,1),UV(3,0,0),  3,3);
 
-                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[2], tangents[2], WHITE);
-                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs[1], normals[2], tangents[2], WHITE);
-                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[2], tangents[2], WHITE);
-                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[2], tangents[2], WHITE);
-
-                    indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 1;
-                    indices[indexCount + 2] = vertexCount + 2;
-                    indices[indexCount + 3] = vertexCount + 2;
-                    indices[indexCount + 4] = vertexCount + 3;
-                    indices[indexCount + 5] = vertexCount + 0;
-
-                    vertexCount += 4;
-                    indexCount += 6;
-                }
-
-                // Face down (always generated for white cubes)
-                if (true)
-                {
-                    Vector2 uvs[4] = {
-                        {texUVs[3].x + texUVs[3].width, texUVs[3].y},
-                        {texUVs[3].x, texUVs[3].y + texUVs[3].height},
-                        {texUVs[3].x + texUVs[3].width, texUVs[3].y + texUVs[3].height},
-                        {texUVs[3].x, texUVs[3].y}
-                    };
-
-                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs[0], normals[3], tangents[3], WHITE);
-                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[3], tangents[3], WHITE);
-                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs[2], normals[3], tangents[3], WHITE);
-                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[3], tangents[3], WHITE);
-
-                    indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 1;
-                    indices[indexCount + 2] = vertexCount + 2;
-                    indices[indexCount + 3] = vertexCount + 0;
-                    indices[indexCount + 4] = vertexCount + 3;
-                    indices[indexCount + 5] = vertexCount + 1;
-
-                    vertexCount += 4;
-                    indexCount += 6;
-                }
-
-                // Checking the lateral faces (occlusion culling)
-
-                // Back face (+Z)
-                if ((z == cubicmap.height - 1) || !ColorIsEqual(pixels[(z + 1) * cubicmap.width + x], WHITE))
-                {
-                    Vector2 uvs[4] = {
-                        {texUVs[5].x, texUVs[5].y},
-                        {texUVs[5].x, texUVs[5].y + texUVs[5].height},
-                        {texUVs[5].x + texUVs[5].width, texUVs[5].y},
-                        {texUVs[5].x + texUVs[5].width, texUVs[5].y + texUVs[5].height}
-                    };
-
-                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[5], tangents[5], WHITE);
-                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[5], tangents[5], WHITE);
-                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[5], tangents[5], WHITE);
-                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs[3], normals[5], tangents[5], WHITE);
-
-                    indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 1;
-                    indices[indexCount + 2] = vertexCount + 2;
-                    indices[indexCount + 3] = vertexCount + 2;
-                    indices[indexCount + 4] = vertexCount + 1;
-                    indices[indexCount + 5] = vertexCount + 3;
-
-                    vertexCount += 4;
-                    indexCount += 6;
-                }
-
-                // Front face (-Z)
-                if ((z == 0) || !ColorIsEqual(pixels[(z - 1) * cubicmap.width + x], WHITE))
-                {
-                    Vector2 uvs[4] = {
-                        {texUVs[4].x + texUVs[4].width, texUVs[4].y},
-                        {texUVs[4].x, texUVs[4].y + texUVs[4].height},
-                        {texUVs[4].x + texUVs[4].width, texUVs[4].y + texUVs[4].height},
-                        {texUVs[4].x, texUVs[4].y}
-                    };
-
-                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[4], tangents[4], WHITE);
-                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs[1], normals[4], tangents[4], WHITE);
-                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs[2], normals[4], tangents[4], WHITE);
-                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs[3], normals[4], tangents[4], WHITE);
-
-                    indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 2;
-                    indices[indexCount + 2] = vertexCount + 1;
-                    indices[indexCount + 3] = vertexCount + 0;
-                    indices[indexCount + 4] = vertexCount + 1;
-                    indices[indexCount + 5] = vertexCount + 3;
-
-                    vertexCount += 4;
-                    indexCount += 6;
-                }
-
-                // Right face (+X)
-                if ((x == cubicmap.width - 1) || !ColorIsEqual(pixels[z * cubicmap.width + (x + 1)], WHITE))
-                {
-                    Vector2 uvs[4] = {
-                        {texUVs[0].x, texUVs[0].y},
-                        {texUVs[0].x, texUVs[0].y + texUVs[0].height},
-                        {texUVs[0].x + texUVs[0].width, texUVs[0].y},
-                        {texUVs[0].x + texUVs[0].width, texUVs[0].y + texUVs[0].height}
-                    };
-
-                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs[0], normals[0], tangents[0], WHITE);
-                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs[1], normals[0], tangents[0], WHITE);
-                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs[2], normals[0], tangents[0], WHITE);
-                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs[3], normals[0], tangents[0], WHITE);
-
-                    indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 1;
-                    indices[indexCount + 2] = vertexCount + 2;
-                    indices[indexCount + 3] = vertexCount + 2;
-                    indices[indexCount + 4] = vertexCount + 1;
-                    indices[indexCount + 5] = vertexCount + 3;
-
-                    vertexCount += 4;
-                    indexCount += 6;
-                }
-
-                // Left face (-X)
-                if ((x == 0) || !ColorIsEqual(pixels[z * cubicmap.width + (x - 1)], WHITE))
-                {
-                    Vector2 uvs[4] = {
-                        {texUVs[1].x, texUVs[1].y},
-                        {texUVs[1].x + texUVs[1].width, texUVs[1].y + texUVs[1].height},
-                        {texUVs[1].x + texUVs[1].width, texUVs[1].y},
-                        {texUVs[1].x, texUVs[1].y + texUVs[1].height}
-                    };
-
-                    vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs[0], normals[1], tangents[1], WHITE);
-                    vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs[1], normals[1], tangents[1], WHITE);
-                    vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs[2], normals[1], tangents[1], WHITE);
-                    vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs[3], normals[1], tangents[1], WHITE);
-
-                    indices[indexCount + 0] = vertexCount + 0;
-                    indices[indexCount + 1] = vertexCount + 1;
-                    indices[indexCount + 2] = vertexCount + 2;
-                    indices[indexCount + 3] = vertexCount + 0;
-                    indices[indexCount + 4] = vertexCount + 3;
-                    indices[indexCount + 5] = vertexCount + 1;
-
-                    vertexCount += 4;
-                    indexCount += 6;
-                }
+                // Walls with occlusion culling
+                if (z==H-1 || !IS_WALL(PIXEL(x,z+1))) QUAD(TLB,BLB,BRB,TRB,  UV(5,0,0),UV(5,0,1),UV(5,1,1),UV(5,1,0),  5,5); // +Z
+                if (z==0   || !IS_WALL(PIXEL(x,z-1))) QUAD(TRF,BRF,BLF,TLF,  UV(4,1,0),UV(4,1,1),UV(4,0,1),UV(4,0,0),  4,4); // -Z
+                if (x==W-1 || !IS_WALL(PIXEL(x+1,z))) QUAD(TRB,BRB,BRF,TRF,  UV(0,0,0),UV(0,0,1),UV(0,1,1),UV(0,1,0),  0,0); // +X
+                if (x==0   || !IS_WALL(PIXEL(x-1,z))) QUAD(TLF,BLF,BLB,TLB,  UV(1,0,0),UV(1,0,1),UV(1,1,1),UV(1,1,0),  1,1); // -X
             }
-            else if (ColorIsEqual(pixel, BLACK))
-            {
-                // Ceiling face (inverted to be visible from below)
-                Vector2 uvs_top[4] = {
-                    {texUVs[2].x, texUVs[2].y},
-                    {texUVs[2].x + texUVs[2].width, texUVs[2].y + texUVs[2].height},
-                    {texUVs[2].x, texUVs[2].y + texUVs[2].height},
-                    {texUVs[2].x + texUVs[2].width, texUVs[2].y}
-                };
-
-                vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ - halfL}, uvs_top[0], normals[3], tangents[3], WHITE);
-                vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ + halfL}, uvs_top[1], normals[3], tangents[3], WHITE);
-                vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX - halfW, cubeSize.y, posZ + halfL}, uvs_top[2], normals[3], tangents[3], WHITE);
-                vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, cubeSize.y, posZ - halfL}, uvs_top[3], normals[3], tangents[3], WHITE);
-
-                indices[indexCount + 0] = vertexCount + 0;
-                indices[indexCount + 1] = vertexCount + 1;
-                indices[indexCount + 2] = vertexCount + 2;
-                indices[indexCount + 3] = vertexCount + 0;
-                indices[indexCount + 4] = vertexCount + 3;
-                indices[indexCount + 5] = vertexCount + 1;
-
-                vertexCount += 4;
-                indexCount += 6;
-
-                // Ground face
-                Vector2 uvs_bottom[4] = {
-                    {texUVs[3].x + texUVs[3].width, texUVs[3].y},
-                    {texUVs[3].x + texUVs[3].width, texUVs[3].y + texUVs[3].height},
-                    {texUVs[3].x, texUVs[3].y + texUVs[3].height},
-                    {texUVs[3].x, texUVs[3].y}
-                };
-
-                vertices[vertexCount + 0] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ - halfL}, uvs_bottom[0], normals[2], tangents[2], WHITE);
-                vertices[vertexCount + 1] = R3D_MakeVertex((Vector3){posX - halfW, 0.0f, posZ + halfL}, uvs_bottom[1], normals[2], tangents[2], WHITE);
-                vertices[vertexCount + 2] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ + halfL}, uvs_bottom[2], normals[2], tangents[2], WHITE);
-                vertices[vertexCount + 3] = R3D_MakeVertex((Vector3){posX + halfW, 0.0f, posZ - halfL}, uvs_bottom[3], normals[2], tangents[2], WHITE);
-
-                indices[indexCount + 0] = vertexCount + 0;
-                indices[indexCount + 1] = vertexCount + 1;
-                indices[indexCount + 2] = vertexCount + 2;
-                indices[indexCount + 3] = vertexCount + 2;
-                indices[indexCount + 4] = vertexCount + 3;
-                indices[indexCount + 5] = vertexCount + 0;
-
-                vertexCount += 4;
-                indexCount += 6;
+            else {
+                QUAD(TLF,TRF,TRB,TLB,  UV(3,0,0),UV(3,1,0),UV(3,1,1),UV(3,0,1),  3,3);
+                QUAD(BLF,BLB,BRB,BRF,  UV(2,0,0),UV(2,0,1),UV(2,1,1),UV(2,1,0),  2,2);
             }
         }
     }
 
-    // Cleaning
     UnloadImageColors(pixels);
+    meshData.vertexCount = vc;
+    meshData.indexCount  = ic;
 
-    meshData.vertexCount = vertexCount;
-    meshData.indexCount = indexCount;
+    #undef IS_WALL
+    #undef PIXEL
+    #undef UV
+    #undef QUAD
 
     return meshData;
 }
