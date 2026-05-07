@@ -139,8 +139,8 @@ static bool load_animation(R3D_Animation* animation, const R3D_Importer* importe
         ? (float)aiAnim->mTicksPerSecond 
         : 24.0f;
 
-    // Copy animation name
-    size_t nameLen = strlen(aiAnim->mName.data);
+    // Copy animation name (clamp to buffer size to prevent heap overflow)
+    size_t nameLen = aiAnim->mName.length;
     if (nameLen >= sizeof(animation->name)) {
         nameLen = sizeof(animation->name) - 1;
     }
