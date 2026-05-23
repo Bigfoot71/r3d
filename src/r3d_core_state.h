@@ -27,6 +27,7 @@
  */
 typedef struct {
     R3D_Camera camera;      //< Complete camera data
+    Rectangle viewport;     //< Viewport of the pass
     R3D_Frustum frustum;    //< View frustum for culling
     Matrix view, invView;   //< View matrix and its inverse
     Matrix proj, invProj;   //< Projection matrix and its inverse
