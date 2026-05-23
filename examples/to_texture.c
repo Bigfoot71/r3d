@@ -4,7 +4,7 @@
 int main(void)
 {
     // Initialize window
-    InitWindow(800, 450, "[r3d] - Basic example");
+    InitWindow(800, 450, "[r3d] - Render to texture");
     SetTargetFPS(60);
 
     // Initialize R3D
