@@ -12,6 +12,7 @@
 #include "./r3d_animation_player.h"
 #include "./r3d_instance.h"
 #include "./r3d_platform.h"
+#include "./r3d_camera.h"
 #include "./r3d_model.h"
 #include "./r3d_decal.h"
 #include <raylib.h>
@@ -22,6 +23,27 @@
  */
 
 // ========================================
+// STRUCT TYPES
+// ========================================
+
+/**
+ * @brief Describes a complete R3D rendering view.
+ *
+ * A view defines where and how a scene is rendered for a single rendering
+ * session. It combines an R3D camera, an optional viewport and an optional
+ * render target.
+ *
+ * If `target` is zero-initialized, rendering is directed to the default
+ * framebuffer. If `viewport.width` or `viewport.height` is less than or equal
+ * to zero, the full target size is used.
+ */
+typedef struct R3D_View {
+    R3D_Camera camera;      ///< Camera used for this view.
+    Rectangle viewport;     ///< Viewport inside the target. If width or height <= 0, the full target is used.
+    RenderTexture target;   ///< Render target. Zero-initialized means screen/backbuffer.
+} R3D_View;
+
+// ========================================
 // PUBLIC API
 // ========================================
 
@@ -30,23 +52,43 @@ extern "C" {
 #endif
 
 /**
- * @brief Begins a rendering session using the given camera.
+ * @brief Begins a rendering session using a raylib camera.
  *
+ * This is the simplest entry point and follows the usual raylib-style workflow.
  * Rendering output is directed to the default framebuffer.
+ *
+ * The given raylib camera is converted internally to an R3D camera using
+ * `R3D_CameraFromRL()`.
  *
  * @param camera Camera used to render the scene.
  */
 R3DAPI void R3D_Begin(Camera3D camera);
 
 /**
- * @brief Begins a rendering session with a custom render target.
+ * @brief Begins a rendering session using an R3D camera.
  *
- * If the render target is invalid (ID = 0), rendering goes to the screen.
+ * Rendering output is directed to the default framebuffer.
  *
- * @param target Render texture to render into.
+ * This entry point provides access to R3D-specific camera features such as
+ * layer masks, custom near/far clipping planes and quaternion-based orientation.
+ *
  * @param camera Camera used to render the scene.
  */
-R3DAPI void R3D_BeginEx(RenderTexture target, Camera3D camera);
+R3DAPI void R3D_BeginEx(R3D_Camera camera);
+
+/**
+ * @brief Begins a rendering session using a complete R3D view descriptor.
+ *
+ * This is the advanced entry point. It allows the caller to specify the camera,
+ * render target and viewport used for the rendering session.
+ *
+ * Use this function for render-to-texture workflows, custom viewports,
+ * multipass rendering, editor views, minimaps, probes or any case where the
+ * default framebuffer is not enough.
+ *
+ * @param view View descriptor used to render the scene.
+ */
+R3DAPI void R3D_BeginPro(R3D_View view);
 
 /**
  * @brief Ends the current rendering session.

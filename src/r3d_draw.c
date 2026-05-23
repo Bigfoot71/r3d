@@ -107,14 +107,25 @@ static void cleanup_after_render(void);
 
 void R3D_Begin(Camera3D camera)
 {
-    R3D_BeginEx((RenderTexture) {0}, camera);
+    R3D_BeginEx(R3D_CameraFromRL(camera));
 }
 
-void R3D_BeginEx(RenderTexture target, Camera3D camera)
+void R3D_BeginEx(R3D_Camera camera)
+{
+    R3D_View view = {
+        .camera = camera,
+        .viewport = {0},
+        .target = {0},
+    };
+
+    R3D_BeginPro(view);
+}
+
+void R3D_BeginPro(R3D_View view)
 {
     rlDrawRenderBatchActive();
-    update_view_state(R3D_CameraFromRL(camera));
-    R3D.screen = target;
+    update_view_state(view.camera);
+    R3D.screen = view.target;
     r3d_render_clear();
 }
 
