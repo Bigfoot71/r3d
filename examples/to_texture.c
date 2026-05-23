@@ -1,4 +1,3 @@
-#include "raylib.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -28,14 +27,13 @@ int main(void)
     // Render texture
     RenderTexture target = LoadRenderTexture(1024, 512);
 
-    // Setup camera
+    // Setup cameras
     Camera3D r3dCamera = {
         .position = {0, 2, 2},
         .target = {0, 0, 0},
         .up = {0, 1, 0},
         .fovy = 60
     };
-
     Camera3D rlCamera = {
         .position = {0, 1, 4},
         .target = {0, 1, -1},
