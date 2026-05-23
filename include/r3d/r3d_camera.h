@@ -114,8 +114,16 @@ extern "C" {
 /**
  * @brief Creates an R3D camera from a raylib camera.
  *
- * Since raylib cameras do not store near/far clipping planes or layer masks,
- * default values are assigned for those fields.
+ * The camera position, orientation, field of view and projection mode are
+ * derived from the given raylib camera.
+ *
+ * Since raylib's Camera3D does not store near/far clipping planes or layer
+ * masks, the near/far planes are initialized from the current rlgl culling
+ * distances, while the layer mask is set to the default R3D camera layer mask.
+ *
+ * @param camera Raylib camera to convert.
+ *
+ * @return Converted R3D camera.
  */
 R3DAPI R3D_Camera R3D_CameraFromRL(Camera camera);
 

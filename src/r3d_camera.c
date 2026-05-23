@@ -8,6 +8,7 @@
 
 #include <r3d/r3d_camera.h>
 #include <stddef.h>
+#include <rlgl.h>
 
 #include "./common/r3d_math.h"
 
@@ -21,6 +22,8 @@ R3D_Camera R3D_CameraFromRL(Camera camera)
 
     result.position = camera.position;
     result.fovy = camera.fovy;
+    result.nearPlane = rlGetCullDistanceNear();
+    result.farPlane = rlGetCullDistanceFar();
 
     result.projection =
         (camera.projection == CAMERA_ORTHOGRAPHIC)

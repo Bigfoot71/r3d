@@ -52,13 +52,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Begins a rendering session using a raylib camera.
+ * @brief Begins a rendering session using the given raylib camera.
  *
- * This is the simplest entry point and follows the usual raylib-style workflow.
  * Rendering output is directed to the default framebuffer.
  *
- * The given raylib camera is converted internally to an R3D camera using
- * `R3D_CameraFromRL()`.
+ * The given Camera3D is converted internally to an R3D_Camera. Since raylib
+ * cameras do not store near/far clipping planes, the converted camera uses the
+ * current rlgl culling distances for those values.
  *
  * @param camera Camera used to render the scene.
  */
@@ -81,6 +81,11 @@ R3DAPI void R3D_BeginEx(R3D_Camera camera);
  *
  * This is the advanced entry point. It allows the caller to specify the camera,
  * render target and viewport used for the rendering session.
+ *
+ * The view camera is used as-is, including its near/far clipping planes and
+ * layer mask. If the camera was created from a raylib Camera3D using
+ * `R3D_CameraFromRL()`, its near/far planes come from the current rlgl culling
+ * distances because raylib cameras do not store those values directly.
  *
  * Use this function for render-to-texture workflows, custom viewports,
  * multipass rendering, editor views, minimaps, probes or any case where the
