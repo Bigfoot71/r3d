@@ -21,6 +21,45 @@
 #include "../common/r3d_hash.h"
 
 // ========================================
+// MODULE CONSTANTS
+// ========================================
+
+static const GLenum INSTANCE_FORMAT_GL_TYPE[R3D_INSTANCE_FORMAT_COUNT] = {
+    [R3D_INSTANCE_FORMAT_FLOAT32] = GL_FLOAT,
+    [R3D_INSTANCE_FORMAT_FLOAT16] = GL_HALF_FLOAT,
+    [R3D_INSTANCE_FORMAT_UNORM16] = GL_UNSIGNED_SHORT,
+    [R3D_INSTANCE_FORMAT_SNORM16] = GL_SHORT,
+    [R3D_INSTANCE_FORMAT_UNORM8]  = GL_UNSIGNED_BYTE,
+    [R3D_INSTANCE_FORMAT_SNORM8]  = GL_BYTE,
+};
+
+static const GLboolean INSTANCE_FORMAT_NORMALIZED[R3D_INSTANCE_FORMAT_COUNT] = {
+    [R3D_INSTANCE_FORMAT_FLOAT32] = GL_FALSE,
+    [R3D_INSTANCE_FORMAT_FLOAT16] = GL_FALSE,
+    [R3D_INSTANCE_FORMAT_UNORM16] = GL_TRUE,
+    [R3D_INSTANCE_FORMAT_SNORM16] = GL_TRUE,
+    [R3D_INSTANCE_FORMAT_UNORM8]  = GL_TRUE,
+    [R3D_INSTANCE_FORMAT_SNORM8]  = GL_TRUE,
+};
+
+static const int INSTANCE_ATTRIBUTE_COMPONENTS[R3D_INSTANCE_ATTRIBUTE_COUNT] = {
+    /* POSITION */  3,
+    /* ROTATION */  4,
+    /* SCALE    */  3,
+    /* COLOR    */  4,
+    /* CUSTOM   */  4,
+};
+
+static const int INSTANCE_FORMAT_SIZE[R3D_INSTANCE_FORMAT_COUNT] = {
+    [R3D_INSTANCE_FORMAT_FLOAT32] = 4,
+    [R3D_INSTANCE_FORMAT_FLOAT16] = 2,
+    [R3D_INSTANCE_FORMAT_UNORM16] = 2,
+    [R3D_INSTANCE_FORMAT_SNORM16] = 2,
+    [R3D_INSTANCE_FORMAT_UNORM8]  = 1,
+    [R3D_INSTANCE_FORMAT_SNORM8]  = 1,
+};
+
+// ========================================
 // MODULE STATE
 // ========================================
 
@@ -408,61 +447,50 @@ void load_shape_cube(r3d_render_shape_t* shape)
 // INTERNAL INSTANCES FUNCTIONS
 // ========================================
 
-static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT], R3D_InstanceFlags flags, int offset)
+static void enable_instances(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT], R3D_InstanceLayout layout, int offset)
 {
     r3d_render_instance_state_t* state = &R3D_MOD_RENDER.instanceState;
 
-    if (flags == state->flags && offset == state->offset &&
-        memcmp(buffers, state->buffers, R3D_INSTANCE_ATTRIBUTE_COUNT * sizeof(GLuint)) == 0) {
+    if (offset == state->offset &&
+        memcmp(buffers, state->buffers, R3D_INSTANCE_ATTRIBUTE_COUNT * sizeof(GLuint)) == 0 &&
+        memcmp(&layout, &state->layout, sizeof(R3D_InstanceLayout)) == 0) {
         return;
     }
 
     memcpy(state->buffers, buffers, R3D_INSTANCE_ATTRIBUTE_COUNT * sizeof(GLuint));
-    state->flags = flags, state->offset = offset;
+    state->layout = layout;
+    state->offset = offset;
 
-    if (BIT_TEST(flags, R3D_INSTANCE_POSITION)) {
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-        glEnableVertexAttribArray(10);
-        glVertexAttribPointer(10, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)(offset * sizeof(Vector3)));
-    }
-    else {
-        glDisableVertexAttribArray(10);
-    }
+    for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
+        GLuint attrib = 10 + i;
+        R3D_InstanceFlags flag = 1u << i;
 
-    if (BIT_TEST(flags, R3D_INSTANCE_ROTATION)) {
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
-        glEnableVertexAttribArray(11);
-        glVertexAttribPointer(11, 4, GL_FLOAT, GL_FALSE, sizeof(Quaternion), (void*)(offset * sizeof(Quaternion)));
-    }
-    else {
-        glDisableVertexAttribArray(11);
-    }
+        if (!BIT_TEST(layout.flags, flag)) {
+            glDisableVertexAttribArray(attrib);
+            continue;
+        }
 
-    if (BIT_TEST(flags, R3D_INSTANCE_SCALE)) {
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-        glEnableVertexAttribArray(12);
-        glVertexAttribPointer(12, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)(offset * sizeof(Vector3)));
-    }
-    else {
-        glDisableVertexAttribArray(12);
-    }
+        R3D_InstanceFormat format = layout.formats[i];
 
-    if (BIT_TEST(flags, R3D_INSTANCE_COLOR)) {
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[3]);
-        glEnableVertexAttribArray(13);
-        glVertexAttribPointer(13, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Color), (void*)(offset * sizeof(Color)));
-    }
-    else {
-        glDisableVertexAttribArray(13);
-    }
+        if (format < 0 || format >= R3D_INSTANCE_FORMAT_COUNT) {
+            glDisableVertexAttribArray(attrib);
+            R3D_TRACELOG(LOG_WARNING, "enable_instances -> invalid instance format (attribute=%d, format=%d)", i, format);
+            continue;
+        }
 
-    if (BIT_TEST(flags, R3D_INSTANCE_CUSTOM)) {
-        glBindBuffer(GL_ARRAY_BUFFER, buffers[4]);
-        glEnableVertexAttribArray(14);
-        glVertexAttribPointer(14, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)(offset * sizeof(Vector4)));
-    }
-    else {
-        glDisableVertexAttribArray(14);
+        int components = INSTANCE_ATTRIBUTE_COMPONENTS[i];
+        int stride = components * INSTANCE_FORMAT_SIZE[format];
+
+        glBindBuffer(GL_ARRAY_BUFFER, buffers[i]);
+        glEnableVertexAttribArray(attrib);
+        glVertexAttribPointer(
+            attrib,
+            components,
+            INSTANCE_FORMAT_GL_TYPE[format],
+            INSTANCE_FORMAT_NORMALIZED[format],
+            stride,
+            (void*)((size_t)offset * stride)
+        );
     }
 }
 
@@ -1475,7 +1503,7 @@ void r3d_render_draw_instanced(const r3d_render_call_t* call)
 
     const r3d_render_group_t* group = r3d_render_get_call_group(call);
 
-    enable_instances(group->instances.buffers, group->instances.flags, group->instanceOffset);
+    enable_instances(group->instances.buffers, group->instances.layout, group->instanceOffset);
 
     if (indexRange.count == 0) {
         glDrawArraysInstanced(primitive, vertexRange.offset, vertexRange.count, group->instanceCount);
@@ -1495,7 +1523,7 @@ void r3d_render_draw_instanced(const r3d_render_call_t* call)
     // the draw. This is safe as long as non-instanced vertex shaders
     // never read those locations.
 
-    //disable_instances(group->instances.flags);
+    //disable_instances(group->instances.layout.flags);
 }
 
 void r3d_render_draw_shape(r3d_render_shape_enum_t shape)
