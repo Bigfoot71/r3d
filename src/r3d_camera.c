@@ -42,7 +42,7 @@ Camera R3D_CameraToRL(R3D_Camera camera)
     result.position = camera.position;
     result.target = Vector3Add(camera.position, R3D_GetCameraForward(camera));
     result.up = R3D_GetCameraUp(camera);
-    result.fovy = camera.fovy;
+    result.fovy = (float)camera.fovy;
 
     result.projection =
         (camera.projection == R3D_PROJECTION_ORTHOGRAPHIC)
