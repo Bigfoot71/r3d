@@ -27,11 +27,11 @@
 // ========================================
 
 /**
- * @brief Describes a complete R3D rendering view.
+ * @brief Describes an R3D rendering view.
  *
- * A view defines where and how a scene is rendered for a single rendering
- * session. It combines an R3D camera, an optional viewport and an optional
- * render target.
+ * A view defines the camera and output area used for a single rendering
+ * session. It combines an R3D camera, an optional render target and an optional
+ * viewport inside that target.
  *
  * If `target` is zero-initialized, rendering is directed to the default
  * framebuffer. If `viewport.width` or `viewport.height` is less than or equal
@@ -39,8 +39,8 @@
  */
 typedef struct R3D_View {
     R3D_Camera camera;      ///< Camera used for this view.
-    Rectangle viewport;     ///< Viewport inside the target. If width or height <= 0, the full target is used.
     RenderTexture target;   ///< Render target. Zero-initialized means screen/backbuffer.
+    Rectangle viewport;     ///< Viewport inside the target. If width or height <= 0, the full target is used.
 } R3D_View;
 
 // ========================================
