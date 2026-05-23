@@ -1700,12 +1700,12 @@ void R3D_TransformMeshData(R3D_MeshData* meshData, Matrix transform)
         R3D_Vertex* v = &meshData->vertices[i];
         v->position = r3d_vector3_transform(v->position, &transform);
 
-        Vector3 normal = R3D_DecodeNormal((int8_t*)v->normal);
-        R3D_EncodeNormal((int8_t*)v->normal, r3d_vector3_transform_normal(normal, &matNormal));
+        Vector3 normal = R3D_UnpackNormal((int8_t*)v->normal);
+        R3D_PackNormal((int8_t*)v->normal, r3d_vector3_transform_normal(normal, &matNormal));
 
-        Vector4 tangent = R3D_DecodeTangent((int8_t*)v->tangent);
+        Vector4 tangent = R3D_UnpackTangent((int8_t*)v->tangent);
         Vector3 t = Vector3Normalize(r3d_vector3_transform_normal((Vector3){tangent.x, tangent.y, tangent.z}, &matNormal));
-        R3D_EncodeTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
+        R3D_PackTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
     }
 }
 
@@ -1730,12 +1730,12 @@ void R3D_RotateMeshData(R3D_MeshData* meshData, Quaternion rotation)
 
         v->position = Vector3RotateByQuaternion(v->position, rotation);
 
-        Vector3 normal = R3D_DecodeNormal((int8_t*)v->normal);
-        R3D_EncodeNormal((int8_t*)v->normal, Vector3RotateByQuaternion(normal, rotation));
+        Vector3 normal = R3D_UnpackNormal((int8_t*)v->normal);
+        R3D_PackNormal((int8_t*)v->normal, Vector3RotateByQuaternion(normal, rotation));
 
-        Vector4 tangent = R3D_DecodeTangent((int8_t*)v->tangent);
+        Vector4 tangent = R3D_UnpackTangent((int8_t*)v->tangent);
         Vector3 t = Vector3RotateByQuaternion((Vector3){tangent.x, tangent.y, tangent.z}, rotation);
-        R3D_EncodeTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
+        R3D_PackTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
     }
 }
 
@@ -1760,13 +1760,13 @@ void R3D_ScaleMeshData(R3D_MeshData* meshData, Vector3 scale)
         v->position.z *= scale.z;
 
         if (!uniform) {
-            Vector3 normal = R3D_DecodeNormal((int8_t*)v->normal);
-            normal = Vector3Normalize((Vector3){ normal.x * invScale.x, normal.y * invScale.y, normal.z * invScale.z });
-            R3D_EncodeNormal((int8_t*)v->normal, normal);
+            Vector3 normal = R3D_UnpackNormal((int8_t*)v->normal);
+            normal = Vector3Normalize((Vector3){normal.x * invScale.x, normal.y * invScale.y, normal.z * invScale.z});
+            R3D_PackNormal((int8_t*)v->normal, normal);
 
-            Vector4 tangent = R3D_DecodeTangent((int8_t*)v->tangent);
-            Vector3 t = Vector3Normalize((Vector3){ tangent.x * scale.x, tangent.y * scale.y, tangent.z * scale.z });
-            R3D_EncodeTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
+            Vector4 tangent = R3D_UnpackTangent((int8_t*)v->tangent);
+            Vector3 t = Vector3Normalize((Vector3){tangent.x * scale.x, tangent.y * scale.y, tangent.z * scale.z});
+            R3D_PackTangent((int8_t*)v->tangent, (Vector4){t.x, t.y, t.z, tangent.w});
         }
     }
 }
@@ -1785,7 +1785,7 @@ void R3D_GenMeshDataUVsPlanar(R3D_MeshData* meshData, Vector2 uvScale, Vector3 a
         Vector3 pos = meshData->vertices[i].position;
         float u = Vector3DotProduct(pos, tangent) * uvScale.x;
         float v = Vector3DotProduct(pos, bitangent) * uvScale.y;
-        R3D_EncodeTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
+        R3D_PackTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
     }
 }
 
@@ -1797,7 +1797,7 @@ void R3D_GenMeshDataUVsSpherical(R3D_MeshData* meshData)
         Vector3 pos = Vector3Normalize(meshData->vertices[i].position);
         float u = 0.5f + atan2f(pos.z, pos.x) / (2.0f * PI);
         float v = 0.5f - asinf(pos.y) * (1.0f / PI);
-        R3D_EncodeTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
+        R3D_PackTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
     }
 }
 
@@ -1809,7 +1809,7 @@ void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData)
         Vector3 pos = meshData->vertices[i].position;
         float u = 0.5f + atan2f(pos.z, pos.x) / (2.0f * PI);
         float v = pos.y;
-        R3D_EncodeTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
+        R3D_PackTexCoord(meshData->vertices[i].texcoord, (Vector2){u, v});
     }
 }
 
@@ -1838,7 +1838,7 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
     if (type == R3D_PRIMITIVE_POINTS ||  type == R3D_PRIMITIVE_LINES ||
         type == R3D_PRIMITIVE_LINE_STRIP ||  type == R3D_PRIMITIVE_LINE_LOOP) {
         for (int i = 0; i < meshData->vertexCount; i++) {
-            R3D_EncodeNormal((int8_t*)meshData->vertices[i].normal, (Vector3){0.0f, 0.0f, 1.0f});
+            R3D_PackNormal((int8_t*)meshData->vertices[i].normal, (Vector3){0.0f, 0.0f, 1.0f});
         }
         return;
     }
@@ -1882,7 +1882,7 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
     }
 
     for (int i = 0; i < meshData->vertexCount; i++) {
-        R3D_EncodeNormal((int8_t*)meshData->vertices[i].normal, Vector3Normalize(normals[i]));
+        R3D_PackNormal((int8_t*)meshData->vertices[i].normal, Vector3Normalize(normals[i]));
     }
 
     RL_FREE(normals);
@@ -1894,9 +1894,9 @@ static void process_triangle_tangents(Vector3* tangents, Vector3* bitangents, R3
     Vector3 v1 = meshData->vertices[i1].position;
     Vector3 v2 = meshData->vertices[i2].position;
 
-    Vector2 uv0 = R3D_DecodeTexCoord(meshData->vertices[i0].texcoord);
-    Vector2 uv1 = R3D_DecodeTexCoord(meshData->vertices[i1].texcoord);
-    Vector2 uv2 = R3D_DecodeTexCoord(meshData->vertices[i2].texcoord);
+    Vector2 uv0 = R3D_UnpackTexCoord(meshData->vertices[i0].texcoord);
+    Vector2 uv1 = R3D_UnpackTexCoord(meshData->vertices[i1].texcoord);
+    Vector2 uv2 = R3D_UnpackTexCoord(meshData->vertices[i2].texcoord);
 
     Vector3 edge1 = Vector3Subtract(v1, v0);
     Vector3 edge2 = Vector3Subtract(v2, v0);
@@ -1938,7 +1938,7 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
     if (type == R3D_PRIMITIVE_POINTS || type == R3D_PRIMITIVE_LINES ||
         type == R3D_PRIMITIVE_LINE_STRIP || type == R3D_PRIMITIVE_LINE_LOOP) {
         for (int i = 0; i < meshData->vertexCount; i++) {
-            R3D_EncodeTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){ 1.0f, 0.0f, 0.0f, 1.0f });
+            R3D_PackTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){1.0f, 0.0f, 0.0f, 1.0f});
         }
         return;
     }
@@ -1989,7 +1989,7 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
     // Orthogonalization (Gram-Schmidt) and handedness calculation
     for (int i = 0; i < meshData->vertexCount; i++)
     {
-        Vector3 n = R3D_DecodeNormal((int8_t*)meshData->vertices[i].normal);
+        Vector3 n = R3D_UnpackNormal((int8_t*)meshData->vertices[i].normal);
         Vector3 t = tangents[i];
 
         // Gram-Schmidt orthogonalization
@@ -2004,7 +2004,7 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
         }
 
         float handedness = Vector3DotProduct(Vector3CrossProduct(n, t), bitangents[i]) < 0.0f ? -1.0f : 1.0f;
-        R3D_EncodeTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){t.x, t.y, t.z, handedness});
+        R3D_PackTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){t.x, t.y, t.z, handedness});
     }
 
     RL_FREE(tangents);

@@ -7,10 +7,7 @@
  */
 
 #include <r3d/r3d_vertex.h>
-#include <math.h>
-
-#include "./common/r3d_helper.h"
-#include "./common/r3d_half.h"
+#include <r3d/r3d_pack.h>
 
 // ========================================
 // PUBLIC API
@@ -19,59 +16,61 @@
 R3D_Vertex R3D_MakeVertex(Vector3 position, Vector2 texcoord, Vector3 normal, Vector4 tangent, Color color)
 {
     R3D_Vertex v = {0};
+
     v.position = position;
-    R3D_EncodeTexCoord(v.texcoord, texcoord);
-    R3D_EncodeNormal((int8_t*)v.normal, normal);
-    R3D_EncodeTangent((int8_t*)v.tangent, tangent);
+    R3D_PackTexCoord(v.texcoord, texcoord);
+    R3D_PackNormal((int8_t*)v.normal, normal);
+    R3D_PackTangent((int8_t*)v.tangent, tangent);
     v.color = color;
+
     return v;
 }
 
-void R3D_EncodeTexCoord(uint16_t* dst, Vector2 src)
+void R3D_PackTexCoord(uint16_t* dst, Vector2 src)
 {
-    dst[0] = r3d_half_from_float(src.x);
-    dst[1] = r3d_half_from_float(src.y);
+    dst[0] = R3D_PackFloat16(src.x);
+    dst[1] = R3D_PackFloat16(src.y);
 }
 
-Vector2 R3D_DecodeTexCoord(const uint16_t* src)
+Vector2 R3D_UnpackTexCoord(const uint16_t* src)
 {
-    Vector2 result;
-    result.x = r3d_half_from_float(src[0]);
-    result.y = r3d_half_from_float(src[1]);
-    return result;
-}
-
-void R3D_EncodeNormal(int8_t* dst, Vector3 src)
-{
-    dst[0] = (int8_t)roundf(CLAMP(src.x, -1.0f, 1.0f) * 127.0f);
-    dst[1] = (int8_t)roundf(CLAMP(src.y, -1.0f, 1.0f) * 127.0f);
-    dst[2] = (int8_t)roundf(CLAMP(src.z, -1.0f, 1.0f) * 127.0f);
-    dst[3] = 0;
-}
-
-Vector3 R3D_DecodeNormal(const int8_t* src)
-{
-    return (Vector3){
-        (src[0] == -128) ? -1.0f : src[0] / 127.0f,
-        (src[1] == -128) ? -1.0f : src[1] / 127.0f,
-        (src[2] == -128) ? -1.0f : src[2] / 127.0f
+    return (Vector2) {
+        R3D_UnpackFloat16(src[0]),
+        R3D_UnpackFloat16(src[1])
     };
 }
 
-void R3D_EncodeTangent(int8_t* dst, Vector4 src)
+void R3D_PackNormal(int8_t* dst, Vector3 src)
 {
-    dst[0] = (int8_t)roundf(CLAMP(src.x, -1.0f, 1.0f) * 127.0f);
-    dst[1] = (int8_t)roundf(CLAMP(src.y, -1.0f, 1.0f) * 127.0f);
-    dst[2] = (int8_t)roundf(CLAMP(src.z, -1.0f, 1.0f) * 127.0f);
+    dst[0] = R3D_PackSnorm8(src.x);
+    dst[1] = R3D_PackSnorm8(src.y);
+    dst[2] = R3D_PackSnorm8(src.z);
+    dst[3] = 0;
+}
+
+Vector3 R3D_UnpackNormal(const int8_t* src)
+{
+    return (Vector3) {
+        R3D_UnpackSnorm8(src[0]),
+        R3D_UnpackSnorm8(src[1]),
+        R3D_UnpackSnorm8(src[2])
+    };
+}
+
+void R3D_PackTangent(int8_t* dst, Vector4 src)
+{
+    dst[0] = R3D_PackSnorm8(src.x);
+    dst[1] = R3D_PackSnorm8(src.y);
+    dst[2] = R3D_PackSnorm8(src.z);
     dst[3] = (src.w >= 0.0f) ? 127 : -127;
 }
 
-Vector4 R3D_DecodeTangent(const int8_t* src)
+Vector4 R3D_UnpackTangent(const int8_t* src)
 {
-    return (Vector4){
-        (src[0] == -128) ? -1.0f : src[0] / 127.0f,
-        (src[1] == -128) ? -1.0f : src[1] / 127.0f,
-        (src[2] == -128) ? -1.0f : src[2] / 127.0f,
+    return (Vector4) {
+        R3D_UnpackSnorm8(src[0]),
+        R3D_UnpackSnorm8(src[1]),
+        R3D_UnpackSnorm8(src[2]),
         (src[3] >= 0) ? 1.0f : -1.0f
     };
 }
