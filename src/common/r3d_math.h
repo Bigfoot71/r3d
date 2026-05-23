@@ -181,12 +181,12 @@ static inline Vector4 r3d_color_to_linear_scaled_vec4(Color color, R3D_ColorSpac
 // VECTOR FUNCTIONS
 // ========================================
 
-static float r3d_vector3_len_sq(Vector3 v)
+static inline float r3d_vector3_len_sq(Vector3 v)
 {
     return v.x*v.x + v.y*v.y + v.z*v.z;
 }
 
-static Vector3 r3d_vector3_normalize_or(Vector3 v, Vector3 fallback)
+static inline Vector3 r3d_vector3_normalize_or(Vector3 v, Vector3 fallback)
 {
     float len_sqr = v.x*v.x + v.y*v.y + v.z*v.z;
 
@@ -244,12 +244,12 @@ static inline Vector4 r3d_vector4_transform(Vector4 v, const Matrix* m)
     };
 }
 
-static Quaternion r3d_quaternion_normalize_or_id(Quaternion q)
+static inline Quaternion r3d_quaternion_normalize_or_id(Quaternion q)
 {
     float len_sqr = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
 
     if (len_sqr <= 1e-12f) {
-        return (Quaternion){ 0, 0, 0, 1 };
+        return (Quaternion) {0, 0, 0, 1};
     }
 
     float inv_len = 1.0f / sqrtf(len_sqr);
@@ -262,7 +262,7 @@ static Quaternion r3d_quaternion_normalize_or_id(Quaternion q)
     };
 }
 
-static Quaternion r3d_quaternion_from_axes(Vector3 right, Vector3 up, Vector3 back)
+static inline Quaternion r3d_quaternion_from_axes(Vector3 right, Vector3 up, Vector3 back)
 {
     // Matrix columns are the world-space directions of local +X, +Y, +Z.
     Matrix m = {
