@@ -187,31 +187,31 @@ void R3D_CameraRoll(R3D_Camera* camera, float angle)
     R3D_CameraRotate(camera, q);
 }
 
-void R3D_SetCameraLayers(R3D_Camera* camera, R3D_Layer layers)
+void R3D_SetCameraCullMask(R3D_Camera* camera, R3D_Layer cullMask)
 {
     if (camera == NULL) return;
-    camera->layers = layers;
+    camera->cullMask = cullMask;
 }
 
-void R3D_EnableCameraLayers(R3D_Camera* camera, R3D_Layer layers)
+void R3D_EnableCameraCullLayers(R3D_Camera* camera, R3D_Layer layerMask)
 {
     if (camera == NULL) return;
-    camera->layers |= layers;
+    camera->cullMask |= layerMask;
 }
 
-void R3D_DisableCameraLayers(R3D_Camera* camera, R3D_Layer layers)
+void R3D_DisableCameraCullLayers(R3D_Camera* camera, R3D_Layer layerMask)
 {
     if (camera == NULL) return;
-    camera->layers &= ~layers;
+    camera->cullMask &= ~layerMask;
 }
 
-void R3D_ToggleCameraLayers(R3D_Camera* camera, R3D_Layer layers)
+void R3D_ToggleCameraCullLayers(R3D_Camera* camera, R3D_Layer layerMask)
 {
     if (camera == NULL) return;
-    camera->layers ^= layers;
+    camera->cullMask ^= layerMask;
 }
 
-bool R3D_HasCameraLayers(R3D_Camera camera, R3D_Layer layers)
+bool R3D_IsCameraLayerVisible(R3D_Camera camera, R3D_Layer layerMask)
 {
-    return (camera.layers & layers) != 0;
+    return (camera.cullMask & layerMask) != 0;
 }

@@ -31,7 +31,7 @@
         .fovy       = 60.0,                             \
         .nearPlane  = 0.05,                             \
         .farPlane   = 4000.0,                           \
-        .layers     = R3D_LAYER_ALL,                    \
+        .cullMask   = R3D_LAYER_ALL,                    \
         .projection = R3D_PROJECTION_PERSPECTIVE,       \
     }
 
@@ -99,7 +99,7 @@ typedef struct R3D_Camera {
     double fovy;                    ///< Vertical field of view in degrees for perspective projection; vertical size for orthographic projection.
     double nearPlane;               ///< Distance to the near clipping plane.
     double farPlane;                ///< Distance to the far clipping plane.
-    R3D_Layer layers;               ///< Camera visibility layer mask.
+    R3D_Layer cullMask;             ///< Camera visibility layer mask.
     R3D_Projection projection;      ///< Camera projection mode.
 } R3D_Camera;
 
@@ -201,29 +201,29 @@ R3DAPI void R3D_CameraYaw(R3D_Camera* camera, float angle);
 R3DAPI void R3D_CameraRoll(R3D_Camera* camera, float angle);
 
 /**
- * @brief Replaces the camera visibility layer mask.
+ * @brief Replaces the camera culling mask.
  */
-R3DAPI void R3D_SetCameraLayers(R3D_Camera* camera, R3D_Layer layers);
+R3DAPI void R3D_SetCameraCullMask(R3D_Camera* camera, R3D_Layer cullMask);
 
 /**
- * @brief Enables one or more layers in the camera visibility mask.
+ * @brief Enables one or more layers in the camera culling mask.
  */
-R3DAPI void R3D_EnableCameraLayers(R3D_Camera* camera, R3D_Layer layers);
+R3DAPI void R3D_EnableCameraCullLayers(R3D_Camera* camera, R3D_Layer layerMask);
 
 /**
- * @brief Disables one or more layers from the camera visibility mask.
+ * @brief Disables one or more layers from the camera culling mask.
  */
-R3DAPI void R3D_DisableCameraLayers(R3D_Camera* camera, R3D_Layer layers);
+R3DAPI void R3D_DisableCameraCullLayers(R3D_Camera* camera, R3D_Layer layerMask);
 
 /**
- * @brief Toggles one or more layers in the camera visibility mask.
+ * @brief Toggles one or more layers in the camera culling mask.
  */
-R3DAPI void R3D_ToggleCameraLayers(R3D_Camera* camera, R3D_Layer layers);
+R3DAPI void R3D_ToggleCameraCullLayers(R3D_Camera* camera, R3D_Layer layerMask);
 
 /**
- * @brief Checks whether at least one of the given layers is visible to the camera.
+ * @brief Checks whether at least one object layer is visible to the camera.
  */
-R3DAPI bool R3D_HasCameraLayers(R3D_Camera camera, R3D_Layer layers);
+R3DAPI bool R3D_IsCameraLayerVisible(R3D_Camera camera, R3D_Layer layerMask);
 
 #ifdef __cplusplus
 } // extern "C"

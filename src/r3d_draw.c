@@ -35,8 +35,11 @@
 
 #define IS_MESH_VALID(mesh) ((mesh).vertexCount > 0)
 
-#define IS_MESH_DRAWABLE(mesh, cullMask)        \
-    (IS_MESH_VALID(mesh) && BIT_TEST_ANY((cullMask), (mesh).layerMask))
+#define IS_MESH_VISIBLE(mesh, cullMask) \
+    (BIT_TEST_ANY((cullMask), (mesh).layerMask))
+
+#define IS_MESH_VISIBLE_CAMERA(mesh) \
+    (IS_MESH_VISIBLE((mesh), R3D.viewState.camera.cullMask))
 
 #define SHADOW_CAST_ONLY_MASK (                 \
     (1 << R3D_SHADOW_CAST_ONLY_AUTO) |          \
@@ -316,9 +319,7 @@ void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quat
 
 void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 {
-    if (!IS_MESH_DRAWABLE(mesh, R3D.viewState.camera.layers)) {
-        return;
-    }
+    if (!IS_MESH_VALID(mesh)) return;
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
@@ -347,10 +348,7 @@ void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceB
 void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int offset, int count, Matrix transform)
 {
     if (count <= 0) return;
-
-    if (!IS_MESH_DRAWABLE(mesh, R3D.viewState.camera.layers)) {
-        return;
-    }
+    if (!IS_MESH_VALID(mesh)) return;
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
@@ -392,9 +390,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -431,9 +427,7 @@ void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, in
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -470,9 +464,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -511,9 +503,7 @@ void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer play
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -1607,7 +1597,7 @@ void pass_scene_geometry(void)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (!call->mesh.material.unlit) {
             raster_geometry(call, false);
         }
@@ -1629,7 +1619,7 @@ void pass_scene_prepass(void)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (r3d_render_is_prepass(call)) {
             raster_depth(call, &R3D.viewState.viewProj, NULL);
         }
@@ -1646,7 +1636,7 @@ void pass_scene_prepass(void)
     r3d_driver_set_depth_func(GL_EQUAL);
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (r3d_render_is_prepass(call)) {
             raster_geometry(call, true);
         }
@@ -2148,7 +2138,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (call->mesh.material.unlit) {
             raster_unlit(call);
         }
@@ -2158,7 +2148,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (call->mesh.material.unlit) {
             raster_unlit(call);
         }
