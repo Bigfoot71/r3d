@@ -7,7 +7,6 @@
  */
 
 #include "./r3d_light.h"
-#include "r3d/r3d_camera.h"
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
