@@ -13,11 +13,10 @@
 #include <r3d/r3d_environment.h>
 #include <r3d/r3d_material.h>
 #include <r3d/r3d_frustum.h>
+#include <r3d/r3d_camera.h>
 #include <r3d/r3d_core.h>
 #include <r3d_config.h>
 #include <raylib.h>
-
-#include "./common/r3d_camera.h"
 
 // ========================================
 // CORE STATE
@@ -27,11 +26,12 @@
  * Current view state including view frustum and transforms.
  */
 typedef struct {
-    r3d_camera_t camera;    //< Complete camera data
+    R3D_Camera camera;      //< Complete camera data
     R3D_Frustum frustum;    //< View frustum for culling
     Matrix view, invView;   //< View matrix and its inverse
     Matrix proj, invProj;   //< Projection matrix and its inverse
     Matrix viewProj;        //< Combined view-projection matrix
+    double aspect;          //< Camera aspect (based on target)
 } r3d_core_view_t;
 
 /*
@@ -53,7 +53,6 @@ extern struct r3d_core_state {
     TextureWrap textureWrap;            //< Default texture wrap for material map loading
     R3D_ColorSpace colorSpace;          //< Color space that must be considered for supplied colors or surface colors
     Matrix matCubeViews[6];             //< Pre-computed view matrices for cubemap faces
-    R3D_Layer layers;                   //< Active rendering layers
 } R3D;
 
 #endif // R3D_CORE_STATE_H

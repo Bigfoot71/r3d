@@ -9,7 +9,6 @@
 #include "./r3d_pass.h"
 #include <r3d_config.h>
 #include <raymath.h>
-#include <rlgl.h>
 #include <glad.h>
 
 #include "../r3d_core_state.h"

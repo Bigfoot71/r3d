@@ -181,6 +181,28 @@ static inline Vector4 r3d_color_to_linear_scaled_vec4(Color color, R3D_ColorSpac
 // VECTOR FUNCTIONS
 // ========================================
 
+static float r3d_vector3_len_sq(Vector3 v)
+{
+    return v.x*v.x + v.y*v.y + v.z*v.z;
+}
+
+static Vector3 r3d_vector3_normalize_or(Vector3 v, Vector3 fallback)
+{
+    float len_sqr = v.x*v.x + v.y*v.y + v.z*v.z;
+
+    if (len_sqr <= 1e-12f) {
+        return fallback;
+    }
+
+    float inv_len = 1.0f / sqrtf(len_sqr);
+
+    return (Vector3) {
+        v.x * inv_len,
+        v.y * inv_len,
+        v.z * inv_len,
+    };
+}
+
 static inline Vector3 r3d_vector3_transform(Vector3 v, const Matrix* m)
 {
     float x = v.x, y = v.y, z = v.z;
@@ -220,6 +242,37 @@ static inline Vector4 r3d_vector4_transform(Vector4 v, const Matrix* m)
         m->m2 * x + m->m6 * y + m->m10 * z + m->m14 * w,
         m->m3 * x + m->m7 * y + m->m11 * z + m->m15 * w
     };
+}
+
+static Quaternion r3d_quaternion_normalize_or_id(Quaternion q)
+{
+    float len_sqr = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+
+    if (len_sqr <= 1e-12f) {
+        return (Quaternion){ 0, 0, 0, 1 };
+    }
+
+    float inv_len = 1.0f / sqrtf(len_sqr);
+
+    return (Quaternion) {
+        q.x * inv_len,
+        q.y * inv_len,
+        q.z * inv_len,
+        q.w * inv_len,
+    };
+}
+
+static Quaternion r3d_quaternion_from_axes(Vector3 right, Vector3 up, Vector3 back)
+{
+    // Matrix columns are the world-space directions of local +X, +Y, +Z.
+    Matrix m = {
+        right.x, right.y, right.z, 0.0f,
+        up.x,    up.y,    up.z,    0.0f,
+        back.x,  back.y,  back.z,  0.0f,
+        0.0f,    0.0f,    0.0f,    1.0f
+    };
+
+    return r3d_quaternion_normalize_or_id(QuaternionFromMatrix(m));
 }
 
 // ========================================

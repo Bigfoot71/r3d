@@ -271,6 +271,7 @@ add_library(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/src/r3d_animation.c"
     "${R3D_ROOT_PATH}/src/r3d_color.c"
     "${R3D_ROOT_PATH}/src/r3d_core.c"
+    "${R3D_ROOT_PATH}/src/r3d_camera.c"
     "${R3D_ROOT_PATH}/src/r3d_cubemap.c"
     "${R3D_ROOT_PATH}/src/r3d_draw.c"
     "${R3D_ROOT_PATH}/src/r3d_decal.c"

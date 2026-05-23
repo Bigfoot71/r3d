@@ -34,7 +34,6 @@
 #include <uthash.h>
 #include <assert.h>
 #include <stdio.h>
-#include <rlgl.h>
 #include <glad.h>
 
 #include "../common/r3d_helper.h"

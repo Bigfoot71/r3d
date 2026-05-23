@@ -9,8 +9,8 @@
 #ifndef R3D_FRUSTUM_H
 #define R3D_FRUSTUM_H
 
-#include "./r3d_kinematics.h"
 #include "./r3d_platform.h"
+#include "./r3d_shape.h"
 #include <raylib.h>
 
 /**

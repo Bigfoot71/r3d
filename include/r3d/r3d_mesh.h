@@ -11,7 +11,7 @@
 
 #include "./r3d_mesh_data.h"
 #include "./r3d_platform.h"
-#include "./r3d_core.h"
+#include "./r3d_camera.h"
 #include <raylib.h>
 
 /**

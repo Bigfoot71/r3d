@@ -52,7 +52,7 @@
 // INTERNAL FUNCTIONS
 // ========================================
 
-static void update_view_state(Camera3D camera, double near, double far);
+static void update_view_state(R3D_Camera camera);
 static void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow);
 static void upload_frame_block(void);
 static void upload_view_block(void);
@@ -113,7 +113,7 @@ void R3D_Begin(Camera3D camera)
 void R3D_BeginEx(RenderTexture target, Camera3D camera)
 {
     rlDrawRenderBatchActive();
-    update_view_state(camera, rlGetCullDistanceNear(), rlGetCullDistanceFar());
+    update_view_state(R3D_CameraFromRL(camera));
     R3D.screen = target;
     r3d_render_clear();
 }
@@ -137,7 +137,12 @@ void R3D_End(void)
     /* --- Update all visible lights and render their shadow maps --- */
 
     bool hasVisibleShadows = false;
-    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.camera, &hasVisibleShadows);
+    r3d_light_update_and_cull(
+        &R3D.viewState.frustum,
+        R3D.viewState.camera,
+        R3D.viewState.aspect,
+        &hasVisibleShadows
+    );
 
     if (hasVisibleShadows) {
         pass_scene_shadow();
@@ -300,7 +305,7 @@ void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quat
 
 void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 {
-    if (!IS_MESH_DRAWABLE(mesh, R3D.layers)) {
+    if (!IS_MESH_DRAWABLE(mesh, R3D.viewState.camera.layers)) {
         return;
     }
 
@@ -332,7 +337,7 @@ void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_Instance
 {
     if (count <= 0) return;
 
-    if (!IS_MESH_DRAWABLE(mesh, R3D.layers)) {
+    if (!IS_MESH_DRAWABLE(mesh, R3D.viewState.camera.layers)) {
         return;
     }
 
@@ -376,7 +381,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
             continue;
         }
 
@@ -415,7 +420,7 @@ void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, in
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
             continue;
         }
 
@@ -454,7 +459,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
             continue;
         }
 
@@ -495,7 +500,7 @@ void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer play
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
+        if (!IS_MESH_DRAWABLE(*mesh, R3D.viewState.camera.layers)) {
             continue;
         }
 
@@ -574,7 +579,7 @@ void R3D_DrawDecalInstancedPro(R3D_Decal decal, R3D_InstanceBuffer instances, in
 // INTERNAL FUNCTIONS
 // ========================================
 
-void update_view_state(Camera3D camera, double near, double far)
+void update_view_state(R3D_Camera camera)
 {
     int resW = 1, resH = 1;
     switch (R3D.aspectMode) {
@@ -592,17 +597,20 @@ void update_view_state(Camera3D camera, double near, double far)
         break;
     }
 
-    R3D.viewState.camera = r3d_camera_init(camera, resW, resH);
-    Matrix view = r3d_camera_view(R3D.viewState.camera);
-    Matrix proj = r3d_camera_proj(R3D.viewState.camera);
+    double aspect = (double)resW / (double)resH;
+
+    Matrix view = R3D_GetCameraView(camera);
+    Matrix proj = R3D_GetCameraProj(camera, aspect);
     Matrix viewProj = MatrixMultiply(view, proj);
 
+    R3D.viewState.camera = camera;
     R3D.viewState.frustum = R3D_ComputeFrustum(viewProj);
     R3D.viewState.view = view;
     R3D.viewState.proj = proj;
     R3D.viewState.invView = MatrixInvert(view);
     R3D.viewState.invProj = MatrixInvert(proj);
     R3D.viewState.viewProj = viewProj;
+    R3D.viewState.aspect = aspect;
 }
 
 void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow)
@@ -672,9 +680,9 @@ void upload_view_block(void)
         .invProj = MatrixTranspose(R3D.viewState.invProj),
         .viewProj = MatrixTranspose(R3D.viewState.viewProj),
         .projMode = R3D.viewState.camera.projection,
-        .aspect = (float)R3D.viewState.camera.aspect,
-        .near = (float)R3D.viewState.camera.near,
-        .far = (float)R3D.viewState.camera.far,
+        .aspect = (float)R3D.viewState.aspect,
+        .near = (float)R3D.viewState.camera.nearPlane,
+        .far = (float)R3D.viewState.camera.farPlane,
     };
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view);

@@ -17,6 +17,7 @@
 #include <r3d/r3d_skeleton.h>
 #include <r3d/r3d_importer.h>
 #include <r3d/r3d_model.h>
+#include <r3d/r3d_core.h>
 
 #include <assimp/postprocess.h>
 #include <assimp/quaternion.h>
