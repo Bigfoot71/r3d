@@ -38,6 +38,7 @@
 #include "r3d_mesh_data.h"
 #include "r3d_mesh.h"
 #include "r3d_model.h"
+#include "r3d_pack.h"
 #include "r3d_probe.h"
 #include "r3d_screen_shader.h"
 #include "r3d_shape.h"
