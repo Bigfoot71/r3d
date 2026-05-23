@@ -23,42 +23,6 @@
 // ========================================
 
 /**
- * @brief Bitfield type used to specify rendering layers for 3D objects.
- *
- * This type is used by `R3D_Mesh` and `R3D_Sprite` objects to indicate
- * which rendering layer(s) they belong to. Active layers are controlled
- * globally via the functions:
- * 
- * - void R3D_EnableLayers(R3D_Layer bitfield);
- * - void R3D_DisableLayers(R3D_Layer bitfield);
- *
- * A mesh or sprite will be rendered if at least one of its assigned layers is active.
- *
- * For simplicity, 16 layers are defined in this header, but the maximum number
- * of layers is 32 for an uint32_t.
- */
-typedef uint32_t R3D_Layer;
-
-#define R3D_LAYER_01    (1 << 0)
-#define R3D_LAYER_02    (1 << 1)
-#define R3D_LAYER_03    (1 << 2)
-#define R3D_LAYER_04    (1 << 3)
-#define R3D_LAYER_05    (1 << 4)
-#define R3D_LAYER_06    (1 << 5)
-#define R3D_LAYER_07    (1 << 6)
-#define R3D_LAYER_08    (1 << 7)
-#define R3D_LAYER_09    (1 << 8)
-#define R3D_LAYER_10    (1 << 9)
-#define R3D_LAYER_11    (1 << 10)
-#define R3D_LAYER_12    (1 << 11)
-#define R3D_LAYER_13    (1 << 12)
-#define R3D_LAYER_14    (1 << 13)
-#define R3D_LAYER_15    (1 << 14)
-#define R3D_LAYER_16    (1 << 15)
-
-#define R3D_LAYER_ALL   0xFFFFFFFF
-
-/**
  * @brief Anti-aliasing modes used during rendering.
  *
  * Anti-aliasing reduces visible jagged edges (aliasing artifacts)
@@ -334,48 +298,6 @@ R3DAPI void R3D_SetTextureWrap(TextureWrap wrap);
  * @param space Color space to use for color inputs (linear or sRGB).
  */
 R3DAPI void R3D_SetColorSpace(R3D_ColorSpace space);
-
-/**
- * @brief Get the currently active global rendering layers.
- *
- * Returns the bitfield representing the currently active layers in the renderer.
- * By default, the internal active layers are set to 0, which means that any
- * non-zero layer assigned to an object will NOT be rendered unless explicitly
- * activated.
- *
- * @return R3D_Layer Bitfield of active layers.
- */
-R3DAPI R3D_Layer R3D_GetActiveLayers(void);
-
-/**
- * @brief Set the active global rendering layers.
- *
- * Replaces the current set of active layers with the given bitfield.
- *
- * @param bitfield Bitfield representing the layers to activate.
- */
-R3DAPI void R3D_SetActiveLayers(R3D_Layer bitfield);
-
-/**
- * @brief Enable one or more layers without affecting other active layers.
- *
- * This function sets the bits in the global active layers corresponding to
- * the bits in the provided bitfield. Layers already active remain active.
- *
- * @param bitfield Bitfield representing one or more layers to enable.
- */
-R3DAPI void R3D_EnableLayers(R3D_Layer bitfield);
-
-/**
- * @brief Disable one or more layers without affecting other active layers.
- *
- * This function clears the bits in the global active layers corresponding to
- * the bits in the provided bitfield. Layers not included in the bitfield
- * remain unchanged.
- *
- * @param bitfield Bitfield representing one or more layers to disable.
- */
-R3DAPI void R3D_DisableLayers(R3D_Layer bitfield);
 
 #ifdef __cplusplus
 } // extern "C"

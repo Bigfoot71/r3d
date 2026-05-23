@@ -13,7 +13,6 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
-#include <rlgl.h>
 
 #include "../common/r3d_helper.h"
 

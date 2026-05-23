@@ -11,11 +11,11 @@
 
 #include <r3d/r3d_lighting.h>
 #include <r3d/r3d_frustum.h>
+#include <r3d/r3d_camera.h>
 #include <r3d_config.h>
 #include <raylib.h>
 #include <glad.h>
 
-#include "../common/r3d_camera.h"
 #include "../common/r3d_math.h"
 
 // ========================================
@@ -153,7 +153,7 @@ bool r3d_light_enable_shadows(r3d_light_t* light);
 void r3d_light_disable_shadows(r3d_light_t* light);
 
 /* Update light states and collect visible ones (can indicate if shadows are visible) */
-void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, r3d_camera_t camera, bool* hasVisibleShadows);
+void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, R3D_Camera camera, double aspect, bool* hasVisibleShadows);
 
 /* Check if shadow map should be rendered (updates state if willBeUpdated is true) */
 bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated);

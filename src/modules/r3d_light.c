@@ -279,20 +279,20 @@ static void update_light_shadow_state(r3d_light_t* light)
     }
 }
 
-static void update_light_dir_matrix(r3d_light_t* light, r3d_camera_t camera)
+static void update_light_dir_matrix(r3d_light_t* light, R3D_Camera camera, double aspect)
 {
     assert(light->type == R3D_LIGHT_DIR);
 
     float camNear = light->range / 1000.0f;
     float camFar = light->range;
     float camFovy = (float)camera.fovy;
-    float camAspect = (float)camera.aspect;
+    float camAspect = (float)aspect;
 
     float farH = camFar * tanf(camFovy * (DEG2RAD * 0.5f));
     float halfDepth = (camFar - camNear) * 0.5f;
     float radius = sqrtf(farH * farH * (1.0f + camAspect * camAspect) + halfDepth * halfDepth);
 
-    Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 forward = R3D_GetCameraForward(camera);
     Vector3 frustumCenter = Vector3Add(camera.position, Vector3Scale(forward, (camNear + camFar) * 0.5f));
 
     Vector3 lightDir = Vector3Normalize(light->direction);
@@ -367,11 +367,11 @@ static void update_light_omni_matrix(r3d_light_t* light)
     }
 }
 
-static void update_light_matrix(r3d_light_t* light, r3d_camera_t camera)
+static void update_light_matrix(r3d_light_t* light, R3D_Camera camera, double aspect)
 {
     switch (light->type) {
     case R3D_LIGHT_DIR:
-        update_light_dir_matrix(light, camera);
+        update_light_dir_matrix(light, camera, aspect);
         break;
     case R3D_LIGHT_SPOT:
         update_light_spot_matrix(light);
@@ -640,7 +640,7 @@ void r3d_light_disable_shadows(r3d_light_t* light)
     }
 }
 
-void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, r3d_camera_t camera, bool* hasVisibleShadows)
+void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, R3D_Camera camera, double aspect, bool* hasVisibleShadows)
 {
     r3d_light_array_t* visibleLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VISIBLE];
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
@@ -663,7 +663,7 @@ void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, r3d_camera_t came
             : light->state.matrixShouldBeUpdated;
 
         if (shouldUpdateMatrix) {
-            update_light_matrix(light, camera);
+            update_light_matrix(light, camera, aspect);
             update_light_frustum(light);
             if (!isDirectional) {
                 update_light_bounding_box(light);

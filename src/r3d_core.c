@@ -9,10 +9,7 @@
 #include <r3d/r3d_core.h>
 #include <raymath.h>
 #include <float.h>
-#include <rlgl.h>
 #include <glad.h>
-
-#include "./r3d_core_state.h"
 
 #include "./modules/r3d_texture.h"
 #include "./modules/r3d_target.h"
@@ -21,6 +18,7 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
+#include "./r3d_core_state.h"
 
 // ========================================
 // SHARED CORE STATE
@@ -46,11 +44,13 @@ bool R3D_Init(int resWidth, int resHeight)
     R3D.environment = R3D_ENVIRONMENT_BASE;
     R3D.material = R3D_MATERIAL_BASE;
 
+    R3D.viewState.camera = R3D_CAMERA_BASE;
     R3D.viewState.view = R3D_MATRIX_IDENTITY;
     R3D.viewState.invView = R3D_MATRIX_IDENTITY;
     R3D.viewState.proj = R3D_MATRIX_IDENTITY;
     R3D.viewState.invProj = R3D_MATRIX_IDENTITY;
     R3D.viewState.viewProj = R3D_MATRIX_IDENTITY;
+    R3D.viewState.aspect = 1.0;
 
     R3D.aaMode = R3D_ANTI_ALIASING_MODE_NONE;
     R3D.aaPreset = R3D_ANTI_ALIASING_PRESET_MEDIUM;
@@ -62,7 +62,6 @@ bool R3D_Init(int resWidth, int resHeight)
     R3D.textureFilter = TEXTURE_FILTER_TRILINEAR;
     R3D.textureWrap = TEXTURE_WRAP_CLAMP;
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
-    R3D.layers = R3D_LAYER_ALL;
 
     if (!r3d_texture_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init texture module"); return false; }
     if (!r3d_target_init(resWidth, resHeight)) { R3D_TRACELOG(LOG_ERROR, "Failed to init target module"); return false; }
@@ -177,24 +176,4 @@ void R3D_SetTextureWrap(TextureWrap wrap)
 void R3D_SetColorSpace(R3D_ColorSpace space)
 {
     R3D.colorSpace = space;
-}
-
-R3D_Layer R3D_GetActiveLayers(void)
-{
-    return R3D.layers;
-}
-
-void R3D_SetActiveLayers(R3D_Layer bitfield)
-{
-    R3D.layers = bitfield;
-}
-
-void R3D_EnableLayers(R3D_Layer bitfield)
-{
-    BIT_SET(R3D.layers, bitfield);
-}
-
-void R3D_DisableLayers(R3D_Layer bitfield)
-{
-    BIT_CLEAR(R3D.layers, bitfield);
 }

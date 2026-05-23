@@ -11,7 +11,6 @@
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
-#include <rlgl.h>
 #include <glad.h>
 
 #include "./common/r3d_helper.h"

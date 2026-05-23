@@ -10,7 +10,6 @@
 #include <raymath.h>
 #include <stdlib.h>
 #include <stddef.h>
-#include <rlgl.h>
 #include <glad.h>
 
 #include "./modules/r3d_driver.h"

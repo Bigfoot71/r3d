@@ -35,8 +35,11 @@
 
 #define IS_MESH_VALID(mesh) ((mesh).vertexCount > 0)
 
-#define IS_MESH_DRAWABLE(mesh, cullMask)        \
-    (IS_MESH_VALID(mesh) && BIT_TEST_ANY((cullMask), (mesh).layerMask))
+#define IS_MESH_VISIBLE(mesh, cullMask) \
+    (BIT_TEST_ANY((cullMask), (mesh).layerMask))
+
+#define IS_MESH_VISIBLE_CAMERA(mesh) \
+    (IS_MESH_VISIBLE((mesh), R3D.viewState.camera.cullMask))
 
 #define SHADOW_CAST_ONLY_MASK (                 \
     (1 << R3D_SHADOW_CAST_ONLY_AUTO) |          \
@@ -52,7 +55,7 @@
 // INTERNAL FUNCTIONS
 // ========================================
 
-static void update_view_state(Camera3D camera, double near, double far);
+static void update_view_state(R3D_View view);
 static void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow);
 static void upload_frame_block(void);
 static void upload_view_block(void);
@@ -107,14 +110,25 @@ static void cleanup_after_render(void);
 
 void R3D_Begin(Camera3D camera)
 {
-    R3D_BeginEx((RenderTexture) {0}, camera);
+    R3D_BeginEx(R3D_CameraFromRL(camera));
 }
 
-void R3D_BeginEx(RenderTexture target, Camera3D camera)
+void R3D_BeginEx(R3D_Camera camera)
+{
+    R3D_View view = {
+        .camera = camera,
+        .viewport = {0},
+        .target = {0},
+    };
+
+    R3D_BeginPro(view);
+}
+
+void R3D_BeginPro(R3D_View view)
 {
     rlDrawRenderBatchActive();
-    update_view_state(camera, rlGetCullDistanceNear(), rlGetCullDistanceFar());
-    R3D.screen = target;
+    update_view_state(view);
+    R3D.screen = view.target;
     r3d_render_clear();
 }
 
@@ -137,7 +151,12 @@ void R3D_End(void)
     /* --- Update all visible lights and render their shadow maps --- */
 
     bool hasVisibleShadows = false;
-    r3d_light_update_and_cull(&R3D.viewState.frustum, R3D.viewState.camera, &hasVisibleShadows);
+    r3d_light_update_and_cull(
+        &R3D.viewState.frustum,
+        R3D.viewState.camera,
+        R3D.viewState.aspect,
+        &hasVisibleShadows
+    );
 
     if (hasVisibleShadows) {
         pass_scene_shadow();
@@ -300,9 +319,7 @@ void R3D_DrawMeshEx(R3D_Mesh mesh, R3D_Material material, Vector3 position, Quat
 
 void R3D_DrawMeshPro(R3D_Mesh mesh, R3D_Material material, Matrix transform)
 {
-    if (!IS_MESH_DRAWABLE(mesh, R3D.layers)) {
-        return;
-    }
+    if (!IS_MESH_VALID(mesh)) return;
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
@@ -331,10 +348,7 @@ void R3D_DrawMeshInstancedEx(R3D_Mesh mesh, R3D_Material material, R3D_InstanceB
 void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_InstanceBuffer instances, int offset, int count, Matrix transform)
 {
     if (count <= 0) return;
-
-    if (!IS_MESH_DRAWABLE(mesh, R3D.layers)) {
-        return;
-    }
+    if (!IS_MESH_VALID(mesh)) return;
 
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
@@ -376,9 +390,7 @@ void R3D_DrawModelPro(R3D_Model model, Matrix transform)
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -415,9 +427,7 @@ void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, in
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -454,9 +464,7 @@ void R3D_DrawAnimatedModelPro(R3D_Model model, R3D_AnimationPlayer player, Matri
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -495,9 +503,7 @@ void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer play
     for (int i = 0; i < model.meshCount; i++)
     {
         const R3D_Mesh* mesh = &model.meshes[i];
-        if (!IS_MESH_DRAWABLE(*mesh, R3D.layers)) {
-            continue;
-        }
+        if (!IS_MESH_VALID(*mesh)) continue;
 
         r3d_render_call_t drawCall = {0};
         drawCall.type = R3D_RENDER_CALL_MESH;
@@ -574,35 +580,113 @@ void R3D_DrawDecalInstancedPro(R3D_Decal decal, R3D_InstanceBuffer instances, in
 // INTERNAL FUNCTIONS
 // ========================================
 
-void update_view_state(Camera3D camera, double near, double far)
+static inline bool view_has_target(RenderTexture target)
 {
-    int resW = 1, resH = 1;
-    switch (R3D.aspectMode) {
-    case R3D_ASPECT_EXPAND:
-        if (R3D.screen.id != 0) {
-            resW = R3D.screen.texture.width;
-            resH = R3D.screen.texture.height;
-        }
-        else {
-            resW = GetRenderWidth();
-            resH = GetRenderHeight();
-        }
-    case R3D_ASPECT_KEEP:
-        r3d_target_get_resolution(&resW, &resH, R3D_TARGET_SCENE_0, 0);
-        break;
+    return target.id != 0 && target.texture.id != 0;
+}
+
+static void view_get_target_size(RenderTexture target, int* width, int* height)
+{
+    if (view_has_target(target)) {
+        *width = target.texture.width;
+        *height = target.texture.height;
+    }
+    else {
+        *width = GetRenderWidth();
+        *height = GetRenderHeight();
     }
 
-    R3D.viewState.camera = r3d_camera_init(camera, resW, resH);
-    Matrix view = r3d_camera_view(R3D.viewState.camera);
-    Matrix proj = r3d_camera_proj(R3D.viewState.camera);
-    Matrix viewProj = MatrixMultiply(view, proj);
+    if (*width <= 0) *width = 1;
+    if (*height <= 0) *height = 1;
+}
 
-    R3D.viewState.frustum = R3D_ComputeFrustum(viewProj);
-    R3D.viewState.view = view;
-    R3D.viewState.proj = proj;
-    R3D.viewState.invView = MatrixInvert(view);
-    R3D.viewState.invProj = MatrixInvert(proj);
-    R3D.viewState.viewProj = viewProj;
+static Rectangle view_resolve_viewport(R3D_View view)
+{
+    int targetW = 1;
+    int targetH = 1;
+
+    view_get_target_size(view.target, &targetW, &targetH);
+
+    if (view.viewport.width <= 0.0f || view.viewport.height <= 0.0f) {
+        return (Rectangle) {
+            0.0f,
+            0.0f,
+            (float)targetW,
+            (float)targetH
+        };
+    }
+
+    return view.viewport;
+}
+
+static Rectangle view_fit_aspect(Rectangle rect, double aspect)
+{
+    if (rect.width <= 0.0f || rect.height <= 0.0f || aspect <= 0.0) {
+        return rect;
+    }
+
+    double rectAspect = (double)rect.width / (double)rect.height;
+
+    if (aspect > rectAspect) {
+        float newH = (float)((double)rect.width / aspect);
+        rect.y += (rect.height - newH) * 0.5f;
+        rect.height = newH;
+    }
+    else {
+        float newW = (float)((double)rect.height * aspect);
+        rect.x += (rect.width - newW) * 0.5f;
+        rect.width = newW;
+    }
+
+    return rect;
+}
+
+static Rectangle view_resolve_present_rect(R3D_View view)
+{
+    Rectangle viewport = view_resolve_viewport(view);
+
+    switch (R3D.aspectMode) {
+    case R3D_ASPECT_KEEP: {
+        int srcW = 1;
+        int srcH = 1;
+
+        r3d_target_get_resolution(&srcW, &srcH, R3D_TARGET_SCENE_0, 0);
+
+        if (srcW <= 0) srcW = 1;
+        if (srcH <= 0) srcH = 1;
+
+        double srcAspect = (double)srcW / (double)srcH;
+        return view_fit_aspect(viewport, srcAspect);
+    }
+
+    case R3D_ASPECT_EXPAND:
+    default:
+        return viewport;
+    }
+}
+
+void update_view_state(R3D_View view)
+{
+    Rectangle viewport = view_resolve_present_rect(view);
+
+    double aspect = 1.0;
+    if (viewport.height > 0.0f) {
+        aspect = (double)viewport.width / (double)viewport.height;
+    }
+
+    Matrix matView = R3D_GetCameraView(view.camera);
+    Matrix matProj = R3D_GetCameraProj(view.camera, aspect);
+    Matrix matViewProj = MatrixMultiply(matView, matProj);
+
+    R3D.viewState.camera = view.camera;
+    R3D.viewState.viewport = viewport;
+    R3D.viewState.frustum = R3D_ComputeFrustum(matViewProj);
+    R3D.viewState.view = matView;
+    R3D.viewState.proj = matProj;
+    R3D.viewState.invView = MatrixInvert(matView);
+    R3D.viewState.invProj = MatrixInvert(matProj);
+    R3D.viewState.viewProj = matViewProj;
+    R3D.viewState.aspect = aspect;
 }
 
 void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shadow)
@@ -672,9 +756,9 @@ void upload_view_block(void)
         .invProj = MatrixTranspose(R3D.viewState.invProj),
         .viewProj = MatrixTranspose(R3D.viewState.viewProj),
         .projMode = R3D.viewState.camera.projection,
-        .aspect = (float)R3D.viewState.camera.aspect,
-        .near = (float)R3D.viewState.camera.near,
-        .far = (float)R3D.viewState.camera.far,
+        .aspect = (float)R3D.viewState.aspect,
+        .near = (float)R3D.viewState.camera.nearPlane,
+        .far = (float)R3D.viewState.camera.farPlane,
     };
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view);
@@ -1513,7 +1597,7 @@ void pass_scene_geometry(void)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (!call->mesh.material.unlit) {
             raster_geometry(call, false);
         }
@@ -1535,7 +1619,7 @@ void pass_scene_prepass(void)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (r3d_render_is_prepass(call)) {
             raster_depth(call, &R3D.viewState.viewProj, NULL);
         }
@@ -1552,7 +1636,7 @@ void pass_scene_prepass(void)
     r3d_driver_set_depth_func(GL_EQUAL);
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (r3d_render_is_prepass(call)) {
             raster_geometry(call, true);
         }
@@ -2054,7 +2138,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
     r3d_driver_set_depth_mask(GL_TRUE);
 
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_OPAQUE_INST, R3D_RENDER_LIST_OPAQUE) {
         if (call->mesh.material.unlit) {
             raster_unlit(call);
         }
@@ -2064,7 +2148,7 @@ void pass_scene_forward(r3d_target_t sceneTarget)
 
     r3d_driver_set_depth_mask(GL_FALSE);
 
-    R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
+    R3D_RENDER_FOR_EACH(call, IS_MESH_VISIBLE_CAMERA(call->mesh.instance), frustum, R3D_RENDER_LIST_TRANSPARENT_INST, R3D_RENDER_LIST_TRANSPARENT) {
         if (call->mesh.material.unlit) {
             raster_unlit(call);
         }
@@ -2393,83 +2477,100 @@ void blit_to_screen(r3d_target_t source)
     }
 
     GLuint dstId = R3D.screen.id;
-    int dstW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
-    int dstH = dstId ? R3D.screen.texture.height : GetRenderHeight();
 
-    int dstX = 0, dstY = 0;
-    if (R3D.aspectMode == R3D_ASPECT_KEEP) {
-        float srcRatio = (float)R3D_TARGET_SIZE_W / R3D_TARGET_SIZE_H;
-        float dstRatio = (float)dstW / dstH;
-        if (srcRatio > dstRatio) {
-            int newH = (int)(dstW / srcRatio + 0.5f);
-            dstY = (dstH - newH) / 2;
-            dstH = newH;
-        }
-        else {
-            int newW = (int)(dstH * srcRatio + 0.5f);
-            dstX = (dstW - newW) / 2;
-            dstW = newW;
-        }
+    int targetW = dstId ? R3D.screen.texture.width  : GetRenderWidth();
+    int targetH = dstId ? R3D.screen.texture.height : GetRenderHeight();
+
+    if (targetW <= 0) targetW = 1;
+    if (targetH <= 0) targetH = 1;
+
+    Rectangle viewport = R3D.viewState.viewport;
+
+    int dstX = (int)(viewport.x + 0.5f);
+    int dstY = (int)(viewport.y + 0.5f);
+    int dstW = (int)(viewport.width + 0.5f);
+    int dstH = (int)(viewport.height + 0.5f);
+
+    if (dstW <= 0 || dstH <= 0) {
+        return;
     }
 
-    int srcW = 0, srcH = 0;
+    int glDstY = targetH - dstY - dstH;
+    int srcW = 0;
+    int srcH = 0;
+
     r3d_target_get_resolution(&srcW, &srcH, source, 0);
 
-    bool sameDim = (dstW == srcW) & (dstH == srcH);
-    bool greater = (dstW >  srcW) | (dstH >  srcH);
-    bool smaller = (dstW <  srcW) | (dstH <  srcH);
-
-    if (sameDim || (greater && R3D.upscaleMode == R3D_UPSCALE_NEAREST) || (smaller && R3D.downscaleMode == R3D_DOWNSCALE_NEAREST)) {
-        r3d_target_blit(source, true, dstId, dstX, dstY, dstW, dstH, false);
+    if (srcW <= 0 || srcH <= 0) {
         return;
     }
 
-    if ((greater && R3D.upscaleMode == R3D_UPSCALE_LINEAR) || (smaller && R3D.downscaleMode == R3D_DOWNSCALE_LINEAR)) {
-        r3d_target_blit(source, true, dstId, dstX, dstY, dstW, dstH, true);
+    bool sameDim = (dstW == srcW) && (dstH == srcH);
+    bool upscale = (dstW >= srcW) && (dstH >= srcH) && !sameDim;
+    bool downscale = (dstW <= srcW) && (dstH <= srcH) && !sameDim;
+    bool mixedScale = !sameDim && !upscale && !downscale;
+
+    if (sameDim || (upscale && R3D.upscaleMode == R3D_UPSCALE_NEAREST) || (downscale && R3D.downscaleMode == R3D_DOWNSCALE_NEAREST)) {
+        r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, false);
         return;
     }
 
-    if (greater) {
+    if (mixedScale || (upscale && R3D.upscaleMode == R3D_UPSCALE_LINEAR) || (downscale && R3D.downscaleMode == R3D_DOWNSCALE_LINEAR)) {
+        r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, true);
+        return;
+    }
+
+    if (upscale) {
         glBindFramebuffer(GL_FRAMEBUFFER, dstId);
-        glViewport(dstX, dstY, dstW, dstH);
+        glViewport(dstX, glDstY, dstW, dstH);
+
         switch (R3D.upscaleMode) {
         case R3D_UPSCALE_BICUBIC:
             R3D_SHADER_USE(blit.upBicubic);
             R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H});
             R3D_SHADER_BIND_SAMPLER(blit.upBicubic, uSourceTex, r3d_target_get(source));
             break;
+
         case R3D_UPSCALE_LANCZOS:
             R3D_SHADER_USE(blit.upLanczos);
             R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H});
             R3D_SHADER_BIND_SAMPLER(blit.upLanczos, uSourceTex, r3d_target_get(source));
             break;
+
         default:
-            break;
+            r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, true);
+            return;
         }
+
         R3D_RENDER_SCREEN();
-        r3d_target_blit(-1, true, dstId, dstX, dstY, dstW, dstH, false);
+        r3d_target_blit(-1, true, dstId, dstX, glDstY, dstW, dstH, false);
         return;
     }
 
-    if (smaller) {
+    if (downscale) {
         glBindFramebuffer(GL_FRAMEBUFFER, dstId);
-        glViewport(dstX, dstY, dstW, dstH);
+        glViewport(dstX, glDstY, dstW, dstH);
+
         switch (R3D.downscaleMode) {
         case R3D_DOWNSCALE_RGSS:
             R3D_SHADER_USE(blit.downRgss);
-            R3D_SHADER_SET_VEC2(blit.downRgss, uDestTexel, (Vector2) {1.0f/dstW, 1.0f/dstH});
+            R3D_SHADER_SET_VEC2(blit.downRgss, uDestTexel, (Vector2) {1.0f / dstW, 1.0f / dstH});
             R3D_SHADER_BIND_SAMPLER(blit.downRgss, uSourceTex, r3d_target_get(source));
             break;
+
         case R3D_DOWNSCALE_PDSS:
             R3D_SHADER_USE(blit.downPdss);
-            R3D_SHADER_SET_VEC2(blit.downPdss, uDestTexel, (Vector2) {1.0f/dstW, 1.0f/dstH});
+            R3D_SHADER_SET_VEC2(blit.downPdss, uDestTexel, (Vector2) {1.0f / dstW, 1.0f / dstH});
             R3D_SHADER_BIND_SAMPLER(blit.downPdss, uSourceTex, r3d_target_get(source));
             break;
+
         default:
-            break;
+            r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, true);
+            return;
         }
+
         R3D_RENDER_SCREEN();
-        r3d_target_blit(-1, true, dstId, dstX, dstY, dstW, dstH, false);
+        r3d_target_blit(-1, true, dstId, dstX, glDstY, dstW, dstH, false);
         return;
     }
 }
