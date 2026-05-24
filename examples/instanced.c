@@ -43,10 +43,10 @@ int main(void)
 
     R3D_InstanceBuffer instances = R3D_LoadInstanceBufferEx(INSTANCE_COUNT, layout);
 
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
-    PackedRotation* rotations = R3D_MapInstances(instances, R3D_INSTANCE_ROTATION);
-    PackedScale* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE);
-    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
+    PackedRotation* rotations = R3D_MapInstances(instances, R3D_INSTANCE_ROTATION, false);
+    PackedScale* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE, false);
+    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR, false);
 
     for (int i = 0; i < INSTANCE_COUNT; i++)
     {

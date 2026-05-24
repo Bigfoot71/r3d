@@ -35,8 +35,8 @@ int main(void)
 
     // Create transforms for instanced billboards
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(64, R3D_INSTANCE_POSITION | R3D_INSTANCE_SCALE);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
-    Vector3* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
+    Vector3* scales = R3D_MapInstances(instances, R3D_INSTANCE_SCALE, false);
     for (int i = 0; i < 64; i++) {
         float scaleFactor = GetRandomValue(25, 50) / 10.0f;
         scales[i] = (Vector3) {scaleFactor, scaleFactor, 1.0f};

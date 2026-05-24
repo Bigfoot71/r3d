@@ -31,7 +31,7 @@ int main(void)
 
     // Create data for instanced drawing
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(3, R3D_INSTANCE_POSITION);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
     positions[0] = (Vector3){ -1.25f, 0, 1 };
     positions[1] = (Vector3){ 0, 0, 1 };
     positions[2] = (Vector3){ 1.25f, 0, 1 };

@@ -39,8 +39,8 @@ int main(void)
     float offsetZ = (Y_INSTANCES * spacing) / 2.0f;
     int idx = 0;
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION | R3D_INSTANCE_COLOR);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
-    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
+    Color* colors = R3D_MapInstances(instances, R3D_INSTANCE_COLOR, false);
     for (int x = 0; x < X_INSTANCES; x++) {
         for (int y = 0; y < Y_INSTANCES; y++) {
             positions[idx] = (Vector3) {x * spacing - offsetX, 0, y * spacing - offsetZ};

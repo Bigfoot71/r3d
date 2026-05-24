@@ -29,7 +29,7 @@ int main(void)
 
     // Allocate transforms for all spheres
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(GRID_SIZE * GRID_SIZE, R3D_INSTANCE_POSITION);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
     for (int x = -50; x < 50; x++) {
         for (int z = -50; z < 50; z++) {
             positions[(z+50)*GRID_SIZE + (x+50)] = (Vector3) {x + 0.5f, 0, z + 0.5f};

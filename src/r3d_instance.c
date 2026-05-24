@@ -175,76 +175,101 @@ void R3D_ResizeInstanceBuffer(R3D_InstanceBuffer* buffer, int newCapacity, bool 
         return;
     }
 
-    GLuint newBuffers[R3D_INSTANCE_ATTRIBUTE_COUNT] = {0};
-    glGenBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+    if (!keepData) {
+        // Orphan path: reallocate existing buffers in-place, avoids GPU stall and new IDs
+        for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
+            if (!BIT_TEST(buffer->layout.flags, 1u << i)) continue;
 
-    for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
-        if (!BIT_TEST(buffer->layout.flags, 1u << i)) continue;
-
-        size_t newSize = 0;
-        if (!get_buffer_size(newCapacity, i, buffer->layout.formats[i], &newSize)) {
-            R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> invalid new size or format (attribute=%d, format=%d)", i, buffer->layout.formats[i]);
-            glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
-            return;
-        }
-
-        glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffers[i]);
-
-        r3d_driver_clear_errors();
-        glBufferData(GL_COPY_WRITE_BUFFER, (GLsizeiptr)newSize, NULL, GL_DYNAMIC_DRAW);
-
-        if (r3d_driver_check_error("ResizeInstanceBuffer -> glBufferData failed")) {
-            R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> failed to allocate attribute %d (%.2f MiB)", i, (double)newSize / (1024.0 * 1024.0));
-            glBindBuffer(GL_COPY_READ_BUFFER, 0);
-            glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-            glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
-            return;
-        }
-
-        if (keepData && buffer->capacity > 0) {
-            size_t oldSize = 0;
-            if (!get_buffer_size(buffer->capacity, i, buffer->layout.formats[i], &oldSize)) {
-                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> invalid old size (attribute=%d)", i);
-                glBindBuffer(GL_COPY_READ_BUFFER, 0);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-                glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+            size_t newSize = 0;
+            if (!get_buffer_size(newCapacity, i, buffer->layout.formats[i], &newSize)) {
+                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> invalid size or format (attribute=%d, format=%d)", i, buffer->layout.formats[i]);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
                 return;
             }
 
+            // Generate buffer on first use
             if (buffer->buffers[i] == 0) {
-                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> invalid source buffer (attribute=%d)", i);
-                glBindBuffer(GL_COPY_READ_BUFFER, 0);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-                glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
-                return;
+                glGenBuffers(1, &buffer->buffers[i]);
             }
 
-            glBindBuffer(GL_COPY_READ_BUFFER, buffer->buffers[i]);
-
+            glBindBuffer(GL_ARRAY_BUFFER, buffer->buffers[i]);
             r3d_driver_clear_errors();
-            glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, (GLsizeiptr)oldSize);
+            glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)newSize, NULL, GL_DYNAMIC_DRAW);
 
-            if (r3d_driver_check_error("ResizeInstanceBuffer -> glCopyBufferSubData failed")) {
-                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> failed to copy attribute %d", i);
-                glBindBuffer(GL_COPY_READ_BUFFER, 0);
-                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-                glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+            if (r3d_driver_check_error("ResizeInstanceBuffer -> glBufferData failed")) {
+                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> failed to orphan attribute %d (%.2f MiB)", i, (double)newSize / (1024.0 * 1024.0));
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
                 return;
             }
         }
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+    else {
+        // Copy path: allocate new buffers, copy existing data, swap and delete old
+        GLuint newBuffers[R3D_INSTANCE_ATTRIBUTE_COUNT] = {0};
+
+        for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
+            if (!BIT_TEST(buffer->layout.flags, 1u << i)) continue;
+
+            size_t newSize = 0;
+            if (!get_buffer_size(newCapacity, i, buffer->layout.formats[i], &newSize)) {
+                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> invalid size or format (attribute=%d, format=%d)", i, buffer->layout.formats[i]);
+                glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+                return;
+            }
+
+            glGenBuffers(1, &newBuffers[i]);
+            glBindBuffer(GL_COPY_WRITE_BUFFER, newBuffers[i]);
+            r3d_driver_clear_errors();
+            glBufferData(GL_COPY_WRITE_BUFFER, (GLsizeiptr)newSize, NULL, GL_DYNAMIC_DRAW);
+
+            if (r3d_driver_check_error("ResizeInstanceBuffer -> glBufferData failed")) {
+                R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> failed to allocate attribute %d (%.2f MiB)", i, (double)newSize / (1024.0 * 1024.0));
+                glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+                glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+                return;
+            }
+
+            // Copy old content if it exists
+            if (buffer->capacity > 0 && buffer->buffers[i] != 0) {
+                size_t oldSize = 0;
+                if (!get_buffer_size(buffer->capacity, i, buffer->layout.formats[i], &oldSize)) {
+                    R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> invalid old size (attribute=%d)", i);
+                    glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                    glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+                    glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+                    return;
+                }
+
+                glBindBuffer(GL_COPY_READ_BUFFER, buffer->buffers[i]);
+                r3d_driver_clear_errors();
+                glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, 0, (GLsizeiptr)oldSize);
+
+                if (r3d_driver_check_error("ResizeInstanceBuffer -> glCopyBufferSubData failed")) {
+                    R3D_TRACELOG(LOG_WARNING, "ResizeInstanceBuffer -> failed to copy attribute %d", i);
+                    glBindBuffer(GL_COPY_READ_BUFFER, 0);
+                    glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+                    glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, newBuffers);
+                    return;
+                }
+            }
+        }
+
+        glBindBuffer(GL_COPY_READ_BUFFER, 0);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+
+        // Swap: delete old GPU buffers and take ownership of new ones
+        glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer->buffers);
+        memcpy(buffer->buffers, newBuffers, sizeof(newBuffers));
     }
 
-    glBindBuffer(GL_COPY_READ_BUFFER, 0);
-    glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-
-    glDeleteBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer->buffers);
-    memcpy(buffer->buffers, newBuffers, R3D_INSTANCE_ATTRIBUTE_COUNT * sizeof(GLuint));
     buffer->capacity = newCapacity;
-
     R3D_TRACELOG(LOG_INFO, "Instance buffer resized successfully (capacity=%d)", newCapacity);
 }
 
-void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int offset, int count, void* data)
+void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag,
+                         int offset, int count, const void* data, bool discard)
 {
     int index = r3d_instance_attribute_index(flag);
     if (index < 0) {
@@ -253,7 +278,7 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int 
     }
 
     if (!BIT_TEST(buffer.layout.flags, flag)) {
-        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> attribute not allocated for this buffer (flag=0x%04x)", flag);
+        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> attribute not allocated (flag=0x%04x)", flag);
         return;
     }
 
@@ -262,12 +287,8 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int 
         return;
     }
 
-    if (offset < 0 || count < 0 || offset > buffer.capacity || count > buffer.capacity - offset) {
+    if (offset < 0 || count <= 0 || offset > buffer.capacity || count > buffer.capacity - offset) {
         R3D_TRACELOG(LOG_WARNING, "UploadInstances -> range out of bounds (offset=%d, count=%d, capacity=%d)", offset, count, buffer.capacity);
-        return;
-    }
-
-    if (count == 0) {
         return;
     }
 
@@ -276,58 +297,87 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, int 
         return;
     }
 
-    size_t size = 0;
-    if (!get_buffer_size(count, index, buffer.layout.formats[index], &size)) {
-        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> invalid upload size (flag=0x%04x)", flag);
+    size_t attrSize = get_attribute_size(index, buffer.layout.formats[index]);
+    if (attrSize == 0) {
+        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> invalid attribute size (flag=0x%04x)", flag);
         return;
     }
 
-    size_t attrSize = get_attribute_size(index, buffer.layout.formats[index]);
+    size_t uploadSize = (size_t)count * attrSize;
     size_t offsetBytes = (size_t)offset * attrSize;
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.buffers[index]);
 
+    // Orphan the buffer to avoid GPU sync; old data is discarded entirely
+    if (discard) {
+        size_t totalSize = (size_t)buffer.capacity * attrSize;
+        glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)totalSize, NULL, GL_DYNAMIC_DRAW);
+    }
+
     r3d_driver_clear_errors();
-    glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)offsetBytes, (GLsizeiptr)size, data);
+    glBufferSubData(GL_ARRAY_BUFFER, (GLintptr)offsetBytes, (GLsizeiptr)uploadSize, data);
 
     if (r3d_driver_check_error("UploadInstances -> glBufferSubData failed")) {
-        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> failed to upload attribute data (%.2f MiB)", (double)size / (1024.0 * 1024.0));
+        R3D_TRACELOG(LOG_WARNING, "UploadInstances -> failed to upload attribute data (%.2f MiB)", (double)uploadSize / (1024.0 * 1024.0));
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag)
+void* R3D_MapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag, bool discard)
+{
+    return R3D_MapInstancesEx(buffer, flag, 0, buffer.capacity, discard);
+}
+
+void* R3D_MapInstancesEx(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag,
+                         int offset, int count, bool discard)
 {
     int index = r3d_instance_attribute_index(flag);
     if (index < 0) {
-        R3D_TRACELOG(LOG_WARNING, "MapInstances -> invalid attribute flag (0x%04x)", flag);
+        R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> invalid attribute flag (0x%04x)", flag);
         return NULL;
     }
 
     if (!BIT_TEST(buffer.layout.flags, flag)) {
-        R3D_TRACELOG(LOG_WARNING, "MapInstances -> attribute not allocated for this buffer (flag=0x%04x)", flag);
+        R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> attribute not allocated (flag=0x%04x)", flag);
         return NULL;
     }
 
     if (buffer.buffers[index] == 0) {
-        R3D_TRACELOG(LOG_WARNING, "MapInstances -> invalid GPU buffer (flag=0x%04x)", flag);
+        R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> invalid GPU buffer (flag=0x%04x)", flag);
         return NULL;
     }
+
+    if (offset < 0 || count <= 0 || offset > buffer.capacity || count > buffer.capacity - offset) {
+        R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> range out of bounds (offset=%d, count=%d, capacity=%d)", offset, count, buffer.capacity);
+        return NULL;
+    }
+
+    size_t attrSize = get_attribute_size(index, buffer.layout.formats[index]);
+    if (attrSize == 0) {
+        R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> invalid attribute size (flag=0x%04x)", flag);
+        return NULL;
+    }
+
+    GLbitfield mapFlags = GL_MAP_WRITE_BIT;
+    if (discard) mapFlags |= GL_MAP_INVALIDATE_RANGE_BIT;
+
+    GLintptr offsetBytes = (GLintptr)((size_t)offset * attrSize);
+    GLsizeiptr rangeSize = (GLsizeiptr)((size_t)count * attrSize);
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.buffers[index]);
 
     r3d_driver_clear_errors();
-    void* ptrMap = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    void* ptr = glMapBufferRange(GL_ARRAY_BUFFER, offsetBytes, rangeSize, mapFlags);
 
-    if (r3d_driver_check_error("MapInstances -> glMapBuffer failed") || ptrMap == NULL) {
-        R3D_TRACELOG(LOG_WARNING, "MapInstances -> failed to map GPU buffer (flag=0x%04x)", flag);
-        ptrMap = NULL;
+    if (r3d_driver_check_error("MapInstancesEx -> glMapBufferRange failed") || ptr == NULL) {
+        R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> failed to map GPU buffer (flag=0x%04x)", flag);
+        ptr = NULL;
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    return ptrMap;
+    return ptr;
 }
 
 void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flags)
