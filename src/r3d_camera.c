@@ -16,7 +16,7 @@
 // PUBLIC API
 // ========================================
 
-R3D_Camera R3D_CameraFromRL(Camera camera)
+R3D_Camera R3D_CameraFromRL(Camera3D camera)
 {
     R3D_Camera result = R3D_CAMERA_BASE;
 
@@ -35,9 +35,9 @@ R3D_Camera R3D_CameraFromRL(Camera camera)
     return result;
 }
 
-Camera R3D_CameraToRL(R3D_Camera camera)
+Camera3D R3D_CameraToRL(R3D_Camera camera)
 {
-    Camera result = {0};
+    Camera3D result = {0};
 
     result.position = camera.position;
     result.target = Vector3Add(camera.position, R3D_GetCameraForward(camera));

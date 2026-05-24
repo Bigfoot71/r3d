@@ -125,7 +125,7 @@ extern "C" {
  *
  * @return Converted R3D camera.
  */
-R3DAPI R3D_Camera R3D_CameraFromRL(Camera camera);
+R3DAPI R3D_Camera R3D_CameraFromRL(Camera3D camera);
 
 /**
  * @brief Converts an R3D camera to a raylib camera.
@@ -133,7 +133,7 @@ R3DAPI R3D_Camera R3D_CameraFromRL(Camera camera);
  * The raylib target/up vectors are derived from the camera quaternion.
  * Near/far clipping planes and layer masks are not represented by Camera3D.
  */
-R3DAPI Camera R3D_CameraToRL(R3D_Camera camera);
+R3DAPI Camera3D R3D_CameraToRL(R3D_Camera camera);
 
 /**
  * @brief Sets the camera orientation so it looks at a target point.
