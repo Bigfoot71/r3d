@@ -44,7 +44,7 @@ int main(void)
 
     // Create model instances
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(4, R3D_INSTANCE_POSITION);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
     for (int z = 0; z < 2; z++) {
         for (int x = 0; x < 2; x++) {
             positions[z*2 + x] = (Vector3) {(float)x - 0.5f, 0, (float)z - 0.5f};

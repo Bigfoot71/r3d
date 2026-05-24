@@ -92,7 +92,7 @@ int main(void)
         }
         particleCount = alive;
 
-        R3D_UploadInstances(instances, R3D_INSTANCE_POSITION, 0, particleCount, positions);
+        R3D_UploadInstances(instances, R3D_INSTANCE_POSITION, 0, particleCount, positions, true);
 
         BeginDrawing();
             R3D_Begin(camera);

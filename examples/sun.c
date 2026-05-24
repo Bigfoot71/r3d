@@ -22,7 +22,7 @@ int main(void)
 
     // Create transforms for instanced spheres
     R3D_InstanceBuffer instances = R3D_LoadInstanceBuffer(INSTANCE_COUNT, R3D_INSTANCE_POSITION);
-    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION);
+    Vector3* positions = R3D_MapInstances(instances, R3D_INSTANCE_POSITION, false);
     float spacing = 1.5f;
     float offsetX = (X_INSTANCES * spacing) / 2.0f;
     float offsetZ = (Y_INSTANCES * spacing) / 2.0f;
