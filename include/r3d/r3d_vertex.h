@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 /**
- * @defgroup Vertex
+ * @defgroup Vertex Vertex
  * @{
  */
 
@@ -23,16 +23,20 @@
 // ========================================
 
 /**
- * @brief Represents a vertex and all its attributes for a mesh.
+ * @brief Compact vertex format used by R3D meshes.
+ *
+ * Texture coordinates are stored as float16 values.
+ * Normals and tangents are stored as signed normalized 8-bit values.
+ * Bone weights are stored as unsigned 8-bit values and should sum to 255.
  */
 typedef struct R3D_Vertex {
-    Vector3 position;           ///< The 3D position of the vertex in object space.
-    uint16_t texcoord[2];       ///< The 2D texture coordinates (UV) for mapping textures.
-    int8_t normal[4];           ///< The normal vector used for lighting calculations.
-    int8_t tangent[4];          ///< The tangent vector, used in normal mapping (often with a handedness in w).
-    Color color;                ///< Vertex color, in RGBA32.
-    uint8_t boneIndices[4];     ///< Indices of up to 4 bones that influence this vertex (for skinning).
-    uint8_t boneWeights[4];     ///< Corresponding bone weights (should sum to 255). Defines the influence of each bone.
+    Vector3 position;           ///< Vertex position in object space.
+    uint16_t texcoord[2];       ///< Texture coordinates stored as float16.
+    int8_t normal[4];           ///< Normal vector stored as SNORM8. XYZ are used, W is unused.
+    int8_t tangent[4];          ///< Tangent vector stored as SNORM8. XYZ are tangent, W stores handedness.
+    Color color;                ///< Vertex color in RGBA8.
+    uint8_t boneIndices[4];     ///< Indices of up to 4 bones influencing this vertex.
+    uint8_t boneWeights[4];     ///< Bone weights in UNORM8. Values should sum to 255.
 } R3D_Vertex;
 
 // ========================================
@@ -44,62 +48,87 @@ extern "C" {
 #endif
 
 /**
- * @brief Constructs a fully encoded @ref R3D_Vertex from unpacked attribute data.
+ * @brief Constructs a packed R3D vertex from unpacked attribute data.
+ *
+ * Texture coordinates are packed to float16.
+ * Normals and tangents are packed to SNORM8.
+ *
  * @param position Vertex position in object space.
- * @param texcoord UV texture coordinates (float, any range).
- * @param normal Unit normal vector.
- * @param tangent Tangent vector with handedness in w (+1 or -1).
+ * @param texcoord Texture coordinates in float32. Any range is supported.
+ * @param normal Normal vector. Components are clamped to the [-1, 1] range.
+ * @param tangent Tangent vector. XYZ components are clamped to [-1, 1], W stores handedness.
  * @param color Vertex color in RGBA8.
- * @return Encoded vertex ready for GPU upload.
+ *
+ * @return Packed vertex ready for GPU upload.
  */
 R3DAPI R3D_Vertex R3D_MakeVertex(Vector3 position, Vector2 texcoord, Vector3 normal, Vector4 tangent, Color color);
 
 /**
- * @brief Encodes a UV coordinate pair from float32 to float16.
- * @param dst Output buffer of 2 uint16_t (float16). Must not be NULL.
- * @param src UV coordinates in float32. Supports any range (tiling included).
+ * @brief Packs texture coordinates from float32 to float16.
+ *
+ * @param dst Output buffer of 2 uint16_t values. Must not be NULL.
+ * @param src Texture coordinates in float32. Any range is supported.
  */
-R3DAPI void R3D_EncodeTexCoord(uint16_t* dst, Vector2 src);
+R3DAPI void R3D_PackTexCoord(uint16_t* dst, Vector2 src);
 
 /**
- * @brief Decodes a float16 UV coordinate pair back to float32.
- * @param src Input buffer of 2 uint16_t (float16). Must not be NULL.
- * @return Decoded UV coordinates in float32.
+ * @brief Unpacks texture coordinates from float16 to float32.
+ *
+ * @param src Input buffer of 2 uint16_t values. Must not be NULL.
+ *
+ * @return Unpacked texture coordinates in float32.
  */
-R3DAPI Vector2 R3D_DecodeTexCoord(const uint16_t* src);
+R3DAPI Vector2 R3D_UnpackTexCoord(const uint16_t* src);
 
 /**
- * @brief Encodes a unit normal vector from float32 to snorm8 (XYZ).
- * @param dst Output buffer of 4 int8_t. W is set to 0. Must not be NULL.
- * @param src Unit normal vector. Components must be in [-1, 1].
+ * @brief Packs a normal vector from float32 to SNORM8.
+ *
+ * XYZ components are clamped to the [-1, 1] range before packing.
+ * The fourth component is set to 0.
+ *
+ * @param dst Output buffer of 4 int8_t values. Must not be NULL.
+ * @param src Normal vector to pack.
  */
-R3DAPI void R3D_EncodeNormal(int8_t* dst, Vector3 src);
+R3DAPI void R3D_PackNormal(int8_t* dst, Vector3 src);
 
 /**
- * @brief Decodes a snorm8 normal back to float32.
- * @param src Input buffer of 4 int8_t (only XYZ are read). Must not be NULL.
- * @return Decoded normal vector. Not guaranteed to be unit length.
+ * @brief Unpacks a normal vector from SNORM8 to float32.
+ *
+ * Only XYZ components are read.
+ *
+ * @param src Input buffer of 4 int8_t values. Must not be NULL.
+ *
+ * @return Unpacked normal vector. Not guaranteed to be unit length.
  */
-R3DAPI Vector3 R3D_DecodeNormal(const int8_t* src);
+R3DAPI Vector3 R3D_UnpackNormal(const int8_t* src);
 
 /**
- * @brief Encodes a tangent vector from float32 to snorm8, preserving handedness in W.
- * @param dst Output buffer of 4 int8_t. Must not be NULL.
- * @param src Tangent vector. XYZ must be in [-1, 1]; W encodes handedness (+1 or -1).
+ * @brief Packs a tangent vector from float32 to SNORM8.
+ *
+ * XYZ components are clamped to the [-1, 1] range before packing.
+ * W stores tangent handedness and is packed as either +1 or -1.
+ *
+ * @param dst Output buffer of 4 int8_t values. Must not be NULL.
+ * @param src Tangent vector to pack. W is interpreted as handedness.
  */
-R3DAPI void R3D_EncodeTangent(int8_t* dst, Vector4 src);
+R3DAPI void R3D_PackTangent(int8_t* dst, Vector4 src);
 
 /**
- * @brief Decodes a snorm8 tangent back to float32.
- * @param src Input buffer of 4 int8_t. Must not be NULL.
- * @return Decoded tangent. W is exactly +1.0 or -1.0 (handedness).
+ * @brief Unpacks a tangent vector from SNORM8 to float32.
+ *
+ * XYZ components are unpacked from SNORM8.
+ * W is returned as exactly +1.0f or -1.0f.
+ *
+ * @param src Input buffer of 4 int8_t values. Must not be NULL.
+ *
+ * @return Unpacked tangent vector.
  */
-R3DAPI Vector4 R3D_DecodeTangent(const int8_t* src);
+R3DAPI Vector4 R3D_UnpackTangent(const int8_t* src);
 
 #ifdef __cplusplus
 } // extern "C"
 #endif
 
-/** @} */ // end of MeshData
+/** @} */ // end of Vertex
 
 #endif // R3D_VERTEX_H

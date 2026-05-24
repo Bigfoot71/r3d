@@ -157,9 +157,9 @@ typedef enum {
  * GL attribute reconfiguration when consecutive draw calls share
  * the same instance group.
  */
-typedef struct {
+typedef struct r3d_render_instance_state_t {
     GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT];
-    R3D_InstanceFlags flags;
+    R3D_InstanceLayout layout;
     int offset;
 } r3d_render_instance_state_t;
 

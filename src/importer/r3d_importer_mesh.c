@@ -42,7 +42,7 @@ static inline void process_vertex_position(Vector3* position, const struct aiVec
 static inline void process_vertex_texcoord(uint16_t* texcoord, const struct aiMesh* aiMesh, int index)
 {
     if (aiMesh->mTextureCoords[0] && aiMesh->mNumUVComponents[0] >= 2) {
-        R3D_EncodeTexCoord(texcoord, r3d_importer_cast_to_vector2(aiMesh->mTextureCoords[0][index]));
+        R3D_PackTexCoord(texcoord, r3d_importer_cast_to_vector2(aiMesh->mTextureCoords[0][index]));
     }
     // NOTE: Vertices are zero-initialized
     //else {
@@ -57,10 +57,10 @@ static inline void process_vertex_normal(int8_t* normal, const struct aiMesh* ai
         if (!hasBones) {
             vec = r3d_vector3_transform_linear(vec, normalMatrix);
         }
-        R3D_EncodeNormal(normal, Vector3Normalize(vec));
+        R3D_PackNormal(normal, Vector3Normalize(vec));
     }
     else {
-        R3D_EncodeNormal(normal, (Vector3){0.0f, 0.0f, 1.0f});
+        R3D_PackNormal(normal, (Vector3){0.0f, 0.0f, 1.0f});
     }
 }
 
@@ -84,13 +84,13 @@ static inline void process_vertex_tangent(R3D_Vertex* vertex, const struct aiMes
         Vector3 reconstructedBitangent = Vector3CrossProduct(normal, tangent);
         float handedness = Vector3DotProduct(reconstructedBitangent, bitangent);
 
-        R3D_EncodeTangent(vertex->tangent, (Vector4){
+        R3D_PackTangent(vertex->tangent, (Vector4){
             tangent.x, tangent.y, tangent.z,
             copysignf(1.0f, handedness)
         });
     }
     else {
-        R3D_EncodeTangent(vertex->tangent, (Vector4){1.0f, 0.0f, 0.0f, 1.0f});
+        R3D_PackTangent(vertex->tangent, (Vector4){1.0f, 0.0f, 0.0f, 1.0f});
     }
 }
 
