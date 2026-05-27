@@ -123,7 +123,7 @@ void main()
         shadow *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);
     }
 
-    if (uLight.shadowLayer >= 0 && shadow > 1e-4) {
+    if (uLight.shadowLayer >= 0 && uLight.shadowOpacity != 0.0 && shadow > 1e-4) {
         mat2 diskRot = L_ShadowDebandingMatrix(gl_FragCoord.xy);
         switch (uLight.type) {
         case LIGHT_DIR:  shadow *= L_SampleShadowDir(P, depth, NdotL, diskRot); break;

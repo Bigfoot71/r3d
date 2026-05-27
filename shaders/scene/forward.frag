@@ -155,7 +155,7 @@ void main()
             shadow *= smoothstep(0.0, 1.0, (theta - light.outerCutOff) / epsilon);
         }
 
-        if (light.shadowLayer >= 0 && shadow > 1e-4) {
+        if (light.shadowLayer >= 0 && light.shadowOpacity != 0.0 && shadow > 1e-4) {
             switch (light.type) {
             case LIGHT_DIR:  shadow *= L_SampleShadowDir(i, vPosLightSpace[i], vLinearDepth, NdotL, diskRot); break;
             case LIGHT_SPOT: shadow *= L_SampleShadowSpot(i, vPosLightSpace[i], NdotL, diskRot); break;

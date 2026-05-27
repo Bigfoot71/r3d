@@ -681,7 +681,11 @@ void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, R3D_Camera camera
 
 bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated)
 {
+    // If the light does not have a shadow map assigned, we return
     if (light->shadowLayer < 0) return false;
+
+    // If the shadow opacity is set to zero, the update is ignored
+    if (light->shadowOpacity == 0.0f) return false;
 
     bool shouldUpdate = light->state.shadowShouldBeUpdated;
 
