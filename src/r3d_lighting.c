@@ -344,6 +344,42 @@ void R3D_SetShadowSlopeBias(R3D_Light id, float value)
     light->shadowSlopeBias = value;
 }
 
+R3D_Layer R3D_GetShadowCasterMask(R3D_Light id)
+{
+    GET_LIGHT_OR_RETURN(light, id, 0);
+    return light->casterMask;
+}
+
+void R3D_SetShadowCasterMask(R3D_Light id, R3D_Layer cullMask)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    light->casterMask = cullMask;
+}
+
+void R3D_EnableShadowCasterLayers(R3D_Light id, R3D_Layer layerMask)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    light->casterMask |= layerMask;
+}
+
+void R3D_DisableShadowCasterLayers(R3D_Light id, R3D_Layer layerMask)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    light->casterMask &= ~layerMask;
+}
+
+void R3D_ToggleShadowCasterLayers(R3D_Light id, R3D_Layer layerMask)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    light->casterMask ^= layerMask;
+}
+
+bool R3D_IsShadowCasterLayerVisible(R3D_Light id, R3D_Layer layerMask)
+{
+    GET_LIGHT_OR_RETURN(light, id, false);
+    return (light->casterMask & layerMask) != 0;
+}
+
 BoundingBox R3D_GetLightBoundingBox(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, (BoundingBox) {0});

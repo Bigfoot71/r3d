@@ -10,6 +10,7 @@
 #define R3D_LIGHTING_H
 
 #include "./r3d_platform.h"
+#include "./r3d_camera.h"
 #include <raylib.h>
 #include <stdint.h>
 
@@ -541,6 +542,36 @@ R3DAPI float R3D_GetShadowSlopeBias(R3D_Light id);
  * incorrectly appearing or disappearing along object edges.
  */
 R3DAPI void R3D_SetShadowSlopeBias(R3D_Light id, float value);
+
+/**
+ * @brief Gets the shadow caster mask.
+ */
+R3DAPI R3D_Layer R3D_GetShadowCasterMask(R3D_Light id);
+
+/**
+ * @brief Replaces the shadow caster mask.
+ */
+R3DAPI void R3D_SetShadowCasterMask(R3D_Light id, R3D_Layer cullMask);
+
+/**
+ * @brief Enables one or more layers in the shadow caster mask.
+ */
+R3DAPI void R3D_EnableShadowCasterLayers(R3D_Light id, R3D_Layer layerMask);
+
+/**
+ * @brief Disables one or more layers from the shadow caster mask.
+ */
+R3DAPI void R3D_DisableShadowCasterLayers(R3D_Light id, R3D_Layer layerMask);
+
+/**
+ * @brief Toggles one or more layers in the shadow caster mask.
+ */
+R3DAPI void R3D_ToggleShadowCasterLayers(R3D_Light id, R3D_Layer layerMask);
+
+/**
+ * @brief Checks whether at least one object layer is visible to the shadow caster.
+ */
+R3DAPI bool R3D_IsShadowCasterLayerVisible(R3D_Light id, R3D_Layer layerMask);
 
 // ----------------------------------------
 // LIGHTING: Light Helper Functions
