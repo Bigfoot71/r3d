@@ -720,6 +720,7 @@ void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shado
         data->innerCutOff = light->innerCutOff;
         data->outerCutOff = light->outerCutOff;
         data->shadowSoftness = light->shadowSoftness;
+        data->shadowOpacity = light->shadowOpacity;
         data->shadowDepthBias = light->shadowDepthBias;
         data->shadowSlopeBias = light->shadowSlopeBias;
         data->shadowLayer = shadow ? light->shadowLayer : -1;
@@ -2034,6 +2035,7 @@ void pass_deferred_lights(void)
             .innerCutOff = light->innerCutOff,
             .outerCutOff = light->outerCutOff,
             .shadowSoftness = light->shadowSoftness,
+            .shadowOpacity = light->shadowOpacity,
             .shadowDepthBias = light->shadowDepthBias,
             .shadowSlopeBias = light->shadowSlopeBias,
             .shadowLayer = light->shadowLayer,

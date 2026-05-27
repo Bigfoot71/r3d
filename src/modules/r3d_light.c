@@ -235,8 +235,7 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
     light->outerCutOff = cosf(45.0f * DEG2RAD);
 
     light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
-    light->casterMask = R3D_LAYER_ALL;
-
+    light->shadowOpacity = 1.0f;
     switch (type) {
     case R3D_LIGHT_DIR:
         light->shadowDepthBias = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
@@ -253,6 +252,7 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
     default:
         break;
     }
+    light->casterMask = R3D_LAYER_ALL;
 
     light->type = type;
     light->enabled = false;

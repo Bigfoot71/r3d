@@ -63,6 +63,7 @@ struct Light {
     float innerCutOff;
     float outerCutOff;
     float shadowSoftness;
+    float shadowOpacity;
     float shadowDepthBias;
     float shadowSlopeBias;
     int shadowLayer;        //< less than zero if no shadows
@@ -137,9 +138,8 @@ DECL_SHADOW_DIR(L_SampleShadowDir)
     vec3 distToBorder = min(projCoords, 1.0 - projCoords);
     float edgeFade = smoothstep(0.0, 0.05, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
     float distFade = smoothstep(LIGHT.range, LIGHT.range * 0.75, Zvs);
-    shadow = mix(1.0, shadow, edgeFade * distFade);
 
-    return shadow;
+    return mix(1.0, shadow, edgeFade * distFade * LIGHT.shadowOpacity);
 }
 
 DECL_SHADOW_SPOT(L_SampleShadowSpot)
@@ -157,8 +157,9 @@ DECL_SHADOW_SPOT(L_SampleShadowSpot)
         vec2 offset = diskRot * VOGEL_DISK[i] * LIGHT.shadowSoftness;
         shadow += texture(uShadowSpotTex, vec4(projCoords.xy + offset, LIGHT.shadowLayer, compareDepth));
     }
+    shadow /= float(SHADOW_SAMPLES);
 
-   return shadow / float(SHADOW_SAMPLES);
+    return mix(1.0, shadow, LIGHT.shadowOpacity);
 }
 
 DECL_SHADOW_OMNI(L_SampleShadowOmni)
@@ -176,8 +177,9 @@ DECL_SHADOW_OMNI(L_SampleShadowOmni)
         vec2 diskOffset = diskRot * VOGEL_DISK[i] * LIGHT.shadowSoftness;
         shadow += texture(uShadowOmniTex, vec4(OBN * vec3(diskOffset.xy, 1.0), LIGHT.shadowLayer), compareDepth);
     }
+    shadow /= float(SHADOW_SAMPLES);
 
-    return shadow / float(SHADOW_SAMPLES);
+    return mix(1.0, shadow, LIGHT.shadowOpacity);
 }
 
 #endif // L_SHADOW_IMPL
