@@ -36,12 +36,4 @@
 #   endif
 #endif
 
-#ifndef R3D_TYPEINIT
-#   ifdef __cplusplus
-#       define R3D_TYPEINIT(type) type{0}
-#   else
-#       define R3D_TYPEINIT(type) (type) {0}
-#   endif
-#endif
-
 #endif // R3D_API_H
