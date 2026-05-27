@@ -63,7 +63,7 @@
         .ambient = {                                    \
             .color = BLACK,                             \
             .energy = 1.0f,                             \
-            .map = R3D_TYPEINIT(R3D_AmbientMap)         \
+            .map = {0},                                 \
         },                                              \
         .ssao = {                                       \
             .sampleCount = 16,                          \
