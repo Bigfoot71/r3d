@@ -10,7 +10,7 @@
   Add a signed integer indicating render priority in materials, in order to control whether certain objects should be rendered before or after others.
   It should integrate easily with the existing material-based sorting.
 
-* [ ] **Add layer mask support for shadows**
+* [x] **Add layer mask support for shadows**
   Allows rendering an object in the scene without rendering its shadows.
   Or rendering only the object's shadows without rendering the object itself, using the camera layer mask.
   _(in addition to the existing shadow casting mode, this will allow for more different configurations per light)_

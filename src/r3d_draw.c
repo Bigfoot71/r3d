@@ -33,7 +33,8 @@
 // HELPER MACROS
 // ========================================
 
-#define IS_MESH_VALID(mesh) ((mesh).vertexCount > 0)
+#define IS_MESH_VALID(mesh) \
+    (((mesh).vertexCount > 0) && ((mesh).layerMask != 0))
 
 #define IS_MESH_VISIBLE(mesh, cullMask) \
     (BIT_TEST_ANY((cullMask), (mesh).layerMask))
@@ -1455,6 +1456,11 @@ void pass_scene_shadow(void)
     r3d_driver_set_depth_func(GL_LEQUAL);
     r3d_driver_set_depth_mask(GL_TRUE);
 
+    #define COND (                                                          \
+        (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED) && \
+        IS_MESH_VISIBLE(call->mesh.instance, light->casterMask)             \
+    )
+
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
         if (!r3d_light_shadow_should_be_updated(light, true)) {
@@ -1469,13 +1475,11 @@ void pass_scene_shadow(void)
                 const R3D_Frustum* frustum = &light->frustum[iFace];
                 r3d_render_cull_groups(frustum);
 
-                #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
                 R3D_RENDER_FOR_EACH(call, COND, frustum, R3D_RENDER_PACKLIST_SHADOW) {
                     if (r3d_render_should_cast_shadow(call)) {
                         raster_depth_cube(call, &light->viewProj[iFace], light);
                     }
                 }
-                #undef COND
             }
         }
         else {
@@ -1485,15 +1489,15 @@ void pass_scene_shadow(void)
             const R3D_Frustum* frustum = &light->frustum[0];
             r3d_render_cull_groups(frustum);
 
-            #define COND (call->mesh.instance.shadowCastMode != R3D_SHADOW_CAST_DISABLED)
             R3D_RENDER_FOR_EACH(call, COND, frustum, R3D_RENDER_PACKLIST_SHADOW) {
                 if (r3d_render_should_cast_shadow(call)) {
                     raster_depth(call, &light->viewProj[0], light);
                 }
             }
-            #undef COND
         }
     }
+
+    #undef COND
 }
 
 void pass_scene_probes(void)
