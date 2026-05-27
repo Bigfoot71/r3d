@@ -529,6 +529,9 @@ R3DAPI float R3D_GetShadowOpacity(R3D_Light id);
  * fully transparent, while 1 applies full opacity. Values are not clamped, but the
  * usual range is 0 to 1.
  *
+ * When the opacity is exactly 0, the light still owns its shadow map, but shadow
+ * map rendering and shadow application are entirely skipped.
+ *
  * @param id The ID of the light.
  * @param opacity The shadow opacity to apply.
  */
