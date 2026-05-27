@@ -33,7 +33,7 @@
 // HELPER MACROS
 // ========================================
 
-#define IS_MESH_VALID(mesh) ((mesh).vertexCount > 0)
+#define IS_MESH_VALID(mesh) (((mesh).vertexCount > 0) && ((mesh).layerMask != 0))
 
 #define IS_MESH_VISIBLE(mesh, cullMask) \
     (BIT_TEST_ANY((cullMask), (mesh).layerMask))
