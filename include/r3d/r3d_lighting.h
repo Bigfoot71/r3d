@@ -515,6 +515,26 @@ R3DAPI float R3D_GetShadowSoftness(R3D_Light id);
 R3DAPI void R3D_SetShadowSoftness(R3D_Light id, float softness);
 
 /**
+ * @brief Retrieves the shadow opacity for a light.
+ *
+ * @param id The ID of the light.
+ * @return The current shadow opacity.
+ */
+R3DAPI float R3D_GetShadowOpacity(R3D_Light id);
+
+/**
+ * @brief Sets the shadow opacity for a light.
+ *
+ * The opacity controls the visual strength of shadows. A value of 0 makes shadows
+ * fully transparent, while 1 applies full opacity. Values are not clamped, but the
+ * usual range is 0 to 1.
+ *
+ * @param id The ID of the light.
+ * @param opacity The shadow opacity to apply.
+ */
+R3DAPI void R3D_SetShadowOpacity(R3D_Light id, float opacity);
+
+/**
  * @brief Gets the shadow depth bias value.
  */
 R3DAPI float R3D_GetShadowDepthBias(R3D_Light id);

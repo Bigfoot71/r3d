@@ -320,6 +320,18 @@ void R3D_SetShadowSoftness(R3D_Light id, float softness)
     light->shadowSoftness = softness / R3D_LIGHT_SHADOW_SIZE[light->type];
 }
 
+float R3D_GetShadowOpacity(R3D_Light id)
+{
+    GET_LIGHT_OR_RETURN(light, id, 0.0f);
+    return light->shadowOpacity;
+}
+
+void R3D_SetShadowOpacity(R3D_Light id, float opacity)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    light->shadowOpacity = opacity;
+}
+
 float R3D_GetShadowDepthBias(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, 0);
