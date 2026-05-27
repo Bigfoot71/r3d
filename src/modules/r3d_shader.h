@@ -532,6 +532,7 @@ typedef struct {
     alignas(4) float innerCutOff;
     alignas(4) float outerCutOff;
     alignas(4) float shadowSoftness;
+    alignas(4) float shadowOpacity;
     alignas(4) float shadowDepthBias;
     alignas(4) float shadowSlopeBias;
     alignas(4) int32_t shadowLayer;

@@ -70,6 +70,7 @@ typedef struct {
     float innerCutOff;          // Spot light inner cutoff angle
     float outerCutOff;          // Spot light outer cutoff angle
     float shadowSoftness;       // Softness factor for penumbra
+    float shadowOpacity;        // Shadow opacity factor
     float shadowDepthBias;      // Constant depth bias
     float shadowSlopeBias;      // Slope-scaled depth bias
     R3D_Layer casterMask;       // Shadow caster mask
