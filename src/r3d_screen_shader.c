@@ -189,7 +189,7 @@ void R3D_SetScreenShaderSampler(R3D_ScreenShader* shader, const char* name, Text
 
 void R3D_SetScreenShaderChain(R3D_ScreenShaderStage stage, R3D_ScreenShader** shaders, int count)
 {
-    if (stage < 0 && stage >= R3D_SCREEN_SHADER_STAGE_COUNT) {
+    if (stage < 0 || stage >= R3D_SCREEN_SHADER_STAGE_COUNT) {
         R3D_TRACELOG(LOG_WARNING, "Invalid screen shader stage: %d", stage);
     }
 
