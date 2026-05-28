@@ -28,7 +28,6 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
-#include "r3d/r3d_screen_shader.h"
 
 // ========================================
 // HELPER MACROS
