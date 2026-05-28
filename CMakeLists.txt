@@ -62,7 +62,7 @@ set(R3D_CONFIG_DEFAULTS
     R3D_MAX_SHADER_CODE_LENGTH          16384
     R3D_MAX_SHADER_SAMPLERS             4
     R3D_MAX_SHADER_UNIFORMS             16
-    R3D_MAX_SCREEN_SHADERS              8
+    R3D_MAX_SCREEN_SHADERS              4
     R3D_ENABLE_TRACELOG                 1
 )
 

@@ -36,7 +36,7 @@ int main(void)
 
     // Load a screen shader
     R3D_ScreenShader* shader = R3D_LoadScreenShader(RESOURCES_PATH "shaders/screen.glsl");
-    R3D_SetScreenShaderChain(&shader, 1);
+    R3D_SetScreenShaderChain(R3D_SCREEN_SHADER_STAGE_OUTPUT, &shader, 1);
 
     // Set screen custom unforms
     R3D_SetScreenShaderUniform(shader, "u_time_scale", (float[]){2.5f});

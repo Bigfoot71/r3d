@@ -187,18 +187,30 @@ void R3D_SetScreenShaderSampler(R3D_ScreenShader* shader, const char* name, Text
     }
 }
 
-void R3D_SetScreenShaderChain(R3D_ScreenShader** shaders, int count)
+void R3D_SetScreenShaderChain(R3D_ScreenShaderStage stage, R3D_ScreenShader** shaders, int count)
 {
-    if (count > ARRAY_SIZE(R3D.screenShaders)) {
-        R3D_TRACELOG(LOG_WARNING, "Nombre de shader écran fournit à la chaine trop grand: %i / %i", count, ARRAY_SIZE(R3D.screenShaders));
-        count = ARRAY_SIZE(R3D.screenShaders);
+    if (stage < 0 || stage >= R3D_SCREEN_SHADER_STAGE_COUNT) {
+        R3D_TRACELOG(LOG_WARNING, "Invalid screen shader stage: %d", stage);
     }
 
-    memset(R3D.screenShaders, 0, sizeof(R3D.screenShaders));
+    size_t maxChain = ARRAY_SIZE(R3D.screenShaders[stage]);
+
+    if (count > (int)maxChain) {
+        R3D_TRACELOG(
+            LOG_WARNING,
+            "Too many screen shaders provided for chain: %d / %zu",
+            count,
+            maxChain
+        );
+
+        count = (int)maxChain;
+    }
+
+    memset(R3D.screenShaders[stage], 0, sizeof(R3D.screenShaders[stage]));
     if (shaders == NULL) return;
 
     for (int i = 0; i < count; i++) {
-        R3D.screenShaders[i] = shaders[i];
+        R3D.screenShaders[stage][i] = shaders[i];
     }
 }
 
