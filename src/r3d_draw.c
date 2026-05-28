@@ -18,7 +18,6 @@
 #include "./r3d_core_state.h"
 
 #include "./common/r3d_helper.h"
-#include "./common/r3d_half.h"
 #include "./common/r3d_pass.h"
 #include "./common/r3d_math.h"
 
