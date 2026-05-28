@@ -41,6 +41,7 @@
 #include <shaders/dof_blur.frag.h>
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
+#include <shaders/luminance.frag.h>
 #include <shaders/smaa_blending_weigths.vert.h>
 #include <shaders/smaa_blending_weigths.frag.h>
 #include <shaders/smaa_edge_detection.vert.h>
@@ -65,6 +66,7 @@
 #include <shaders/fog.frag.h>
 #include <shaders/dof.frag.h>
 #include <shaders/bloom.frag.h>
+#include <shaders/auto_exposure.frag.h>
 #include <shaders/screen.frag.h>
 #include <shaders/output.frag.h>
 #include <shaders/fxaa.frag.h>
@@ -536,6 +538,36 @@ bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
 
     USE_SHADER(bloomUp);
     SET_SAMPLER(bloomUp, uTexture, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_luminance_compute(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_luminance_compute_t, prepare, luminanceCompute);
+
+    const char* FS_DEFINES[] = {"LUMINANCE_COMPUTE"};
+    char* fsCode = inject_defines(LUMINANCE_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    LOAD_SHADER(luminanceCompute, SCREEN_VERT, fsCode);
+
+    USE_SHADER(luminanceCompute);
+    SET_SAMPLER(luminanceCompute, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_luminance_downsample(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_luminance_downsample_t, prepare, luminanceDownsample);
+
+    const char* FS_DEFINES[] = {"LUMINANCE_DOWNSAMPLE"};
+    char* fsCode = inject_defines(LUMINANCE_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    LOAD_SHADER(luminanceDownsample, SCREEN_VERT, fsCode);
+
+    USE_SHADER(luminanceDownsample);
+    SET_SAMPLER(luminanceDownsample, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
 
     return true;
 }
@@ -1348,6 +1380,19 @@ bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
 
     SET_SAMPLER(bloom, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(bloom, uBloomTex, R3D_SHADER_SAMPLER_BUFFER_BLOOM);
+
+    return true;
+}
+
+bool r3d_shader_load_post_auto_exposure(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_post_auto_exposure_t, post, autoExposure);
+    LOAD_SHADER(autoExposure, SCREEN_VERT, AUTO_EXPOSURE_FRAG);
+
+    GET_LOCATION(autoExposure, uExposure);
+
+    USE_SHADER(autoExposure);
+    SET_SAMPLER(autoExposure, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
 
     return true;
 }

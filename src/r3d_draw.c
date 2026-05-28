@@ -18,6 +18,7 @@
 #include "./r3d_core_state.h"
 
 #include "./common/r3d_helper.h"
+#include "./common/r3d_half.h"
 #include "./common/r3d_pass.h"
 #include "./common/r3d_math.h"
 
@@ -95,6 +96,7 @@ static void pass_scene_background(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_setup(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
+static r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
@@ -256,6 +258,10 @@ void R3D_End(void)
 
     if (R3D.environment.bloom.mode != R3D_BLOOM_DISABLED) {
         sceneTarget = pass_post_bloom(sceneTarget);
+    }
+
+    if (R3D.environment.autoExposure.enabled) {
+        sceneTarget = pass_post_auto_exposure(sceneTarget);
     }
 
     sceneTarget = pass_post_screen(sceneTarget);
@@ -2363,6 +2369,86 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     R3D_SHADER_SET_INT(post.bloom, uBloomMode, R3D.environment.bloom.mode);
     R3D_SHADER_SET_FLOAT(post.bloom, uBloomIntensity, R3D.environment.bloom.intensity);
 
+    R3D_RENDER_SCREEN();
+
+    return sceneTarget;
+}
+
+r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
+{
+    /* --- Build log-luminance pyramid --- */
+
+    R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_LUMINANCE);
+
+    R3D_SHADER_USE(prepare.luminanceCompute);
+    R3D_SHADER_BIND_SAMPLER(prepare.luminanceCompute, uSourceTex, r3d_target_get(sceneTarget));
+    R3D_RENDER_SCREEN();
+
+    int numLevels = r3d_target_get_num_levels(R3D_TARGET_LUMINANCE);
+
+    R3D_SHADER_USE(prepare.luminanceDownsample);
+
+    for (int dstLevel = 1; dstLevel < numLevels; dstLevel++) {
+        R3D_SHADER_BIND_SAMPLER(
+            prepare.luminanceDownsample,
+            uSourceTex,
+            r3d_target_get_level(R3D_TARGET_LUMINANCE, dstLevel - 1)
+        );
+
+        R3D_TARGET_BIND_LEVEL(dstLevel, R3D_TARGET_LUMINANCE);
+        R3D_RENDER_SCREEN();
+    }
+
+    /* --- Read average log-luminance --- */
+
+    static const float MIDDLE_GRAY     = 0.18f;
+    static const float LOG_MIDDLE_GRAY = -1.7147984280919266f; // log(0.18)
+    static const float LOG_2           =  0.6931471805599453f; // log(2)
+
+    static float adaptedLogLum = LOG_MIDDLE_GRAY;
+
+    r3d_half_t halfMeasuredLogLum = 0;
+
+    glBindTexture(GL_TEXTURE_2D, r3d_target_get(R3D_TARGET_LUMINANCE));
+    glGetTexImage(GL_TEXTURE_2D, numLevels - 1, GL_RED, GL_HALF_FLOAT, &halfMeasuredLogLum);
+
+    float measuredLogLum = r3d_half_to_float(halfMeasuredLogLum);
+
+    /* --- Clamp measured luminance range in EV --- */
+
+    const R3D_EnvAutoExposure *autoExposure = &R3D.environment.autoExposure;
+
+    float minLogLum = LOG_MIDDLE_GRAY + autoExposure->minEV * LOG_2;
+    float maxLogLum = LOG_MIDDLE_GRAY + autoExposure->maxEV * LOG_2;
+
+    measuredLogLum = Clamp(measuredLogLum, minLogLum, maxLogLum);
+
+    /* --- Adapt exposure over time --- */
+
+    float timeConstant = fmaxf(autoExposure->adaptationSpeed, 1e-3f);
+
+    float speedUp   = 3.0f / timeConstant; // adapt faster to brighter scenes
+    float speedDown = 1.0f / timeConstant; // adapt slower to darker scenes
+
+    float speed = (measuredLogLum > adaptedLogLum) ? speedUp : speedDown;
+    float blend = 1.0f - expf(-GetFrameTime() * speed);
+
+    adaptedLogLum = Lerp(adaptedLogLum, measuredLogLum, blend);
+
+    /* --- Convert adapted luminance to exposure --- */
+
+    float compensation = exp2f(autoExposure->exposureCompensation);
+    float exposure = expf(LOG_MIDDLE_GRAY - adaptedLogLum) * compensation;
+
+    /* --- Apply exposure --- */
+
+    GLuint sceneSourceID = r3d_target_get(sceneTarget);
+
+    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+
+    R3D_SHADER_USE(post.autoExposure);
+    R3D_SHADER_SET_FLOAT(post.autoExposure, uExposure, exposure);
+    R3D_SHADER_BIND_SAMPLER(post.autoExposure, uSceneTex, sceneSourceID);
     R3D_RENDER_SCREEN();
 
     return sceneTarget;

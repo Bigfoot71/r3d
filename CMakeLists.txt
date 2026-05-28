@@ -317,6 +317,7 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/prepare/smaa_edge_detection.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/blur_up.frag"
+    "${R3D_ROOT_PATH}/shaders/prepare/luminance.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/depth_pyramid.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao_in_down.frag"
     "${R3D_ROOT_PATH}/shaders/prepare/ssao.frag"
@@ -352,8 +353,9 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/deferred/compose.frag"
     "${R3D_ROOT_PATH}/shaders/deferred/fog.frag"
     # Post
-    "${R3D_ROOT_PATH}/shaders/post/bloom.frag"
     "${R3D_ROOT_PATH}/shaders/post/dof.frag"
+    "${R3D_ROOT_PATH}/shaders/post/bloom.frag"
+    "${R3D_ROOT_PATH}/shaders/post/auto_exposure.frag"
     "${R3D_ROOT_PATH}/shaders/post/screen.frag"
     "${R3D_ROOT_PATH}/shaders/post/output.frag"
     "${R3D_ROOT_PATH}/shaders/post/fxaa.frag"

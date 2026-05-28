@@ -45,6 +45,7 @@ typedef enum {
     R3D_TARGET_BLOOM,           //< Half - Mip N - RGB16F
     R3D_TARGET_SMAA_EDGES,      //< Full - Mip 1 - RG8
     R3D_TARGET_SMAA_BLEND,      //< Full - Mip 1 - RGBA8
+    R3D_TARGET_LUMINANCE,       //< Half - Mip N - R16F
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB16F
     R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB16F
     R3D_TARGET_COUNT

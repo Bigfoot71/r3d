@@ -353,9 +353,10 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_DOF_COC       = 32,
     R3D_SHADER_SAMPLER_BUFFER_DOF           = 33,
     R3D_SHADER_SAMPLER_BUFFER_BLOOM         = 34,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 35,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 36,
-    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 37,
+    R3D_SHADER_SAMPLER_BUFFER_LUMINANCE     = 35,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 36,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 37,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 38,
 
     // Unamed for special passes
     R3D_SHADER_SAMPLER_SOURCE_1D_0          = 40,
@@ -407,6 +408,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_DOF_COC]         = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_DOF]             = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_BLOOM]           = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_LUMINANCE]       = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES]      = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND]      = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SCENE]           = GL_TEXTURE_2D,
@@ -732,6 +734,16 @@ typedef struct {
 
 typedef struct {
     GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+} r3d_shader_prepare_luminance_compute_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+} r3d_shader_prepare_luminance_downsample_t;
+
+typedef struct {
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
 } r3d_shader_prepare_smaa_edge_detection_t;
 
@@ -1048,6 +1060,12 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
+    r3d_shader_uniform_float_t uExposure;
+} r3d_shader_post_auto_exposure_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_post_screen_t;
@@ -1181,6 +1199,8 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_dof_blur_t dofBlur;
         r3d_shader_prepare_bloom_down_t bloomDown;
         r3d_shader_prepare_bloom_up_t bloomUp;
+        r3d_shader_prepare_luminance_compute_t luminanceCompute;
+        r3d_shader_prepare_luminance_downsample_t luminanceDownsample;
         r3d_shader_prepare_smaa_edge_detection_t smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_prepare_smaa_blending_weights_t smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
@@ -1215,6 +1235,7 @@ extern struct r3d_mod_shader {
     struct {
         r3d_shader_post_dof_t dof;
         r3d_shader_post_bloom_t bloom;
+        r3d_shader_post_auto_exposure_t autoExposure;
         r3d_shader_post_output_t output;
         r3d_shader_post_fxaa_t fxaa[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_post_smaa_t smaa[R3D_ANTI_ALIASING_PRESET_COUNT];
@@ -1255,6 +1276,8 @@ bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_luminance_compute(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_luminance_downsample(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_low(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_medium(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_high(r3d_shader_custom_t* custom);
@@ -1284,6 +1307,7 @@ bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
+bool r3d_shader_load_post_auto_exposure(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_output(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_fxaa_low(r3d_shader_custom_t* custom);
@@ -1323,6 +1347,8 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func dofBlur;
         r3d_shader_loader_func bloomDown;
         r3d_shader_loader_func bloomUp;
+        r3d_shader_loader_func luminanceCompute;
+        r3d_shader_loader_func luminanceDownsample;
         r3d_shader_loader_func smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func cubemapFromEquirectangular;
@@ -1358,6 +1384,7 @@ static const struct r3d_shader_loader {
     struct {
         r3d_shader_loader_func dof;
         r3d_shader_loader_func bloom;
+        r3d_shader_loader_func autoExposure;
         r3d_shader_loader_func screen;
         r3d_shader_loader_func output;
         r3d_shader_loader_func fxaa[R3D_ANTI_ALIASING_PRESET_COUNT];
@@ -1394,6 +1421,8 @@ static const struct r3d_shader_loader {
         .dofBlur = r3d_shader_load_prepare_dof_blur,
         .bloomDown = r3d_shader_load_prepare_bloom_down,
         .bloomUp = r3d_shader_load_prepare_bloom_up,
+        .luminanceCompute = r3d_shader_load_prepare_luminance_compute,
+        .luminanceDownsample = r3d_shader_load_prepare_luminance_downsample,
         .smaaEdgeDetection[0] = r3d_shader_load_prepare_smaa_edge_detection_low,
         .smaaEdgeDetection[1] = r3d_shader_load_prepare_smaa_edge_detection_medium,
         .smaaEdgeDetection[2] = r3d_shader_load_prepare_smaa_edge_detection_high,
@@ -1432,6 +1461,7 @@ static const struct r3d_shader_loader {
     .post = {
         .dof = r3d_shader_load_post_dof,
         .bloom = r3d_shader_load_post_bloom,
+        .autoExposure = r3d_shader_load_post_auto_exposure,
         .screen = r3d_shader_load_post_screen,
         .output = r3d_shader_load_post_output,
         .fxaa[0] = r3d_shader_load_post_fxaa_low,

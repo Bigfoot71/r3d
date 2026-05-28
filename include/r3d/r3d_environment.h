@@ -102,14 +102,6 @@
             .edgeFade = 0.25f,                          \
             .enabled = false,                           \
         },                                              \
-        .bloom = {                                      \
-            .mode = R3D_BLOOM_DISABLED,                 \
-            .levels = 0.5f,                             \
-            .intensity = 0.05f,                         \
-            .threshold = 0.0f,                          \
-            .softThreshold = 0.5f,                      \
-            .filterRadius = 1.0f,                       \
-        },                                              \
         .fog = {                                        \
             .mode = R3D_FOG_DISABLED,                   \
             .color = {255, 255, 255, 255},              \
@@ -124,6 +116,20 @@
             .focusScale = 1.0f,                         \
             .nearScale = 1.0f,                          \
             .maxBlurSize = 20.0f,                       \
+        },                                              \
+        .bloom = {                                      \
+            .mode = R3D_BLOOM_DISABLED,                 \
+            .levels = 0.5f,                             \
+            .intensity = 0.05f,                         \
+            .threshold = 0.0f,                          \
+            .softThreshold = 0.5f,                      \
+            .filterRadius = 1.0f,                       \
+        },                                              \
+        .autoExposure = {                               \
+            .minEV = -4.0f,                             \
+            .maxEV =  4.0f,                             \
+            .exposureCompensation = 0.0f,               \
+            .adaptationSpeed = 1.0f,                    \
         },                                              \
         .tonemap = {                                    \
             .mode = R3D_TONEMAP_LINEAR,                 \
@@ -276,20 +282,6 @@ typedef struct R3D_EnvSSR {
 } R3D_EnvSSR;
 
 /**
- * @brief Bloom post-processing settings.
- *
- * Glow effect around bright areas in the scene.
- */
-typedef struct R3D_EnvBloom {
-    R3D_Bloom mode;         ///< Bloom blending mode (default: R3D_BLOOM_DISABLED)
-    float levels;           ///< Mipmap spread factor [0-1]: higher = wider glow (default: 0.5)
-    float intensity;        ///< Bloom strength multiplier (default: 0.05)
-    float threshold;        ///< Minimum brightness to trigger bloom (default: 0.0)
-    float softThreshold;    ///< Softness of brightness cutoff transition (default: 0.5)
-    float filterRadius;     ///< Blur filter radius during upscaling (default: 1.0)
-} R3D_EnvBloom;
-
-/**
  * @brief Fog atmospheric effect settings.
  */
 typedef struct R3D_EnvFog {
@@ -313,6 +305,35 @@ typedef struct R3D_EnvDoF {
     float nearScale;        ///< Near blur intensity: 0.0 = disabled, 1.0 = symmetric to far (default: 1.0)
     float maxBlurSize;      ///< Maximum blur radius, similar to aperture (default: 20.0)
 } R3D_EnvDoF;
+
+/**
+ * @brief Bloom post-processing settings.
+ *
+ * Glow effect around bright areas in the scene.
+ */
+typedef struct R3D_EnvBloom {
+    R3D_Bloom mode;         ///< Bloom blending mode (default: R3D_BLOOM_DISABLED)
+    float levels;           ///< Mipmap spread factor [0-1]: higher = wider glow (default: 0.5)
+    float intensity;        ///< Bloom strength multiplier (default: 0.05)
+    float threshold;        ///< Minimum brightness to trigger bloom (default: 0.0)
+    float softThreshold;    ///< Softness of brightness cutoff transition (default: 0.5)
+    float filterRadius;     ///< Blur filter radius during upscaling (default: 1.0)
+} R3D_EnvBloom;
+
+/**
+ * @brief Auto exposure post-processing settings.
+ *
+ * Simulates eye adaptation by automatically adjusting scene exposure
+ * based on average luminance. Uses asymmetric temporal smoothing:
+ * adaptation to brightness is faster than adaptation to darkness.
+ */
+typedef struct R3D_EnvAutoExposure {
+    float minEV;                ///< Minimum exposure in EV stops: clamps adaptation floor (default: -4.0)
+    float maxEV;                ///< Maximum exposure in EV stops: clamps adaptation ceiling (default: 4.0)
+    float exposureCompensation; ///< Artistic exposure bias in EV stops: +1 = one stop brighter (default: 0.0)
+    float adaptationSpeed;      ///< Adaptation time constant in seconds: lower = faster (default: 1.0)
+    bool enabled;               ///< Enable auto exposure (default: false)
+} R3D_EnvAutoExposure;
 
 /**
  * @brief Tone mapping and exposure settings.
@@ -343,17 +364,18 @@ typedef struct R3D_EnvColor {
  * Initialize with R3D_ENVIRONMENT_BASE for default values.
  */
 typedef struct R3D_Environment {
-    R3D_EnvBackground background;   ///< Background and skybox settings
-    R3D_EnvAmbient    ambient;      ///< Ambient lighting configuration
-    R3D_EnvSSAO       ssao;         ///< Screen space ambient occlusion
-    R3D_EnvSSIL       ssil;         ///< Screen space indirect lighting
-    R3D_EnvSSGI       ssgi;         ///< Screen space global illumination
-    R3D_EnvSSR        ssr;          ///< Screen space reflections
-    R3D_EnvBloom      bloom;        ///< Bloom glow effect
-    R3D_EnvFog        fog;          ///< Atmospheric fog
-    R3D_EnvDoF        dof;          ///< Depth of field focus effect
-    R3D_EnvTonemap    tonemap;      ///< HDR tone mapping
-    R3D_EnvColor      color;        ///< Color grading adjustments
+    R3D_EnvBackground   background;     ///< Background and skybox settings
+    R3D_EnvAmbient      ambient;        ///< Ambient lighting configuration
+    R3D_EnvSSAO         ssao;           ///< Screen space ambient occlusion
+    R3D_EnvSSIL         ssil;           ///< Screen space indirect lighting
+    R3D_EnvSSGI         ssgi;           ///< Screen space global illumination
+    R3D_EnvSSR          ssr;            ///< Screen space reflections
+    R3D_EnvFog          fog;            ///< Atmospheric fog
+    R3D_EnvDoF          dof;            ///< Depth of field focus effect
+    R3D_EnvBloom        bloom;          ///< Bloom glow effect
+    R3D_EnvAutoExposure autoExposure;   ///< Auto exposure effect
+    R3D_EnvTonemap      tonemap;        ///< HDR tone mapping
+    R3D_EnvColor        color;          ///< Color grading adjustments
 } R3D_Environment;
 
 // ========================================
