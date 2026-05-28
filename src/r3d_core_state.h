@@ -40,7 +40,9 @@ typedef struct {
  */
 extern struct r3d_core_state {
     RenderTexture screen;               //< Texture target (screen if null id)
-    R3D_ScreenShader* screenShaders[R3D_MAX_SCREEN_SHADERS]; //< Chain of screen shaders
+    R3D_ScreenShader* screenShaders     //< Chain of screen shaders
+        [R3D_SCREEN_SHADER_STAGE_COUNT]
+        [R3D_MAX_SCREEN_SHADERS];
     R3D_Environment environment;        //< Current environment settings
     R3D_Material material;              //< Default material to use
     r3d_core_view_t viewState;          //< Current view state

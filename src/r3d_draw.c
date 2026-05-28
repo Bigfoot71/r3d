@@ -28,6 +28,7 @@
 #include "./modules/r3d_render.h"
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
+#include "r3d/r3d_screen_shader.h"
 
 // ========================================
 // HELPER MACROS
@@ -96,7 +97,7 @@ static r3d_target_t pass_post_setup(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget);
-static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
+static r3d_target_t pass_post_screen(R3D_ScreenShaderStage stage, r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_smaa(r3d_target_t sceneTarget);
@@ -250,6 +251,7 @@ void R3D_End(void)
     /* --- Applying effects over the scene and final blit --- */
 
     sceneTarget = pass_post_setup(sceneTarget);
+    sceneTarget = pass_post_screen(R3D_SCREEN_SHADER_STAGE_SCENE, sceneTarget);
 
     if (R3D.environment.dof.mode != R3D_DOF_DISABLED) {
         sceneTarget = pass_post_dof(sceneTarget);
@@ -263,8 +265,10 @@ void R3D_End(void)
         sceneTarget = pass_post_auto_exposure(sceneTarget);
     }
 
-    sceneTarget = pass_post_screen(sceneTarget);
+    sceneTarget = pass_post_screen(R3D_SCREEN_SHADER_STAGE_POST, sceneTarget);
     sceneTarget = pass_post_output(sceneTarget);
+
+    sceneTarget = pass_post_screen(R3D_SCREEN_SHADER_STAGE_OUTPUT, sceneTarget);
 
     switch (R3D.aaMode) {
     case R3D_ANTI_ALIASING_MODE_FXAA:
@@ -276,6 +280,8 @@ void R3D_End(void)
     default:
         break;
     }
+
+    sceneTarget = pass_post_screen(R3D_SCREEN_SHADER_STAGE_FINAL, sceneTarget);
 
     switch (R3D.outputMode) {
     case R3D_OUTPUT_SCENE: blit_to_screen(r3d_target_swap_scene(sceneTarget)); break;
@@ -2442,15 +2448,15 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
     return sceneTarget;
 }
 
-r3d_target_t pass_post_screen(r3d_target_t sceneTarget)
+r3d_target_t pass_post_screen(R3D_ScreenShaderStage stage, r3d_target_t sceneTarget)
 {
-    for (int i = 0; i < ARRAY_SIZE(R3D.screenShaders); i++)
+    for (int i = 0; i < ARRAY_SIZE(R3D.screenShaders[stage]); i++)
     {
-        R3D_ScreenShader* shader = R3D.screenShaders[i];
+        R3D_ScreenShader* shader = R3D.screenShaders[stage][i];
         if (shader == NULL) continue;
 
         R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
-        R3D_SHADER_USE_CUSTOM(R3D.screenShaders[i], post.screen);
+        R3D_SHADER_USE_CUSTOM(R3D.screenShaders[stage][i], post.screen);
 
         R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uSceneTex, r3d_target_get(sceneTarget));
         R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
