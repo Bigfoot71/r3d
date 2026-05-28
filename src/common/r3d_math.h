@@ -28,6 +28,9 @@
 #   endif
 #endif
 
+#define R3D_LOG2     0.6931471805599453f
+#define R3D_LOG018  -1.7147984280919266f
+
 #define R3D_SRGB_ALPHA                  (0.055f)
 #define R3D_SRGB_INV_ALPHA              (1.0f / 1.055f)
 #define R3D_SRGB_GAMMA                  (2.4f)

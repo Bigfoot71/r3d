@@ -95,6 +95,7 @@ static void pass_scene_background(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_setup(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_dof(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_bloom(r3d_target_t sceneTarget);
+static r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_screen(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_output(r3d_target_t sceneTarget);
 static r3d_target_t pass_post_fxaa(r3d_target_t sceneTarget);
@@ -256,6 +257,10 @@ void R3D_End(void)
 
     if (R3D.environment.bloom.mode != R3D_BLOOM_DISABLED) {
         sceneTarget = pass_post_bloom(sceneTarget);
+    }
+
+    if (R3D.environment.autoExposure.enabled) {
+        sceneTarget = pass_post_auto_exposure(sceneTarget);
     }
 
     sceneTarget = pass_post_screen(sceneTarget);
@@ -2368,6 +2373,75 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
     return sceneTarget;
 }
 
+r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
+{
+    r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
+    GLuint sceneSourceID = r3d_target_get(sceneSource);
+
+    /* --- Build log-luminance pyramid --- */
+
+    R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_LUMINANCE);
+
+    R3D_SHADER_USE(prepare.luminance);
+    R3D_SHADER_BIND_SAMPLER(prepare.luminance, uSourceTex, sceneSourceID);
+    R3D_RENDER_SCREEN();
+
+    r3d_target_gen_mipmap(R3D_TARGET_LUMINANCE);
+
+    /* --- Update auto-exposure history on GPU --- */
+
+    const R3D_EnvAutoExposure *autoExposure = &R3D.environment.autoExposure;
+
+    float minLogLum = R3D_LOG018 + autoExposure->minEV * R3D_LOG2;
+    float maxLogLum = R3D_LOG018 + autoExposure->maxEV * R3D_LOG2;
+
+    float timeToBright = fmaxf(autoExposure->adaptationToBright, 1e-3f);
+    float timeToDark   = fmaxf(autoExposure->adaptationToDark,   1e-3f);
+
+    float speedUp   = 1.0f / timeToBright;
+    float speedDown = 1.0f / timeToDark;
+
+    float exposureCompLog = autoExposure->exposureCompensation * R3D_LOG2;
+
+    static r3d_target_t EXPOSURE_DST = R3D_TARGET_EXPOSURE_0;
+    static r3d_target_t EXPOSURE_SRC = R3D_TARGET_EXPOSURE_1;
+
+    if (!r3d_target_exists(EXPOSURE_SRC)) {
+        R3D_TARGET_CLEAR(false, EXPOSURE_SRC);
+    }
+
+    R3D_TARGET_BIND(false, EXPOSURE_DST);
+
+    R3D_SHADER_USE(prepare.exposureAdapt);
+
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uDeltaTime, GetFrameTime());
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uMinLogLum, minLogLum);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uMaxLogLum, maxLogLum);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uSpeedUp, speedUp);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uSpeedDown, speedDown);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uExposureCompLog, exposureCompLog);
+
+    int lumNumLevels = r3d_target_get_num_levels(R3D_TARGET_LUMINANCE);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uMeasuredLogLumTex, r3d_target_get_level(R3D_TARGET_LUMINANCE, lumNumLevels - 1));
+    R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uPrevAutoExposureTex, r3d_target_get(EXPOSURE_SRC));
+
+    R3D_RENDER_SCREEN();
+
+    SWAP(r3d_target_t, EXPOSURE_DST, EXPOSURE_SRC);
+
+    /* --- Apply exposure --- */
+
+    R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
+
+    R3D_SHADER_USE(post.autoExposure);
+    R3D_SHADER_BIND_SAMPLER(post.autoExposure, uSceneTex, sceneSourceID);
+    R3D_SHADER_BIND_SAMPLER(post.autoExposure, uExposureTex, r3d_target_get(EXPOSURE_SRC));
+    R3D_RENDER_SCREEN();
+
+    return sceneTarget;
+}
+
 r3d_target_t pass_post_screen(r3d_target_t sceneTarget)
 {
     for (int i = 0; i < ARRAY_SIZE(R3D.screenShaders); i++)
@@ -2478,7 +2552,7 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
 
 void blit_to_screen(r3d_target_t source)
 {
-    if (r3d_target_get_or_null(source) == 0) {
+    if (!r3d_target_exists(source)) {
         return;
     }
 
@@ -2583,7 +2657,7 @@ void blit_to_screen(r3d_target_t source)
 
 void visualize_to_screen(r3d_target_t source)
 {
-    if (r3d_target_get_or_null(source) == 0) {
+    if (!r3d_target_exists(source)) {
         return;
     }
 
@@ -2659,7 +2733,7 @@ void cleanup_after_render(void)
 
 #ifndef NDEBUG
     for (int iTarget = 0; iTarget < R3D_TARGET_COUNT; iTarget++) {
-        if (r3d_target_get_or_null(iTarget) != 0) {
+        if (r3d_target_exists(iTarget)) {
             r3d_target_set_read_levels(iTarget, 0, r3d_target_get_num_levels(iTarget) - 1);
         }
     }

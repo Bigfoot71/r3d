@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "../common/r3d_helper.h"
+#include "../common/r3d_math.h"
 
 // ========================================
 // MODULE STATE
@@ -96,6 +97,9 @@ static const target_config_t TARGET_CONFIG[] = {
     [R3D_TARGET_BLOOM]       = { FORMAT_RGB16F,  0.5f, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR,  0, {0} },
     [R3D_TARGET_SMAA_EDGES]  = { FORMAT_RG8,     1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SMAA_BLEND]  = { FORMAT_RGBA8,   1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
+    [R3D_TARGET_LUMINANCE]   = { FORMAT_R16F,    0.5f, GL_NEAREST,              GL_NEAREST, 0, {0} },
+    [R3D_TARGET_EXPOSURE_0]  = { FORMAT_RG16F,   0.0f, GL_NEAREST,              GL_NEAREST, 1, {1.0f, R3D_LOG018, 0.0f, 1.0f} },
+    [R3D_TARGET_EXPOSURE_1]  = { FORMAT_RG16F,   0.0f, GL_NEAREST,              GL_NEAREST, 1, {1.0f, R3D_LOG018, 0.0f, 1.0f} },
     [R3D_TARGET_SCENE_0]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
     [R3D_TARGET_SCENE_1]     = { FORMAT_RGB16F,  1.0f, GL_LINEAR,               GL_LINEAR,  1, {0} },
 };
@@ -271,6 +275,7 @@ int r3d_target_get_num_levels(r3d_target_t target)
 {
     const target_config_t* config = &TARGET_CONFIG[target];
     if (config->numLevels > 0) return config->numLevels;
+    if (config->resolutionFactor <= 0.0f) return 1;
 
     int w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
     int h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
@@ -280,6 +285,12 @@ int r3d_target_get_num_levels(r3d_target_t target)
 void r3d_target_get_resolution(int* w, int* h, r3d_target_t target, int level)
 {
     const target_config_t* config = &TARGET_CONFIG[target];
+
+    if (config->resolutionFactor <= 0.0f) {
+        if (w) *w = 1;
+        if (h) *h = 1;
+        return;
+    }
 
     if (w) *w = (int)((float)R3D_MOD_TARGET.resW * config->resolutionFactor);
     if (h) *h = (int)((float)R3D_MOD_TARGET.resH * config->resolutionFactor);
@@ -293,6 +304,12 @@ void r3d_target_get_resolution(int* w, int* h, r3d_target_t target, int level)
 void r3d_target_get_texel_size(float* w, float* h, r3d_target_t target, int level)
 {
     const target_config_t* config = &TARGET_CONFIG[target];
+
+    if (config->resolutionFactor <= 0.0f) {
+        if (w) *w = 1.0f;
+        if (h) *h = 1.0f;
+        return;
+    }
 
     if (w) *w = R3D_MOD_TARGET.txlW / config->resolutionFactor;
     if (h) *h = R3D_MOD_TARGET.txlH / config->resolutionFactor;
@@ -428,7 +445,7 @@ void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel
 
 void r3d_target_gen_mipmap(r3d_target_t target)
 {
-    GLuint id = r3d_target_get(target);
+    GLuint id = r3d_target_get_all_levels(target);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
@@ -436,10 +453,22 @@ void r3d_target_gen_mipmap(r3d_target_t target)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+bool r3d_target_exists(r3d_target_t target)
+{
+    return (r3d_target_get_or_null(target) != 0);
+}
+
 GLuint r3d_target_get(r3d_target_t target)
 {
     assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
     assert(R3D_MOD_TARGET.targetLoaded[target]);
+    return R3D_MOD_TARGET.targetTextures[target];
+}
+
+GLuint r3d_target_get_or_null(r3d_target_t target)
+{
+    if (target <= R3D_TARGET_INVALID || target >= R3D_TARGET_COUNT) return 0;
+    if (!R3D_MOD_TARGET.targetLoaded[target]) return 0;
     return R3D_MOD_TARGET.targetTextures[target];
 }
 
@@ -460,13 +489,6 @@ GLuint r3d_target_get_all_levels(r3d_target_t target)
     assert(target > R3D_TARGET_INVALID && target < R3D_TARGET_COUNT);
     int maxLevel = r3d_target_get_num_levels(target) - 1;
     r3d_target_set_read_levels(target, 0, maxLevel);
-    return R3D_MOD_TARGET.targetTextures[target];
-}
-
-GLuint r3d_target_get_or_null(r3d_target_t target)
-{
-    if (target <= R3D_TARGET_INVALID || target >= R3D_TARGET_COUNT) return 0;
-    if (!R3D_MOD_TARGET.targetLoaded[target]) return 0;
     return R3D_MOD_TARGET.targetTextures[target];
 }
 
