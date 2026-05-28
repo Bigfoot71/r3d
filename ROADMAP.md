@@ -2,9 +2,9 @@
 
 ## **v0.10**
 
-* [ ] **Implement Auto Exposure**
+* [x] **Implement Auto Exposure**
   Can be done by downsampling the scene texture and basing the effect on the final 1x1 mip level.
-  We could also expose the downsampled version of the scene for custom screen shaders.
+  ~~We could also expose the downsampled version of the scene for custom screen shaders.~~
 
 * [x] **Add a render priority index to `R3D_Material`**
   Add a signed integer indicating render priority in materials, in order to control whether certain objects should be rendered before or after others.
