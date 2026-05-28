@@ -126,10 +126,11 @@
             .filterRadius = 1.0f,                       \
         },                                              \
         .autoExposure = {                               \
-            .minEV = -4.0f,                             \
-            .maxEV =  4.0f,                             \
+            .minEV = -1.0f,                             \
+            .maxEV =  1.0f,                             \
             .exposureCompensation = 0.0f,               \
-            .adaptationSpeed = 1.0f,                    \
+            .adaptationToBright = 0.5f,                 \
+            .adaptationToDark = 1.0f,                   \
         },                                              \
         .tonemap = {                                    \
             .mode = R3D_TONEMAP_LINEAR,                 \
@@ -323,15 +324,22 @@ typedef struct R3D_EnvBloom {
 /**
  * @brief Auto exposure post-processing settings.
  *
- * Simulates eye adaptation by automatically adjusting scene exposure
- * based on average luminance. Uses asymmetric temporal smoothing:
- * adaptation to brightness is faster than adaptation to darkness.
+ * Automatically adjusts scene exposure from average luminance,
+ * simulating eye adaptation. Adaptation should physically be
+ * faster toward bright scenes than toward dark scenes,
+ * as dark adaptation is slower.
+ *
+ * @warning Current implementation keeps a single temporal history. Enabling
+ * auto exposure for multiple scene passes in the same frame, or across
+ * different scenes, may produce incorrect adaptation. For now, use it only on
+ * one continuous begin/end scene render path.
  */
 typedef struct R3D_EnvAutoExposure {
-    float minEV;                ///< Minimum exposure in EV stops: clamps adaptation floor (default: -4.0)
-    float maxEV;                ///< Maximum exposure in EV stops: clamps adaptation ceiling (default: 4.0)
+    float minEV;                ///< Minimum measured luminance in EV stops, relative to middle gray (default: -1.0)
+    float maxEV;                ///< Maximum measured luminance in EV stops, relative to middle gray (default:  1.0)
     float exposureCompensation; ///< Artistic exposure bias in EV stops: +1 = one stop brighter (default: 0.0)
-    float adaptationSpeed;      ///< Adaptation time constant in seconds: lower = faster (default: 1.0)
+    float adaptationToBright;   ///< Time constant in seconds when scene luminance increases; lower = faster (default: 0.5)
+    float adaptationToDark;     ///< Time constant in seconds when scene luminance decreases; lower = faster (default: 1.0)
     bool enabled;               ///< Enable auto exposure (default: false)
 } R3D_EnvAutoExposure;
 

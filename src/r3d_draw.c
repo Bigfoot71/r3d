@@ -2392,13 +2392,14 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
 
     const R3D_EnvAutoExposure *autoExposure = &R3D.environment.autoExposure;
 
-    float timeConstant = fmaxf(autoExposure->adaptationSpeed, 1e-3f);
-
     float minLogLum = R3D_LOG018 + autoExposure->minEV * R3D_LOG2;
     float maxLogLum = R3D_LOG018 + autoExposure->maxEV * R3D_LOG2;
 
-    float speedUp = 3.0f / timeConstant;
-    float speedDown = 1.0f / timeConstant;
+    float timeToBright = fmaxf(autoExposure->adaptationToBright, 1e-3f);
+    float timeToDark   = fmaxf(autoExposure->adaptationToDark,   1e-3f);
+
+    float speedUp   = 1.0f / timeToBright;
+    float speedDown = 1.0f / timeToDark;
 
     float exposureCompLog = autoExposure->exposureCompensation * R3D_LOG2;
 
