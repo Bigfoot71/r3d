@@ -543,32 +543,13 @@ bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom)
     return true;
 }
 
-bool r3d_shader_load_prepare_luminance_compute(r3d_shader_custom_t* custom)
+bool r3d_shader_load_prepare_luminance(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(r3d_shader_prepare_luminance_compute_t, prepare, luminanceCompute);
+    DECL_SHADER(r3d_shader_prepare_luminance_t, prepare, luminance);
+    LOAD_SHADER(luminance, SCREEN_VERT, LUMINANCE_FRAG);
 
-    const char* FS_DEFINES[] = {"LUMINANCE_COMPUTE"};
-    char* fsCode = inject_defines(LUMINANCE_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
-    LOAD_SHADER(luminanceCompute, SCREEN_VERT, fsCode);
-
-    USE_SHADER(luminanceCompute);
-    SET_SAMPLER(luminanceCompute, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
-
-    return true;
-}
-
-bool r3d_shader_load_prepare_luminance_downsample(r3d_shader_custom_t* custom)
-{
-    DECL_SHADER(r3d_shader_prepare_luminance_downsample_t, prepare, luminanceDownsample);
-
-    const char* FS_DEFINES[] = {"LUMINANCE_DOWNSAMPLE"};
-    char* fsCode = inject_defines(LUMINANCE_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
-    LOAD_SHADER(luminanceDownsample, SCREEN_VERT, fsCode);
-
-    USE_SHADER(luminanceDownsample);
-    SET_SAMPLER(luminanceDownsample, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
+    USE_SHADER(luminance);
+    SET_SAMPLER(luminance, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
 
     return true;
 }

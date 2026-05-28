@@ -2382,24 +2382,11 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
 
     R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_LUMINANCE);
 
-    R3D_SHADER_USE(prepare.luminanceCompute);
-    R3D_SHADER_BIND_SAMPLER(prepare.luminanceCompute, uSourceTex, sceneSourceID);
+    R3D_SHADER_USE(prepare.luminance);
+    R3D_SHADER_BIND_SAMPLER(prepare.luminance, uSourceTex, sceneSourceID);
     R3D_RENDER_SCREEN();
 
-    int numLevels = r3d_target_get_num_levels(R3D_TARGET_LUMINANCE);
-
-    R3D_SHADER_USE(prepare.luminanceDownsample);
-
-    for (int dstLevel = 1; dstLevel < numLevels; dstLevel++) {
-        R3D_SHADER_BIND_SAMPLER(
-            prepare.luminanceDownsample,
-            uSourceTex,
-            r3d_target_get_level(R3D_TARGET_LUMINANCE, dstLevel - 1)
-        );
-
-        R3D_TARGET_BIND_LEVEL(dstLevel, R3D_TARGET_LUMINANCE);
-        R3D_RENDER_SCREEN();
-    }
+    r3d_target_gen_mipmap(R3D_TARGET_LUMINANCE);
 
     /* --- Update auto-exposure history on GPU --- */
 
@@ -2433,7 +2420,9 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
     R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uSpeedDown, speedDown);
     R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uExposureCompLog, exposureCompLog);
 
-    R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uMeasuredLogLumTex, r3d_target_get_level(R3D_TARGET_LUMINANCE, numLevels - 1));
+    int lumNumLevels = r3d_target_get_num_levels(R3D_TARGET_LUMINANCE);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uMeasuredLogLumTex, r3d_target_get_level(R3D_TARGET_LUMINANCE, lumNumLevels - 1));
     R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uPrevAutoExposureTex, r3d_target_get(EXPOSURE_SRC));
 
     R3D_RENDER_SCREEN();

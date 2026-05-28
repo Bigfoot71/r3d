@@ -8,7 +8,6 @@ void main()
 {
     ivec2 pixCoord = 2 * ivec2(gl_FragCoord.xy);
 
-#ifdef LUMINANCE_COMPUTE
     vec3 c0 = texelFetch(uSourceTex, pixCoord + ivec2(0, 0), 0).rgb;
     vec3 c1 = texelFetch(uSourceTex, pixCoord + ivec2(1, 0), 0).rgb;
     vec3 c2 = texelFetch(uSourceTex, pixCoord + ivec2(0, 1), 0).rgb;
@@ -23,16 +22,4 @@ void main()
                   + log(l2 + 0.0001) + log(l3 + 0.0001)) * 0.25;
 
     FragColor = vec4(avgLog, 0.0, 0.0, 1.0);
-
-#else // LUMINANCE_DOWNSAMPLE
-    float l0 = texelFetch(uSourceTex, pixCoord + ivec2(0, 0), 0).r;
-    float l1 = texelFetch(uSourceTex, pixCoord + ivec2(1, 0), 0).r;
-    float l2 = texelFetch(uSourceTex, pixCoord + ivec2(0, 1), 0).r;
-    float l3 = texelFetch(uSourceTex, pixCoord + ivec2(1, 1), 0).r;
-
-    float avg = (l0 + l1 + l2 + l3) * 0.25;
-
-    FragColor = vec4(avg, 0.0, 0.0, 1.0);
-
-#endif
 }

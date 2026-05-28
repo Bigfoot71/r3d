@@ -737,12 +737,7 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
-} r3d_shader_prepare_luminance_compute_t;
-
-typedef struct {
-    GLuint id;
-    r3d_shader_uniform_sampler_t uSourceTex;
-} r3d_shader_prepare_luminance_downsample_t;
+} r3d_shader_prepare_luminance_t;
 
 typedef struct {
     GLuint id;
@@ -1213,8 +1208,7 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_dof_blur_t dofBlur;
         r3d_shader_prepare_bloom_down_t bloomDown;
         r3d_shader_prepare_bloom_up_t bloomUp;
-        r3d_shader_prepare_luminance_compute_t luminanceCompute;
-        r3d_shader_prepare_luminance_downsample_t luminanceDownsample;
+        r3d_shader_prepare_luminance_t luminance;
         r3d_shader_prepare_exposure_adapt_t exposureAdapt;
         r3d_shader_prepare_smaa_edge_detection_t smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_prepare_smaa_blending_weights_t smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
@@ -1291,8 +1285,7 @@ bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
-bool r3d_shader_load_prepare_luminance_compute(r3d_shader_custom_t* custom);
-bool r3d_shader_load_prepare_luminance_downsample(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_luminance(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_exposure_adapt(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_low(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_medium(r3d_shader_custom_t* custom);
@@ -1363,8 +1356,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func dofBlur;
         r3d_shader_loader_func bloomDown;
         r3d_shader_loader_func bloomUp;
-        r3d_shader_loader_func luminanceCompute;
-        r3d_shader_loader_func luminanceDownsample;
+        r3d_shader_loader_func luminance;
         r3d_shader_loader_func exposureAdapt;
         r3d_shader_loader_func smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
@@ -1438,8 +1430,7 @@ static const struct r3d_shader_loader {
         .dofBlur = r3d_shader_load_prepare_dof_blur,
         .bloomDown = r3d_shader_load_prepare_bloom_down,
         .bloomUp = r3d_shader_load_prepare_bloom_up,
-        .luminanceCompute = r3d_shader_load_prepare_luminance_compute,
-        .luminanceDownsample = r3d_shader_load_prepare_luminance_downsample,
+        .luminance = r3d_shader_load_prepare_luminance,
         .exposureAdapt = r3d_shader_load_prepare_exposure_adapt,
         .smaaEdgeDetection[0] = r3d_shader_load_prepare_smaa_edge_detection_low,
         .smaaEdgeDetection[1] = r3d_shader_load_prepare_smaa_edge_detection_medium,
