@@ -445,7 +445,7 @@ void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel
 
 void r3d_target_gen_mipmap(r3d_target_t target)
 {
-    GLuint id = r3d_target_get(target);
+    GLuint id = r3d_target_get_all_levels(target);
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, id);
