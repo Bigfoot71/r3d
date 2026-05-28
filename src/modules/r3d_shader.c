@@ -42,6 +42,7 @@
 #include <shaders/bloom_down.frag.h>
 #include <shaders/bloom_up.frag.h>
 #include <shaders/luminance.frag.h>
+#include <shaders/exposure_adapt.frag.h>
 #include <shaders/smaa_blending_weigths.vert.h>
 #include <shaders/smaa_blending_weigths.frag.h>
 #include <shaders/smaa_edge_detection.vert.h>
@@ -568,6 +569,26 @@ bool r3d_shader_load_prepare_luminance_downsample(r3d_shader_custom_t* custom)
 
     USE_SHADER(luminanceDownsample);
     SET_SAMPLER(luminanceDownsample, uSourceTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
+
+    return true;
+}
+
+bool r3d_shader_load_prepare_exposure_adapt(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_prepare_exposure_adapt_t, prepare, exposureAdapt);
+
+    LOAD_SHADER(exposureAdapt, SCREEN_VERT, EXPOSURE_ADAPT_FRAG);
+
+    GET_LOCATION(exposureAdapt, uDeltaTime);
+    GET_LOCATION(exposureAdapt, uMinLogLum);
+    GET_LOCATION(exposureAdapt, uMaxLogLum);
+    GET_LOCATION(exposureAdapt, uSpeedUp);
+    GET_LOCATION(exposureAdapt, uSpeedDown);
+    GET_LOCATION(exposureAdapt, uExposureCompLog);
+
+    USE_SHADER(exposureAdapt);
+    SET_SAMPLER(exposureAdapt, uMeasuredLogLumTex, R3D_SHADER_SAMPLER_BUFFER_LUMINANCE);
+    SET_SAMPLER(exposureAdapt, uPrevAutoExposureTex, R3D_SHADER_SAMPLER_BUFFER_EXPOSURE);
 
     return true;
 }
@@ -1389,10 +1410,9 @@ bool r3d_shader_load_post_auto_exposure(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_post_auto_exposure_t, post, autoExposure);
     LOAD_SHADER(autoExposure, SCREEN_VERT, AUTO_EXPOSURE_FRAG);
 
-    GET_LOCATION(autoExposure, uExposure);
-
     USE_SHADER(autoExposure);
     SET_SAMPLER(autoExposure, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
+    SET_SAMPLER(autoExposure, uExposureTex, R3D_SHADER_SAMPLER_BUFFER_EXPOSURE);
 
     return true;
 }

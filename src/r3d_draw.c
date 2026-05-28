@@ -2376,12 +2376,15 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
 r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
 {
+    r3d_target_t sceneSource = r3d_target_swap_scene(sceneTarget);
+    GLuint sceneSourceID = r3d_target_get(sceneSource);
+
     /* --- Build log-luminance pyramid --- */
 
     R3D_TARGET_BIND_LEVEL(0, R3D_TARGET_LUMINANCE);
 
     R3D_SHADER_USE(prepare.luminanceCompute);
-    R3D_SHADER_BIND_SAMPLER(prepare.luminanceCompute, uSourceTex, r3d_target_get(sceneTarget));
+    R3D_SHADER_BIND_SAMPLER(prepare.luminanceCompute, uSourceTex, sceneSourceID);
     R3D_RENDER_SCREEN();
 
     int numLevels = r3d_target_get_num_levels(R3D_TARGET_LUMINANCE);
@@ -2399,56 +2402,52 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
         R3D_RENDER_SCREEN();
     }
 
-    /* --- Read average log-luminance --- */
-
-    static const float MIDDLE_GRAY     = 0.18f;
-    static const float LOG_MIDDLE_GRAY = -1.7147984280919266f; // log(0.18)
-    static const float LOG_2           =  0.6931471805599453f; // log(2)
-
-    static float adaptedLogLum = LOG_MIDDLE_GRAY;
-
-    r3d_half_t halfMeasuredLogLum = 0;
-
-    glBindTexture(GL_TEXTURE_2D, r3d_target_get(R3D_TARGET_LUMINANCE));
-    glGetTexImage(GL_TEXTURE_2D, numLevels - 1, GL_RED, GL_HALF_FLOAT, &halfMeasuredLogLum);
-
-    float measuredLogLum = r3d_half_to_float(halfMeasuredLogLum);
-
-    /* --- Clamp measured luminance range in EV --- */
+    /* --- Update auto-exposure history on GPU --- */
 
     const R3D_EnvAutoExposure *autoExposure = &R3D.environment.autoExposure;
 
-    float minLogLum = LOG_MIDDLE_GRAY + autoExposure->minEV * LOG_2;
-    float maxLogLum = LOG_MIDDLE_GRAY + autoExposure->maxEV * LOG_2;
-
-    measuredLogLum = Clamp(measuredLogLum, minLogLum, maxLogLum);
-
-    /* --- Adapt exposure over time --- */
-
     float timeConstant = fmaxf(autoExposure->adaptationSpeed, 1e-3f);
 
-    float speedUp   = 3.0f / timeConstant; // adapt faster to brighter scenes
-    float speedDown = 1.0f / timeConstant; // adapt slower to darker scenes
+    float minLogLum = R3D_LOG018 + autoExposure->minEV * R3D_LOG2;
+    float maxLogLum = R3D_LOG018 + autoExposure->maxEV * R3D_LOG2;
 
-    float speed = (measuredLogLum > adaptedLogLum) ? speedUp : speedDown;
-    float blend = 1.0f - expf(-GetFrameTime() * speed);
+    float speedUp = 3.0f / timeConstant;
+    float speedDown = 1.0f / timeConstant;
 
-    adaptedLogLum = Lerp(adaptedLogLum, measuredLogLum, blend);
+    float exposureCompLog = autoExposure->exposureCompensation * R3D_LOG2;
 
-    /* --- Convert adapted luminance to exposure --- */
+    static r3d_target_t EXPOSURE_DST = R3D_TARGET_EXPOSURE_0;
+    static r3d_target_t EXPOSURE_SRC = R3D_TARGET_EXPOSURE_1;
 
-    float compensation = exp2f(autoExposure->exposureCompensation);
-    float exposure = expf(LOG_MIDDLE_GRAY - adaptedLogLum) * compensation;
+    if (!r3d_target_exists(EXPOSURE_SRC)) {
+        R3D_TARGET_CLEAR(false, EXPOSURE_SRC);
+    }
+
+    R3D_TARGET_BIND(false, EXPOSURE_DST);
+
+    R3D_SHADER_USE(prepare.exposureAdapt);
+
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uDeltaTime, GetFrameTime());
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uMinLogLum, minLogLum);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uMaxLogLum, maxLogLum);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uSpeedUp, speedUp);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uSpeedDown, speedDown);
+    R3D_SHADER_SET_FLOAT(prepare.exposureAdapt, uExposureCompLog, exposureCompLog);
+
+    R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uMeasuredLogLumTex, r3d_target_get_level(R3D_TARGET_LUMINANCE, numLevels - 1));
+    R3D_SHADER_BIND_SAMPLER(prepare.exposureAdapt, uPrevAutoExposureTex, r3d_target_get(EXPOSURE_SRC));
+
+    R3D_RENDER_SCREEN();
+
+    SWAP(r3d_target_t, EXPOSURE_DST, EXPOSURE_SRC);
 
     /* --- Apply exposure --- */
-
-    GLuint sceneSourceID = r3d_target_get(sceneTarget);
 
     R3D_TARGET_BIND_AND_SWAP_SCENE(sceneTarget);
 
     R3D_SHADER_USE(post.autoExposure);
-    R3D_SHADER_SET_FLOAT(post.autoExposure, uExposure, exposure);
     R3D_SHADER_BIND_SAMPLER(post.autoExposure, uSceneTex, sceneSourceID);
+    R3D_SHADER_BIND_SAMPLER(post.autoExposure, uExposureTex, r3d_target_get(EXPOSURE_SRC));
     R3D_RENDER_SCREEN();
 
     return sceneTarget;
@@ -2564,7 +2563,7 @@ r3d_target_t pass_post_smaa(r3d_target_t sceneTarget)
 
 void blit_to_screen(r3d_target_t source)
 {
-    if (r3d_target_get_or_null(source) == 0) {
+    if (!r3d_target_exists(source)) {
         return;
     }
 
@@ -2669,7 +2668,7 @@ void blit_to_screen(r3d_target_t source)
 
 void visualize_to_screen(r3d_target_t source)
 {
-    if (r3d_target_get_or_null(source) == 0) {
+    if (!r3d_target_exists(source)) {
         return;
     }
 
@@ -2745,7 +2744,7 @@ void cleanup_after_render(void)
 
 #ifndef NDEBUG
     for (int iTarget = 0; iTarget < R3D_TARGET_COUNT; iTarget++) {
-        if (r3d_target_get_or_null(iTarget) != 0) {
+        if (r3d_target_exists(iTarget)) {
             r3d_target_set_read_levels(iTarget, 0, r3d_target_get_num_levels(iTarget) - 1);
         }
     }

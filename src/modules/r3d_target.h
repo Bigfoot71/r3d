@@ -46,6 +46,8 @@ typedef enum {
     R3D_TARGET_SMAA_EDGES,      //< Full - Mip 1 - RG8
     R3D_TARGET_SMAA_BLEND,      //< Full - Mip 1 - RGBA8
     R3D_TARGET_LUMINANCE,       //< Half - Mip N - R16F
+    R3D_TARGET_EXPOSURE_0,      //< 1x1  - Mip 1 - RG16F
+    R3D_TARGET_EXPOSURE_1,      //< 1x1  - Mip 1 - RG16F
     R3D_TARGET_SCENE_0,         //< Full - Mip 1 - RGB16F
     R3D_TARGET_SCENE_1,         //< Full - Mip 1 - RGB16F
     R3D_TARGET_COUNT
@@ -298,11 +300,23 @@ void r3d_target_set_read_levels(r3d_target_t target, int baseLevel, int maxLevel
 void r3d_target_gen_mipmap(r3d_target_t target);
 
 /*
+ * Returns whether the requested target has a valid texture ID.
+ * Returns false if the target has not been created yet or if the enum is invalid.
+ */
+bool r3d_target_exists(r3d_target_t target);
+
+/*
  * Returns the texture ID corresponding to the requested target.
  * Asserts that the requested target has been created and if the target enum is valid.
  * If not created yet, it means we never bound this target, so it would be empty.
  */
 GLuint r3d_target_get(r3d_target_t target);
+
+/*
+ * Returns the texture ID corresponding to the requested target.
+ * Or returns 0 if the target has not been created or if the enum is invalid.
+ */
+GLuint r3d_target_get_or_null(r3d_target_t target);
 
 /*
  * Returns the texture ID corresponding to the requested target and sampling level.
@@ -323,12 +337,6 @@ GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel);
  * If not created yet, it means we never bound this target, so it would be empty.
  */
 GLuint r3d_target_get_all_levels(r3d_target_t target);
-
-/*
- * Returns the texture ID corresponding to the requested target.
- * Or returns 0 if the target has not been created or if the enum is invalid.
- */
-GLuint r3d_target_get_or_null(r3d_target_t target);
 
 /*
  * Blits the provided targets to the specified FBO.

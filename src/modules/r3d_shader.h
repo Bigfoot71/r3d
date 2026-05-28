@@ -354,9 +354,10 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_DOF           = 33,
     R3D_SHADER_SAMPLER_BUFFER_BLOOM         = 34,
     R3D_SHADER_SAMPLER_BUFFER_LUMINANCE     = 35,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 36,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 37,
-    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 38,
+    R3D_SHADER_SAMPLER_BUFFER_EXPOSURE      = 36,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 37,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 38,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 39,
 
     // Unamed for special passes
     R3D_SHADER_SAMPLER_SOURCE_1D_0          = 40,
@@ -409,6 +410,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_DOF]             = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_BLOOM]           = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_LUMINANCE]       = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_EXPOSURE]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES]      = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND]      = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SCENE]           = GL_TEXTURE_2D,
@@ -744,6 +746,18 @@ typedef struct {
 
 typedef struct {
     GLuint id;
+    r3d_shader_uniform_sampler_t uMeasuredLogLumTex;
+    r3d_shader_uniform_sampler_t uPrevAutoExposureTex;
+    r3d_shader_uniform_float_t uDeltaTime;
+    r3d_shader_uniform_float_t uMinLogLum;
+    r3d_shader_uniform_float_t uMaxLogLum;
+    r3d_shader_uniform_float_t uSpeedUp;
+    r3d_shader_uniform_float_t uSpeedDown;
+    r3d_shader_uniform_float_t uExposureCompLog;
+} r3d_shader_prepare_exposure_adapt_t;
+
+typedef struct {
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
 } r3d_shader_prepare_smaa_edge_detection_t;
 
@@ -1060,7 +1074,7 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_float_t uExposure;
+    r3d_shader_uniform_sampler_t uExposureTex;
 } r3d_shader_post_auto_exposure_t;
 
 typedef struct {
@@ -1201,6 +1215,7 @@ extern struct r3d_mod_shader {
         r3d_shader_prepare_bloom_up_t bloomUp;
         r3d_shader_prepare_luminance_compute_t luminanceCompute;
         r3d_shader_prepare_luminance_downsample_t luminanceDownsample;
+        r3d_shader_prepare_exposure_adapt_t exposureAdapt;
         r3d_shader_prepare_smaa_edge_detection_t smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_prepare_smaa_blending_weights_t smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_prepare_cubemap_from_equirectangular_t cubemapFromEquirectangular;
@@ -1278,6 +1293,7 @@ bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_bloom_up(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_luminance_compute(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_luminance_downsample(r3d_shader_custom_t* custom);
+bool r3d_shader_load_prepare_exposure_adapt(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_low(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_medium(r3d_shader_custom_t* custom);
 bool r3d_shader_load_prepare_smaa_edge_detection_high(r3d_shader_custom_t* custom);
@@ -1349,6 +1365,7 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func bloomUp;
         r3d_shader_loader_func luminanceCompute;
         r3d_shader_loader_func luminanceDownsample;
+        r3d_shader_loader_func exposureAdapt;
         r3d_shader_loader_func smaaEdgeDetection[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func smaaBlendingWeights[R3D_ANTI_ALIASING_PRESET_COUNT];
         r3d_shader_loader_func cubemapFromEquirectangular;
@@ -1423,6 +1440,7 @@ static const struct r3d_shader_loader {
         .bloomUp = r3d_shader_load_prepare_bloom_up,
         .luminanceCompute = r3d_shader_load_prepare_luminance_compute,
         .luminanceDownsample = r3d_shader_load_prepare_luminance_downsample,
+        .exposureAdapt = r3d_shader_load_prepare_exposure_adapt,
         .smaaEdgeDetection[0] = r3d_shader_load_prepare_smaa_edge_detection_low,
         .smaaEdgeDetection[1] = r3d_shader_load_prepare_smaa_edge_detection_medium,
         .smaaEdgeDetection[2] = r3d_shader_load_prepare_smaa_edge_detection_high,
