@@ -50,6 +50,7 @@
             .occlusion = 1.0f,                          \
             .roughness = 1.0f,                          \
             .metalness = 0.0f,                          \
+            .specular  = 0.5f,                          \
         },                                              \
         .uvOffset = {0.0f, 0.0f},                       \
         .uvScale = {1.0f, 1.0f},                        \
@@ -207,6 +208,7 @@ typedef struct R3D_OrmMap {
     float occlusion;    ///< Occlusion multiplier (default: 1.0f)
     float roughness;    ///< Roughness multiplier (default: 1.0f)
     float metalness;    ///< Metalness multiplier (default: 0.0f)
+    float specular;     ///< Controls how reflective non-metal materials appear (default: 0.5f)
 } R3D_OrmMap;
 
 /**
@@ -459,9 +461,10 @@ R3DAPI void R3D_UnloadNormalMap(R3D_NormalMap map);
  * @param occlusion Occlusion multiplier.
  * @param roughness Roughness multiplier.
  * @param metalness Metalness multiplier.
+ * @param specular Base reflectivity multiplier for non-metal materials.
  * @return ORM map. Returns an empty map on failure.
  */
-R3DAPI R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness, float metalness);
+R3DAPI R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness, float metalness, float specular);
 
 /**
  * @brief Load a combined ORM (Occlusion-Roughness-Metalness) map from memory.
@@ -474,10 +477,11 @@ R3DAPI R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float ro
  * @param occlusion Occlusion multiplier.
  * @param roughness Roughness multiplier.
  * @param metalness Metalness multiplier.
+ * @param specular Base reflectivity multiplier for non-metal materials.
  * @return ORM map. Returns an empty map on failure.
  */
 R3DAPI R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, int dataSize,
-                                           float occlusion, float roughness, float metalness);
+                                           float occlusion, float roughness, float metalness, float specular);
 
 /**
  * @brief Unload an ORM map texture.

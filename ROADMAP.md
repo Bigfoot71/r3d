@@ -18,12 +18,11 @@
 * [x] **Add shadow opacity parameter**
   Allows controlling the transparency of shadows relative to the light.
 
-* [ ] **Add specular parameter in the ORM map**
-  Allows controlling specularity per material (in relation to metalness) instead of only through the lights.
+* [x] **Add specular parameter in the ORM map**
+  Controls the base reflectivity of non-metal materials (F0), allowing per-material adjustment instead of relying on a fixed value.
 
 ## **Ideas (Not Planned Yet)**
 
-* [ ] Investigate the integration of a velocity buffer and frame history, mainly for TAA and motion blur. The current begin/end rendering model makes this non-trivial.
 * [ ] Improve support for shadow/transparency interaction (e.g., colored shadows).
 * [ ] Implement Cascaded Shadow Maps (or alternative) for directional lights.
 * [ ] Make wiki pages for the repo, consider it for the release.

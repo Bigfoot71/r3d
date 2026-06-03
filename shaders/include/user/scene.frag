@@ -26,6 +26,7 @@ vec3 NORMAL_MAP = vec3(0.0);
 float OCCLUSION = 0.0;
 float ROUGHNESS = 0.0;
 float METALNESS = 0.0;
+float SPECULAR  = 0.0;
 
 /* === Built-In Globals === */
 
@@ -57,14 +58,15 @@ vec3 SampleNormal(vec2 texCoord)
     return normal;
 }
 
-vec3 SampleOrm(vec2 texCoord)
+vec4 SampleOrm(vec2 texCoord)
 {
-    vec3 ORM = vec3(0.0);
+    vec4 ORM = vec4(0.0);
 #if !defined(UNLIT) && !defined(PROBE_UNLIT) && !defined(DEPTH) && !defined(DEPTH_CUBE)
-    ORM = texture(uOrmMap, texCoord).rgb;
+    ORM = texture(uOrmMap, texCoord);
     ORM.x *= uOcclusion;
     ORM.y *= uRoughness;
     ORM.z *= uMetalness;
+    ORM.w  = uSpecular;
 #endif
     return ORM;
 }
@@ -82,6 +84,7 @@ void FetchMaterial(vec2 texCoord)
     OCCLUSION  = uOcclusion * ORM.x;
     ROUGHNESS  = uRoughness * ORM.y;
     METALNESS  = uMetalness * ORM.z;
+    SPECULAR   = uSpecular;
 #endif
 }
 
@@ -113,6 +116,7 @@ void SceneFragment(vec2 texCoord, mat3 tbn, float alphaCutoff)
     OCCLUSION  = uOcclusion * ORM.x;
     ROUGHNESS  = uRoughness * ORM.y;
     METALNESS  = uMetalness * ORM.z;
+    SPECULAR   = uSpecular;
 
 #endif // !R3D_NO_AUTO_FETCH && !UNLIT && !PROBE_UNLIT && !DEPTH && !DEPTH_CUBE
 #endif // !R3D_NO_AUTO_FETCH

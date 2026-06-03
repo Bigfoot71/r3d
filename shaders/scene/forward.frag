@@ -47,6 +47,7 @@ uniform float uNormalScale;
 uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
+uniform float uSpecular;
 
 uniform vec3 uViewPosition;
 
@@ -85,7 +86,7 @@ void main()
 
     /* Compute F0 (reflectance at normal incidence) and diffuse coefficient */
 
-    vec3 F0 = PBR_ComputeF0(METALNESS, 0.5, ALBEDO);
+    vec3 F0 = PBR_ComputeF0(METALNESS, SPECULAR, ALBEDO);
     vec3 kD = dielectric * ALBEDO;
 
     /* Sample normal map and compute final normal */
@@ -173,9 +174,9 @@ void main()
 
 #if defined(PROBE)
     if (uProbeInterior) E_ComputeAmbientColor(diff, kD, OCCLUSION);
-    else E_ComputeAmbientOnly(diff, spec, kD, ORM, F0, vPosition, N, V, NdotV);
+    else E_ComputeAmbientOnly(diff, spec, kD, ORM.rgb, F0, vPosition, N, V, NdotV);
 #else
-    E_ComputeAmbientAndProbes(diff, spec, kD, ORM, F0, vPosition, N, V, NdotV);
+    E_ComputeAmbientAndProbes(diff, spec, kD, ORM.rgb, F0, vPosition, N, V, NdotV);
 #endif
 
     /* Compute the final fragment color */

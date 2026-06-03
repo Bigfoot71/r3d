@@ -1037,6 +1037,7 @@ void raster_probe_forward(const r3d_render_call_t* call, const r3d_env_probe_t* 
     R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uOcclusion, material->orm.occlusion);
     R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uRoughness, material->orm.roughness);
     R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uMetalness, material->orm.metalness);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.probeForward, shader, uSpecular, material->orm.specular);
 
     /* --- Set texcoord offset/scale --- */
 
@@ -1188,6 +1189,7 @@ void raster_geometry(const r3d_render_call_t* call, bool matchPrepass)
     R3D_SHADER_SET_FLOAT_SELECT(scene.geometry, shader, uOcclusion, material->orm.occlusion);
     R3D_SHADER_SET_FLOAT_SELECT(scene.geometry, shader, uRoughness, material->orm.roughness);
     R3D_SHADER_SET_FLOAT_SELECT(scene.geometry, shader, uMetalness, material->orm.metalness);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.geometry, shader, uSpecular, material->orm.specular);
 
     /* --- Set misc material values --- */
 
@@ -1266,6 +1268,7 @@ void raster_decal(const r3d_render_call_t* call)
     R3D_SHADER_SET_FLOAT_SELECT(scene.decal, shader, uOcclusion, decal->orm.occlusion);
     R3D_SHADER_SET_FLOAT_SELECT(scene.decal, shader, uRoughness, decal->orm.roughness);
     R3D_SHADER_SET_FLOAT_SELECT(scene.decal, shader, uMetalness, decal->orm.metalness);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.decal, shader, uSpecular, decal->orm.specular);
 
     /* --- Set misc material values --- */
 
@@ -1352,6 +1355,7 @@ void raster_forward(const r3d_render_call_t* call)
     R3D_SHADER_SET_FLOAT_SELECT(scene.forward, shader, uOcclusion, material->orm.occlusion);
     R3D_SHADER_SET_FLOAT_SELECT(scene.forward, shader, uRoughness, material->orm.roughness);
     R3D_SHADER_SET_FLOAT_SELECT(scene.forward, shader, uMetalness, material->orm.metalness);
+    R3D_SHADER_SET_FLOAT_SELECT(scene.forward, shader, uSpecular, material->orm.specular);
 
     /* --- Set texcoord offset/scale --- */
 
