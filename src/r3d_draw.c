@@ -2462,8 +2462,8 @@ r3d_target_t pass_post_screen(R3D_ScreenShaderStage stage, r3d_target_t sceneTar
         R3D_SHADER_USE_CUSTOM(R3D.screenShaders[stage][i], post.screen);
 
         R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uSceneTex, r3d_target_get(sceneTarget));
-        R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uNormalTex, r3d_target_get(R3D_TARGET_NORMAL));
-        R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uDepthTex, r3d_target_get(R3D_TARGET_DEPTH));
+        R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
+        R3D_SHADER_BIND_SAMPLER_CUSTOM(shader, post.screen, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
 
         R3D_RENDER_SCREEN();
     }
