@@ -53,13 +53,13 @@ void main()
     /* Sample albedo and ORM texture and extract values */
 
     vec3 albedo = texelFetch(uAlbedoTex, pixCoord, 0).rgb;
-    vec3 orm = texelFetch(uOrmTex, pixCoord, 0).rgb;
+    vec4 orm = texelFetch(uOrmTex, pixCoord, 0);
     float roughness = orm.g;
     float metalness = orm.b;
 
     /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
 
-    vec3 F0 = PBR_ComputeF0(metalness, 0.5, albedo);
+    vec3 F0 = PBR_ComputeF0(metalness, orm.w, albedo);
 
     /* Get position and normal in world space */
 

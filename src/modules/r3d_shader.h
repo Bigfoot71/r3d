@@ -834,6 +834,7 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
+    r3d_shader_uniform_float_t uSpecular;
 } r3d_shader_scene_geometry_t;
 
 typedef struct {
@@ -863,6 +864,7 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
+    r3d_shader_uniform_float_t uSpecular;
     r3d_shader_uniform_vec3_t uViewPosition;
 } r3d_shader_scene_forward_t;
 
@@ -945,6 +947,7 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
+    r3d_shader_uniform_float_t uSpecular;
     r3d_shader_uniform_vec3_t uViewPosition;
     r3d_shader_uniform_int_t uProbeInterior;
 } r3d_shader_scene_probe_forward_t;
@@ -988,6 +991,7 @@ typedef struct {
     r3d_shader_uniform_float_t uOcclusion;
     r3d_shader_uniform_float_t uRoughness;
     r3d_shader_uniform_float_t uMetalness;
+    r3d_shader_uniform_float_t uSpecular;
     r3d_shader_uniform_float_t uNormalThreshold;
     r3d_shader_uniform_float_t uFadeWidth;
     r3d_shader_uniform_int_t uApplyColor;

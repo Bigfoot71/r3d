@@ -55,7 +55,7 @@ layout(location = 1) out vec4 FragSpecular;
 void main()
 {
     vec3 albedo = texelFetch(uAlbedoTex, ivec2(gl_FragCoord.xy), 0).rgb;
-    vec3 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0).rgb;
+    vec4 orm = texelFetch(uOrmTex, ivec2(gl_FragCoord).xy, 0);
     float ssao = texture(uSsaoTex, vTexCoord).r;
     vec4 ssil = texture(uSsilTex, vTexCoord);
     vec4 ssgi = texture(uSsgiTex, vTexCoord);
@@ -64,7 +64,7 @@ void main()
     orm.x *= pow(ssil.a, uSsilAoPower); 
     orm.x *= pow(ssao, uSsaoPower);
 
-    vec3 F0 = PBR_ComputeF0(orm.z, 0.5, albedo);
+    vec3 F0 = PBR_ComputeF0(orm.z, orm.w, albedo);
     vec3 kD = albedo * (1.0 - orm.z);
 
     vec3 P = V_GetWorldPosition(uDepthTex, ivec2(gl_FragCoord.xy));
@@ -74,7 +74,7 @@ void main()
 
     vec3 diffuse = vec3(0.0);
     vec3 specular = vec3(0.0);
-    E_ComputeAmbientAndProbes(diffuse, specular, kD, orm, F0, P, N, V, NdotV);
+    E_ComputeAmbientAndProbes(diffuse, specular, kD, orm.rgb, F0, P, N, V, NdotV);
 
     vec3 gi = ssgi.rgb * uSsgiIntensity;
     gi += ssil.rgb * uSsilIntensity;

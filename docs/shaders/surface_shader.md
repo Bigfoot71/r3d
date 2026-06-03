@@ -192,6 +192,7 @@ Fragment-stage variables are pre-initialized with material values (unless `R3D_N
 | `OCCLUSION` | `float` | Ambient occlusion |
 | `ROUGHNESS` | `float` | Surface roughness (0 = smooth, 1 = rough) |
 | `METALNESS` | `float` | Metallic property (0 = dielectric, 1 = metal) |
+| `SPECULAR` | `float` | Base reflectivity of non-metal materials |
 | `FRAME_INDEX` | `int` | Index incremented at each frame |
 | `TIME` | `float` | Time provided by the raylib's `GetTime()` |
 
@@ -379,7 +380,7 @@ If you want to start with zero values and sample materials manually, define:
 #define R3D_NO_AUTO_FETCH
 ```
 
-This sets `ALBEDO`, `NORMAL_MAP`, and `OCCLUSION`/`ROUGHNESS`/`METALNESS` to zero.
+This sets `ALBEDO`, `NORMAL_MAP`, and `OCCLUSION`/`ROUGHNESS`/`METALNESS`/`SPECULAR` to zero.
 
 ### Manual Sampling Functions
 
@@ -387,7 +388,7 @@ This sets `ALBEDO`, `NORMAL_MAP`, and `OCCLUSION`/`ROUGHNESS`/`METALNESS` to zer
 vec4 SampleAlbedo(vec2 texCoord);
 vec3 SampleEmission(vec2 texCoord);
 vec3 SampleNormal(vec2 texCoord);
-vec3 SampleOrm(vec2 texCoord); // (Occlusion, Roughness, Metalness)
+vec4 SampleOrm(vec2 texCoord); // (Occlusion, Roughness, Metalness, Specular)
 ```
 
 ### Quick Auto-Fill
@@ -410,7 +411,7 @@ void fragment() {
     
     // Or sample individual textures
     // ALBEDO = SampleAlbedo(distorted_uv).rgb;
-    // vec3 orm = SampleOrm(distorted_uv);
+    // vec4 orm = SampleOrm(distorted_uv);
     // ROUGHNESS = orm.g;
 }
 ```

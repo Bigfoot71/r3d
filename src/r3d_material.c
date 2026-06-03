@@ -179,24 +179,26 @@ void R3D_UnloadNormalMap(R3D_NormalMap map)
     R3D_UnloadTexture(map.texture);
 }
 
-R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness, float metalness)
+R3D_OrmMap R3D_LoadOrmMap(const char* fileName, float occlusion, float roughness, float metalness, float specular)
 {
     R3D_OrmMap map = {0};
     map.texture = R3D_LoadTexture(fileName, false);
     map.occlusion = occlusion;
     map.roughness = roughness;
     map.metalness = metalness;
+    map.specular = specular;
     return map;
 }
 
 R3D_OrmMap R3D_LoadOrmMapFromMemory(const char* fileType, const void* fileData, int dataSize,
-                                    float occlusion, float roughness, float metalness)
+                                    float occlusion, float roughness, float metalness, float specular)
 {
     R3D_OrmMap map = {0};
     map.texture = R3D_LoadTextureFromMemory(fileType, fileData, dataSize, false);
     map.occlusion = occlusion;
     map.roughness = roughness;
     map.metalness = metalness;
+    map.specular = specular;
     return map;
 }
 

@@ -36,13 +36,14 @@ uniform float uNormalScale;
 uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
+uniform float uSpecular;
 
 /* === Fragments === */
 
 layout(location = 0) out vec3 FragAlbedo;
 layout(location = 1) out vec3 FragEmission;
 layout(location = 2) out vec2 FragNormal;
-layout(location = 3) out vec3 FragORM;
+layout(location = 3) out vec4 FragORM;
 layout(location = 4) out vec2 FragGeomNormal;
 layout(location = 5) out float FragDepth;
 
@@ -67,6 +68,6 @@ void main()
     FragEmission   = EMISSION;
     FragNormal     = M_EncodeOctahedral(N);
     FragGeomNormal = M_EncodeOctahedral(gN);
-    FragORM        = vec3(OCCLUSION, ROUGHNESS, METALNESS);
+    FragORM        = vec4(OCCLUSION, ROUGHNESS, METALNESS, SPECULAR);
     FragDepth      = vLinearDepth;
 }

@@ -804,6 +804,7 @@ bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
     GET_LOCATION(geometry, uOcclusion);
     GET_LOCATION(geometry, uRoughness);
     GET_LOCATION(geometry, uMetalness);
+    GET_LOCATION(geometry, uSpecular);
 
     USE_SHADER(geometry);
 
@@ -871,6 +872,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     GET_LOCATION(forward, uOcclusion);
     GET_LOCATION(forward, uRoughness);
     GET_LOCATION(forward, uMetalness);
+    GET_LOCATION(forward, uSpecular);
     GET_LOCATION(forward, uViewPosition);
 
     USE_SHADER(forward);
@@ -1130,6 +1132,7 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
     GET_LOCATION(probeForward, uOcclusion);
     GET_LOCATION(probeForward, uRoughness);
     GET_LOCATION(probeForward, uMetalness);
+    GET_LOCATION(probeForward, uSpecular);
     GET_LOCATION(probeForward, uViewPosition);
     GET_LOCATION(probeForward, uProbeInterior);
 
@@ -1248,6 +1251,7 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
     GET_LOCATION(decal, uOcclusion);
     GET_LOCATION(decal, uRoughness);
     GET_LOCATION(decal, uMetalness);
+    GET_LOCATION(decal, uSpecular);
     GET_LOCATION(decal, uNormalThreshold);
     GET_LOCATION(decal, uFadeWidth);
     GET_LOCATION(decal, uApplyColor);
