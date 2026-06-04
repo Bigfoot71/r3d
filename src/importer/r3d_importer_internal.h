@@ -177,11 +177,6 @@ static inline int r3d_importer_get_material_count(const R3D_Importer* importer)
     return importer->scene->mNumMaterials;
 }
 
-static inline int r3d_importer_get_texture_count(const R3D_Importer* importer)
-{
-    return importer->scene->mNumTextures;
-}
-
 static inline int r3d_importer_get_mesh_count(const R3D_Importer* importer)
 {
     return importer->scene->mNumMeshes;

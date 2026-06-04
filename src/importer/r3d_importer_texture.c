@@ -273,7 +273,27 @@ static bool load_image_base(Image* outImage, bool* outOwned, const R3D_Importer*
         }
     }
     else {
-        *outImage = LoadImage(path);
+        char fullPath[MAX_PATH_LENGTH];
+
+        // Standardize the separators (MTL can have Windows backslashes)
+        strncpy(fullPath, path, sizeof(fullPath) - 1);
+        fullPath[sizeof(fullPath) - 1] = '\0';
+        for (char* p = fullPath; *p; p++) {
+            if (*p == '\\') *p = '/';
+        }
+
+        // Prepend base directory if path is relative
+        if (!r3d_is_absolute_path(fullPath)) {
+            const char* baseDir = GetDirectoryPath(importer->name);
+            // Shift the relative path to the right to make room for baseDir
+            size_t baseDirLen = strlen(baseDir);
+            size_t pathLen = strlen(fullPath);
+            memmove(fullPath + baseDirLen + 1, fullPath, pathLen + 1);
+            memcpy(fullPath, baseDir, baseDirLen);
+            fullPath[baseDirLen] = '/';
+        }
+
+        *outImage = LoadImage(fullPath);
         *outOwned = (outImage->data != NULL);
     }
 
@@ -379,14 +399,25 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
         return NULL;
     }
 
-    if (r3d_importer_get_texture_count(importer) <= 0) {
-        return NULL;
-    }
+    /* --- Early exit: check if any material has textures before allocating --- */
 
     int materialCount = r3d_importer_get_material_count(importer);
-    int maxSlots = materialCount * R3D_MAP_COUNT;
+
+    bool hasAnyTexture = false;
+    for (int matIdx = 0; matIdx < materialCount && !hasAnyTexture; matIdx++) {
+        const struct aiMaterial* mat = r3d_importer_get_material(importer, matIdx);
+        for (int mapIdx = 0; mapIdx < R3D_MAP_COUNT && !hasAnyTexture; mapIdx++) {
+            texture_job_t job = {0};
+            if (texture_job_init(&job, mat, mapIdx)) {
+                hasAnyTexture = true;
+            }
+        }
+    }
+    if (!hasAnyTexture) return NULL;
 
     /* --- Phase 0: Allocate a large block of memory for work --- */
+
+    int maxSlots = materialCount * R3D_MAP_COUNT;
 
     size_t arenaSize = 
         sizeof(texture_job_t) * maxSlots +      // Jobs

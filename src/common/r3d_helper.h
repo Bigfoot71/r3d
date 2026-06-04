@@ -9,6 +9,7 @@
 #ifndef R3D_COMMON_HELPER_H
 #define R3D_COMMON_HELPER_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -111,6 +112,15 @@ static inline int r3d_string_format(char* dst, size_t dstSize, const char* fmt, 
     dst[dstSize - 1] = '\0';
 
     return written;
+}
+
+static inline bool r3d_is_absolute_path(const char* path)
+{
+#ifdef _WIN32
+    return (path[1] == ':') || (path[0] == '\\' && path[1] == '\\');
+#else
+    return path[0] == '/';
+#endif
 }
 
 static inline int32_t r3d_get_mip_levels_1d(int32_t s)
