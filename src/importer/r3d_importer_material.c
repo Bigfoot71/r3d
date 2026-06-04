@@ -40,16 +40,22 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
     }
 
     // Load opacity factor
-    if (material->albedo.color.a >= 255) {
-        float opacity;
-        if (aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity) == AI_SUCCESS) {
-            material->albedo.color.a = (unsigned char)(opacity * 255.0f);
-        }
-        else if (aiGetMaterialFloat(aiMat, AI_MATKEY_TRANSPARENCYFACTOR, &opacity) == AI_SUCCESS) {
-            material->albedo.color.a = (unsigned char)((1.0f - opacity) * 255.0f);
-        }
-        else if (aiGetMaterialFloat(aiMat, AI_MATKEY_TRANSMISSION_FACTOR, &opacity) == AI_SUCCESS) {
-            material->albedo.color.a = (unsigned char)((1.0f - opacity) * 255.0f);
+    struct aiColor4D opacity;
+    if (material->albedo.color.a == 255 &&  aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity.a) == AI_SUCCESS) {
+        material->albedo.color.a = (unsigned char)(opacity.a * 255.0f);
+    }
+    if (material->albedo.color.a == 255 && aiGetMaterialFloat(aiMat, AI_MATKEY_TRANSPARENCYFACTOR, &opacity.a) == AI_SUCCESS) {
+        material->albedo.color.a = (unsigned char)((1.0f - opacity.a) * 255.0f);
+    }
+    if (material->albedo.color.a == 255 && aiGetMaterialFloat(aiMat, AI_MATKEY_TRANSMISSION_FACTOR, &opacity.a) == AI_SUCCESS) {
+        material->albedo.color.a = (unsigned char)((1.0f - opacity.a) * 255.0f);
+    }
+    // OBJ/MTL: handle 'Tf' (transmission filter) -> AI_MATKEY_COLOR_TRANSPARENT
+    if (material->albedo.color.a == 255 && aiGetMaterialColor(aiMat, AI_MATKEY_COLOR_TRANSPARENT, &opacity) == AI_SUCCESS) {
+        float transmission = opacity.r * 0.2126f + opacity.g * 0.7152f + opacity.b * 0.0722f;
+        // Tf 1 1 1 is the default for opaque materials in OBJ/MTL, ignore it
+        if (transmission > 0.0f && transmission < 1.0f) {
+            material->albedo.color.a = (unsigned char)((1.0f - transmission) * 255.0f);
         }
     }
 
@@ -128,6 +134,15 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
             break;
         default:
             break;
+        }
+    }
+
+    // If blend mode still opaque, we choose based on alpha uniform
+    if (material->transparencyMode == R3D_TRANSPARENCY_DISABLED) {
+        // If `material->albedo.color.a == 0` it is probably a degenerate material, ignore it
+        if (material->albedo.color.a > 0 && material->albedo.color.a < 255) {
+            material->transparencyMode = R3D_TRANSPARENCY_ALPHA;
+            material->blendMode = R3D_BLEND_MIX;
         }
     }
 
