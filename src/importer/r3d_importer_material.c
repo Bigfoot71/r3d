@@ -41,7 +41,7 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
 
     // Load opacity factor
     struct aiColor4D opacity;
-    if (material->albedo.color.a == 255 &&  aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity.a) == AI_SUCCESS) {
+    if (material->albedo.color.a == 255 && aiGetMaterialFloat(aiMat, AI_MATKEY_OPACITY, &opacity.a) == AI_SUCCESS) {
         material->albedo.color.a = (unsigned char)(opacity.a * 255.0f);
     }
     if (material->albedo.color.a == 255 && aiGetMaterialFloat(aiMat, AI_MATKEY_TRANSPARENCYFACTOR, &opacity.a) == AI_SUCCESS) {
@@ -87,6 +87,21 @@ static void load_material(R3D_Material* material, const R3D_Importer* importer, 
     float roughness;
     if (aiGetMaterialFloat(aiMat, AI_MATKEY_ROUGHNESS_FACTOR, &roughness) == AI_SUCCESS) {
         material->orm.roughness = roughness;
+    }
+    else {
+        // OBJ/MTL fallback: derive roughness from Ns (specular exponent, 0-1000)
+        float shininess = 0.0f;
+        if (aiGetMaterialFloat(aiMat, AI_MATKEY_SHININESS, &shininess) == AI_SUCCESS && shininess > 0.0f) {
+            // Ns 1000 = very shiny = low roughness, Ns 0 = matte = high roughness
+            float normalized = fminf(shininess / 1000.0f, 1.0f);
+            float roughness = 1.0f - sqrtf(normalized);
+            float strength = 1.0f;
+            if (aiGetMaterialFloat(aiMat, AI_MATKEY_SHININESS_STRENGTH, &strength) == AI_SUCCESS) {
+                strength = fminf(fmaxf(strength, 0.0f), 1.0f);
+                roughness = roughness + (1.0f - roughness) * (1.0f - strength);
+            }
+            material->orm.roughness = fminf(fmaxf(roughness, 0.0f), 1.0f);
+        }
     }
 
     float metalness;
