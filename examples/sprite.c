@@ -1,3 +1,5 @@
+#include "r3d/r3d_core.h"
+#include "raylib.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -16,6 +18,7 @@ int main(void)
     // Initialize R3D
     R3D_Init(GetScreenWidth(), GetScreenHeight());
     R3D_SetTextureFilter(TEXTURE_FILTER_POINT);
+    R3D_SetTextureWrap(TEXTURE_WRAP_REPEAT);
 
     // Set background/ambient color
     R3D_ENVIRONMENT_SET(background.color, (Color){102, 191, 255, 255});
