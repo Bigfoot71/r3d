@@ -38,6 +38,7 @@ uniform float uNormalScale;
 uniform float uOcclusion;
 uniform float uRoughness;
 uniform float uMetalness;
+uniform float uSpecular;
 
 uniform vec2 uTexCoordOffset;
 uniform vec2 uTexCoordScale;
@@ -111,4 +112,8 @@ void main()
     FragNormal   = vec4(M_EncodeOctahedral(N), 0.0, 1.0);
     FragEmission = vec4(EMISSION, fadeAlpha);
     FragORM      = vec4(vec3(OCCLUSION, ROUGHNESS, METALNESS), fadeAlpha);
+
+    /* FIXME: uSpecular/SPECULAR is available but not written to FragORM.a, which is used
+     *        here as a blend factor. Alpha writes are currently masked in pass_scene_decals
+     *        to preserve the underlying surface specular (F0) until a proper solution is found. */
 }

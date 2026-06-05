@@ -1678,10 +1678,18 @@ void pass_scene_decals(void)
 
     r3d_driver_set_cull_face(GL_FRONT); // Only render back faces to avoid clipping issues
 
+    // FIXME: The decal shader uses the alpha channel of the ORM attachment as a blend factor,
+    //        but this channel now stores the material specular (F0) written during the geometry
+    //        pass. We mask alpha writes to preserve the underlying specular, at the cost of
+    //        making orm.specular ineffective for decals.
+    glColorMaski(2, GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+
     const R3D_Frustum* frustum = &R3D.viewState.frustum;
     R3D_RENDER_FOR_EACH(call, true, frustum, R3D_RENDER_LIST_DECAL_INST, R3D_RENDER_LIST_DECAL) {
         raster_decal(call);
     }
+
+    glColorMaski(2, GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 }
 
 void pass_prepare_depth_pyramid(void)
