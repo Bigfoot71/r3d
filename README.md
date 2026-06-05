@@ -7,7 +7,6 @@ R3D is an extension library for <a href="https://www.raylib.com/">raylib</a> tha
 
 ---
 
-[![GitHub Releases Downloads](https://img.shields.io/github/downloads/Bigfoot71/r3d/total)](https://github.com/Bigfoot71/r3d/releases)
 [![GitHub Stars](https://img.shields.io/github/stars/Bigfoot71/r3d?style=flat&label=stars)](https://github.com/Bigfoot71/r3d/stargazers)
 [![License](https://img.shields.io/badge/license-zlib-blue.svg)](LICENSE)
 [![CI](https://github.com/Bigfoot71/r3d/actions/workflows/build.yml/badge.svg)](https://github.com/Bigfoot71/r3d/actions/workflows/build.yml)
