@@ -1,25 +1,14 @@
 # R3D Roadmap
 
-## **v0.10**
+## **v0.11**
 
-* [x] **Implement Auto Exposure**
-  Can be done by downsampling the scene texture and basing the effect on the final 1x1 mip level.
-  ~~We could also expose the downsampled version of the scene for custom screen shaders.~~
+* [ ] **Considering a possible redesign of the lights and probes management API**
+  This part of the API will likely be revised and may introduce breaking changes in preparation for the final release.
 
-* [x] **Add a render priority index to `R3D_Material`**
-  Add a signed integer indicating render priority in materials, in order to control whether certain objects should be rendered before or after others.
-  It should integrate easily with the existing material-based sorting.
+* [ ] **Adding an optional rendering context system**
+  See this discussion for more details: https://github.com/Bigfoot71/r3d/discussions/288
 
-* [x] **Add layer mask support for shadows**
-  Allows rendering an object in the scene without rendering its shadows.
-  Or rendering only the object's shadows without rendering the object itself, using the camera layer mask.
-  _(in addition to the existing shadow casting mode, this will allow for more different configurations per light)_
-
-* [x] **Add shadow opacity parameter**
-  Allows controlling the transparency of shadows relative to the light.
-
-* [x] **Add specular parameter in the ORM map**
-  Controls the base reflectivity of non-metal materials (F0), allowing per-material adjustment instead of relying on a fixed value.
+*Note: This version will mainly focus on preparatory work for the official r3d release.*
 
 ## **Ideas (Not Planned Yet)**
 
