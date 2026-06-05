@@ -21,10 +21,10 @@ R3D is an extension library for <a href="https://www.raylib.com/">raylib</a> tha
 
 - **Hybrid Renderer**: Deferred pipeline with forward rendering for transparency.
 - **Advanced Materials**: Complete PBR material system (Burley/SchlickGGX)
-- **Custom Shaders**: Support for surface shaders (materials/decals) and screen shaders.
+- **Custom Shaders**: Support for surface shaders (materials/decals), sky and screen shaders.
 - **Dynamic Lighting**: Directional, spot, and omni lights with soft shadows
 - **Image-Based Lighting**: Supports environment IBL and reflection probes.
-- **Post-Processing**: SSAO, SSR, DoF, bloom, fog, tonemapping, and more
+- **Post-Processing**: SSAO, SSGI, SSR, DoF, bloom, fog, tonemapping, and more
 - **Kinematics Support**: Basic kinematic system with capsule and mesh-based colliders.
 - **Mesh Utilities**: Mesh generation, manipulation, and helper utilities.
 - **Model Loading**: Assimp integration with animations and mesh generation
