@@ -368,7 +368,8 @@ R3DAPI void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer);
  *
  * The inner angle defines the region of full intensity, and the outer angle
  * defines where the light fully fades out. The transition between the two
- * produces a soft edge. Both angles are in degrees and must satisfy inner <= outer.
+ * produces a soft edge. Both angles are in degrees. If inner exceeds outer,
+ * the two values are swapped automatically.
  * Only applicable to spot lights.
  *
  * @param id The ID of the light.
