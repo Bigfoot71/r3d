@@ -1694,7 +1694,7 @@ void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture)
     }
 }
 
-void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data)
+void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data, bool orphan)
 {
     assert(block < R3D_SHADER_BLOCK_COUNT);
 
@@ -1703,6 +1703,9 @@ void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data)
     int blockSize = R3D_SHADER_BLOCK_SIZES[block];
 
     glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    if (orphan) {
+        glBufferData(GL_UNIFORM_BUFFER, blockSize, NULL, GL_DYNAMIC_DRAW);
+    }
     glBufferSubData(GL_UNIFORM_BUFFER, 0, blockSize, data);
 
     if (R3D_MOD_SHADER.uniformBindings[block] != ubo) {

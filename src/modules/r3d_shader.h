@@ -1522,7 +1522,7 @@ void r3d_shader_bind_sampler(r3d_shader_sampler_t sampler, GLuint texture);
 /*
  * Upload and bind the specified uniform block with the provided data.
  */
-void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data);
+void r3d_shader_set_uniform_block(r3d_shader_block_t block, const void* data, bool orphan);
 
 /*
  * Only bind the specified uniform block without change its data.

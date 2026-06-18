@@ -741,7 +741,7 @@ void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shado
         }
     }
 
-    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT_ARRAY, &lights);
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT_ARRAY, &lights, true);
 }
 
 void upload_frame_block(void)
@@ -755,7 +755,7 @@ void upload_frame_block(void)
         .index = frameIndex++,
     };
 
-    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FRAME, &frame);
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FRAME, &frame, false);
 }
 
 void upload_view_block(void)
@@ -773,7 +773,7 @@ void upload_view_block(void)
         .far = (float)R3D.viewState.camera.farPlane,
     };
 
-    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view);
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_VIEW, &view, false);
 }
 
 void upload_env_block(void)
@@ -806,7 +806,7 @@ void upload_env_block(void)
     env.uNumPrefilterLevels = r3d_get_mip_levels_1d(R3D_CUBEMAP_PREFILTER_SIZE);
     env.uNumProbes = iProbe;
 
-    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env);
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env, false);
 }
 
 void upload_fog_block(void)
@@ -823,7 +823,7 @@ void upload_fog_block(void)
     currFog.mode = fog->mode;
 
     if (memcmp(&prevFog, &currFog, sizeof(currFog)) != 0) {
-        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FOG, &currFog);
+        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FOG, &currFog,  false);
         prevFog = currFog;
     }
     else {
@@ -2063,7 +2063,7 @@ void pass_deferred_lights(void)
             .shadowLayer = light->shadowLayer,
             .type = light->type,
         };
-        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data);
+        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data, true);
 
         // Accumulate this light!
         R3D_RENDER_SCREEN();
