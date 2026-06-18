@@ -241,6 +241,12 @@ void R3D_SetLightAngle(R3D_Light id, float inner, float outer)
         return;
     }
 
+    if (inner > outer) {
+        float tmp = inner;
+        inner = outer;
+        outer = tmp;
+    }
+
     float i = cosf(inner * DEG2RAD);
     float o = cosf(outer * DEG2RAD);
 
