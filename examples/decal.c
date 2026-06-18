@@ -44,7 +44,7 @@ int main(void)
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
     R3D_SetLightDirection(light, (Vector3){ 0.5f, -1, -0.5f });
     R3D_EnableShadow(light);
-    R3D_SetLightActive(light, true);
+    R3D_EnableLight(light);
 
     // Setup camera
     Camera3D camera = (Camera3D){

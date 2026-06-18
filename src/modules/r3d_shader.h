@@ -532,7 +532,7 @@ typedef struct {
     alignas(4) float range;
     alignas(4) float near;
     alignas(4) float far;
-    alignas(4) float attenuation;
+    alignas(4) float falloff;
     alignas(4) float innerCutOff;
     alignas(4) float outerCutOff;
     alignas(4) float shadowSoftness;

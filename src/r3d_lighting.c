@@ -1,4 +1,4 @@
-/* r3d_lighting.h -- R3D Lighting Module.
+/* r3d_lighting.c -- R3D Lighting Module.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -42,7 +42,7 @@ void R3D_DestroyLight(R3D_Light id)
     r3d_light_delete(id);
 }
 
-bool R3D_IsLightExist(R3D_Light id)
+bool R3D_IsLightValid(R3D_Light id)
 {
     return r3d_light_is_valid(id);
 }
@@ -53,7 +53,7 @@ R3D_LightType R3D_GetLightType(R3D_Light id)
     return light->type;
 }
 
-bool R3D_IsLightActive(R3D_Light id)
+bool R3D_IsLightEnabled(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, false);
     return light->enabled;
@@ -69,19 +69,22 @@ void R3D_ToggleLight(R3D_Light id)
     }
 }
 
-void R3D_SetLightActive(R3D_Light id, bool active)
+void R3D_EnableLight(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id);
+    if (light->enabled) return;
 
-    if (light->enabled == active) {
-        return;
-    }
-
-    if (active && light->shadowLayer >= 0) {
+    if (light->shadowLayer >= 0) {
         light->state.shadowShouldBeUpdated = true;
     }
+    light->enabled = true;
+}
 
-    light->enabled = active;
+void R3D_DisableLight(R3D_Light id)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    if (!light->enabled) return;
+    light->enabled = false;
 }
 
 Color R3D_GetLightColor(R3D_Light id)
@@ -153,7 +156,7 @@ void R3D_SetLightDirection(R3D_Light id, Vector3 direction)
     light->direction = Vector3Normalize(direction);
 }
 
-void R3D_LightLookAt(R3D_Light id, Vector3 position, Vector3 target)
+void R3D_SetLightTarget(R3D_Light id, Vector3 position, Vector3 target)
 {
     GET_LIGHT_OR_RETURN(light, id);
 
@@ -206,55 +209,59 @@ void R3D_SetLightRange(R3D_Light id, float range)
     light->range = range;
 }
 
-float R3D_GetLightAttenuation(R3D_Light id)
+float R3D_GetLightFalloff(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, 0);
-    return 1.0f / light->attenuation;
+    return light->falloff;
 }
 
-void R3D_SetLightAttenuation(R3D_Light id, float attenuation)
+void R3D_SetLightFalloff(R3D_Light id, float falloff)
 {
     GET_LIGHT_OR_RETURN(light, id);
     if (light->type == R3D_LIGHT_DIR) {
-        R3D_TRACELOG(LOG_WARNING, "Can't set attenuation for light [ID %i]; it's directional and doesn't have attenuation", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set falloff for light [ID %i]; it's directional and doesn't have falloff", id);
         return;
     }
-    light->attenuation = (attenuation > 1e-4f) ? 1.0f / attenuation : 10000.0f;
+    light->falloff = Clamp(falloff, 0.0f, 1.0f);
 }
 
-float R3D_GetLightInnerCutOff(R3D_Light id)
-{
-    GET_LIGHT_OR_RETURN(light, id, 0);
-    return acosf(light->innerCutOff) * RAD2DEG;
-}
-
-void R3D_SetLightInnerCutOff(R3D_Light id, float degrees)
-{
-    GET_LIGHT_OR_RETURN(light, id);
-    if (light->type == R3D_LIGHT_DIR || light->type == R3D_LIGHT_OMNI) {
-        R3D_TRACELOG(LOG_WARNING, "Can't set inner cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
-        return;
-    }
-    light->innerCutOff = cosf(degrees * DEG2RAD);
-}
-
-float R3D_GetLightOuterCutOff(R3D_Light id)
-{
-    GET_LIGHT_OR_RETURN(light, id, 0);
-    return acosf(light->outerCutOff) * RAD2DEG;
-}
-
-void R3D_SetLightOuterCutOff(R3D_Light id, float degrees)
+void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer)
 {
     GET_LIGHT_OR_RETURN(light, id);
 
+    if (inner) *inner = acosf(light->innerCutOff) * RAD2DEG;
+    if (outer) *outer = acosf(light->outerCutOff) * RAD2DEG;
+}
+
+void R3D_SetLightAngle(R3D_Light id, float inner, float outer)
+{
+    GET_LIGHT_OR_RETURN(light, id);
     if (light->type == R3D_LIGHT_DIR || light->type == R3D_LIGHT_OMNI) {
-        R3D_TRACELOG(LOG_WARNING, "Can't set outer cutoff for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
+        R3D_TRACELOG(LOG_WARNING, "Can't set angle for light [ID %i]; it's directional or omni and doesn't have angle attenuation", id);
         return;
     }
 
-    light->state.matrixShouldBeUpdated = true;
-    light->outerCutOff = cosf(degrees * DEG2RAD);
+    if (inner > outer) {
+        float tmp = inner;
+        inner = outer;
+        outer = tmp;
+    }
+
+    float i = cosf(inner * DEG2RAD);
+    float o = cosf(outer * DEG2RAD);
+
+    if (fabsf(o - light->outerCutOff) > 1e-4f) {
+        light->state.matrixShouldBeUpdated = true;
+    }
+
+    light->innerCutOff = i;
+    light->outerCutOff = o;
+}
+
+bool R3D_IsShadowEnabled(R3D_Light id)
+{
+    GET_LIGHT_OR_RETURN(light, id, false);
+    return light->shadowLayer >= 0;
 }
 
 void R3D_EnableShadow(R3D_Light id)
@@ -272,12 +279,6 @@ void R3D_DisableShadow(R3D_Light id)
     r3d_light_disable_shadows(light);
 }
 
-bool R3D_IsShadowEnabled(R3D_Light id)
-{
-    GET_LIGHT_OR_RETURN(light, id, false);
-    return light->shadowLayer >= 0;
-}
-
 R3D_ShadowUpdateMode R3D_GetShadowUpdateMode(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, 0);
@@ -290,16 +291,16 @@ void R3D_SetShadowUpdateMode(R3D_Light id, R3D_ShadowUpdateMode mode)
     light->state.shadowUpdate = mode;
 }
 
-int R3D_GetShadowUpdateFrequency(R3D_Light id)
+float R3D_GetShadowUpdateInterval(R3D_Light id)
 {
-    GET_LIGHT_OR_RETURN(light, id, 0);
-    return (int)(light->state.shadowFrequencySec * 1000);
+    GET_LIGHT_OR_RETURN(light, id, 0.0f);
+    return light->state.shadowUpdateInterval;
 }
 
-void R3D_SetShadowUpdateFrequency(R3D_Light id, int msec)
+void R3D_SetShadowUpdateInterval(R3D_Light id, float sec)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    light->state.shadowFrequencySec = (float)msec / 1000;
+    light->state.shadowUpdateInterval = sec;
 }
 
 void R3D_UpdateShadowMap(R3D_Light id)
@@ -398,7 +399,7 @@ BoundingBox R3D_GetLightBoundingBox(R3D_Light id)
     return light->aabb;
 }
 
-void R3D_DrawLightShape(R3D_Light id)
+void R3D_DrawLightDebug(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id);
 

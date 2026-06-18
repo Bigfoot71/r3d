@@ -59,7 +59,7 @@ struct Light {
     float range;
     float near;
     float far;
-    float attenuation;
+    float falloff;
     float innerCutOff;
     float outerCutOff;
     float shadowSoftness;

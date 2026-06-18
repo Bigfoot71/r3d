@@ -44,8 +44,8 @@ int main(void)
     // Setup lighting
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 10, 255});
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
-    R3D_LightLookAt(light, (Vector3){0, 10, 5}, (Vector3){0});
-    R3D_SetLightActive(light, true);
+    R3D_SetLightTarget(light, (Vector3){0, 10, 5}, (Vector3){0});
+    R3D_EnableLight(light);
     R3D_EnableShadow(light);
 
     // Main loop

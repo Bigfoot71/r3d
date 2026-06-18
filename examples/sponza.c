@@ -1,3 +1,4 @@
+#include "r3d/r3d_lighting.h"
 #include <r3d/r3d.h>
 #include <raymath.h>
 
@@ -32,10 +33,10 @@ int main(void)
     for (int i = 0; i < 2; i++) {
         lights[i] = R3D_CreateLight(R3D_LIGHT_OMNI);
         R3D_SetLightPosition(lights[i], (Vector3) {i ? -10.0f : 10.0f, 20.0f, 0.0f});
-        R3D_SetLightActive(lights[i], true);
-        R3D_SetLightEnergy(lights[i], 8.0f);
         R3D_SetShadowUpdateMode(lights[i], R3D_SHADOW_UPDATE_MANUAL);
+        R3D_SetLightEnergy(lights[i], 8.0f);
         R3D_EnableShadow(lights[i]);
+        R3D_EnableLight(lights[i]);
     }
 
     // Setup camera

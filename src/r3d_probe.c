@@ -41,31 +41,47 @@ void R3D_DestroyProbe(R3D_Probe id)
     r3d_env_probe_delete(id);
 }
 
-bool R3D_IsProbeExist(R3D_Probe id)
+bool R3D_IsProbeValid(R3D_Probe id)
 {
     return r3d_env_probe_is_valid(id);
 }
 
-R3D_ProbeFlags R3D_GetProbeType(R3D_Probe id)
+R3D_ProbeFlags R3D_GetProbeFlags(R3D_Probe id)
 {
     GET_PROBE_OR_RETURN(probe, id, 0);
     return probe->flags;
 }
 
-bool R3D_IsProbeActive(R3D_Probe id)
+bool R3D_IsProbeEnabled(R3D_Probe id)
 {
     GET_PROBE_OR_RETURN(probe, id, 0);
     return probe->enabled;
 }
 
-void R3D_SetProbeActive(R3D_Probe id, bool active)
+void R3D_ToggleProbe(R3D_Probe id)
 {
     GET_PROBE_OR_RETURN(probe, id);
+    probe->enabled = !probe->enabled;
 
-    if (probe->enabled == active) return;
-    if (active) probe->state.sceneShouldBeUpdated = true;
+    if (probe->enabled) {
+        probe->state.sceneShouldBeUpdated = true;
+    }
+}
 
-    probe->enabled = active;
+void R3D_EnableProbe(R3D_Probe id)
+{
+    GET_PROBE_OR_RETURN(probe, id);
+    if (probe->enabled) return;
+
+    probe->state.sceneShouldBeUpdated = true;
+    probe->enabled = true;
+}
+
+void R3D_DisableProbe(R3D_Probe id)
+{
+    GET_PROBE_OR_RETURN(probe, id);
+    if (!probe->enabled) return;
+    probe->enabled = false;
 }
 
 R3D_ProbeUpdateMode R3D_GetProbeUpdateMode(R3D_Probe id)
@@ -155,9 +171,5 @@ float R3D_GetProbeFalloff(R3D_Probe id)
 void R3D_SetProbeFalloff(R3D_Probe id, float falloff)
 {
     GET_PROBE_OR_RETURN(probe, id);
-
-    if (probe->falloff != falloff) {
-        probe->state.sceneShouldBeUpdated = true;
-        probe->falloff = falloff;
-    }
+    probe->falloff = falloff;
 }
