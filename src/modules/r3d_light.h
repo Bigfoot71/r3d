@@ -42,8 +42,8 @@ static const int R3D_LIGHT_SHADOW_SIZE[] = {
 
 typedef struct {
     R3D_ShadowUpdateMode shadowUpdate;
-    float shadowFrequencySec;
-    float shadowTimerSec;
+    float shadowUpdateInterval;
+    float shadowUpdateTimer;
     bool shadowShouldBeUpdated;
     bool matrixShouldBeUpdated;
 } r3d_light_state_t;
@@ -66,7 +66,7 @@ typedef struct {
     float range;                // Maximum distance (spot/omni)
     float near;                 // Near plane for shadow projection
     float far;                  // Far plane for shadow projection
-    float attenuation;          // Additional attenuation (spot/omni)
+    float falloff;              // Distance falloff factor (spot/omni)
     float innerCutOff;          // Spot light inner cutoff angle
     float outerCutOff;          // Spot light outer cutoff angle
     float shadowSoftness;       // Softness factor for penumbra

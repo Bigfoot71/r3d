@@ -99,7 +99,7 @@ R3DAPI void R3D_DestroyLight(R3D_Light id);
  * @param id The ID of the light to check.
  * @return True if the light exists, false otherwise.
  */
-R3DAPI bool R3D_IsLightExist(R3D_Light id);
+R3DAPI bool R3D_IsLightValid(R3D_Light id);
 
 /**
  * @brief Gets the type of a light.
@@ -112,34 +112,37 @@ R3DAPI bool R3D_IsLightExist(R3D_Light id);
 R3DAPI R3D_LightType R3D_GetLightType(R3D_Light id);
 
 /**
- * @brief Checks if a light is active.
+ * @brief Returns whether a light is currently enabled.
  *
- * This function checks whether the specified light is currently active (enabled or disabled).
- *
- * @param id The ID of the light to check.
- * @return True if the light is active, false otherwise.
+ * @param id The ID of the light to query.
+ * @return True if the light is enabled, false otherwise.
  */
-R3DAPI bool R3D_IsLightActive(R3D_Light id);
+R3DAPI bool R3D_IsLightEnabled(R3D_Light id);
 
 /**
- * @brief Toggles the state of a light (active or inactive).
- *
- * This function toggles the state of the specified light, turning it on if it is off,
- * or off if it is on.
+ * @brief Toggles a light between enabled and disabled states.
  *
  * @param id The ID of the light to toggle.
  */
 R3DAPI void R3D_ToggleLight(R3D_Light id);
 
 /**
- * @brief Sets the active state of a light.
+ * @brief Enables a light.
  *
- * This function allows manually turning a light on or off by specifying its active state.
+ * Has no effect if the light is already enabled.
  *
- * @param id The ID of the light to set the active state for.
- * @param active True to activate the light, false to deactivate it.
+ * @param id The ID of the light to enable.
  */
-R3DAPI void R3D_SetLightActive(R3D_Light id, bool active);
+R3DAPI void R3D_EnableLight(R3D_Light id);
+
+/**
+ * @brief Disables a light.
+ *
+ * Has no effect if the light is already disabled.
+ *
+ * @param id The ID of the light to disable.
+ */
+R3DAPI void R3D_DisableLight(R3D_Light id);
 
 /**
  * @brief Gets the color of a light.
@@ -251,7 +254,7 @@ R3DAPI void R3D_SetLightDirection(R3D_Light id, Vector3 direction);
  * @param position The position to set for the light.
  * @param target The point the light should look at.
  */
-R3DAPI void R3D_LightLookAt(R3D_Light id, Vector3 position, Vector3 target);
+R3DAPI void R3D_SetLightTarget(R3D_Light id, Vector3 position, Vector3 target);
 
 /**
  * @brief Gets the energy level of a light.
@@ -320,74 +323,59 @@ R3DAPI float R3D_GetLightRange(R3D_Light id);
 R3DAPI void R3D_SetLightRange(R3D_Light id, float range);
 
 /**
- * @brief Gets the attenuation factor of a light.
+ * @brief Gets the falloff exponent of a light.
  *
- * This function retrieves the attenuation factor of the specified light.
- * Attenuation controls how the intensity of a light decreases with distance.
- * Only applicable to spot lights or omni-lights.
+ * Controls the shape of the attenuation curve over the light's range.
+ * A value of 1.0 produces a linear falloff, 2.0 a quadratic (more physically
+ * plausible) falloff, and higher values concentrate the light closer to the source.
+ * Only applicable to spot lights and omni-lights.
  *
  * @param id The ID of the light.
- * @return The attenuation factor of the light.
+ * @return The falloff exponent of the light.
  */
-R3DAPI float R3D_GetLightAttenuation(R3D_Light id);
+R3DAPI float R3D_GetLightFalloff(R3D_Light id);
 
 /**
- * @brief Sets the attenuation factor of a light.
+ * @brief Sets the falloff exponent of a light.
  *
- * This function sets the attenuation factor of the specified light.
- * A higher attenuation value causes the light to lose intensity more quickly as the distance increases.
- * For a realistic effect, an attenuation factor of 2.0f is typically used.
- * Only applicable to spot lights or omni-lights.
+ * Controls the shape of the attenuation curve over the light's range.
+ * A value of 1.0 produces a linear falloff, 2.0 a quadratic (more physically
+ * plausible) falloff, and higher values concentrate the light closer to the source.
+ * Values of 0.0 or below are clamped to 1.0.
+ * Only applicable to spot lights and omni-lights.
  *
  * @param id The ID of the light.
- * @param attenuation The new attenuation factor to set for the light.
+ * @param falloff The falloff exponent to set. Typical range is [0.5, 4.0].
  */
-R3DAPI void R3D_SetLightAttenuation(R3D_Light id, float attenuation);
+R3DAPI void R3D_SetLightFalloff(R3D_Light id, float falloff);
 
 /**
- * @brief Gets the inner cutoff angle of a spotlight.
+ * @brief Gets the inner and outer cone angles of a spot light.
  *
- * This function retrieves the inner cutoff angle of a spotlight.
- * The inner cutoff defines the cone of light where the light is at full intensity.
+ * The inner angle defines the region of full intensity, and the outer angle
+ * defines where the light fully fades out. The transition between the two
+ * produces a soft edge. Both angles are in degrees.
+ * Only applicable to spot lights.
  *
  * @param id The ID of the light.
- * @return The inner cutoff angle in degrees of the spotlight.
+ * @param inner Pointer to receive the inner cone angle, in degrees. May be NULL.
+ * @param outer Pointer to receive the outer cone angle, in degrees. May be NULL.
  */
-R3DAPI float R3D_GetLightInnerCutOff(R3D_Light id);
+R3DAPI void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer);
 
 /**
- * @brief Sets the inner cutoff angle of a spotlight.
+ * @brief Sets the inner and outer cone angles of a spot light.
  *
- * This function sets the inner cutoff angle of a spotlight.
- * The inner cutoff angle defines the cone where the light is at full intensity.
- * Anything outside this cone starts to fade.
- *
- * @param id The ID of the light.
- * @param degrees The new inner cutoff angle in degrees.
- */
-R3DAPI void R3D_SetLightInnerCutOff(R3D_Light id, float degrees);
-
-/**
- * @brief Gets the outer cutoff angle of a spotlight.
- *
- * This function retrieves the outer cutoff angle of a spotlight.
- * The outer cutoff defines the outer boundary of the light's cone, where the light starts to fade.
+ * The inner angle defines the region of full intensity, and the outer angle
+ * defines where the light fully fades out. The transition between the two
+ * produces a soft edge. Both angles are in degrees and must satisfy inner <= outer.
+ * Only applicable to spot lights.
  *
  * @param id The ID of the light.
- * @return The outer cutoff angle in degrees of the spotlight.
+ * @param inner The inner cone half-angle, in degrees.
+ * @param outer The outer cone half-angle, in degrees.
  */
-R3DAPI float R3D_GetLightOuterCutOff(R3D_Light id);
-
-/**
- * @brief Sets the outer cutoff angle of a spotlight.
- *
- * This function sets the outer cutoff angle of a spotlight.
- * The outer cutoff defines the boundary of the light's cone where the light intensity starts to gradually decrease.
- *
- * @param id The ID of the light.
- * @param degrees The new outer cutoff angle in degrees.
- */
-R3DAPI void R3D_SetLightOuterCutOff(R3D_Light id, float degrees);
+R3DAPI void R3D_SetLightAngle(R3D_Light id, float inner, float outer);
 
 // ----------------------------------------
 // LIGHTING: Shadow Config Functions
@@ -455,28 +443,24 @@ R3DAPI R3D_ShadowUpdateMode R3D_GetShadowUpdateMode(R3D_Light id);
 R3DAPI void R3D_SetShadowUpdateMode(R3D_Light id, R3D_ShadowUpdateMode mode);
 
 /**
- * @brief Gets the frequency of shadow map updates for the interval update mode.
+ * @brief Gets the interval between shadow map updates in interval update mode.
  *
- * This function retrieves the frequency (in milliseconds) at which the shadow map should be updated when
- * the interval update mode is enabled. This function is only relevant if the shadow map update mode is set
- * to "Interval".
+ * Only relevant when the shadow update mode is set to @ref R3D_SHADOW_UPDATE_INTERVAL.
  *
  * @param id The ID of the light.
- * @return The frequency in milliseconds at which the shadow map is updated.
+ * @return The interval in seconds between shadow map updates.
  */
-R3DAPI int R3D_GetShadowUpdateFrequency(R3D_Light id);
+R3DAPI float R3D_GetShadowUpdateInterval(R3D_Light id);
 
 /**
- * @brief Sets the frequency of shadow map updates for the interval update mode.
+ * @brief Sets the interval between shadow map updates in interval update mode.
  *
- * This function sets the frequency (in milliseconds) at which the shadow map should be updated when
- * the interval update mode is enabled. This function is only relevant if the shadow map update mode is set
- * to "Interval".
+ * Only relevant when the shadow update mode is set to @ref R3D_SHADOW_UPDATE_INTERVAL.
  *
  * @param id The ID of the light.
- * @param msec The frequency in milliseconds at which to update the shadow map.
+ * @param seconds The interval in seconds between shadow map updates.
  */
-R3DAPI void R3D_SetShadowUpdateFrequency(R3D_Light id, int msec);
+R3DAPI void R3D_SetShadowUpdateInterval(R3D_Light id, float seconds);
 
 /**
  * @brief Forces an immediate update of the shadow map during the next rendering pass.
@@ -630,7 +614,7 @@ R3DAPI BoundingBox R3D_GetLightBoundingBox(R3D_Light light);
  *
  * @param id The ID of the light.
  */
-R3DAPI void R3D_DrawLightShape(R3D_Light id);
+R3DAPI void R3D_DrawLightDebug(R3D_Light id);
 
 #ifdef __cplusplus
 } // extern "C"

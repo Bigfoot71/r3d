@@ -63,9 +63,9 @@ int main(void)
     R3D_ENVIRONMENT_SET(ambient.color, (Color){10, 10, 15, 255});
 
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_SPOT);
-    R3D_LightLookAt(light, (Vector3){4, 8, 5}, (Vector3){0});
+    R3D_SetLightTarget(light, (Vector3){4, 8, 5}, (Vector3){0});
     R3D_SetShadowSoftness(light, 8.0f);
-    R3D_SetLightActive(light, true);
+    R3D_EnableLight(light);
     R3D_EnableShadow(light);
 
     Camera3D camera = {

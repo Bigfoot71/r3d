@@ -113,8 +113,8 @@ void main()
     float shadow = 1.0;
 
     if (uLight.type != LIGHT_DIR) {
-        float atten = 1.0 - clamp(Ldist / uLight.range, 0.0, 1.0);
-        shadow *= atten * uLight.attenuation;
+        float atten = pow(1.0 - clamp(Ldist / uLight.range, 0.0, 1.0), uLight.falloff);
+        shadow *= atten;
     }
 
     if (uLight.type == LIGHT_SPOT) {

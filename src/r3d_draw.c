@@ -726,7 +726,7 @@ void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shado
         data->range = light->range;
         data->near = light->near;
         data->far = light->far;
-        data->attenuation = light->attenuation;
+        data->falloff = light->falloff;
         data->innerCutOff = light->innerCutOff;
         data->outerCutOff = light->outerCutOff;
         data->shadowSoftness = light->shadowSoftness;
@@ -2053,7 +2053,7 @@ void pass_deferred_lights(void)
             .range = light->range,
             .near = light->near,
             .far = light->far,
-            .attenuation = light->attenuation,
+            .falloff = light->falloff,
             .innerCutOff = light->innerCutOff,
             .outerCutOff = light->outerCutOff,
             .shadowSoftness = light->shadowSoftness,

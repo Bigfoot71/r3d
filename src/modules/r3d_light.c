@@ -214,8 +214,8 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
         .shadowUpdate = R3D_SHADOW_UPDATE_INTERVAL,
         .shadowShouldBeUpdated = true,
         .matrixShouldBeUpdated = true,
-        .shadowFrequencySec = 0.016f,
-        .shadowTimerSec = 0.0f
+        .shadowUpdateInterval = 0.016f,
+        .shadowUpdateTimer = 0.0f
     };
 
     light->shadowLayer = -1;
@@ -230,7 +230,7 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
     light->specular = 0.5f;
     light->energy = 1.0f;
     light->range = 50.0f;
-    light->attenuation = 1.0f;
+    light->falloff = 1.0f;
     light->innerCutOff = cosf(22.5f * DEG2RAD);
     light->outerCutOff = cosf(45.0f * DEG2RAD);
 
@@ -267,9 +267,9 @@ static void update_light_shadow_state(r3d_light_t* light)
         break;
     case R3D_SHADOW_UPDATE_INTERVAL:
         if (!light->state.shadowShouldBeUpdated) {
-            light->state.shadowTimerSec += GetFrameTime();
-            if (light->state.shadowTimerSec >= light->state.shadowFrequencySec) {
-                light->state.shadowTimerSec -= light->state.shadowFrequencySec;
+            light->state.shadowUpdateTimer += GetFrameTime();
+            if (light->state.shadowUpdateTimer >= light->state.shadowUpdateInterval) {
+                light->state.shadowUpdateTimer -= light->state.shadowUpdateInterval;
                 light->state.shadowShouldBeUpdated = true;
             }
         }

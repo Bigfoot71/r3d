@@ -27,7 +27,7 @@ int main(void)
     // Create directional light
     R3D_Light light = R3D_CreateLight(R3D_LIGHT_DIR);
     R3D_SetLightDirection(light, (Vector3){0, -1, 0});
-    R3D_SetLightActive(light, true);
+    R3D_EnableLight(light);
 
     // Create sphere mesh and default material
     R3D_Mesh meshSphere = R3D_GenMeshSphere(0.2f, 64, 64);
