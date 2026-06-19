@@ -222,7 +222,7 @@ void R3D_SetLightFalloff(R3D_Light id, float falloff)
         R3D_TRACELOG(LOG_WARNING, "Can't set falloff for light [ID %i]; it's directional and doesn't have falloff", id);
         return;
     }
-    light->falloff = Clamp(falloff, 0.0f, 1.0f);
+    light->falloff = (falloff <= 0.0f) ? 1.0f : falloff;
 }
 
 void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer)
