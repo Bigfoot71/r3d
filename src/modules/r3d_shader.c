@@ -1291,6 +1291,9 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     GET_LOCATION(ambient, uSsilAoPower);
     GET_LOCATION(ambient, uSsilIntensity);
     GET_LOCATION(ambient, uSsgiIntensity);
+    GET_LOCATION(ambient, uSsaoEnabled);
+    GET_LOCATION(ambient, uSsilEnabled);
+    GET_LOCATION(ambient, uSsgiEnabled);
 
     USE_SHADER(ambient);
 

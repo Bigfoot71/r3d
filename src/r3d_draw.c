@@ -2096,16 +2096,19 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
 
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uAlbedoTex, r3d_target_get_level(R3D_TARGET_ALBEDO, 0));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 0));
-    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
-    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsaoTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssaoSource), WHITE));
-    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsilTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssilSource), BLACK));
-    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsgiTex, R3D_TEXTURE_SELECT(r3d_target_get_or_null(ssgiSource), BLACK));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 1));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsaoTex, r3d_target_get_or_null(ssaoSource));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsilTex, r3d_target_get_or_null(ssilSource));
+    R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsgiTex, r3d_target_get_or_null(ssgiSource));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uOrmTex, r3d_target_get_level(R3D_TARGET_ORM, 0));
 
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsaoPower, R3D.environment.ssao.power);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilAoPower, R3D.environment.ssil.aoPower);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilIntensity, R3D.environment.ssil.giIntensity);
     R3D_SHADER_SET_FLOAT(deferred.ambient, uSsgiIntensity, R3D.environment.ssgi.intensity);
+    R3D_SHADER_SET_INT(deferred.ambient, uSsaoEnabled, R3D.environment.ssao.enabled);
+    R3D_SHADER_SET_INT(deferred.ambient, uSsilEnabled, R3D.environment.ssil.enabled);
+    R3D_SHADER_SET_INT(deferred.ambient, uSsgiEnabled, R3D.environment.ssgi.enabled);
 
     R3D_RENDER_SCREEN();
 }
