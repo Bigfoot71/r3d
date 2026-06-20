@@ -65,6 +65,9 @@
 #include <shaders/lighting.frag.h>
 #include <shaders/compose.frag.h>
 #include <shaders/fog.frag.h>
+#include <shaders/vfog_transmittance.frag.h>
+#include <shaders/vfog_radiance.frag.h>
+#include <shaders/vfog_compose.frag.h>
 #include <shaders/dof.frag.h>
 #include <shaders/bloom.frag.h>
 #include <shaders/auto_exposure.frag.h>
@@ -1365,6 +1368,64 @@ bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_deferred_vfog_transmittance(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_deferred_vfog_transmittance_t, deferred, vfogTransmittance);
+    LOAD_SHADER(vfogTransmittance, SCREEN_VERT, VFOG_TRANSMITTANCE_FRAG);
+
+    SET_UNIFORM_BUFFER(vfogTransmittance, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
+
+    GET_LOCATION(vfogTransmittance, uStepSize);
+    GET_LOCATION(vfogTransmittance, uLength);
+    GET_LOCATION(vfogTransmittance, uScatteringDensity);
+    GET_LOCATION(vfogTransmittance, uAbsortionDensity);
+    GET_LOCATION(vfogTransmittance, uEmissionColor);
+    GET_LOCATION(vfogTransmittance, uEmissionEnergy);
+    GET_LOCATION(vfogTransmittance, uSkyAffect);
+
+    USE_SHADER(vfogTransmittance);
+    SET_SAMPLER(vfogTransmittance, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_deferred_vfog_radiance(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_deferred_vfog_radiance_t, deferred, vfogRadiance);
+    LOAD_SHADER(vfogRadiance, SCREEN_VERT, VFOG_RADIANCE_FRAG);
+
+    SET_UNIFORM_BUFFER(vfogRadiance, LightBlock, R3D_SHADER_BLOCK_SLOT_LIGHT);
+    SET_UNIFORM_BUFFER(vfogRadiance, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
+
+    GET_LOCATION(vfogRadiance, uStepSize);
+    GET_LOCATION(vfogRadiance, uLength);
+    GET_LOCATION(vfogRadiance, uScatteringDensity);
+    GET_LOCATION(vfogRadiance, uAbsortionDensity);
+    GET_LOCATION(vfogRadiance, uScatteringColor);
+    GET_LOCATION(vfogRadiance, uAnisotropy);
+    GET_LOCATION(vfogRadiance, uSkyAffect);
+
+    USE_SHADER(vfogRadiance);
+    SET_SAMPLER(vfogRadiance, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+    SET_SAMPLER(vfogRadiance, uShadowDirTex, R3D_SHADER_SAMPLER_SHADOW_DIR);
+    SET_SAMPLER(vfogRadiance, uShadowSpotTex, R3D_SHADER_SAMPLER_SHADOW_SPOT);
+    SET_SAMPLER(vfogRadiance, uShadowOmniTex, R3D_SHADER_SAMPLER_SHADOW_OMNI);
+
+    return true;
+}
+
+bool r3d_shader_load_deferred_vfog_compose(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_deferred_vfog_compose_t, deferred, vfogCompose);
+    LOAD_SHADER(vfogCompose, SCREEN_VERT, VFOG_COMPOSE_FRAG);
+
+    USE_SHADER(vfogCompose);
+    SET_SAMPLER(vfogCompose, uRadianceTex, R3D_SHADER_SAMPLER_BUFFER_VFOG_RAD);
+    SET_SAMPLER(vfogCompose, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_post_dof_t, post, dof);
@@ -1671,6 +1732,9 @@ void r3d_shader_quit()
     UNLOAD_SHADER(deferred.lighting);
     UNLOAD_SHADER(deferred.compose);
     UNLOAD_SHADER(deferred.fog);
+    UNLOAD_SHADER(deferred.vfogTransmittance);
+    UNLOAD_SHADER(deferred.vfogRadiance);
+    UNLOAD_SHADER(deferred.vfogCompose);
 
     UNLOAD_SHADER(post.dof);
     UNLOAD_SHADER(post.bloom);

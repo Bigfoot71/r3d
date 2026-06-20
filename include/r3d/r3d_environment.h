@@ -104,11 +104,23 @@
         },                                              \
         .fog = {                                        \
             .mode = R3D_FOG_DISABLED,                   \
-            .color = {255, 255, 255, 255},              \
+            .color = WHITE,                             \
             .start = 1.0f,                              \
             .end = 50.0f,                               \
             .density = 0.05f,                           \
             .skyAffect = 0.5f,                          \
+        },                                              \
+        .volumetricFog = {                              \
+            .scatteringDensity = 0.01f,                 \
+            .absortionDensity = 0.03f,                  \
+            .scatteringColor = WHITE,                   \
+            .anisotropy = 0.5f,                         \
+            .emissionColor = WHITE,                     \
+            .emissionEnergy = 0.0f,                     \
+            .skyAffect = 0.5f,                          \
+            .length = 50.0f,                            \
+            .stepSize = 1.0f,                           \
+            .enabled = false,                           \
         },                                              \
         .dof = {                                        \
             .mode = R3D_DOF_DISABLED,                   \
@@ -283,7 +295,7 @@ typedef struct R3D_EnvSSR {
 } R3D_EnvSSR;
 
 /**
- * @brief Fog atmospheric effect settings.
+ * @brief Atmospheric fog effect settings.
  */
 typedef struct R3D_EnvFog {
     R3D_Fog mode;           ///< Fog distribution mode (default: R3D_FOG_DISABLED)
@@ -293,6 +305,22 @@ typedef struct R3D_EnvFog {
     float density;          ///< Exponential modes: fog thickness factor (default: 0.05)
     float skyAffect;        ///< Fog influence on skybox [0-1] (default: 0.5)
 } R3D_EnvFog;
+
+/**
+ * @brief Volumetric fog effect settings.
+ */
+typedef struct R3D_VolumetricFog {
+    float scatteringDensity;    ///< Light scattering thickness; higher = more visible light rays (default: 0.01)
+    float absortionDensity;     ///< Light absorption thickness; higher = darker scene (default: 0.03)
+    Color scatteringColor;      ///< Tint color of scattered light rays (default: WHITE)
+    float anisotropy;           ///< Scattering direction: 0 = uniform, >0 = forward (haze), <0 = backward (default: 0.5)
+    Color emissionColor;        ///< Color emitted by the fog regardless of lighting (default: WHITE)
+    float emissionEnergy;       ///< Emission brightness; 0 disables emission (default: 0.0)
+    float skyAffect;            ///< Fog influence on the skybox [0-1] (default: 0.5)
+    float length;               ///< Maximum fog render distance in world units (default: 50.0)
+    float stepSize;             ///< Ray-march step size; smaller = higher quality, lower performance (default: 1.0)
+    bool enabled;               ///< Enables or disables the volumetric fog (default: false)
+} R3D_VolumetricFog;
 
 /**
  * @brief Depth of Field (DoF) camera focus settings.
@@ -379,6 +407,7 @@ typedef struct R3D_Environment {
     R3D_EnvSSGI         ssgi;           ///< Screen space global illumination
     R3D_EnvSSR          ssr;            ///< Screen space reflections
     R3D_EnvFog          fog;            ///< Atmospheric fog
+    R3D_VolumetricFog   volumetricFog;  ///< Volumetric fog
     R3D_EnvDoF          dof;            ///< Depth of field focus effect
     R3D_EnvBloom        bloom;          ///< Bloom glow effect
     R3D_EnvAutoExposure autoExposure;   ///< Auto exposure effect
