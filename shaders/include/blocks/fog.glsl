@@ -55,23 +55,17 @@ float FogFactor(float dist)
     return 0.0; // FOG_DISABLED
 }
 
-vec4 FogColorAlpha(float dist)
+vec4 FogColorAlpha(float depth, float far)
 {
-    return vec4(uFog.color, FogFactor(dist));
+    return vec4(uFog.color, (depth >= far) ? uFog.skyAffect : FogFactor(depth));
 }
 
-vec3 FogColorMix(vec3 color, float dist)
+vec3 FogColorMix(vec3 color, float depth)
 {
-    return mix(color, uFog.color, FogFactor(dist));
+    return mix(color, uFog.color, FogFactor(depth));
 }
 
-vec4 FogColorMix(vec4 color, float dist)
+vec4 FogColorMix(vec4 color, float depth)
 {
-    return vec4(mix(color.rgb, uFog.color, FogFactor(dist)), color.a);
-}
-
-vec3 FogSkyMix(vec3 sky)
-{
-    if (uFog.mode == FOG_DISABLED) return sky;
-    return mix(sky, uFog.color, uFog.skyAffect);
+    return vec4(mix(color.rgb, uFog.color, FogFactor(depth)), color.a);
 }

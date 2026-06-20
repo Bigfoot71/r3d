@@ -10,7 +10,6 @@
 
 /* === Includes === */
 
-#include "../include/blocks/fog.glsl"
 #include "../include/math.glsl"
 
 /* === Varyings === */
@@ -35,5 +34,4 @@ void main()
     vec3 direction = normalize(vViewRay);
     direction = M_Rotate3D(direction, uRotation);
     FragColor = textureLod(uSkyMap, direction, uLod).rgb * uEnergy;
-    FragColor = FogSkyMix(FragColor);
 }

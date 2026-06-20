@@ -8,6 +8,7 @@
 
 #version 330 core
 
+#include "../include/blocks/view.glsl"
 #include "../include/blocks/fog.glsl"
 
 noperspective in vec2 vTexCoord;
@@ -17,5 +18,5 @@ out vec4 FragColor;
 void main()
 {
     float depth = texelFetch(uDepthTex, ivec2(gl_FragCoord.xy), 0).r;
-    FragColor = FogColorAlpha(depth);
+    FragColor = FogColorAlpha(depth, uView.far);
 }

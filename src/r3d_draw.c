@@ -229,10 +229,6 @@ void R3D_End(void)
 
         if (ssr) ssrSource = pass_prepare_ssr();
         pass_deferred_compose(sceneTarget, ssrSource);
-
-        if (R3D.environment.fog.mode != R3D_FOG_DISABLED) {
-            pass_deferred_fog(sceneTarget);
-        }
     }
     else {
         int numLevels = r3d_target_get_num_levels(R3D_TARGET_DEPTH);
@@ -241,9 +237,13 @@ void R3D_End(void)
         }
     }
 
-    /* --- Then background and transparent rendering --- */
+    /* --- Then background/fog and transparent rendering --- */
 
     pass_scene_background(sceneTarget);
+
+    if (R3D.environment.fog.mode != R3D_FOG_DISABLED) {
+        pass_deferred_fog(sceneTarget);
+    }
 
     if (R3D.environment.volumetricFog.enabled) {
         pass_deferred_volumetric_fog(sceneTarget);
@@ -2146,11 +2146,8 @@ void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
 void pass_deferred_fog(r3d_target_t sceneTarget)
 {
     r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
     r3d_driver_disable(GL_CULL_FACE);
-
-    r3d_driver_enable(GL_DEPTH_TEST);
-    r3d_driver_set_depth_func(GL_GREATER);
-    r3d_driver_set_depth_mask(GL_FALSE);
 
     r3d_driver_enable(GL_BLEND);
     r3d_driver_set_blend_func(GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -2307,7 +2304,6 @@ void pass_scene_background(r3d_target_t sceneTarget)
     r3d_driver_set_depth_mask(GL_FALSE);
 
     const R3D_EnvBackground* bg = &R3D.environment.background;
-    const R3D_EnvFog* fog = &R3D.environment.fog;
 
     if (bg->sky.texture != 0) {
         R3D_SHADER_USE(scene.skybox);
@@ -2320,11 +2316,9 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_SET_MAT4(scene.skybox, uMatInvProj, R3D.viewState.invProj);
     }
     else {
-        Vector3 bgColor = r3d_color_to_linear_scaled_vec3(bg->color, R3D.colorSpace, bg->energy);
-        if (fog->mode != R3D_FOG_DISABLED) {
-            Vector3 fogColor = r3d_color_to_linear_vec3(fog->color, R3D.colorSpace);
-            bgColor = Vector3Lerp(bgColor, fogColor, fog->skyAffect);
-        }
+        Vector3 bgColor = r3d_color_to_linear_scaled_vec3(
+            bg->color, R3D.colorSpace, bg->energy
+        );
         R3D_SHADER_USE(scene.background);
         R3D_SHADER_SET_VEC4(scene.background, uColor, (Vector4) {bgColor.x, bgColor.y, bgColor.z, 1.0f});
     }

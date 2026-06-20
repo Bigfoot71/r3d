@@ -964,8 +964,6 @@ bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_scene_skybox_t, scene, skybox);
     LOAD_SHADER(skybox, SKYBOX_VERT, SKYBOX_FRAG);
 
-    SET_UNIFORM_BUFFER(skybox, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
-
     GET_LOCATION(skybox, uMatInvView);
     GET_LOCATION(skybox, uMatInvProj);
     GET_LOCATION(skybox, uRotation);
@@ -1361,6 +1359,7 @@ bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom)
     LOAD_SHADER(fog, SCREEN_VERT, FOG_FRAG);
 
     SET_UNIFORM_BUFFER(fog, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(fog, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
 
     USE_SHADER(fog);
     SET_SAMPLER(fog, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
