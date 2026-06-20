@@ -105,6 +105,8 @@ typedef struct {
     pipeline_entry_t blendEquation;
     pipeline_entry_t blendSrcFactor;
     pipeline_entry_t blendDstFactor;
+    pipeline_entry_t blendSrcAlpha;
+    pipeline_entry_t blendDstAlpha;
     GLint viewport[4];
 } pipeline_cache_t;
 
@@ -346,6 +348,25 @@ void r3d_driver_set_stencil_mask(uint8_t mask)
     }
 }
 
+void r3d_driver_set_blend_func_separate(GLenum equation, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+{
+    if (CHECK_PIPE(blendEquation, enum, equation)) {
+        SET_PIPE(blendEquation, enum, equation);
+        glBlendEquation(equation);
+    }
+
+    bool rgbDirty   = CHECK_PIPE(blendSrcFactor, enum, srcRGB)  || CHECK_PIPE(blendDstFactor, enum, dstRGB);
+    bool alphaDirty = CHECK_PIPE(blendSrcAlpha,  enum, srcAlpha) || CHECK_PIPE(blendDstAlpha,  enum, dstAlpha);
+
+    if (rgbDirty || alphaDirty) {
+        SET_PIPE(blendSrcFactor, enum, srcRGB);
+        SET_PIPE(blendDstFactor, enum, dstRGB);
+        SET_PIPE(blendSrcAlpha,  enum, srcAlpha);
+        SET_PIPE(blendDstAlpha,  enum, dstAlpha);
+        glBlendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+    }
+}
+
 void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFactor)
 {
     if (CHECK_PIPE(blendEquation, enum, equation)) {
@@ -353,9 +374,13 @@ void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFact
         glBlendEquation(equation);
     }
 
-    if (CHECK_PIPE(blendSrcFactor, enum, srcFactor) || CHECK_PIPE(blendDstFactor, enum, dstFactor)) {
+    if (CHECK_PIPE(blendSrcFactor, enum, srcFactor) || CHECK_PIPE(blendDstFactor, enum, dstFactor)
+    ||  CHECK_PIPE(blendSrcAlpha,  enum, srcFactor) || CHECK_PIPE(blendDstAlpha,  enum, dstFactor))
+    {
         SET_PIPE(blendSrcFactor, enum, srcFactor);
         SET_PIPE(blendDstFactor, enum, dstFactor);
+        SET_PIPE(blendSrcAlpha,  enum, srcFactor);
+        SET_PIPE(blendDstAlpha,  enum, dstFactor);
         glBlendFunc(srcFactor, dstFactor);
     }
 }

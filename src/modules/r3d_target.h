@@ -32,6 +32,7 @@ typedef enum {
     R3D_TARGET_SPECULAR,        //< Full - Mip 2 - RGB16F
     R3D_TARGET_GEOM_NORMAL,     //< Full - Mip 1 - RG16
     R3D_TARGET_SELECTOR,        //< Half - Mip 2 - R8UI
+    R3D_TARGET_VFOG_RAD,        //< Half - Mip 1 - RGB16F
     R3D_TARGET_SSAO_0,          //< Half - Mip 1 - R8
     R3D_TARGET_SSAO_1,          //< Half - Mip 1 - R8
     R3D_TARGET_SSIL_0,          //< Half - Mip 1 - RGBA16F

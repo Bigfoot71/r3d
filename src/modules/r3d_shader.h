@@ -346,24 +346,25 @@ typedef enum {
     R3D_SHADER_SAMPLER_BUFFER_DIFFUSE       = 25,
     R3D_SHADER_SAMPLER_BUFFER_SPECULAR      = 26,
     R3D_SHADER_SAMPLER_BUFFER_SELECTOR      = 27,
-    R3D_SHADER_SAMPLER_BUFFER_SSAO          = 28,
-    R3D_SHADER_SAMPLER_BUFFER_SSIL          = 29,
-    R3D_SHADER_SAMPLER_BUFFER_SSGI          = 30,
-    R3D_SHADER_SAMPLER_BUFFER_SSR           = 31,
-    R3D_SHADER_SAMPLER_BUFFER_DOF_COC       = 32,
-    R3D_SHADER_SAMPLER_BUFFER_DOF           = 33,
-    R3D_SHADER_SAMPLER_BUFFER_BLOOM         = 34,
-    R3D_SHADER_SAMPLER_BUFFER_LUMINANCE     = 35,
-    R3D_SHADER_SAMPLER_BUFFER_EXPOSURE      = 36,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 37,
-    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 38,
-    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 39,
+    R3D_SHADER_SAMPLER_BUFFER_VFOG_RAD      = 28,
+    R3D_SHADER_SAMPLER_BUFFER_SSAO          = 29,
+    R3D_SHADER_SAMPLER_BUFFER_SSIL          = 30,
+    R3D_SHADER_SAMPLER_BUFFER_SSGI          = 31,
+    R3D_SHADER_SAMPLER_BUFFER_SSR           = 32,
+    R3D_SHADER_SAMPLER_BUFFER_DOF_COC       = 33,
+    R3D_SHADER_SAMPLER_BUFFER_DOF           = 34,
+    R3D_SHADER_SAMPLER_BUFFER_BLOOM         = 35,
+    R3D_SHADER_SAMPLER_BUFFER_LUMINANCE     = 36,
+    R3D_SHADER_SAMPLER_BUFFER_EXPOSURE      = 37,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_EDGES    = 38,
+    R3D_SHADER_SAMPLER_BUFFER_SMAA_BLEND    = 39,
+    R3D_SHADER_SAMPLER_BUFFER_SCENE         = 40,
 
     // Unamed for special passes
-    R3D_SHADER_SAMPLER_SOURCE_1D_0          = 40,
-    R3D_SHADER_SAMPLER_SOURCE_2D_0          = 41,
-    R3D_SHADER_SAMPLER_SOURCE_2D_1          = 42,
-    R3D_SHADER_SAMPLER_SOURCE_CUBE_0        = 43,
+    R3D_SHADER_SAMPLER_SOURCE_1D_0          = 41,
+    R3D_SHADER_SAMPLER_SOURCE_2D_0          = 42,
+    R3D_SHADER_SAMPLER_SOURCE_2D_1          = 43,
+    R3D_SHADER_SAMPLER_SOURCE_CUBE_0        = 44,
 
     // Custom samplers
     R3D_SHADER_SAMPLER_CUSTOM_1D            = 45,
@@ -402,6 +403,7 @@ static const GLenum R3D_MOD_SHADER_SAMPLER_TYPES[R3D_SHADER_SAMPLER_COUNT] =
     [R3D_SHADER_SAMPLER_BUFFER_SPECULAR]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SELECTOR]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_GEOM_NORMAL]     = GL_TEXTURE_2D,
+    [R3D_SHADER_SAMPLER_BUFFER_VFOG_RAD]        = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSAO]            = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSIL]            = GL_TEXTURE_2D,
     [R3D_SHADER_SAMPLER_BUFFER_SSGI]            = GL_TEXTURE_2D,
@@ -1061,6 +1063,39 @@ typedef struct {
 
 typedef struct {
     GLuint id;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_float_t uStepSize;
+    r3d_shader_uniform_float_t uLength;
+    r3d_shader_uniform_float_t uScatteringDensity;
+    r3d_shader_uniform_float_t uAbsortionDensity;
+    r3d_shader_uniform_col3_t uEmissionColor;
+    r3d_shader_uniform_float_t uEmissionEnergy;
+    r3d_shader_uniform_float_t uSkyAffect;
+} r3d_shader_deferred_vfog_transmittance_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uDepthTex;
+    r3d_shader_uniform_sampler_t uShadowDirTex;
+    r3d_shader_uniform_sampler_t uShadowSpotTex;
+    r3d_shader_uniform_sampler_t uShadowOmniTex;
+    r3d_shader_uniform_float_t uStepSize;
+    r3d_shader_uniform_float_t uLength;
+    r3d_shader_uniform_float_t uScatteringDensity;
+    r3d_shader_uniform_float_t uAbsortionDensity;
+    r3d_shader_uniform_col3_t uScatteringColor;
+    r3d_shader_uniform_float_t uAnisotropy;
+    r3d_shader_uniform_float_t uSkyAffect;
+} r3d_shader_deferred_vfog_radiance_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uRadianceTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+} r3d_shader_deferred_vfog_compose_t;
+
+typedef struct {
+    GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uBlurTex;
 } r3d_shader_post_dof_t;
@@ -1245,6 +1280,9 @@ extern struct r3d_mod_shader {
         r3d_shader_deferred_lighting_t lighting;
         r3d_shader_deferred_compose_t compose;
         r3d_shader_deferred_fog_t fog;
+        r3d_shader_deferred_vfog_transmittance_t vfogTransmittance;
+        r3d_shader_deferred_vfog_radiance_t vfogRadiance;
+        r3d_shader_deferred_vfog_compose_t vfogCompose;
     } deferred;
 
     // Post shaders
@@ -1321,6 +1359,9 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_lighting(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_compose(r3d_shader_custom_t* custom);
 bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_vfog_transmittance(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_vfog_radiance(r3d_shader_custom_t* custom);
+bool r3d_shader_load_deferred_vfog_compose(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_dof(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_auto_exposure(r3d_shader_custom_t* custom);
@@ -1394,6 +1435,9 @@ static const struct r3d_shader_loader {
         r3d_shader_loader_func lighting;
         r3d_shader_loader_func compose;
         r3d_shader_loader_func fog;
+        r3d_shader_loader_func vfogTransmittance;
+        r3d_shader_loader_func vfogRadiance;
+        r3d_shader_loader_func vfogCompose;
      } deferred;
 
     // Post shaders
@@ -1472,6 +1516,9 @@ static const struct r3d_shader_loader {
         .lighting = r3d_shader_load_deferred_lighting,
         .compose = r3d_shader_load_deferred_compose,
         .fog = r3d_shader_load_deferred_fog,
+        .vfogTransmittance = r3d_shader_load_deferred_vfog_transmittance,
+        .vfogRadiance = r3d_shader_load_deferred_vfog_radiance,
+        .vfogCompose = r3d_shader_load_deferred_vfog_compose,
     },
 
     .post = {

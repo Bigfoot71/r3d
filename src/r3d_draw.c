@@ -88,6 +88,7 @@ static void pass_deferred_lights(void);
 static void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d_target_t ssgiSource);
 static void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource);
 static void pass_deferred_fog(r3d_target_t sceneTarget);
+static void pass_deferred_volumetric_fog(r3d_target_t sceneTarget);
 
 static void pass_scene_forward(r3d_target_t sceneTarget);
 static void pass_scene_background(r3d_target_t sceneTarget);
@@ -214,9 +215,10 @@ void R3D_End(void)
         bool ssil = R3D.environment.ssil.enabled;
         bool ssgi = R3D.environment.ssgi.enabled;
         bool ssr = R3D.environment.ssr.enabled;
+        bool vfog = R3D.environment.volumetricFog.enabled;
         bool dof = R3D.environment.dof.mode;
 
-        if (ssao || ssil || ssgi || ssr || dof) {
+        if (ssao || ssil || ssgi || ssr || vfog || dof) {
             pass_prepare_depth_pyramid();
         }
 
@@ -227,10 +229,6 @@ void R3D_End(void)
 
         if (ssr) ssrSource = pass_prepare_ssr();
         pass_deferred_compose(sceneTarget, ssrSource);
-
-        if (R3D.environment.fog.mode != R3D_FOG_DISABLED) {
-            pass_deferred_fog(sceneTarget);
-        }
     }
     else {
         int numLevels = r3d_target_get_num_levels(R3D_TARGET_DEPTH);
@@ -239,9 +237,17 @@ void R3D_End(void)
         }
     }
 
-    /* --- Then background and transparent rendering --- */
+    /* --- Then background/fog and transparent rendering --- */
 
     pass_scene_background(sceneTarget);
+
+    if (R3D.environment.fog.mode != R3D_FOG_DISABLED) {
+        pass_deferred_fog(sceneTarget);
+    }
+
+    if (R3D.environment.volumetricFog.enabled) {
+        pass_deferred_volumetric_fog(sceneTarget);
+    }
 
     if (r3d_render_has_forward() || r3d_render_has_prepass()) {
         pass_scene_forward(sceneTarget);
@@ -2140,11 +2146,8 @@ void pass_deferred_compose(r3d_target_t sceneTarget, r3d_target_t ssrSource)
 void pass_deferred_fog(r3d_target_t sceneTarget)
 {
     r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
     r3d_driver_disable(GL_CULL_FACE);
-
-    r3d_driver_enable(GL_DEPTH_TEST);
-    r3d_driver_set_depth_func(GL_GREATER);
-    r3d_driver_set_depth_mask(GL_FALSE);
 
     r3d_driver_enable(GL_BLEND);
     r3d_driver_set_blend_func(GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -2153,6 +2156,99 @@ void pass_deferred_fog(r3d_target_t sceneTarget)
     R3D_SHADER_USE(deferred.fog);
 
     R3D_SHADER_BIND_SAMPLER(deferred.fog, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
+    R3D_RENDER_SCREEN();
+}
+
+void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
+{
+    r3d_driver_disable(GL_STENCIL_TEST);
+    r3d_driver_disable(GL_DEPTH_TEST);
+    r3d_driver_disable(GL_CULL_FACE);
+
+    /* --- Apply transmittance --- */
+
+    r3d_driver_enable(GL_BLEND);
+    r3d_driver_set_blend_func_separate(GL_FUNC_ADD, GL_ONE, GL_SRC_ALPHA, GL_ZERO, GL_ONE);
+
+    R3D_TARGET_BIND(false, sceneTarget);
+
+    R3D_SHADER_USE(deferred.vfogTransmittance);
+    R3D_SHADER_BIND_SAMPLER(deferred.vfogTransmittance, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
+    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uStepSize, R3D.environment.volumetricFog.stepSize);
+    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uLength, R3D.environment.volumetricFog.length);
+    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uScatteringDensity, R3D.environment.volumetricFog.scatteringDensity);
+    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uAbsortionDensity, R3D.environment.volumetricFog.absortionDensity);
+    R3D_SHADER_SET_COL3(deferred.vfogTransmittance, uEmissionColor, R3D.colorSpace, R3D.environment.volumetricFog.emissionColor);
+    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uEmissionEnergy, R3D.environment.volumetricFog.emissionEnergy);
+    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uSkyAffect, R3D.environment.volumetricFog.skyAffect);
+
+    R3D_RENDER_SCREEN();
+
+    /* --- Accumulate radiance in half resolution --- */
+
+    r3d_driver_enable(GL_SCISSOR_TEST);
+    r3d_driver_enable(GL_BLEND);
+    r3d_driver_set_blend_func(GL_FUNC_ADD, GL_ONE, GL_ONE);
+
+    R3D_TARGET_CLEAR(false, R3D_TARGET_VFOG_RAD);
+
+    R3D_SHADER_USE(deferred.vfogRadiance);
+    R3D_SHADER_BIND_SAMPLER(deferred.vfogRadiance, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
+    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uStepSize, R3D.environment.volumetricFog.stepSize);
+    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uLength, R3D.environment.volumetricFog.length);
+    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uScatteringDensity, R3D.environment.volumetricFog.scatteringDensity);
+    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uAbsortionDensity, R3D.environment.volumetricFog.absortionDensity);
+    R3D_SHADER_SET_COL3(deferred.vfogRadiance, uScatteringColor, R3D.colorSpace, R3D.environment.volumetricFog.scatteringColor);
+    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uAnisotropy, R3D.environment.volumetricFog.anisotropy);
+    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uSkyAffect, R3D.environment.volumetricFog.skyAffect);
+
+    R3D_LIGHT_FOR_EACH_VISIBLE(light)
+    {
+        r3d_rect_t dst = {0, 0, R3D_TARGET_SIZE_W/2, R3D_TARGET_SIZE_H/2};
+        if (light->type != R3D_LIGHT_DIR) {
+            dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, dst.w, dst.h);
+            if (memcmp(&dst, &(r3d_rect_t){0}, sizeof(r3d_rect_t)) == 0) continue;
+        }
+        glScissor(dst.x, dst.y, dst.w, dst.h);
+
+        r3d_shader_block_light_t data = {
+            .viewProj = MatrixTranspose(light->viewProj[0]),
+            .color = light->color,
+            .position = light->position,
+            .direction = light->direction,
+            .specular = light->specular,
+            .energy = light->energy,
+            .range = light->range,
+            .near = light->near,
+            .far = light->far,
+            .falloff = light->falloff,
+            .innerCutOff = light->innerCutOff,
+            .outerCutOff = light->outerCutOff,
+            .shadowSoftness = light->shadowSoftness,
+            .shadowOpacity = light->shadowOpacity,
+            .shadowDepthBias = light->shadowDepthBias,
+            .shadowSlopeBias = light->shadowSlopeBias,
+            .shadowLayer = light->shadowLayer,
+            .type = light->type,
+        };
+        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_LIGHT, &data, true);
+
+        R3D_RENDER_SCREEN();
+    }
+
+    r3d_driver_disable(GL_SCISSOR_TEST);
+
+    /* --- Compose radiance to the scene --- */
+
+    R3D_TARGET_BIND(false, sceneTarget);
+    R3D_SHADER_USE(deferred.vfogCompose);
+
+    r3d_driver_enable(GL_BLEND);
+    r3d_driver_set_blend_func(GL_FUNC_ADD, GL_ONE, GL_ONE);
+
+    R3D_SHADER_BIND_SAMPLER(deferred.vfogCompose, uRadianceTex, r3d_target_get_level(R3D_TARGET_VFOG_RAD, 0));
+    R3D_SHADER_BIND_SAMPLER(deferred.vfogCompose, uDepthTex, r3d_target_get_levels(R3D_TARGET_DEPTH, 0, 1));
+
     R3D_RENDER_SCREEN();
 }
 
@@ -2208,7 +2304,6 @@ void pass_scene_background(r3d_target_t sceneTarget)
     r3d_driver_set_depth_mask(GL_FALSE);
 
     const R3D_EnvBackground* bg = &R3D.environment.background;
-    const R3D_EnvFog* fog = &R3D.environment.fog;
 
     if (bg->sky.texture != 0) {
         R3D_SHADER_USE(scene.skybox);
@@ -2221,11 +2316,9 @@ void pass_scene_background(r3d_target_t sceneTarget)
         R3D_SHADER_SET_MAT4(scene.skybox, uMatInvProj, R3D.viewState.invProj);
     }
     else {
-        Vector3 bgColor = r3d_color_to_linear_scaled_vec3(bg->color, R3D.colorSpace, bg->energy);
-        if (fog->mode != R3D_FOG_DISABLED) {
-            Vector3 fogColor = r3d_color_to_linear_vec3(fog->color, R3D.colorSpace);
-            bgColor = Vector3Lerp(bgColor, fogColor, fog->skyAffect);
-        }
+        Vector3 bgColor = r3d_color_to_linear_scaled_vec3(
+            bg->color, R3D.colorSpace, bg->energy
+        );
         R3D_SHADER_USE(scene.background);
         R3D_SHADER_SET_VEC4(scene.background, uColor, (Vector4) {bgColor.x, bgColor.y, bgColor.z, 1.0f});
     }
