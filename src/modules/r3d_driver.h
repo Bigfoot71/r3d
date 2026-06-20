@@ -102,6 +102,11 @@ void r3d_driver_set_stencil_op(GLenum fail, GLenum zFail, GLenum zPass);
 void r3d_driver_set_stencil_mask(uint8_t mask);
 
 /*
+ * Sets separate blend factors for RGB and alpha channels.
+ */
+void r3d_driver_set_blend_func_separate(GLenum equation, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+
+/*
  * Sets the blend equation and blend factors.
  */
 void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFactor);
