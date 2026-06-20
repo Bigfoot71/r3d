@@ -381,7 +381,6 @@ void r3d_driver_set_blend_func(GLenum equation, GLenum srcFactor, GLenum dstFact
         SET_PIPE(blendDstFactor, enum, dstFactor);
         SET_PIPE(blendSrcAlpha,  enum, srcFactor);
         SET_PIPE(blendDstAlpha,  enum, dstFactor);
-        // glBlendFunc est équivalent à glBlendFuncSeparate avec src/dst identiques pour rgb et alpha
         glBlendFunc(srcFactor, dstFactor);
     }
 }
