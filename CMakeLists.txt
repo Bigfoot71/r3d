@@ -353,6 +353,9 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/deferred/lighting.frag"
     "${R3D_ROOT_PATH}/shaders/deferred/compose.frag"
     "${R3D_ROOT_PATH}/shaders/deferred/fog.frag"
+    "${R3D_ROOT_PATH}/shaders/deferred/vfog_transmittance.frag"
+    "${R3D_ROOT_PATH}/shaders/deferred/vfog_radiance.frag"
+    "${R3D_ROOT_PATH}/shaders/deferred/vfog_compose.frag"
     # Post
     "${R3D_ROOT_PATH}/shaders/post/dof.frag"
     "${R3D_ROOT_PATH}/shaders/post/bloom.frag"
