@@ -11,7 +11,7 @@
 
 void E_SampleProbe(inout vec3 irr, inout vec3 rad, inout float wIrr, inout float wRad, int probeIndex, float roughness, vec3 P, vec3 N, vec3 V)
 {
-    EnvProbe probe = uProbes[probeIndex];
+    E_Probe probe = uProbes[probeIndex];
     float dist = length(P - probe.position);
     float weight = pow(clamp(1.0 - dist / probe.range, 0.0, 1.0), probe.falloff);
 

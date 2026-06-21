@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-struct EnvAmbient {
+struct E_Ambient {
     vec4 rotation;
     vec4 color;
     float energy;
@@ -14,7 +14,7 @@ struct EnvAmbient {
     int prefilter;
 };
 
-struct EnvProbe {
+struct E_Probe {
     vec3 position;
     float falloff;
     float range;
@@ -23,8 +23,8 @@ struct EnvProbe {
 };
 
 layout(std140) uniform EnvBlock {
-    EnvProbe uProbes[NUM_PROBES];
-    EnvAmbient uAmbient;
+    E_Probe uProbes[NUM_PROBES];
+    E_Ambient uAmbient;
     int uNumPrefilterLevels;
     int uNumProbes;
 };
