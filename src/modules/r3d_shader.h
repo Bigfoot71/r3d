@@ -456,9 +456,9 @@ typedef enum {
     R3D_SHADER_BLOCK_FRAME,
     R3D_SHADER_BLOCK_VIEW,
     R3D_SHADER_BLOCK_ENV,
+    R3D_SHADER_BLOCK_FX,
     R3D_SHADER_BLOCK_LIGHT,
     R3D_SHADER_BLOCK_LIGHT_ARRAY,
-    R3D_SHADER_BLOCK_FOG,
     R3D_SHADER_BLOCK_COUNT,
     R3D_SHADER_BLOCK_USER = R3D_SHADER_BLOCK_COUNT,
     R3D_SHADER_BLOCK_SLOT_COUNT,
@@ -467,9 +467,9 @@ typedef enum {
 #define R3D_SHADER_BLOCK_SLOT_FRAME         0
 #define R3D_SHADER_BLOCK_SLOT_VIEW          1
 #define R3D_SHADER_BLOCK_SLOT_ENV           2
-#define R3D_SHADER_BLOCK_SLOT_LIGHT         3
-#define R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY   4
-#define R3D_SHADER_BLOCK_SLOT_FOG           5
+#define R3D_SHADER_BLOCK_SLOT_FX            3
+#define R3D_SHADER_BLOCK_SLOT_LIGHT         4
+#define R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY   5
 #define R3D_SHADER_BLOCK_SLOT_USER          6
 
 // ========================================
@@ -525,6 +525,104 @@ typedef struct {
 } r3d_shader_block_env_t;
 
 typedef struct {
+
+    struct r3d_shader_block_fx_ssao {
+        alignas(4) int32_t sampleCount;
+        alignas(4) float intensity;
+        alignas(4) float power;
+        alignas(4) float maxRadius;
+        alignas(4) float radius;
+        alignas(4) float bias;
+        uint8_t _pad[8];
+    } uSsao;
+
+    struct r3d_shader_block_fx_ssil {
+        alignas(4) int32_t sampleCount;
+        alignas(4) float giIntensity;
+        alignas(4) float aoIntensity;
+        alignas(4) float aoPower;
+        alignas(4) float maxRadius;
+        alignas(4) float radius;
+        alignas(4) float bias;
+        uint8_t _pad[4];
+    } uSsil;
+
+    struct r3d_shader_block_fx_ssgi {
+        alignas(4) int32_t sliceCount;
+        alignas(4) float edgeFade;
+        alignas(4) float distanceFalloff;
+        alignas(4) float normalRejection;
+        alignas(4) float intensity;
+        uint8_t _pad[12];
+    } uSsgi;
+
+    struct r3d_shader_block_fx_ssr {
+        alignas(4) int32_t maxRaySteps;
+        alignas(4) int32_t binarySteps;
+        alignas(4) float stepSize;
+        alignas(4) float thickness;
+        alignas(4) float maxDistance;
+        alignas(4) float edgeFade;
+        uint8_t _pad[8];
+    } uSsr;
+
+    struct r3d_shader_block_fx_fog {
+        alignas(16) Vector3 color;
+        alignas(4) float start;
+        alignas(4) float end;
+        alignas(4) float density;
+        alignas(4) float skyAffect;
+        alignas(4) int32_t mode;
+        uint8_t _pad[12];
+    } uFog;
+
+    struct r3d_shader_block_fx_vfog {
+        alignas(16) Vector3 scatteringColor;
+        alignas(16) Vector3 emissionColor;
+        alignas(4) float scatteringDensity;
+        alignas(4) float absortionDensity;
+        alignas(4) float anisotropy;
+        alignas(4) float emissionEnergy;
+        alignas(4) float skyAffect;
+        alignas(4) float length;
+        alignas(4) float stepSize;
+        uint8_t _pad[4];
+    } uVFog;
+
+    struct r3d_shader_block_fx_dof {
+        alignas(4) float focusPoint;
+        alignas(4) float focusScale;
+        alignas(4) float nearScale;
+        alignas(4) float maxBlurSize;
+        alignas(4) int32_t mode;
+        uint8_t _pad[12];
+    } uDof;
+
+    struct r3d_shader_block_fx_bloom {
+        alignas(16) Vector4 prefilter;
+        alignas(4) float intensity;
+        alignas(4) float filterRadius;
+        alignas(4) int32_t mode;
+        uint8_t _pad[4];
+    } uBloom;
+
+    struct r3d_shader_block_fx_tonemap {
+        alignas(4) float exposure;
+        alignas(4) float white;
+        alignas(4) int32_t mode;
+        uint8_t _pad[4];
+    } uTonemap;
+
+    struct r3d_shader_block_fx_bcs {
+        alignas(4) float brightness;
+        alignas(4) float contrast;
+        alignas(4) float saturation;
+        uint8_t _pad[4];
+    } uBcs;
+
+} r3d_shader_block_fx_t;
+
+typedef struct {
     alignas(16) Matrix viewProj;
     alignas(16) Vector3 color;
     alignas(16) Vector3 position;
@@ -550,15 +648,6 @@ typedef struct {
     alignas(4) int32_t uNumLights;
 } r3d_shader_block_light_array_t;
 
-typedef struct {
-    alignas(16) Vector3 color;
-    alignas(4) float start;
-    alignas(4) float end;
-    alignas(4) float density;
-    alignas(4) float skyAffect;
-    alignas(4) int32_t mode;
-} r3d_shader_block_fog_t;
-
 // ========================================
 // UNIFORM BLOCK SIZES AND SLOTS
 // ========================================
@@ -567,18 +656,18 @@ static const int R3D_SHADER_BLOCK_SIZES[R3D_SHADER_BLOCK_COUNT] = {
     [R3D_SHADER_BLOCK_FRAME]       = sizeof(r3d_shader_block_frame_t),
     [R3D_SHADER_BLOCK_VIEW]        = sizeof(r3d_shader_block_view_t),
     [R3D_SHADER_BLOCK_ENV]         = sizeof(r3d_shader_block_env_t),
+    [R3D_SHADER_BLOCK_FX]          = sizeof(r3d_shader_block_fx_t),
     [R3D_SHADER_BLOCK_LIGHT]       = sizeof(r3d_shader_block_light_t),
     [R3D_SHADER_BLOCK_LIGHT_ARRAY] = sizeof(r3d_shader_block_light_array_t),
-    [R3D_SHADER_BLOCK_FOG]         = sizeof(r3d_shader_block_fog_t),
 };
 
 static const int R3D_SHADER_BLOCK_SLOTS[R3D_SHADER_BLOCK_COUNT] = {
     [R3D_SHADER_BLOCK_FRAME]       = R3D_SHADER_BLOCK_SLOT_FRAME,
     [R3D_SHADER_BLOCK_VIEW]        = R3D_SHADER_BLOCK_SLOT_VIEW,
     [R3D_SHADER_BLOCK_ENV]         = R3D_SHADER_BLOCK_SLOT_ENV,
+    [R3D_SHADER_BLOCK_FX]          = R3D_SHADER_BLOCK_SLOT_FX,
     [R3D_SHADER_BLOCK_LIGHT]       = R3D_SHADER_BLOCK_SLOT_LIGHT,
     [R3D_SHADER_BLOCK_LIGHT_ARRAY] = R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY,
-    [R3D_SHADER_BLOCK_FOG]         = R3D_SHADER_BLOCK_SLOT_FOG,
 };
 
 // ========================================

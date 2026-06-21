@@ -61,7 +61,7 @@ static void upload_light_array_block_for_mesh(const r3d_render_call_t* call, boo
 static void upload_frame_block(void);
 static void upload_view_block(void);
 static void upload_env_block(void);
-static void upload_fog_block(void);
+static void upload_fx_block(void);
 
 static void raster_depth(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light);
 static void raster_depth_cube(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light);
@@ -149,7 +149,7 @@ void R3D_End(void)
     upload_frame_block();
     upload_view_block();
     upload_env_block();
-    upload_fog_block();
+    upload_fx_block();
 
     /* --- Update all visible lights and render their shadow maps --- */
 
@@ -815,26 +815,81 @@ void upload_env_block(void)
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env, false);
 }
 
-void upload_fog_block(void)
+void upload_fx_block(void)
 {
-    const R3D_EnvFog* fog = &R3D.environment.fog;
-    static r3d_shader_block_fog_t prevFog = {0};
-    r3d_shader_block_fog_t currFog = {0};
+    const R3D_Environment* env = &R3D.environment;
 
-    currFog.color = r3d_color_to_linear_vec3(fog->color, R3D.colorSpace);
-    currFog.start = fog->start;
-    currFog.end = fog->end;
-    currFog.density = fog->density;
-    currFog.skyAffect = fog->skyAffect;
-    currFog.mode = fog->mode;
+    r3d_shader_block_fx_t block = {0};
 
-    if (memcmp(&prevFog, &currFog, sizeof(currFog)) != 0) {
-        r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FOG, &currFog,  false);
-        prevFog = currFog;
-    }
-    else {
-        r3d_shader_bind_uniform_block(R3D_SHADER_BLOCK_FOG);
-    }
+    block.uSsao.sampleCount = env->ssao.sampleCount;
+    block.uSsao.intensity = env->ssao.intensity;
+    block.uSsao.power = env->ssao.power;
+    block.uSsao.maxRadius = env->ssao.maxRadius;
+    block.uSsao.radius = env->ssao.radius;
+    block.uSsao.bias = env->ssao.bias;
+
+    block.uSsil.sampleCount = env->ssil.sampleCount;
+    block.uSsil.giIntensity = env->ssil.giIntensity;
+    block.uSsil.aoIntensity = env->ssil.aoIntensity;
+    block.uSsil.aoPower = env->ssil.aoPower;
+    block.uSsil.maxRadius = env->ssil.radius;
+    block.uSsil.radius = env->ssil.radius;
+    block.uSsil.bias = env->ssil.bias;
+
+    block.uSsgi.sliceCount = env->ssgi.sliceCount;
+    block.uSsgi.edgeFade = env->ssgi.edgeFade;
+    block.uSsgi.distanceFalloff = env->ssgi.distanceFalloff;
+    block.uSsgi.normalRejection = env->ssgi.normalRejection;
+    block.uSsgi.intensity = env->ssgi.intensity;
+
+    block.uSsr.maxRaySteps = env->ssr.maxRaySteps;
+    block.uSsr.binarySteps = env->ssr.binarySteps;
+    block.uSsr.stepSize = env->ssr.stepSize;
+    block.uSsr.thickness = env->ssr.thickness;
+    block.uSsr.maxDistance = env->ssr.maxDistance;
+    block.uSsr.edgeFade = env->ssr.edgeFade;
+
+    block.uFog.color = r3d_color_to_linear_vec3(env->fog.color, R3D.colorSpace);
+    block.uFog.start = env->fog.start;
+    block.uFog.end = env->fog.end;
+    block.uFog.density = env->fog.density;
+    block.uFog.skyAffect = env->fog.skyAffect;
+    block.uFog.mode = env->fog.mode;
+
+    block.uVFog.scatteringColor = r3d_color_to_linear_vec3(env->volumetricFog.scatteringColor, R3D.colorSpace);
+    block.uVFog.emissionColor = r3d_color_to_linear_vec3(env->volumetricFog.emissionColor, R3D.colorSpace);
+    block.uVFog.scatteringDensity = env->volumetricFog.scatteringDensity;
+    block.uVFog.absortionDensity = env->volumetricFog.absortionDensity;
+    block.uVFog.anisotropy = env->volumetricFog.anisotropy;
+    block.uVFog.emissionEnergy = env->volumetricFog.emissionEnergy;
+    block.uVFog.skyAffect = env->volumetricFog.skyAffect;
+    block.uVFog.length = env->volumetricFog.length;
+    block.uVFog.stepSize = env->volumetricFog.stepSize;
+
+    block.uDof.focusPoint = env->dof.focusPoint;
+    block.uDof.focusScale = env->dof.focusScale;
+    block.uDof.nearScale = env->dof.nearScale;
+    block.uDof.maxBlurSize = env->dof.maxBlurSize;
+    block.uDof.mode = env->dof.mode;
+
+    float knee = env->bloom.threshold * env->bloom.softThreshold;
+    block.uBloom.prefilter.x = env->bloom.threshold;
+    block.uBloom.prefilter.y = env->bloom.threshold - knee;
+    block.uBloom.prefilter.z = 2.0f * knee;
+    block.uBloom.prefilter.w = 0.25f / (knee + 0.00001f);
+    block.uBloom.intensity = env->bloom.intensity;
+    block.uBloom.filterRadius = env->bloom.filterRadius;
+    block.uBloom.mode = env->bloom.mode;
+
+    block.uTonemap.mode = env->tonemap.mode;
+    block.uTonemap.exposure = env->tonemap.exposure;
+    block.uTonemap.white = env->tonemap.white;
+
+    block.uBcs.brightness = env->color.brightness;
+    block.uBcs.contrast = env->color.contrast;
+    block.uBcs.saturation = env->color.saturation;
+
+    r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_FX, &block, false);
 }
 
 void raster_depth(const r3d_render_call_t* call, const Matrix* viewProj, r3d_light_t* light)

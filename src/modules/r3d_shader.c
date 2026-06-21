@@ -855,7 +855,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(forward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(forward, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(forward, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
-    SET_UNIFORM_BUFFER(forward, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(forward, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(forward, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -922,7 +922,7 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
 
     SET_UNIFORM_BUFFER(unlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(unlit, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-    SET_UNIFORM_BUFFER(unlit, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(unlit, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(unlit, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -1110,7 +1110,7 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(probeForward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(probeForward, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(probeForward, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
-    SET_UNIFORM_BUFFER(probeForward, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(probeForward, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(probeForward, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -1180,7 +1180,7 @@ bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
     RL_FREE(fsCode);
 
     SET_UNIFORM_BUFFER(probeUnlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
-    SET_UNIFORM_BUFFER(probeUnlit, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(probeUnlit, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(probeUnlit, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -1358,7 +1358,7 @@ bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_deferred_fog_t, deferred, fog);
     LOAD_SHADER(fog, SCREEN_VERT, FOG_FRAG);
 
-    SET_UNIFORM_BUFFER(fog, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(fog, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
     SET_UNIFORM_BUFFER(fog, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
 
     USE_SHADER(fog);

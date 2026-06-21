@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "../ubo/fog.glsl"
+#include "../ubo/fx.glsl"
 #include "../lib/fog.glsl"
 
 float FogFactor(float dist)
