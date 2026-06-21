@@ -11,7 +11,7 @@
 #define SMAA_INCLUDE_VS 0
 #define SMAA_INCLUDE_PS 1
 
-#include "../include/wrap/smaa.glsl"
+#include <wrap/smaa.glsl>
 
 uniform sampler2D uSceneTex;
 

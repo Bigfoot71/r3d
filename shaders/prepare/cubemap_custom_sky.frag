@@ -10,8 +10,8 @@
 
 /* === Includes === */
 
-#include "../include/ubo/frame.glsl"
-#include "../include/wrap/view.glsl"
+#include <ubo/frame.glsl>
+#include <wrap/view.glsl>
 
 /* === Varyings === */
 

@@ -10,8 +10,8 @@
 
 /* === Includes === */
 
-#include "../include/ubo/frame.glsl"
-#include "../include/wrap/fog.glsl"
+#include <ubo/frame.glsl>
+#include <wrap/fog.glsl>
 
 /* === Varyings === */
 
@@ -32,7 +32,7 @@ layout(location = 0) out vec4 FragColor;
 
 /* === User override === */
 
-#include "../include/user/scene.frag"
+#include <user/scene.frag>
 
 /* === Main function === */
 

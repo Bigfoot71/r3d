@@ -10,8 +10,8 @@
 
 /* === Includes === */
 
-#include "../include/ubo/view.glsl"
-#include "../include/lib/math.glsl"
+#include <ubo/view.glsl>
+#include <lib/math.glsl>
 
 /* === Varyings === */
 

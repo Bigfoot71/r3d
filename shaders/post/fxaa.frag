@@ -49,7 +49,7 @@
 
 /* === Includes === */
 
-#include "../include/ubo/frame.glsl"
+#include <ubo/frame.glsl>
 
 /* === Varyings === */
 

@@ -14,8 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/lib/math.glsl"
-#include "../include/lib/pbr.glsl"
+#include <lib/math.glsl>
+#include <lib/pbr.glsl>
 
 /* === Varyings === */
 
@@ -34,8 +34,8 @@ uniform samplerCubeArrayShadow uShadowOmniTex;
 
 /* === Blocks === */
 
-#include "../include/wrap/light.glsl"
-#include "../include/wrap/view.glsl"
+#include <wrap/light.glsl>
+#include <wrap/view.glsl>
 
 /* === Fragments === */
 

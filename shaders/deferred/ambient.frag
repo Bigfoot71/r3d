@@ -14,8 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/lib/math.glsl"
-#include "../include/lib/pbr.glsl"
+#include <lib/math.glsl>
+#include <lib/pbr.glsl>
 
 /* === Varyings === */
 
@@ -46,8 +46,8 @@ uniform bool uSsgiEnabled;
 
 /* === Blocks === */
 
-#include "../include/wrap/view.glsl"
-#include "../include/wrap/env.glsl"
+#include <wrap/view.glsl>
+#include <wrap/env.glsl>
 
 /* === Fragments === */
 
