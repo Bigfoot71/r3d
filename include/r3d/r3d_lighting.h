@@ -155,6 +155,16 @@ R3DAPI void R3D_DisableLight(R3D_Light id);
 R3DAPI Color R3D_GetLightColor(R3D_Light id);
 
 /**
+ * @brief Sets the color of a light.
+ *
+ * This function sets the color of the specified light using a `Color` structure.
+ *
+ * @param id The ID of the light.
+ * @param color The new color to set for the light.
+ */
+R3DAPI void R3D_SetLightColor(R3D_Light id, Color color);
+
+/**
  * @brief Gets the color of a light as a `Vector3`.
  *
  * This function retrieves the color of the specified light as a `Vector3`, where each
@@ -166,16 +176,6 @@ R3DAPI Color R3D_GetLightColor(R3D_Light id);
 R3DAPI Vector3 R3D_GetLightColorV(R3D_Light id);
 
 /**
- * @brief Sets the color of a light.
- *
- * This function sets the color of the specified light using a `Color` structure.
- *
- * @param id The ID of the light.
- * @param color The new color to set for the light.
- */
-R3DAPI void R3D_SetLightColor(R3D_Light id, Color color);
-
-/**
  * @brief Sets the color of a light using a `Vector3`.
  *
  * This function sets the color of the specified light using a `Vector3`, where each
@@ -185,6 +185,18 @@ R3DAPI void R3D_SetLightColor(R3D_Light id, Color color);
  * @param color The new color to set for the light as a `Vector3`.
  */
 R3DAPI void R3D_SetLightColorV(R3D_Light id, Vector3 color);
+
+/**
+ * @brief Sets the color and modulates the energy of a light from a color temperature.
+ *
+ * Converts the given color temperature to a normalized RGB color and applies it
+ * to the light. The luminance extracted from the temperature is used to scale
+ * the light's existing energy, preserving the user-defined intensity.
+ *
+ * @param id The ID of the light.
+ * @param kelvin The color temperature in Kelvin. Valid range is 1000K to 40000K.
+ */
+R3DAPI void R3D_SetLightTemperature(R3D_Light id, float kelvin);
 
 /**
  * @brief Gets the position of a light.
@@ -260,9 +272,6 @@ R3DAPI void R3D_SetLightTarget(R3D_Light id, Vector3 position, Vector3 target);
 /**
  * @brief Gets the energy level of a light.
  *
- * This function retrieves the energy level (intensity) of the specified light.
- * Energy typically affects the brightness of the light.
- *
  * @param id The ID of the light.
  * @return The energy level of the light.
  */
@@ -278,6 +287,30 @@ R3DAPI float R3D_GetLightEnergy(R3D_Light id);
  * @param energy The new energy value to set for the light.
  */
 R3DAPI void R3D_SetLightEnergy(R3D_Light id, float energy);
+
+/**
+ * @brief Gets the energy level of a light as a luminous flux.
+ *
+ * Converts the light's current energy factor to lumens using a reference distance of 1 unit,
+ * assuming 1 unit = 1 meter. For a custom reference distance, use @ref R3D_EnergyToLumens
+ * with @ref R3D_GetLightEnergy directly.
+ *
+ * @param id The ID of the light.
+ * @return The luminous flux in lumens.
+ */
+R3DAPI float R3D_GetLightLumen(R3D_Light id);
+
+/**
+ * @brief Sets the energy of a light from a luminous flux value.
+ *
+ * Converts the given flux to an energy factor using a reference distance of 1 unit,
+ * assuming 1 unit = 1 meter. For a custom reference distance, use @ref R3D_LumensToEnergy
+ * and pass the result to @ref R3D_SetLightEnergy directly.
+ *
+ * @param id The ID of the light.
+ * @param lumens The luminous flux in lumens.
+ */
+R3DAPI void R3D_SetLightLumen(R3D_Light id, float lumens);
 
 /**
  * @brief Gets the specular intensity of a light.
@@ -637,6 +670,33 @@ R3DAPI BoundingBox R3D_GetLightBoundingBox(R3D_Light light);
  * @param id The ID of the light.
  */
 R3DAPI void R3D_DrawLightDebug(R3D_Light id);
+
+// ----------------------------------------
+// LIGHTING: Math Helper Functions
+// ----------------------------------------
+
+/**
+ * @brief Converts a luminous flux to an energy factor.
+ *
+ * Computes the illuminance in lux at the given reference distance from an isotropic
+ * point source: `energy = lumens / (4 * pi * distance * distance)`
+ *
+ * @param lumens The luminous flux in lumens.
+ * @param referenceDistance The reference distance in scene units (1 unit = 1 meter).
+ * @return The corresponding energy factor.
+ */
+R3DAPI float R3D_LumensToEnergy(float lumens, float referenceDistance);
+
+/**
+ * @brief Converts an energy factor back to a luminous flux.
+ *
+ * Inverse of @ref R3D_LumensToEnergy: `lumens = energy * 4 * pi * distance * distance`
+ *
+ * @param energy The energy factor.
+ * @param referenceDistance The reference distance in scene units (1 unit = 1 meter).
+ * @return The corresponding luminous flux in lumens.
+ */
+R3DAPI float R3D_EnergyToLumens(float energy, float referenceDistance);
 
 #ifdef __cplusplus
 } // extern "C"

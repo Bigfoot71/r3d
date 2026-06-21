@@ -7,12 +7,14 @@
  */
 
 #include <r3d/r3d_lighting.h>
+#include <r3d/r3d_color.h>
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stddef.h>
 #include <rlgl.h>
 
 #include "./modules/r3d_light.h"
+#include "./common/r3d_math.h"
 
 // ========================================
 // HELPER MACROS
@@ -102,12 +104,6 @@ Color R3D_GetLightColor(R3D_Light id)
     };
 }
 
-Vector3 R3D_GetLightColorV(R3D_Light id)
-{
-    GET_LIGHT_OR_RETURN(light, id, (Vector3) {0});
-    return light->color;
-}
-
 void R3D_SetLightColor(R3D_Light id, Color color)
 {
     GET_LIGHT_OR_RETURN(light, id);
@@ -116,10 +112,22 @@ void R3D_SetLightColor(R3D_Light id, Color color)
     light->color.z = color.b / 255.0f;
 }
 
+Vector3 R3D_GetLightColorV(R3D_Light id)
+{
+    GET_LIGHT_OR_RETURN(light, id, (Vector3) {0});
+    return light->color;
+}
+
 void R3D_SetLightColorV(R3D_Light id, Vector3 color)
 {
     GET_LIGHT_OR_RETURN(light, id);
     light->color = color;
+}
+
+void R3D_SetLightTemperature(R3D_Light id, float kelvin)
+{
+    Color color = R3D_ColorFromTemperature(kelvin);
+    R3D_SetLightColorV(id, r3d_color_srgb_to_linear_vec3(color));
 }
 
 Vector3 R3D_GetLightPosition(R3D_Light id)
@@ -183,6 +191,16 @@ void R3D_SetLightEnergy(R3D_Light id, float energy)
 {
     GET_LIGHT_OR_RETURN(light, id);
     light->energy = energy;
+}
+
+float R3D_GetLightLumen(R3D_Light id)
+{
+    return R3D_EnergyToLumens(R3D_GetLightEnergy(id), 1.0f);
+}
+
+void R3D_SetLightLumen(R3D_Light id, float lumens)
+{
+    R3D_SetLightEnergy(id, R3D_LumensToEnergy(lumens, 1.0f));
 }
 
 float R3D_GetLightSpecular(R3D_Light id)
@@ -434,7 +452,7 @@ static void r3d_draw_light_dir_debug(const r3d_light_t* light, Color color)
     // Build orthonormal basis around direction
     Vector3 ref = (fabsf(dir.y) < 0.999f) ? (Vector3){0,1,0} : (Vector3){1,0,0};
     Vector3 right = Vector3Normalize(Vector3CrossProduct(dir, ref));
-    Vector3 up    = Vector3CrossProduct(right, dir);
+    Vector3 up = Vector3CrossProduct(right, dir);
 
     Vector3 origin = light->position;
 
@@ -443,20 +461,20 @@ static void r3d_draw_light_dir_debug(const r3d_light_t* light, Color color)
             // Offset arrow origin on the plane perpendicular to direction
             Vector3 offset = Vector3Add(
                 Vector3Scale(right, (float)i * ARROW_SPREAD),
-                Vector3Scale(up,    (float)j * ARROW_SPREAD)
+                Vector3Scale(up, (float)j * ARROW_SPREAD)
             );
             Vector3 from = Vector3Add(origin, offset);
-            Vector3 to   = Vector3Add(from, Vector3Scale(dir, ARROW_LENGTH));
+            Vector3 to = Vector3Add(from, Vector3Scale(dir, ARROW_LENGTH));
 
             // Arrow shaft
             DrawLine3D(from, to, color);
 
             // Arrow head; 4 lines forming a cross-cap
             Vector3 head_base = Vector3Add(from, Vector3Scale(dir, ARROW_LENGTH - ARROW_HEAD));
-            DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(right,  ARROW_HEAD * 0.5f)), color);
+            DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(right, ARROW_HEAD * 0.5f)), color);
             DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(right, -ARROW_HEAD * 0.5f)), color);
-            DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(up,     ARROW_HEAD * 0.5f)), color);
-            DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(up,    -ARROW_HEAD * 0.5f)), color);
+            DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(up, ARROW_HEAD * 0.5f)), color);
+            DrawLine3D(head_base, Vector3Add(head_base, Vector3Scale(up, -ARROW_HEAD * 0.5f)), color);
         }
     }
 }
@@ -469,15 +487,15 @@ static void r3d_draw_light_spot_debug(const r3d_light_t* light, Color color)
     Vector3 dir = Vector3Normalize(light->direction);
 
     // Build orthonormal basis
-    Vector3 ref   = (fabsf(dir.y) < 0.999f) ? (Vector3){0,1,0} : (Vector3){1,0,0};
+    Vector3 ref = (fabsf(dir.y) < 0.999f) ? (Vector3){0,1,0} : (Vector3){1,0,0};
     Vector3 right = Vector3Normalize(Vector3CrossProduct(dir, ref));
-    Vector3 up    = Vector3CrossProduct(right, dir);
+    Vector3 up = Vector3CrossProduct(right, dir);
 
     // Draw inner and outer cone rings + lines from apex
-    float cutoffs[2] = { light->innerCutOff, light->outerCutOff };
+    float cutoffs[2] = {light->innerCutOff, light->outerCutOff};
     for (int c = 0; c < 2; c++) {
-        float radius  = fabsf(light->range * cutoffs[c]);
-        Vector3 base  = Vector3Add(pos, Vector3Scale(dir, light->range));
+        float radius = fabsf(light->range * cutoffs[c]);
+        Vector3 base = Vector3Add(pos, Vector3Scale(dir, light->range));
 
         // Ring
         rlBegin(RL_LINES);
@@ -515,8 +533,8 @@ static void r3d_draw_light_omni_debug(const r3d_light_t* light, Color color)
     const int   SEGMENTS = 32;
     const float STEP     = (2.0f * PI) / SEGMENTS;
 
-    Vector3 pos   = light->position;
-    float   range = light->range;
+    Vector3 pos = light->position;
+    float range = light->range;
 
     // 3 orthogonal circles (XY, XZ, YZ planes)
     rlBegin(RL_LINES);
@@ -566,4 +584,18 @@ void R3D_DrawLightDebug(R3D_Light id)
     default:
         break;
     }
+}
+
+// ----------------------------------------
+// LIGHTING: Math Helper Functions
+// ----------------------------------------
+
+float R3D_LumensToEnergy(float lumens, float referenceDistance)
+{
+    return lumens / (4.0f * PI * referenceDistance * referenceDistance);
+}
+
+float R3D_EnergyToLumens(float energy, float referenceDistance)
+{
+    return energy * (4.0f * PI * referenceDistance * referenceDistance);
 }
