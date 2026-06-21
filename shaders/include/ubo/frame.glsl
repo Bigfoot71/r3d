@@ -1,4 +1,4 @@
-/* frame.glsl -- Contains all the information about the current frame.
+/* frame.glsl -- Frame data structures and uniform block.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *

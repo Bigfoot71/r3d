@@ -6,7 +6,7 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "../include/blocks/frame.glsl"
+#include "../ubo/frame.glsl"
 
 #define SMAA_GLSL_3
 #define SMAA_RT_METRICS vec4(uFrame.texelSize, uFrame.screenSize)
@@ -21,4 +21,4 @@
 #   define SMAA_PRESET_ULTRA
 #endif
 
-#include "../external/SMAA.hlsl"
+#include "../../external/SMAA.hlsl"

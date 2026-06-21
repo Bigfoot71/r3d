@@ -1,4 +1,4 @@
-/* fog.glsl -- Contains everything you need for the fog
+/* fog.glsl -- Fog helpers wrapping UBO and LIB for direct use in shaders.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -6,46 +6,8 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-/* === Definitions === */
-
-#define FOG_DISABLED 0
-#define FOG_LINEAR 1
-#define FOG_EXP2 2
-#define FOG_EXP 3
-
-/* === Uniform Block === */
-
-struct Fog {
-    vec3 color;
-    float start;
-    float end;
-    float density;
-    float skyAffect;
-    int mode;
-};
-
-layout(std140) uniform FogBlock {
-    Fog uFog;
-};
-
-/* === Functions === */
-
-float FogFactorLinear(float dist, float start, float end)
-{
-    return 1.0 - clamp((end - dist) / (end - start), 0.0, 1.0);
-}
-
-float FogFactorExp2(float dist, float density)
-{
-    const float LOG2 = -1.442695;
-    float d = density * dist;
-    return 1.0 - clamp(exp2(d * d * LOG2), 0.0, 1.0);
-}
-
-float FogFactorExp(float dist, float density)
-{
-    return 1.0 - clamp(exp(-density * dist), 0.0, 1.0);
-}
+#include "../ubo/fog.glsl"
+#include "../lib/fog.glsl"
 
 float FogFactor(float dist)
 {

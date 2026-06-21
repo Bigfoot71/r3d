@@ -14,7 +14,7 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
+#include "../include/lib/math.glsl"
 
 /* === Varyings === */
 
@@ -38,9 +38,8 @@ uniform float uSkyAffect;
 
 /* === Blocks === */
 
-#define L_SHADOW_IMPL
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/view.glsl"
+#include "../include/wrap/light.glsl"
+#include "../include/wrap/view.glsl"
 
 /* === Fragments === */
 

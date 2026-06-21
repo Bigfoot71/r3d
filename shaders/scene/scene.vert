@@ -16,10 +16,10 @@
 
 /* === Includes === */
 
-#include "../include/blocks/frame.glsl"
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
+#include "../include/ubo/frame.glsl"
+#include "../include/ubo/light.glsl"
+#include "../include/ubo/view.glsl"
+#include "../include/lib/math.glsl"
 
 /* === Attributes === */
 

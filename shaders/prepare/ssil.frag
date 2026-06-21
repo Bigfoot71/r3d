@@ -16,8 +16,8 @@
 
 /* === Includes === */
 
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
+#include "../include/wrap/view.glsl"
+#include "../include/lib/math.glsl"
 
 /* === Varyings === */
 

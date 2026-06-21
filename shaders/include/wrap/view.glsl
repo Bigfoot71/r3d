@@ -1,4 +1,4 @@
-/* view.glsl -- Contains everything you need to manage transformations
+/* view.glsl -- View helpers wrapping UBO and LIB for direct use in shaders.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -6,27 +6,8 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#include "../math.glsl"
-
-#define V_PROJ_PERSP 0
-#define V_PROJ_ORTHO 1
-
-struct View {
-    vec3 position;
-    mat4 view;
-    mat4 invView;
-    mat4 proj;
-    mat4 invProj;
-    mat4 viewProj;
-    int projMode;
-    float aspect;
-    float near;
-    float far;
-};
-
-layout(std140) uniform ViewBlock {
-    View uView;
-};
+#include "../ubo/view.glsl"
+#include "../lib/math.glsl"
 
 vec3 V_GetViewPosition(vec2 texCoord, float linearDepth)
 {

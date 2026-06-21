@@ -14,7 +14,7 @@
 
 #version 330 core
 
-#include "../include/math.glsl"
+#include "../include/lib/math.glsl"
 
 noperspective in vec2 vTexCoord;
 

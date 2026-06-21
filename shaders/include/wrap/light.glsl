@@ -1,4 +1,4 @@
-/* light.glsl -- Contains everything you need to manage lights
+/* light.glsl -- Light helpers wrapping UBO and LIB for direct use in shaders.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -6,84 +6,10 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-/* === Includes === */
+#include "../ubo/light.glsl"
+#include "../lib/pbr.glsl"
 
-#include "../math.glsl"
-#include "../pbr.glsl"
-
-/* === Macros === */
-
-#if defined(NUM_FORWARD_LIGHTS)
-#   define DECL_SHADOW_DIR(name)  float name(int lightIndex, vec4 Pls, float Zvs, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_SPOT(name) float name(int lightIndex, vec4 Pls, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float NdotL, mat2 diskRot)
-#   define LIGHT uLights[lightIndex]
-#else
-#   define DECL_SHADOW_DIR(name)  float name(vec3 Pws, float Zvs, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_SPOT(name) float name(vec3 Pws, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_OMNI(name) float name(vec3 Pws, float NdotL, mat2 diskRot)
-#   define LIGHT uLight
-#endif
-
-/* === Constants === */
-
-// Should be defined in client side
-// #define NUM_FORWARD_LIGHTS 8
-
-#define LIGHT_DIR   0
-#define LIGHT_SPOT  1
-#define LIGHT_OMNI  2
-
-#define SHADOW_SAMPLES 8
-
-const vec2 VOGEL_DISK[8] = vec2[8](
-    vec2(0.250000, 0.000000),
-    vec2(-0.319290, 0.292496),
-    vec2(0.048872, -0.556877),
-    vec2(0.402444, 0.524918),
-    vec2(-0.738535, -0.130636),
-    vec2(0.699605, -0.445031),
-    vec2(-0.234004, 0.870484),
-    vec2(-0.446271, -0.859268)
-);
-
-/* === Structures === */
-
-struct Light {
-    mat4 viewProj;
-    vec3 color;
-    vec3 position;
-    vec3 direction;
-    float specular;
-    float energy;
-    float range;
-    float near;
-    float far;
-    float falloff;
-    float innerCutOff;
-    float outerCutOff;
-    float shadowSoftness;
-    float shadowOpacity;
-    float shadowDepthBias;
-    float shadowSlopeBias;
-    int shadowLayer;        //< less than zero if no shadows
-    int type;
-};
-
-/* === Uniform Block === */
-
-#ifdef NUM_FORWARD_LIGHTS
-layout(std140) uniform LightArrayBlock {
-    Light uLights[NUM_FORWARD_LIGHTS];
-    int uNumLights;
-};
-#else
-layout(std140) uniform LightBlock {
-    Light uLight;
-};
-#endif
-
-/* === Functions === */
+/* === Lighting === */
 
 vec3 L_Diffuse(float LdotH, float NdotV, float NdotL, float roughness)
 {
@@ -109,7 +35,32 @@ vec3 L_Specular(vec3 F0, float LdotH, float cNdotH, float NdotV, float NdotL, fl
     return NdotL * D * F * G; // Specular BRDF (Schlick GGX)
 }
 
-#ifdef L_SHADOW_IMPL
+/* === Shadows === */
+
+#define SHADOW_SAMPLES 8
+
+const vec2 VOGEL_DISK[8] = vec2[8](
+    vec2(0.250000, 0.000000),
+    vec2(-0.319290, 0.292496),
+    vec2(0.048872, -0.556877),
+    vec2(0.402444, 0.524918),
+    vec2(-0.738535, -0.130636),
+    vec2(0.699605, -0.445031),
+    vec2(-0.234004, 0.870484),
+    vec2(-0.446271, -0.859268)
+);
+
+#if defined(NUM_FORWARD_LIGHTS)
+#   define DECL_SHADOW_DIR(name)  float name(int lightIndex, vec4 Pls, float Zvs, float NdotL, mat2 diskRot)
+#   define DECL_SHADOW_SPOT(name) float name(int lightIndex, vec4 Pls, float NdotL, mat2 diskRot)
+#   define DECL_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float NdotL, mat2 diskRot)
+#   define LIGHT uLights[lightIndex]
+#else
+#   define DECL_SHADOW_DIR(name)  float name(vec3 Pws, float Zvs, float NdotL, mat2 diskRot)
+#   define DECL_SHADOW_SPOT(name) float name(vec3 Pws, float NdotL, mat2 diskRot)
+#   define DECL_SHADOW_OMNI(name) float name(vec3 Pws, float NdotL, mat2 diskRot)
+#   define LIGHT uLight
+#endif
 
 mat2 L_ShadowDebandingMatrix(vec2 fragCoord)
 {
@@ -181,10 +132,6 @@ DECL_SHADOW_OMNI(L_SampleShadowOmni)
 
     return mix(1.0, shadow, LIGHT.shadowOpacity);
 }
-
-#endif // L_SHADOW_IMPL
-
-/* === Undefs === */
 
 #undef SAMPLE_SHADOW_PROJ
 #undef SAMPLE_SHADOW_OMNI

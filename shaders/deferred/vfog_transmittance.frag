@@ -10,7 +10,8 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
+#include "../include/ubo/view.glsl"
+#include "../include/lib/math.glsl"
 
 /* === Varyings === */
 
@@ -27,10 +28,6 @@ uniform float uAbsortionDensity;
 uniform vec3  uEmissionColor;
 uniform float uEmissionEnergy;
 uniform float uSkyAffect;
-
-/* === Blocks === */
-
-#include "../include/blocks/view.glsl"
 
 /* === Fragments === */
 

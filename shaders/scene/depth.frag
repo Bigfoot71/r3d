@@ -10,7 +10,7 @@
 
 /* === Includes === */
 
-#include "../include/blocks/frame.glsl"
+#include "../include/ubo/frame.glsl"
 
 /* === Varyings === */
 

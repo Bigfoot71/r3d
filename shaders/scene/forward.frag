@@ -14,8 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
-#include "../include/pbr.glsl"
+#include "../include/lib/math.glsl"
+#include "../include/lib/pbr.glsl"
 
 /* === Varyings === */
 
@@ -57,12 +57,10 @@ uniform bool uProbeInterior;
 
 /* === Blocks === */
 
-#define L_SHADOW_IMPL   //< Shadow functions in blocks/light.glsl
-
-#include "../include/blocks/frame.glsl"
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/env.glsl"
-#include "../include/blocks/fog.glsl"
+#include "../include/ubo/frame.glsl"
+#include "../include/wrap/light.glsl"
+#include "../include/wrap/env.glsl"
+#include "../include/wrap/fog.glsl"
 
 /* === Fragments === */
 

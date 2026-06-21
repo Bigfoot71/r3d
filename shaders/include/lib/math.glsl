@@ -1,4 +1,4 @@
-/* math.glsl -- Contains everything you need for maths
+/* math.glsl -- Math functions with explicit parameters, no UBO dependency.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *

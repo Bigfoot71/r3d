@@ -13,7 +13,7 @@
 
 /* === Includes === */
 
-#include "../include/pbr.glsl"
+#include "../include/lib/pbr.glsl"
 
 /* === Varyings === */
 

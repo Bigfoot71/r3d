@@ -1,4 +1,4 @@
-/* pbr.glsl -- Contains everything you need for PBR
+/* pbr.glsl -- PBR functions with explicit parameters, no UBO dependency.
  *
  * Copyright (c) 2025-2026 Le Juez Victor
  *
@@ -22,10 +22,6 @@ float PBR_DistributionGGX(float cosTheta, float alpha)
 float PBR_GeometryGGX(float NdotL, float NdotV, float roughness)
 {
     // Hammon's optimized approximation for GGX Smith geometry term
-    // This version is an efficient approximation that:
-    // 1. Avoids expensive square root calculations
-    // 2. Combines both G1 terms into a single expression
-    // 3. Provides very close results to the exact version at a much lower cost
     // SEE: https://www.gdcvault.com/play/1024478/PBR-Diffuse-Lighting-for-GGX
 
     return 0.5 / mix(2.0 * NdotL * NdotV, NdotL + NdotV, roughness);
