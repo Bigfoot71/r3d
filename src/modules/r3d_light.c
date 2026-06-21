@@ -227,12 +227,13 @@ static bool init_light(r3d_light_t* light, R3D_LightType type)
     light->position = (Vector3) {0};
     light->direction = (Vector3) {0, 0, -1};
 
-    light->specular = 0.5f;
     light->energy = 1.0f;
+    light->specular = 0.5f;
     light->range = 50.0f;
     light->falloff = 1.0f;
     light->innerCutOff = cosf(22.5f * DEG2RAD);
     light->outerCutOff = cosf(45.0f * DEG2RAD);
+    light->fogEnergy = 1.0f;
 
     light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
     light->shadowOpacity = 1.0f;

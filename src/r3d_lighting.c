@@ -258,6 +258,18 @@ void R3D_SetLightAngle(R3D_Light id, float inner, float outer)
     light->outerCutOff = o;
 }
 
+float R3D_GetLightFogEnergy(R3D_Light id)
+{
+    GET_LIGHT_OR_RETURN(light, id, 0.0f);
+    return light->fogEnergy;
+}
+
+void R3D_SetLightFogEnergy(R3D_Light id, float energy)
+{
+    GET_LIGHT_OR_RETURN(light, id);
+    light->fogEnergy = energy;
+}
+
 bool R3D_IsShadowEnabled(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, false);

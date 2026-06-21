@@ -61,14 +61,15 @@ typedef struct {
     Vector3 position;           // Light position (spot/omni)
     Vector3 direction;          // Light direction (spot/dir)
 
-    float specular;
     float energy;
+    float specular;
     float range;                // Maximum distance (spot/omni)
-    float near;                 // Near plane for shadow projection
-    float far;                  // Far plane for shadow projection
     float falloff;              // Distance falloff factor (spot/omni)
     float innerCutOff;          // Spot light inner cutoff angle
     float outerCutOff;          // Spot light outer cutoff angle
+    float fogEnergy;            // Volumetric fog energy multiplier
+    float near;                 // Near plane for shadow projection
+    float far;                  // Far plane for shadow projection
     float shadowSoftness;       // Softness factor for penumbra
     float shadowOpacity;        // Shadow opacity factor
     float shadowDepthBias;      // Constant depth bias

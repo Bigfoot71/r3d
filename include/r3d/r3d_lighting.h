@@ -378,6 +378,26 @@ R3DAPI void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer);
  */
 R3DAPI void R3D_SetLightAngle(R3D_Light id, float inner, float outer);
 
+/**
+ * @brief Gets the volumetric fog energy multiplier of a light.
+ *
+ * @param id The ID of the light.
+ * @return The volumetric fog energy multiplier of the light.
+ */
+R3DAPI float R3D_GetLightFogEnergy(R3D_Light id);
+
+/**
+ * @brief Sets the volumetric fog energy multiplier of a light.
+ *
+ * The final fog contribution is the light's energy multiplied by this factor,
+ * allowing fine-grained control over its volumetric fog intensity independently
+ * of its regular lighting contribution.
+ *
+ * @param id The ID of the light.
+ * @param energy The new volumetric fog energy multiplier to set for the light.
+ */
+R3DAPI void R3D_SetLightFogEnergy(R3D_Light id, float energy);
+
 // ----------------------------------------
 // LIGHTING: Shadow Config Functions
 // ----------------------------------------
