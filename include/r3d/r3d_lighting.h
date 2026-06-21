@@ -203,9 +203,9 @@ R3DAPI Vector3 R3D_GetLightPosition(R3D_Light id);
  * This function sets the position of the specified light.
  * Only applicable to spot lights or omni-lights.
  *
- * @note Has no effect for directional lights.
- *       If called on a directional light, 
- *       a warning will be logged.
+ * @note For directional lights, the position is stored internally but has no effect
+ *       on lighting calculations. It can still be retrieved via @ref R3D_GetLightPosition
+ *       and may be used for debug visualization with @ref R3D_DrawLightDebug.
  *
  * @param id The ID of the light.
  * @param position The new position to set for the light.
@@ -245,10 +245,11 @@ R3DAPI void R3D_SetLightDirection(R3D_Light id, Vector3 direction);
  * This function sets both the position and the direction of the specified light,
  * causing it to "look at" a given target point.
  *
- * @note - For directional lights, only the direction is updated (position is ignored).
+ * @note - For directional lights, only the direction is updated. The position is stored
+ *         internally but has no effect on lighting calculations; it may still be used
+ *         for debug visualization with @ref R3D_DrawLightDebug.
  *       - For omni-directional lights, only the position is updated (direction is not calculated).
  *       - For spot lights, both position and direction are set accordingly.
- *       - This function does **not** emit any warning or log message.
  *
  * @param id The ID of the light.
  * @param position The position to set for the light.

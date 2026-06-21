@@ -128,12 +128,14 @@ void R3D_SetLightPosition(R3D_Light id, Vector3 position)
 {
     GET_LIGHT_OR_RETURN(light, id);
 
-    if (light->type == R3D_LIGHT_DIR) {
-        R3D_TRACELOG(LOG_WARNING, "Can't set position for light [ID %i]; it's directional and position is set automatically", id);
+    if (Vector3Equals(position, light->position)) {
         return;
     }
 
-    light->state.matrixShouldBeUpdated = true;
+    // Position is dummy and unused for directional lights
+    if (light->type != R3D_LIGHT_DIR) {
+        light->state.matrixShouldBeUpdated = true;
+    }
     light->position = position;
 }
 
@@ -161,14 +163,10 @@ void R3D_SetLightTarget(R3D_Light id, Vector3 position, Vector3 target)
     GET_LIGHT_OR_RETURN(light, id);
 
     if (light->type != R3D_LIGHT_OMNI) {
-        light->state.matrixShouldBeUpdated = true;
         light->direction = Vector3Normalize(Vector3Subtract(target, position));
     }
-
-    if (light->type != R3D_LIGHT_DIR) {
-        light->state.matrixShouldBeUpdated = true;
-        light->position = position;
-    }
+    light->state.matrixShouldBeUpdated = true;
+    light->position = position;
 }
 
 float R3D_GetLightEnergy(R3D_Light id)
