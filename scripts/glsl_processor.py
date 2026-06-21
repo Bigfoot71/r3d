@@ -22,16 +22,34 @@ from pathlib import Path
 
 # === Processing Passes === #
 
-def process_includes(shader_content, base_path, included_files=None):
+def process_includes(shader_content, base_path, include_dirs=None, included_files=None):
     """Recursively resolve #include directives in GLSL shader code."""
+    if included_files is None:
+        included_files = set()
+    if include_dirs is None:
+        include_dirs = []
+
     if included_files is None:
         included_files = set()
 
     base_path = Path(base_path)
-    include_pattern = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
+    include_pattern = re.compile(r'^\s*#include\s+(?:"([^"]+)"|<([^>]+)>)', re.MULTILINE)
 
     def replacer(match):
-        file_path = (base_path / match.group(1)).resolve()
+        relative_path = match.group(1)  # "..." match
+        system_path   = match.group(2)  # <...> match
+
+        if relative_path is not None:
+            file_path = (base_path / relative_path).resolve()
+        else:
+            for inc_dir in include_dirs:
+                candidate = (Path(inc_dir) / system_path).resolve()
+                if candidate.is_file():
+                    file_path = candidate
+                    break
+            else:
+                print(f"Include not found in include dirs: {system_path}", file=sys.stderr)
+                return ""
 
         if file_path in included_files:
             return ""
@@ -42,7 +60,7 @@ def process_includes(shader_content, base_path, included_files=None):
 
         included_files.add(file_path)
         content = file_path.read_text(encoding="utf-8")
-        return process_includes(content, file_path.parent, included_files) + "\n"
+        return process_includes(content, file_path.parent, include_dirs, included_files) + "\n"
 
     return include_pattern.sub(replacer, shader_content)
 
@@ -106,7 +124,7 @@ def optimize_float_literals(shader_content):
 
 # === Main === #
 
-def process_shader(filepath):
+def process_shader(filepath, include_dirs=None):
     """Process a shader file through all optimization passes"""
     filepath = Path(filepath)
 
@@ -120,7 +138,7 @@ def process_shader(filepath):
         print(f"Error reading file: {e}", file=sys.stderr)
         sys.exit(1)
 
-    shader_content = process_includes(shader_content, filepath.parent)
+    shader_content = process_includes(shader_content, filepath.parent, include_dirs or [])
     shader_content = remove_comments(shader_content)
     shader_content = remove_newlines(shader_content)
     shader_content = normalize_spaces(shader_content)
@@ -141,12 +159,13 @@ def main():
     parser.add_argument("shader_path", help="Path to the input shader file")
     parser.add_argument("output_file", nargs="?", help="Output file path (optional, defaults to stdout)")
     parser.add_argument("--compress", "-c", action="store_true", help="Compress the shader output (binary mode)")
+    parser.add_argument("-I", "--include-dir", action="append", dest="include_dirs", default=[], metavar="DIR", help="Add a directory to the include search path (can be used multiple times)")
     args = parser.parse_args()
 
     if args.compress and not args.output_file:
         sys.exit("Error: Cannot output compressed data to stdout. Please specify an output file.")
 
-    formatted_shader = process_shader(args.shader_path)
+    formatted_shader = process_shader(args.shader_path, args.include_dirs)
 
     if args.compress:
         formatted_shader = compress_shader(formatted_shader)
