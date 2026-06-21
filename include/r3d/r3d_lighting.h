@@ -145,53 +145,50 @@ R3DAPI void R3D_EnableLight(R3D_Light id);
 R3DAPI void R3D_DisableLight(R3D_Light id);
 
 /**
- * @brief Gets the color of a light.
+ * @brief Gets the color of a light in sRGB space.
  *
- * This function retrieves the color of the specified light as a `Color` structure.
+ * The internal linear color is converted to sRGB before being returned.
  *
  * @param id The ID of the light.
- * @return The color of the light as a `Color` structure.
+ * @return The color of the light as an sRGB @ref Color.
  */
 R3DAPI Color R3D_GetLightColor(R3D_Light id);
 
 /**
- * @brief Sets the color of a light.
+ * @brief Sets the color of a light from an sRGB color.
  *
- * This function sets the color of the specified light using a `Color` structure.
+ * The provided sRGB color is converted to linear space before being stored internally.
  *
  * @param id The ID of the light.
- * @param color The new color to set for the light.
+ * @param color The new color to set for the light, in sRGB space.
  */
 R3DAPI void R3D_SetLightColor(R3D_Light id, Color color);
 
 /**
- * @brief Gets the color of a light as a `Vector3`.
+ * @brief Gets the color of a light in linear space.
  *
- * This function retrieves the color of the specified light as a `Vector3`, where each
- * component (x, y, z) represents the RGB values of the light.
- *
- * @param id The ID of the light.
- * @return The color of the light as a `Vector3`.
- */
-R3DAPI Vector3 R3D_GetLightColorV(R3D_Light id);
-
-/**
- * @brief Sets the color of a light using a `Vector3`.
- *
- * This function sets the color of the specified light using a `Vector3`, where each
- * component (x, y, z) represents the RGB values of the light.
+ * Returns the raw internal color without any color space conversion.
  *
  * @param id The ID of the light.
- * @param color The new color to set for the light as a `Vector3`.
+ * @return The color of the light as a linear RGB @ref Vector3.
  */
-R3DAPI void R3D_SetLightColorV(R3D_Light id, Vector3 color);
+R3DAPI Vector3 R3D_GetLightColorLinear(R3D_Light id);
 
 /**
- * @brief Sets the color and modulates the energy of a light from a color temperature.
+ * @brief Sets the color of a light from a linear RGB color.
  *
- * Converts the given color temperature to a normalized RGB color and applies it
- * to the light. The luminance extracted from the temperature is used to scale
- * the light's existing energy, preserving the user-defined intensity.
+ * The provided value is stored as-is, without any color space conversion.
+ *
+ * @param id The ID of the light.
+ * @param color The new color to set for the light, in linear space.
+ */
+R3DAPI void R3D_SetLightColorLinear(R3D_Light id, Vector3 color);
+
+/**
+ * @brief Sets the color of a light from a color temperature.
+ *
+ * Converts the given temperature to an sRGB color using the Tanner Helland approximation,
+ * then applies the appropriate sRGB-to-linear conversion before storing it internally.
  *
  * @param id The ID of the light.
  * @param kelvin The color temperature in Kelvin. Valid range is 1000K to 40000K.

@@ -96,29 +96,22 @@ void R3D_DisableLight(R3D_Light id)
 Color R3D_GetLightColor(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, BLANK);
-    return (Color) {
-        (uint8_t)Clamp(light->color.x * 255, 0, 255),
-        (uint8_t)Clamp(light->color.y * 255, 0, 255),
-        (uint8_t)Clamp(light->color.z * 255, 0, 255),
-        255
-    };
+    return r3d_color_linear_to_srgb_vec3(light->color);
 }
 
 void R3D_SetLightColor(R3D_Light id, Color color)
 {
     GET_LIGHT_OR_RETURN(light, id);
-    light->color.x = color.r / 255.0f;
-    light->color.y = color.g / 255.0f;
-    light->color.z = color.b / 255.0f;
+    light->color = r3d_color_srgb_to_linear_vec3(color);
 }
 
-Vector3 R3D_GetLightColorV(R3D_Light id)
+Vector3 R3D_GetLightColorLinear(R3D_Light id)
 {
     GET_LIGHT_OR_RETURN(light, id, (Vector3) {0});
     return light->color;
 }
 
-void R3D_SetLightColorV(R3D_Light id, Vector3 color)
+void R3D_SetLightColorLinear(R3D_Light id, Vector3 color)
 {
     GET_LIGHT_OR_RETURN(light, id);
     light->color = color;
@@ -126,8 +119,7 @@ void R3D_SetLightColorV(R3D_Light id, Vector3 color)
 
 void R3D_SetLightTemperature(R3D_Light id, float kelvin)
 {
-    Color color = R3D_ColorFromTemperature(kelvin);
-    R3D_SetLightColorV(id, r3d_color_srgb_to_linear_vec3(color));
+    R3D_SetLightColor(id, R3D_ColorFromTemperature(kelvin));
 }
 
 Vector3 R3D_GetLightPosition(R3D_Light id)
