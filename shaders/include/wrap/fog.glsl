@@ -19,15 +19,15 @@ float FogFactor(float dist)
 
 vec4 FogColorAlpha(float depth, float far)
 {
-    return vec4(uFog.color, (depth >= far) ? uFog.skyAffect : FogFactor(depth));
+    return vec4(uFog.color.rgb, (depth >= far) ? uFog.skyAffect : FogFactor(depth));
 }
 
 vec3 FogColorMix(vec3 color, float depth)
 {
-    return mix(color, uFog.color, FogFactor(depth));
+    return mix(color, uFog.color.rgb, FogFactor(depth));
 }
 
 vec4 FogColorMix(vec4 color, float depth)
 {
-    return vec4(mix(color.rgb, uFog.color, FogFactor(depth)), color.a);
+    return vec4(mix(color.rgb, uFog.color.rgb, FogFactor(depth)), color.a);
 }

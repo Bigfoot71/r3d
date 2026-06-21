@@ -16,6 +16,7 @@
 
 #include <lib/math.glsl>
 #include <lib/pbr.glsl>
+#include <ubo/fx.glsl>
 
 /* === Varyings === */
 
@@ -34,15 +35,6 @@ uniform sampler2D uOrmTex;
 uniform samplerCubeArray uIrradianceTex;
 uniform samplerCubeArray uPrefilterTex;
 uniform sampler2D uBrdfLutTex;
-
-uniform float uSsaoPower;
-uniform float uSsilAoPower;
-uniform float uSsilIntensity;
-uniform float uSsgiIntensity;
-
-uniform bool uSsaoEnabled;
-uniform bool uSsilEnabled;
-uniform bool uSsgiEnabled;
 
 /* === Blocks === */
 
@@ -136,21 +128,21 @@ void main()
     vec3 kD = albedo * (1.0 - orm.z);
 
     vec4 io = vec4(0.0, 0.0, 0.0, 1.0);
-    if (uSsilEnabled || uSsaoEnabled || uSsgiEnabled)
+    if (uSsil.enabled || uSsao.enabled || uSsgi.enabled)
     {
         UpsampleWeights uw = ComputeUpsampleWeights(depth, NdotV);
-        if (uSsilEnabled) {
+        if (uSsil.enabled) {
             io = Upsample(uSsilTex, uw);
-            io.rgb *= uSsilIntensity;
-            io.a = pow(io.a, uSsilAoPower);
+            io.rgb *= uSsil.giIntensity;
+            io.a = pow(io.a, uSsil.aoPower);
         }
-        if (uSsaoEnabled) {
+        if (uSsao.enabled) {
             float ao = Upsample(uSsaoTex, uw).r;
-            io.a *= pow(ao, uSsaoPower);
+            io.a *= pow(ao, uSsao.power);
         }
-        if (uSsgiEnabled) {
+        if (uSsgi.enabled) {
             vec3 gi = Upsample(uSsgiTex, uw).rgb;
-            io.rgb += gi * uSsgiIntensity;
+            io.rgb += gi * uSsgi.intensity;
         }
         orm.x *= io.a;
         io.rgb *= kD;

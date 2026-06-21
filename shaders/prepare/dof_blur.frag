@@ -3,7 +3,7 @@
  * Depth of Field done in a single pass.
  * Originally written by Dennis Gustafsson.
  *
- * Copyright (c) 2025 Victor Le Juez, Jens Roth
+ * Copyright (c) 2025-2026 Victor Le Juez, Jens Roth
  *
  * This software is distributed under the terms of the accompanying LICENSE file.
  * It is provided "as-is", without any express or implied warranty.
@@ -15,12 +15,12 @@
 #version 330 core
 
 #include <lib/math.glsl>
+#include <ubo/fx.glsl>
 
 noperspective in vec2 vTexCoord;
 
 uniform sampler2D uSceneTex;    //< RGB: Color | A: CoC
 uniform sampler2D uDepthTex;
-uniform float uMaxBlurSize;
 
 const float RAD_SCALE = 0.5;
 
@@ -32,19 +32,19 @@ void main()
 
     vec4 centerScene = texture(uSceneTex, vTexCoord);
     float centerDepth = texture(uDepthTex, vTexCoord).r;
-    float centerSize = abs(centerScene.a) * uMaxBlurSize;
+    float centerSize = abs(centerScene.a) * uDof.maxBlurSize;
 
     vec3 color = centerScene.rgb;
     float radius = RAD_SCALE;
     float tot = 1.0;
 
-    for (float ang = 0.0; radius < uMaxBlurSize; ang += M_GOLDEN_ANGLE)
+    for (float ang = 0.0; radius < uDof.maxBlurSize; ang += M_GOLDEN_ANGLE)
     {
         vec2 uv = vTexCoord + vec2(cos(ang), sin(ang)) * texelSize * radius;
 
         vec4 sampleScene = texture(uSceneTex, uv);
         float sampleDepth = texture(uDepthTex, uv).r;
-        float sampleSize = abs(sampleScene.a) * uMaxBlurSize;
+        float sampleSize = abs(sampleScene.a) * uDof.maxBlurSize;
 
         if (sampleDepth > centerDepth) {
             sampleSize = clamp(sampleSize, 0.0, centerSize * 2.0);

@@ -15,6 +15,7 @@
 
 #include <wrap/view.glsl>
 #include <lib/math.glsl>
+#include <ubo/fx.glsl>
 
 /* === Varyings === */
 
@@ -25,11 +26,6 @@ noperspective in vec2 vTexCoord;
 uniform sampler2D uDiffuseTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-
-uniform int uSliceCount;
-uniform float uEdgeFade;
-uniform float uDistanceFalloff;
-uniform float uNormalRejection;
 
 out vec4 FragColor;
 
@@ -65,18 +61,18 @@ void main()
     // Exponential step size parameters
     float startStep = viewport.x / 1000.0;
     float invStartStep = 1.0 / startStep;
-    float stepGrowth = M_TAU / float(uSliceCount) + 1.0;
+    float stepGrowth = M_TAU / float(uSsgi.sliceCount) + 1.0;
     float invLogStepGrowth = 1.0 / log(stepGrowth);
     float pixelDistBase = startStep * pow(stepGrowth, linOffset);
     float pixelDistOffset = 1.0 - startStep;
 
     // Slice constants
-    float sliceStep = M_TAU / float(uSliceCount);
-    float sliceWeight = 2.0 / float(uSliceCount);
+    float sliceStep = M_TAU / float(uSsgi.sliceCount);
+    float sliceWeight = 2.0 / float(uSsgi.sliceCount);
 
     vec3 gi = vec3(0.0);
 
-    for (int slice = 0; slice < uSliceCount; slice++)
+    for (int slice = 0; slice < uSsgi.sliceCount; slice++)
     {
         // Slice direction in screen space
         float sliceAngle = angOffset + sliceStep * float(slice);
@@ -121,14 +117,14 @@ void main()
                 float contrib = max(0.0, HorizonContribution(NdotE, NdotT, sampleAngle, horizonAngle));
 
                 vec2 edge = min(sampleUV, 1.0 - sampleUV);
-                float edgeFade = smoothstep(0.0, uEdgeFade, min(edge.x, edge.y));
+                float edgeFade = smoothstep(0.0, uSsgi.edgeFade, min(edge.x, edge.y));
 
                 float dist2 = dot(delta, delta);
-                float distFade = 1.0 / (1.0 + dist2 * uDistanceFalloff);
+                float distFade = 1.0 / (1.0 + dist2 * uSsgi.distanceFalloff);
 
                 // Reject light from back-facing emitters
                 float facing = -dot(sampleNorm, delta * inversesqrt(max(dist2, 1e-8)));
-                float normalFade = mix(1.0, smoothstep(0.0, 0.1, facing), uNormalRejection);
+                float normalFade = mix(1.0, smoothstep(0.0, 0.1, facing), uSsgi.normalRejection);
 
                 giSlice += light * contrib * edgeFade * distFade * normalFade;
                 horizonAngle = sampleAngle; // tighten horizon

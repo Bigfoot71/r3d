@@ -3,7 +3,7 @@
  * Performs tone mapping, debanding, color adjustments, and
  * converts from linear color space to sRGB.
  *
- * Copyright (c) 2025 Victor Le Juez
+ * Copyright (c) 2025-2026 Victor Le Juez
  *
  * This software is distributed under the terms of the accompanying LICENSE file.
  * It is provided "as-is", without any express or implied warranty.
@@ -14,14 +14,7 @@
 /* === Includes === */
 
 #include <lib/math.glsl>
-
-/* === Definitions === */
-
-#define TONEMAP_LINEAR 0
-#define TONEMAP_REINHARD 1
-#define TONEMAP_FILMIC 2
-#define TONEMAP_ACES 3
-#define TONEMAP_AGX 4
+#include <ubo/fx.glsl>
 
 /* === Varyings === */
 
@@ -29,13 +22,7 @@ noperspective in vec2 vTexCoord;
 
 /* === Uniforms === */
 
-uniform sampler2D uSceneTex;        //< Scene color texture
-uniform float uTonemapExposure;     //< Tonemap exposure
-uniform float uTonemapWhite;        //< Tonemap white point, not used with AGX
-uniform int uTonemapMode;           //< Tonemap mode used (e.g. TONEMAP_LINEAR)
-uniform float uBrightness;          //< Brightness adjustment
-uniform float uContrast;            //< Contrast adjustment
-uniform float uSaturation;          //< Saturation adjustment
+uniform sampler2D uSceneTex;
 
 /* === Fragments === */
 
@@ -162,7 +149,7 @@ vec3 TonemapAgX(vec3 color)
     return color;
 }
 
-/* === Main Functions === */ 
+/* === Stage Functions === */ 
 
 vec3 Tonemapping(vec3 color, float exposure, float pWhite) // inputs are LINEAR
 {
@@ -171,7 +158,7 @@ vec3 Tonemapping(vec3 color, float exposure, float pWhite) // inputs are LINEAR
 
     color *= exposure;
 
-    switch (uTonemapMode) {
+    switch (uTonemap.mode) {
     case TONEMAP_REINHARD:
         color = TonemapReinhard(max(vec3(0.0), color), pWhite);
         break;
@@ -217,14 +204,14 @@ vec3 LinearToSRGB(vec3 color)
 	return max(vec3(1.055) * pow(color, vec3(0.416666667)) - vec3(0.055), vec3(0.0));
 }
 
-/* === Main program === */
+/* === Main Function === */
 
 void main()
 {
     vec3 color = texelFetch(uSceneTex, ivec2(gl_FragCoord.xy), 0).rgb;
 
-    color = Tonemapping(color, uTonemapExposure, uTonemapWhite);
-    color = Adjustments(color, uBrightness, uContrast, uSaturation);
+    color = Tonemapping(color, uTonemap.exposure, uTonemap.white);
+    color = Adjustments(color, uBcs.brightness, uBcs.contrast, uBcs.saturation);
     color = LinearToSRGB(color);
 
     FragColor = vec4(Debanding(color), 1.0);

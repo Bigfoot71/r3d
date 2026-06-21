@@ -15,6 +15,7 @@
 
 #include <wrap/view.glsl>
 #include <lib/math.glsl>
+#include <ubo/fx.glsl>
 
 /* === Varyings === */
 
@@ -24,12 +25,6 @@ noperspective in vec2 vTexCoord;
 
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
-
-uniform int uSampleCount;
-uniform float uRadius;
-uniform float uBias;
-uniform float uIntensity;
-uniform float uMaxSSRadius;
 
 /* === Constants === */
 
@@ -58,7 +53,7 @@ out float FragOcclusion;
 
 vec2 TapLocation(int i, float numSpiralTurns, float spin, out float rNorm)
 {
-    float alpha = (float(i) + 0.5) / float(uSampleCount);
+    float alpha = (float(i) + 0.5) / float(uSsao.sampleCount);
     float angle = alpha * (numSpiralTurns * M_TAU) + spin;
 
     rNorm = alpha;
@@ -79,20 +74,20 @@ void main()
     vec3 normal = V_GetViewNormal(uNormalTex, pixelCoord);
 
     float projScale = abs(uView.proj[1][1]) * textureSize(uDepthTex, 0).y * 0.5;
-    float ssRadiusRaw = projScale * uRadius / max(depth, 0.1);
-    float ssRadius = min(ssRadiusRaw, uMaxSSRadius);
+    float ssRadiusRaw = projScale * uSsao.radius / max(depth, 0.1);
+    float ssRadius = min(ssRadiusRaw, uSsao.ssMaxRadius);
 
     float radiusScale = ssRadius / max(ssRadiusRaw, 1e-4);
-    float radiusSq = uRadius * uRadius;
+    float radiusSq = uSsao.radius * uSsao.radius;
 
     // Here we use an IGN instead of the hash from the HPG12 AlchemyAO paper.
     // The result is much more pleasing and blurs much better.
 
     float spin = M_TAU * M_HashR2(gl_FragCoord.xy);
-    int numSpiralTurns = ROTATIONS[clamp(uSampleCount - 1, 0, 97)];
+    int numSpiralTurns = ROTATIONS[clamp(uSsao.sampleCount - 1, 0, 97)];
 
     float aoSum = 0.0;
-    for (int i = 0; i < uSampleCount; ++i)
+    for (int i = 0; i < uSsao.sampleCount; ++i)
     {
         float rNorm;
         vec2 unitDir = TapLocation(i, float(numSpiralTurns), spin, rNorm);
@@ -106,14 +101,14 @@ void main()
 
         const float epsilon = 0.02;
         float f = max(radiusSq - vv, 0.0);
-        aoSum += f * f * f * max((vn - uBias) / (epsilon + vv), 0.0);
+        aoSum += f * f * f * max((vn - uSsao.bias) / (epsilon + vv), 0.0);
     }
 
-    float temp = radiusSq * uRadius;
+    float temp = radiusSq * uSsao.radius;
     aoSum /= (temp * temp);
 
     // Attenuate intensity proportionally when ssRadius was clamped, preventing over-darkening at close range
-    float ao = max(0.0, 1.0 - aoSum * uIntensity * (2.0 / float(uSampleCount)) * radiusScale);
+    float ao = max(0.0, 1.0 - aoSum * uSsao.intensity * (2.0 / float(uSsao.sampleCount)) * radiusScale);
 
     // 1-pixel bilateral filter using derivatives (almost free)
     if (abs(dFdx(depth)) < 0.2) ao -= dFdx(ao) * (float(pixelCoord.x & 1) - 0.5);

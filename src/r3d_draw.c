@@ -821,65 +821,89 @@ void upload_fx_block(void)
 
     r3d_shader_block_fx_t block = {0};
 
-    block.uSsao.sampleCount = env->ssao.sampleCount;
-    block.uSsao.intensity = env->ssao.intensity;
-    block.uSsao.power = env->ssao.power;
-    block.uSsao.maxRadius = env->ssao.maxRadius;
-    block.uSsao.radius = env->ssao.radius;
-    block.uSsao.bias = env->ssao.bias;
+    if (env->ssao.enabled) {
+        int wSsao = 0, hSsao = 0;
+        r3d_target_get_resolution(&wSsao, &hSsao, R3D_TARGET_SSAO_0, 0);
+        block.uSsao.sampleCount = env->ssao.sampleCount;
+        block.uSsao.intensity = env->ssao.intensity;
+        block.uSsao.power = env->ssao.power;
+        block.uSsao.ssMaxRadius = env->ssao.maxRadius * (float)MIN(wSsao, hSsao);
+        block.uSsao.radius = env->ssao.radius;
+        block.uSsao.bias = env->ssao.bias;
+        block.uSsao.enabled = env->ssao.enabled;
+    }
 
-    block.uSsil.sampleCount = env->ssil.sampleCount;
-    block.uSsil.giIntensity = env->ssil.giIntensity;
-    block.uSsil.aoIntensity = env->ssil.aoIntensity;
-    block.uSsil.aoPower = env->ssil.aoPower;
-    block.uSsil.maxRadius = env->ssil.radius;
-    block.uSsil.radius = env->ssil.radius;
-    block.uSsil.bias = env->ssil.bias;
+    if (env->ssil.enabled) {
+        int wSsil = 0, hSsil = 0;
+        r3d_target_get_resolution(&wSsil, &hSsil, R3D_TARGET_SSAO_1, 0);
+        block.uSsil.sampleCount = env->ssil.sampleCount;
+        block.uSsil.giIntensity = env->ssil.giIntensity;
+        block.uSsil.aoIntensity = env->ssil.aoIntensity;
+        block.uSsil.aoPower = env->ssil.aoPower;
+        block.uSsil.ssMaxRadius = env->ssil.maxRadius * (float)MIN(wSsil, hSsil);
+        block.uSsil.radius = env->ssil.radius;
+        block.uSsil.bias = env->ssil.bias;
+        block.uSsil.enabled = env->ssil.enabled;
+    }
 
-    block.uSsgi.sliceCount = env->ssgi.sliceCount;
-    block.uSsgi.edgeFade = env->ssgi.edgeFade;
-    block.uSsgi.distanceFalloff = env->ssgi.distanceFalloff;
-    block.uSsgi.normalRejection = env->ssgi.normalRejection;
-    block.uSsgi.intensity = env->ssgi.intensity;
+    if (env->ssgi.enabled) {
+        block.uSsgi.sliceCount = env->ssgi.sliceCount;
+        block.uSsgi.edgeFade = env->ssgi.edgeFade;
+        block.uSsgi.distanceFalloff = env->ssgi.distanceFalloff;
+        block.uSsgi.normalRejection = env->ssgi.normalRejection;
+        block.uSsgi.intensity = env->ssgi.intensity;
+        block.uSsgi.enabled = env->ssgi.enabled;
+    }
 
-    block.uSsr.maxRaySteps = env->ssr.maxRaySteps;
-    block.uSsr.binarySteps = env->ssr.binarySteps;
-    block.uSsr.stepSize = env->ssr.stepSize;
-    block.uSsr.thickness = env->ssr.thickness;
-    block.uSsr.maxDistance = env->ssr.maxDistance;
-    block.uSsr.edgeFade = env->ssr.edgeFade;
+    if (env->ssr.enabled) {
+        block.uSsr.maxRaySteps = env->ssr.maxRaySteps;
+        block.uSsr.binarySteps = env->ssr.binarySteps;
+        block.uSsr.stepSize = env->ssr.stepSize;
+        block.uSsr.thickness = env->ssr.thickness;
+        block.uSsr.maxDistance = env->ssr.maxDistance;
+        block.uSsr.edgeFade = env->ssr.edgeFade;
+        block.uSsr.enabled = env->ssr.enabled;
+    }
 
-    block.uFog.color = r3d_color_to_linear_vec3(env->fog.color, R3D.colorSpace);
-    block.uFog.start = env->fog.start;
-    block.uFog.end = env->fog.end;
-    block.uFog.density = env->fog.density;
-    block.uFog.skyAffect = env->fog.skyAffect;
-    block.uFog.mode = env->fog.mode;
+    if (env->fog.mode != R3D_FOG_DISABLED) {
+        block.uFog.color = r3d_color_to_linear_vec4(env->fog.color, R3D.colorSpace);
+        block.uFog.start = env->fog.start;
+        block.uFog.end = env->fog.end;
+        block.uFog.density = env->fog.density;
+        block.uFog.skyAffect = env->fog.skyAffect;
+        block.uFog.mode = env->fog.mode;
+    }
 
-    block.uVFog.scatteringColor = r3d_color_to_linear_vec3(env->volumetricFog.scatteringColor, R3D.colorSpace);
-    block.uVFog.emissionColor = r3d_color_to_linear_vec3(env->volumetricFog.emissionColor, R3D.colorSpace);
-    block.uVFog.scatteringDensity = env->volumetricFog.scatteringDensity;
-    block.uVFog.absortionDensity = env->volumetricFog.absortionDensity;
-    block.uVFog.anisotropy = env->volumetricFog.anisotropy;
-    block.uVFog.emissionEnergy = env->volumetricFog.emissionEnergy;
-    block.uVFog.skyAffect = env->volumetricFog.skyAffect;
-    block.uVFog.length = env->volumetricFog.length;
-    block.uVFog.stepSize = env->volumetricFog.stepSize;
+    if (env->volumetricFog.enabled) {
+        block.uVFog.scatteringColor = r3d_color_to_linear_vec4(env->volumetricFog.scatteringColor, R3D.colorSpace);
+        block.uVFog.emissionColor = r3d_color_to_linear_vec4(env->volumetricFog.emissionColor, R3D.colorSpace);
+        block.uVFog.scatteringDensity = env->volumetricFog.scatteringDensity;
+        block.uVFog.absortionDensity = env->volumetricFog.absortionDensity;
+        block.uVFog.anisotropy = env->volumetricFog.anisotropy;
+        block.uVFog.emissionEnergy = env->volumetricFog.emissionEnergy;
+        block.uVFog.skyAffect = env->volumetricFog.skyAffect;
+        block.uVFog.length = env->volumetricFog.length;
+        block.uVFog.stepSize = env->volumetricFog.stepSize;
+        block.uVFog.enabled = env->volumetricFog.enabled;
+    }
 
-    block.uDof.focusPoint = env->dof.focusPoint;
-    block.uDof.focusScale = env->dof.focusScale;
-    block.uDof.nearScale = env->dof.nearScale;
-    block.uDof.maxBlurSize = env->dof.maxBlurSize;
-    block.uDof.mode = env->dof.mode;
+    if (env->dof.mode != R3D_DOF_DISABLED) {
+        block.uDof.focusPoint = env->dof.focusPoint;
+        block.uDof.focusScale = env->dof.focusScale;
+        block.uDof.nearScale = env->dof.nearScale;
+        block.uDof.maxBlurSize = env->dof.maxBlurSize * 0.5f;
+        block.uDof.mode = env->dof.mode;
+    }
 
-    float knee = env->bloom.threshold * env->bloom.softThreshold;
-    block.uBloom.prefilter.x = env->bloom.threshold;
-    block.uBloom.prefilter.y = env->bloom.threshold - knee;
-    block.uBloom.prefilter.z = 2.0f * knee;
-    block.uBloom.prefilter.w = 0.25f / (knee + 0.00001f);
-    block.uBloom.intensity = env->bloom.intensity;
-    block.uBloom.filterRadius = env->bloom.filterRadius;
-    block.uBloom.mode = env->bloom.mode;
+    if (env->bloom.mode != R3D_BLOOM_DISABLED) {
+        float knee = env->bloom.threshold * env->bloom.softThreshold;
+        block.uBloom.prefilter.x = env->bloom.threshold;
+        block.uBloom.prefilter.y = env->bloom.threshold - knee;
+        block.uBloom.prefilter.z = 2.0f * knee;
+        block.uBloom.prefilter.w = 0.25f / (knee + 0.00001f);
+        block.uBloom.intensity = env->bloom.intensity;
+        block.uBloom.mode = env->bloom.mode;
+    }
 
     block.uTonemap.mode = env->tonemap.mode;
     block.uTonemap.exposure = env->tonemap.exposure;
@@ -1795,16 +1819,6 @@ r3d_target_t pass_prepare_ssao(void)
     R3D_TARGET_BIND(false, R3D_TARGET_SSAO_0);
     R3D_SHADER_USE(prepare.ssao);
 
-    R3D_SHADER_SET_INT(prepare.ssao, uSampleCount, R3D.environment.ssao.sampleCount);
-    R3D_SHADER_SET_FLOAT(prepare.ssao, uRadius,  R3D.environment.ssao.radius);
-    R3D_SHADER_SET_FLOAT(prepare.ssao, uBias, R3D.environment.ssao.bias);
-    R3D_SHADER_SET_FLOAT(prepare.ssao, uIntensity, R3D.environment.ssao.intensity);
-
-    int wSsao = 0, hSsao = 0;
-    r3d_target_get_resolution(&wSsao, &hSsao, R3D_TARGET_SSAO_0, 0);
-    float maxScreenRadius = (float)MIN(wSsao, hSsao) * R3D.environment.ssao.maxRadius;
-    R3D_SHADER_SET_FLOAT(prepare.ssao, uMaxSSRadius, maxScreenRadius);
-
     R3D_SHADER_BIND_SAMPLER(prepare.ssao, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssao, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
 
@@ -1855,16 +1869,6 @@ r3d_target_t pass_prepare_ssil(void)
 
     R3D_TARGET_BIND(false, R3D_TARGET_SSIL_0);
     R3D_SHADER_USE(prepare.ssil);
-
-    R3D_SHADER_SET_INT(prepare.ssil, uSampleCount, R3D.environment.ssil.sampleCount);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uRadius,  R3D.environment.ssil.radius);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uBias, R3D.environment.ssil.bias);
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uAoIntensity, R3D.environment.ssil.aoIntensity);
-
-    int wSsil = 0, hSsil = 0;
-    r3d_target_get_resolution(&wSsil, &hSsil, R3D_TARGET_SSIL_0, 0);
-    float maxScreenRadius = (float)MIN(wSsil, hSsil) * R3D.environment.ssil.maxRadius;
-    R3D_SHADER_SET_FLOAT(prepare.ssil, uMaxSSRadius, maxScreenRadius);
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssil, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
@@ -1927,11 +1931,6 @@ r3d_target_t pass_prepare_ssgi(void)
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDiffuseTex, r3d_target_get_level(R3D_TARGET_DIFFUSE, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssgi, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-
-    R3D_SHADER_SET_INT(prepare.ssgi, uSliceCount, R3D.environment.ssgi.sliceCount);
-    R3D_SHADER_SET_FLOAT(prepare.ssgi, uEdgeFade, R3D.environment.ssgi.edgeFade);
-    R3D_SHADER_SET_FLOAT(prepare.ssgi, uDistanceFalloff, R3D.environment.ssgi.distanceFalloff);
-    R3D_SHADER_SET_FLOAT(prepare.ssgi, uNormalRejection, R3D.environment.ssgi.normalRejection);
 
     R3D_RENDER_SCREEN();
 
@@ -2024,13 +2023,6 @@ r3d_target_t pass_prepare_ssr(void)
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uSpecularTex, r3d_target_get_level(R3D_TARGET_SPECULAR, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uNormalTex, r3d_target_get_level(R3D_TARGET_NORMAL, 1));
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-
-    R3D_SHADER_SET_INT(prepare.ssr, uMaxRaySteps, R3D.environment.ssr.maxRaySteps);
-    R3D_SHADER_SET_INT(prepare.ssr, uBinarySteps, R3D.environment.ssr.binarySteps);
-    R3D_SHADER_SET_FLOAT(prepare.ssr, uStepSize, R3D.environment.ssr.stepSize);
-    R3D_SHADER_SET_FLOAT(prepare.ssr, uThickness, R3D.environment.ssr.thickness);
-    R3D_SHADER_SET_FLOAT(prepare.ssr, uMaxDistance, R3D.environment.ssr.maxDistance);
-    R3D_SHADER_SET_FLOAT(prepare.ssr, uEdgeFade, R3D.environment.ssr.edgeFade);
 
     R3D_RENDER_SCREEN();
 
@@ -2163,14 +2155,6 @@ void pass_deferred_ambient(r3d_target_t ssaoSource, r3d_target_t ssilSource, r3d
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uSsgiTex, r3d_target_get_or_null(ssgiSource));
     R3D_SHADER_BIND_SAMPLER(deferred.ambient, uOrmTex, r3d_target_get_level(R3D_TARGET_ORM, 0));
 
-    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsaoPower, R3D.environment.ssao.power);
-    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilAoPower, R3D.environment.ssil.aoPower);
-    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsilIntensity, R3D.environment.ssil.giIntensity);
-    R3D_SHADER_SET_FLOAT(deferred.ambient, uSsgiIntensity, R3D.environment.ssgi.intensity);
-    R3D_SHADER_SET_INT(deferred.ambient, uSsaoEnabled, R3D.environment.ssao.enabled);
-    R3D_SHADER_SET_INT(deferred.ambient, uSsilEnabled, R3D.environment.ssil.enabled);
-    R3D_SHADER_SET_INT(deferred.ambient, uSsgiEnabled, R3D.environment.ssgi.enabled);
-
     R3D_RENDER_SCREEN();
 }
 
@@ -2229,13 +2213,6 @@ void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE(deferred.vfogTransmittance);
     R3D_SHADER_BIND_SAMPLER(deferred.vfogTransmittance, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
-    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uStepSize, R3D.environment.volumetricFog.stepSize);
-    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uLength, R3D.environment.volumetricFog.length);
-    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uScatteringDensity, R3D.environment.volumetricFog.scatteringDensity);
-    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uAbsortionDensity, R3D.environment.volumetricFog.absortionDensity);
-    R3D_SHADER_SET_COL3(deferred.vfogTransmittance, uEmissionColor, R3D.colorSpace, R3D.environment.volumetricFog.emissionColor);
-    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uEmissionEnergy, R3D.environment.volumetricFog.emissionEnergy);
-    R3D_SHADER_SET_FLOAT(deferred.vfogTransmittance, uSkyAffect, R3D.environment.volumetricFog.skyAffect);
 
     R3D_RENDER_SCREEN();
 
@@ -2249,13 +2226,6 @@ void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
 
     R3D_SHADER_USE(deferred.vfogRadiance);
     R3D_SHADER_BIND_SAMPLER(deferred.vfogRadiance, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uStepSize, R3D.environment.volumetricFog.stepSize);
-    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uLength, R3D.environment.volumetricFog.length);
-    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uScatteringDensity, R3D.environment.volumetricFog.scatteringDensity);
-    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uAbsortionDensity, R3D.environment.volumetricFog.absortionDensity);
-    R3D_SHADER_SET_COL3(deferred.vfogRadiance, uScatteringColor, R3D.colorSpace, R3D.environment.volumetricFog.scatteringColor);
-    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uAnisotropy, R3D.environment.volumetricFog.anisotropy);
-    R3D_SHADER_SET_FLOAT(deferred.vfogRadiance, uSkyAffect, R3D.environment.volumetricFog.skyAffect);
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
@@ -2399,10 +2369,6 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_USE(prepare.dofCoc);
 
     R3D_SHADER_BIND_SAMPLER(prepare.dofCoc, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 0));
-    R3D_SHADER_SET_FLOAT(prepare.dofCoc, uFocusPoint, R3D.environment.dof.focusPoint);
-    R3D_SHADER_SET_FLOAT(prepare.dofCoc, uFocusScale, R3D.environment.dof.focusScale);
-    R3D_SHADER_SET_FLOAT(prepare.dofCoc, uNearScale, R3D.environment.dof.nearScale);
-
     R3D_RENDER_SCREEN();
 
     /* --- Downsample CoC to half resolution --- */
@@ -2422,7 +2388,6 @@ r3d_target_t pass_post_dof(r3d_target_t sceneTarget)
     R3D_SHADER_USE(prepare.dofBlur);
     R3D_SHADER_BIND_SAMPLER(prepare.dofBlur, uSceneTex, r3d_target_get(R3D_TARGET_DOF_0));
     R3D_SHADER_BIND_SAMPLER(prepare.dofBlur, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
-    R3D_SHADER_SET_FLOAT(prepare.dofBlur, uMaxBlurSize, R3D.environment.dof.maxBlurSize * 0.5f);
 
     R3D_RENDER_SCREEN();
 
@@ -2476,7 +2441,6 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     r3d_target_get_texel_size(&txSrcW, &txSrcH, R3D_TARGET_SCENE_0, 0);
     R3D_SHADER_SET_VEC2(prepare.bloomDown, uTexelSize, (Vector2) {txSrcW, txSrcH});
-    R3D_SHADER_SET_VEC4(prepare.bloomDown, uPrefilter, prefilter);
     R3D_SHADER_SET_INT(prepare.bloomDown, uDstLevel, 0);
 
     R3D_RENDER_SCREEN();
@@ -2532,9 +2496,6 @@ r3d_target_t pass_post_bloom(r3d_target_t sceneTarget)
 
     R3D_SHADER_BIND_SAMPLER(post.bloom, uSceneTex, sceneSourceID);
     R3D_SHADER_BIND_SAMPLER(post.bloom, uBloomTex, r3d_target_get_all_levels(R3D_TARGET_BLOOM));
-
-    R3D_SHADER_SET_INT(post.bloom, uBloomMode, R3D.environment.bloom.mode);
-    R3D_SHADER_SET_FLOAT(post.bloom, uBloomIntensity, R3D.environment.bloom.intensity);
 
     R3D_RENDER_SCREEN();
 
@@ -2636,14 +2597,6 @@ r3d_target_t pass_post_output(r3d_target_t sceneTarget)
     R3D_SHADER_USE(post.output);
 
     R3D_SHADER_BIND_SAMPLER(post.output, uSceneTex, r3d_target_get(sceneTarget));
-
-    R3D_SHADER_SET_FLOAT(post.output, uTonemapExposure, R3D.environment.tonemap.exposure);
-    R3D_SHADER_SET_FLOAT(post.output, uTonemapWhite, R3D.environment.tonemap.white);
-    R3D_SHADER_SET_INT(post.output, uTonemapMode, R3D.environment.tonemap.mode);
-    R3D_SHADER_SET_FLOAT(post.output, uBrightness, R3D.environment.color.brightness);
-    R3D_SHADER_SET_FLOAT(post.output, uContrast, R3D.environment.color.contrast);
-    R3D_SHADER_SET_FLOAT(post.output, uSaturation, R3D.environment.color.saturation);
-
     R3D_RENDER_SCREEN();
 
     return sceneTarget;

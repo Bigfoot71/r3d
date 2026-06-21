@@ -17,6 +17,10 @@
 
 #version 330 core
 
+/* === Includes === */
+
+#include <ubo/fx.glsl>
+
 /* === Varyings === */
 
 noperspective in vec2 vTexCoord;
@@ -24,9 +28,8 @@ noperspective in vec2 vTexCoord;
 /* === Uniforms === */
 
 uniform sampler2D uTexture;
-uniform vec2 uTexelSize;        //< Reciprocal of the resolution of the source being sampled
-uniform vec4 uPrefilter;
-uniform int uDstLevel;          //< Which mip we are writing to, used for Karis average
+uniform vec2 uTexelSize;    //< Reciprocal of the resolution of the source being sampled
+uniform int uDstLevel;      //< Which mip we are writing to, used for Karis average
 
 /* === Fragments === */
 
@@ -59,10 +62,10 @@ float KarisAverage(vec3 col)
 vec3 Prefilter (vec3 col)
 {
 	float brightness = max(col.r, max(col.g, col.b));
-	float soft = brightness - uPrefilter.y;
-	soft = clamp(soft, 0, uPrefilter.z);
-	soft = soft * soft * uPrefilter.w;
-	float contribution = max(soft, brightness - uPrefilter.x);
+	float soft = brightness - uBloom.prefilter.y;
+	soft = clamp(soft, 0, uBloom.prefilter.z);
+	soft = soft * soft * uBloom.prefilter.w;
+	float contribution = max(soft, brightness - uBloom.prefilter.x);
 	contribution /= max(brightness, 0.00001);
 	return col * contribution;
 }

@@ -6,18 +6,37 @@
  * For conditions of distribution and use, see accompanying LICENSE file.
  */
 
-#define FOG_DISABLED 0
-#define FOG_LINEAR 1
-#define FOG_EXP2 2
-#define FOG_EXP 3
+/* === Fog Modes === */
+
+#define FOG_DISABLED        0
+#define FOG_LINEAR          1
+#define FOG_EXP2            2
+#define FOG_EXP             3
+
+/* === Bloom Modes === */
+
+#define BLOOM_MIX           1
+#define BLOOM_ADDITIVE      2
+#define BLOOM_SCREEN        3
+
+/* === Tonemap Modes === */
+
+#define TONEMAP_LINEAR      0
+#define TONEMAP_REINHARD    1
+#define TONEMAP_FILMIC      2
+#define TONEMAP_ACES        3
+#define TONEMAP_AGX         4
+
+/* === Structures === */
 
 struct FX_Ssao {
     int sampleCount;
     float intensity;
     float power;
-    float maxRadius;
+    float ssMaxRadius;
     float radius;
     float bias;
+    bool enabled;
 };
 
 struct FX_Ssil {
@@ -25,9 +44,10 @@ struct FX_Ssil {
     float giIntensity;
     float aoIntensity;
     float aoPower;
-    float maxRadius;
+    float ssMaxRadius;
     float radius;
     float bias;
+    bool enabled;
 };
 
 struct FX_Ssgi {
@@ -36,6 +56,7 @@ struct FX_Ssgi {
     float distanceFalloff;
     float normalRejection;
     float intensity;
+    bool enabled;
 };
 
 struct FX_Ssr {
@@ -45,10 +66,11 @@ struct FX_Ssr {
     float thickness;
     float maxDistance;
     float edgeFade;
+    bool enabled;
 };
 
 struct FX_Fog {
-    vec3 color;
+    vec4 color;
     float start;
     float end;
     float density;
@@ -57,8 +79,8 @@ struct FX_Fog {
 };
 
 struct FX_VFog {
-    vec3 scatteringColor;
-    vec3 emissionColor;
+    vec4 scatteringColor;
+    vec4 emissionColor;
     float scatteringDensity;
     float absortionDensity;
     float anisotropy;
@@ -66,6 +88,7 @@ struct FX_VFog {
     float skyAffect;
     float length;
     float stepSize;
+    bool enabled;
 };
 
 struct FX_Dof {
@@ -79,7 +102,6 @@ struct FX_Dof {
 struct FX_Bloom {
     vec4 prefilter;
     float intensity;
-    float filterRadius;
     int mode;
 };
 
@@ -94,6 +116,8 @@ struct FX_Bcs {
     float contrast;
     float saturation;
 };
+
+/* === Uniform Block === */
 
 layout(std140) uniform FxBlock {
     FX_Ssao uSsao;

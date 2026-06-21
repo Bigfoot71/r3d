@@ -530,10 +530,11 @@ typedef struct {
         alignas(4) int32_t sampleCount;
         alignas(4) float intensity;
         alignas(4) float power;
-        alignas(4) float maxRadius;
+        alignas(4) float ssMaxRadius;
         alignas(4) float radius;
         alignas(4) float bias;
-        uint8_t _pad[8];
+        alignas(4) int32_t enabled;
+        uint8_t _pad[4];
     } uSsao;
 
     struct r3d_shader_block_fx_ssil {
@@ -541,10 +542,10 @@ typedef struct {
         alignas(4) float giIntensity;
         alignas(4) float aoIntensity;
         alignas(4) float aoPower;
-        alignas(4) float maxRadius;
+        alignas(4) float ssMaxRadius;
         alignas(4) float radius;
         alignas(4) float bias;
-        uint8_t _pad[4];
+        alignas(4) int32_t enabled;
     } uSsil;
 
     struct r3d_shader_block_fx_ssgi {
@@ -553,7 +554,8 @@ typedef struct {
         alignas(4) float distanceFalloff;
         alignas(4) float normalRejection;
         alignas(4) float intensity;
-        uint8_t _pad[12];
+        alignas(4) int32_t enabled;
+        uint8_t _pad[8];
     } uSsgi;
 
     struct r3d_shader_block_fx_ssr {
@@ -563,11 +565,12 @@ typedef struct {
         alignas(4) float thickness;
         alignas(4) float maxDistance;
         alignas(4) float edgeFade;
-        uint8_t _pad[8];
+        alignas(4) int32_t enabled;
+        uint8_t _pad[4];
     } uSsr;
 
     struct r3d_shader_block_fx_fog {
-        alignas(16) Vector3 color;
+        alignas(16) Vector4 color;
         alignas(4) float start;
         alignas(4) float end;
         alignas(4) float density;
@@ -577,8 +580,8 @@ typedef struct {
     } uFog;
 
     struct r3d_shader_block_fx_vfog {
-        alignas(16) Vector3 scatteringColor;
-        alignas(16) Vector3 emissionColor;
+        alignas(16) Vector4 scatteringColor;
+        alignas(16) Vector4 emissionColor;
         alignas(4) float scatteringDensity;
         alignas(4) float absortionDensity;
         alignas(4) float anisotropy;
@@ -586,7 +589,7 @@ typedef struct {
         alignas(4) float skyAffect;
         alignas(4) float length;
         alignas(4) float stepSize;
-        uint8_t _pad[4];
+        alignas(4) int32_t enabled;
     } uVFog;
 
     struct r3d_shader_block_fx_dof {
@@ -601,9 +604,7 @@ typedef struct {
     struct r3d_shader_block_fx_bloom {
         alignas(16) Vector4 prefilter;
         alignas(4) float intensity;
-        alignas(4) float filterRadius;
         alignas(4) int32_t mode;
-        uint8_t _pad[4];
     } uBloom;
 
     struct r3d_shader_block_fx_tonemap {
@@ -723,11 +724,6 @@ typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_int_t uSampleCount;
-    r3d_shader_uniform_float_t uRadius;
-    r3d_shader_uniform_float_t uBias;
-    r3d_shader_uniform_float_t uIntensity;
-    r3d_shader_uniform_float_t uMaxSSRadius;
 } r3d_shader_prepare_ssao_t;
 
 typedef struct {
@@ -742,11 +738,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_int_t uSampleCount;
-    r3d_shader_uniform_float_t uRadius;
-    r3d_shader_uniform_float_t uBias;
-    r3d_shader_uniform_float_t uAoIntensity;
-    r3d_shader_uniform_float_t uMaxSSRadius;
 } r3d_shader_prepare_ssil_t;
 
 typedef struct {
@@ -761,10 +752,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uDiffuseTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_int_t uSliceCount;
-    r3d_shader_uniform_float_t uEdgeFade;
-    r3d_shader_uniform_float_t uDistanceFalloff;
-    r3d_shader_uniform_float_t uNormalRejection;
 } r3d_shader_prepare_ssgi_t;
 
 typedef struct {
@@ -781,20 +768,11 @@ typedef struct {
     r3d_shader_uniform_sampler_t uSpecularTex;
     r3d_shader_uniform_sampler_t uNormalTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_int_t uMaxRaySteps;
-    r3d_shader_uniform_int_t uBinarySteps;
-    r3d_shader_uniform_float_t uStepSize;
-    r3d_shader_uniform_float_t uThickness;
-    r3d_shader_uniform_float_t uMaxDistance;
-    r3d_shader_uniform_float_t uEdgeFade;
 } r3d_shader_prepare_ssr_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_float_t uFocusPoint;
-    r3d_shader_uniform_float_t uFocusScale;
-    r3d_shader_uniform_float_t uNearScale;
 } r3d_shader_prepare_dof_coc_t;
 
 typedef struct {
@@ -807,14 +785,12 @@ typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_float_t uMaxBlurSize;
 } r3d_shader_prepare_dof_blur_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uTexture;
     r3d_shader_uniform_vec2_t uTexelSize;
-    r3d_shader_uniform_vec4_t uPrefilter;
     r3d_shader_uniform_int_t uDstLevel;
 } r3d_shader_prepare_bloom_down_t;
 
@@ -1115,13 +1091,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uIrradianceTex;
     r3d_shader_uniform_sampler_t uPrefilterTex;
     r3d_shader_uniform_sampler_t uBrdfLutTex;
-    r3d_shader_uniform_float_t uSsaoPower;
-    r3d_shader_uniform_float_t uSsilAoPower;
-    r3d_shader_uniform_float_t uSsilIntensity;
-    r3d_shader_uniform_float_t uSsgiIntensity;
-    r3d_shader_uniform_int_t uSsaoEnabled;
-    r3d_shader_uniform_int_t uSsilEnabled;
-    r3d_shader_uniform_int_t uSsgiEnabled;
 } r3d_shader_deferred_ambient_t;
 
 typedef struct {
@@ -1153,13 +1122,6 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uDepthTex;
-    r3d_shader_uniform_float_t uStepSize;
-    r3d_shader_uniform_float_t uLength;
-    r3d_shader_uniform_float_t uScatteringDensity;
-    r3d_shader_uniform_float_t uAbsortionDensity;
-    r3d_shader_uniform_col3_t uEmissionColor;
-    r3d_shader_uniform_float_t uEmissionEnergy;
-    r3d_shader_uniform_float_t uSkyAffect;
 } r3d_shader_deferred_vfog_transmittance_t;
 
 typedef struct {
@@ -1168,13 +1130,6 @@ typedef struct {
     r3d_shader_uniform_sampler_t uShadowDirTex;
     r3d_shader_uniform_sampler_t uShadowSpotTex;
     r3d_shader_uniform_sampler_t uShadowOmniTex;
-    r3d_shader_uniform_float_t uStepSize;
-    r3d_shader_uniform_float_t uLength;
-    r3d_shader_uniform_float_t uScatteringDensity;
-    r3d_shader_uniform_float_t uAbsortionDensity;
-    r3d_shader_uniform_col3_t uScatteringColor;
-    r3d_shader_uniform_float_t uAnisotropy;
-    r3d_shader_uniform_float_t uSkyAffect;
 } r3d_shader_deferred_vfog_radiance_t;
 
 typedef struct {
@@ -1193,8 +1148,6 @@ typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
     r3d_shader_uniform_sampler_t uBloomTex;
-    r3d_shader_uniform_int_t uBloomMode;
-    r3d_shader_uniform_float_t uBloomIntensity;
 } r3d_shader_post_bloom_t;
 
 typedef struct {
@@ -1213,12 +1166,6 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSceneTex;
-    r3d_shader_uniform_float_t uTonemapExposure;
-    r3d_shader_uniform_float_t uTonemapWhite;
-    r3d_shader_uniform_int_t uTonemapMode;
-    r3d_shader_uniform_float_t uBrightness;
-    r3d_shader_uniform_float_t uContrast;
-    r3d_shader_uniform_float_t uSaturation;
 } r3d_shader_post_output_t;
 
 typedef struct {
