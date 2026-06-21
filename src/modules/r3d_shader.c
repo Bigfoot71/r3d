@@ -353,15 +353,9 @@ bool r3d_shader_load_prepare_ssao(r3d_shader_custom_t* custom)
     LOAD_SHADER(ssao, SCREEN_VERT, SSAO_FRAG);
 
     SET_UNIFORM_BUFFER(ssao, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-
-    GET_LOCATION(ssao, uSampleCount);
-    GET_LOCATION(ssao, uRadius);
-    GET_LOCATION(ssao, uBias);
-    GET_LOCATION(ssao, uIntensity);
-    GET_LOCATION(ssao, uMaxSSRadius);
+    SET_UNIFORM_BUFFER(ssao, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(ssao);
-
     SET_SAMPLER(ssao, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssao, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
@@ -387,15 +381,9 @@ bool r3d_shader_load_prepare_ssil(r3d_shader_custom_t* custom)
     LOAD_SHADER(ssil, SCREEN_VERT, SSIL_FRAG);
 
     SET_UNIFORM_BUFFER(ssil, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-
-    GET_LOCATION(ssil, uSampleCount);
-    GET_LOCATION(ssil, uRadius);
-    GET_LOCATION(ssil, uBias);
-    GET_LOCATION(ssil, uAoIntensity);
-    GET_LOCATION(ssil, uMaxSSRadius);
+    SET_UNIFORM_BUFFER(ssil, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(ssil);
-
     SET_SAMPLER(ssil, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssil, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssil, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
@@ -422,14 +410,9 @@ bool r3d_shader_load_prepare_ssgi(r3d_shader_custom_t* custom)
     LOAD_SHADER(ssgi, SCREEN_VERT, SSGI_FRAG);
 
     SET_UNIFORM_BUFFER(ssgi, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-
-    GET_LOCATION(ssgi, uSliceCount);
-    GET_LOCATION(ssgi, uEdgeFade);
-    GET_LOCATION(ssgi, uDistanceFalloff);
-    GET_LOCATION(ssgi, uNormalRejection);
+    SET_UNIFORM_BUFFER(ssgi, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(ssgi);
-
     SET_SAMPLER(ssgi, uDiffuseTex, R3D_SHADER_SAMPLER_BUFFER_DIFFUSE);
     SET_SAMPLER(ssgi, uNormalTex, R3D_SHADER_SAMPLER_BUFFER_NORMAL);
     SET_SAMPLER(ssgi, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
@@ -457,13 +440,7 @@ bool r3d_shader_load_prepare_ssr(r3d_shader_custom_t* custom)
     LOAD_SHADER(ssr, SCREEN_VERT, SSR_FRAG);
 
     SET_UNIFORM_BUFFER(ssr, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-
-    GET_LOCATION(ssr, uMaxRaySteps);
-    GET_LOCATION(ssr, uBinarySteps);
-    GET_LOCATION(ssr, uStepSize);
-    GET_LOCATION(ssr, uThickness);
-    GET_LOCATION(ssr, uMaxDistance);
-    GET_LOCATION(ssr, uEdgeFade);
+    SET_UNIFORM_BUFFER(ssr, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(ssr);
 
@@ -480,9 +457,7 @@ bool r3d_shader_load_prepare_dof_coc(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_prepare_dof_coc_t, prepare, dofCoc);
     LOAD_SHADER(dofCoc, SCREEN_VERT, DOF_COC_FRAG);
 
-    GET_LOCATION(dofCoc, uFocusPoint);
-    GET_LOCATION(dofCoc, uFocusScale);
-    GET_LOCATION(dofCoc, uNearScale);
+    SET_UNIFORM_BUFFER(dofCoc, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(dofCoc);
     SET_SAMPLER(dofCoc, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
@@ -496,7 +471,6 @@ bool r3d_shader_load_prepare_dof_down(r3d_shader_custom_t* custom)
     LOAD_SHADER(dofDown, SCREEN_VERT, DOF_DOWN_FRAG);
 
     USE_SHADER(dofDown);
-
     SET_SAMPLER(dofDown, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);
     SET_SAMPLER(dofDown, uCoCTex, R3D_SHADER_SAMPLER_BUFFER_DOF_COC);
 
@@ -508,7 +482,7 @@ bool r3d_shader_load_prepare_dof_blur(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_prepare_dof_blur_t, prepare, dofBlur);
     LOAD_SHADER(dofBlur, SCREEN_VERT, DOF_BLUR_FRAG);
 
-    GET_LOCATION(dofBlur, uMaxBlurSize);
+    SET_UNIFORM_BUFFER(dofBlur, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(dofBlur);
     SET_SAMPLER(dofBlur, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_DOF);     //< RGB: Color | A: CoC
@@ -522,8 +496,9 @@ bool r3d_shader_load_prepare_bloom_down(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_prepare_bloom_down_t, prepare, bloomDown);
     LOAD_SHADER(bloomDown, SCREEN_VERT, BLOOM_DOWN_FRAG);
 
+    SET_UNIFORM_BUFFER(bloomDown, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
+
     GET_LOCATION(bloomDown, uTexelSize);
-    GET_LOCATION(bloomDown, uPrefilter);
     GET_LOCATION(bloomDown, uDstLevel);
 
     USE_SHADER(bloomDown);
@@ -855,7 +830,7 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(forward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(forward, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(forward, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
-    SET_UNIFORM_BUFFER(forward, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(forward, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(forward, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -922,7 +897,7 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
 
     SET_UNIFORM_BUFFER(unlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(unlit, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-    SET_UNIFORM_BUFFER(unlit, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(unlit, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(unlit, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -1110,7 +1085,7 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
     SET_UNIFORM_BUFFER(probeForward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(probeForward, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(probeForward, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
-    SET_UNIFORM_BUFFER(probeForward, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(probeForward, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(probeForward, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -1180,7 +1155,7 @@ bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
     RL_FREE(fsCode);
 
     SET_UNIFORM_BUFFER(probeUnlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
-    SET_UNIFORM_BUFFER(probeUnlit, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(probeUnlit, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     if (userCode && strstr(userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(probeUnlit, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
@@ -1287,14 +1262,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
 
     SET_UNIFORM_BUFFER(ambient, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(ambient, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
-
-    GET_LOCATION(ambient, uSsaoPower);
-    GET_LOCATION(ambient, uSsilAoPower);
-    GET_LOCATION(ambient, uSsilIntensity);
-    GET_LOCATION(ambient, uSsgiIntensity);
-    GET_LOCATION(ambient, uSsaoEnabled);
-    GET_LOCATION(ambient, uSsilEnabled);
-    GET_LOCATION(ambient, uSsgiEnabled);
+    SET_UNIFORM_BUFFER(ambient, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(ambient);
 
@@ -1358,7 +1326,7 @@ bool r3d_shader_load_deferred_fog(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_deferred_fog_t, deferred, fog);
     LOAD_SHADER(fog, SCREEN_VERT, FOG_FRAG);
 
-    SET_UNIFORM_BUFFER(fog, FogBlock, R3D_SHADER_BLOCK_SLOT_FOG);
+    SET_UNIFORM_BUFFER(fog, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
     SET_UNIFORM_BUFFER(fog, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
 
     USE_SHADER(fog);
@@ -1373,14 +1341,7 @@ bool r3d_shader_load_deferred_vfog_transmittance(r3d_shader_custom_t* custom)
     LOAD_SHADER(vfogTransmittance, SCREEN_VERT, VFOG_TRANSMITTANCE_FRAG);
 
     SET_UNIFORM_BUFFER(vfogTransmittance, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-
-    GET_LOCATION(vfogTransmittance, uStepSize);
-    GET_LOCATION(vfogTransmittance, uLength);
-    GET_LOCATION(vfogTransmittance, uScatteringDensity);
-    GET_LOCATION(vfogTransmittance, uAbsortionDensity);
-    GET_LOCATION(vfogTransmittance, uEmissionColor);
-    GET_LOCATION(vfogTransmittance, uEmissionEnergy);
-    GET_LOCATION(vfogTransmittance, uSkyAffect);
+    SET_UNIFORM_BUFFER(vfogTransmittance, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(vfogTransmittance);
     SET_SAMPLER(vfogTransmittance, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
@@ -1395,14 +1356,7 @@ bool r3d_shader_load_deferred_vfog_radiance(r3d_shader_custom_t* custom)
 
     SET_UNIFORM_BUFFER(vfogRadiance, LightBlock, R3D_SHADER_BLOCK_SLOT_LIGHT);
     SET_UNIFORM_BUFFER(vfogRadiance, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
-
-    GET_LOCATION(vfogRadiance, uStepSize);
-    GET_LOCATION(vfogRadiance, uLength);
-    GET_LOCATION(vfogRadiance, uScatteringDensity);
-    GET_LOCATION(vfogRadiance, uAbsortionDensity);
-    GET_LOCATION(vfogRadiance, uScatteringColor);
-    GET_LOCATION(vfogRadiance, uAnisotropy);
-    GET_LOCATION(vfogRadiance, uSkyAffect);
+    SET_UNIFORM_BUFFER(vfogRadiance, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(vfogRadiance);
     SET_SAMPLER(vfogRadiance, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
@@ -1442,8 +1396,7 @@ bool r3d_shader_load_post_bloom(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_post_bloom_t, post, bloom);
     LOAD_SHADER(bloom, SCREEN_VERT, BLOOM_FRAG);
 
-    GET_LOCATION(bloom, uBloomMode);
-    GET_LOCATION(bloom, uBloomIntensity);
+    SET_UNIFORM_BUFFER(bloom, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(bloom);
 
@@ -1496,12 +1449,7 @@ bool r3d_shader_load_post_output(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_post_output_t, post, output);
     LOAD_SHADER(output, SCREEN_VERT, OUTPUT_FRAG);
 
-    GET_LOCATION(output, uTonemapExposure);
-    GET_LOCATION(output, uTonemapWhite);
-    GET_LOCATION(output, uTonemapMode);
-    GET_LOCATION(output, uBrightness);
-    GET_LOCATION(output, uContrast);
-    GET_LOCATION(output, uSaturation);
+    SET_UNIFORM_BUFFER(output, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
 
     USE_SHADER(output);
     SET_SAMPLER(output, uSceneTex, R3D_SHADER_SAMPLER_BUFFER_SCENE);

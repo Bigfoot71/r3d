@@ -10,7 +10,7 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
+#include <lib/math.glsl>
 
 /* === Constants === */
 

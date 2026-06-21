@@ -14,8 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
-#include "../include/pbr.glsl"
+#include <lib/math.glsl>
+#include <lib/pbr.glsl>
 
 /* === Varyings === */
 
@@ -57,12 +57,10 @@ uniform bool uProbeInterior;
 
 /* === Blocks === */
 
-#define L_SHADOW_IMPL   //< Shadow functions in blocks/light.glsl
-
-#include "../include/blocks/frame.glsl"
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/env.glsl"
-#include "../include/blocks/fog.glsl"
+#include <ubo/frame.glsl>
+#include <wrap/light.glsl>
+#include <wrap/env.glsl>
+#include <wrap/fog.glsl>
 
 /* === Fragments === */
 
@@ -70,7 +68,7 @@ layout(location = 0) out vec4 FragColor;
 
 /* === User override === */
 
-#include "../include/user/scene.frag"
+#include <user/scene.frag>
 
 /* === Main function === */
 

@@ -16,10 +16,10 @@
 
 /* === Includes === */
 
-#include "../include/blocks/frame.glsl"
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
+#include <ubo/frame.glsl>
+#include <ubo/light.glsl>
+#include <ubo/view.glsl>
+#include <lib/math.glsl>
 
 /* === Attributes === */
 
@@ -166,7 +166,7 @@ void BillboardYAxis(inout vec3 position, inout vec3 normal, inout vec3 tangent, 
 
 /* === User override === */
 
-#include "../include/user/scene.vert"
+#include <user/scene.vert>
 
 /* === Main program === */
 

@@ -10,8 +10,9 @@
 
 /* === Includes === */
 
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
+#include <wrap/view.glsl>
+#include <lib/math.glsl>
+#include <ubo/fx.glsl>
 
 /* === Varyings === */
 
@@ -24,13 +25,6 @@ uniform sampler2D uSpecularTex;
 uniform sampler2D uNormalTex;
 uniform sampler2D uDepthTex;
 
-uniform int uMaxRaySteps;
-uniform int uBinarySteps;
-uniform float uStepSize;
-uniform float uThickness;
-uniform float uMaxDistance;
-uniform float uEdgeFade;
-
 /* === Output === */
 
 out vec4 FragColor;
@@ -39,9 +33,9 @@ out vec4 FragColor;
 
 vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
 {
-    vec3 dirStep = reflectionDir * uStepSize;
+    vec3 dirStep = reflectionDir * uSsr.stepSize;
     float stepDistanceSq = dot(dirStep, dirStep);
-    float maxDistanceSq = uMaxDistance * uMaxDistance;
+    float maxDistanceSq = uSsr.maxDistance * uSsr.maxDistance;
 
     vec3 currentPos = startViewPos + dirStep;
     vec3 prevPos = startViewPos;
@@ -50,7 +44,7 @@ vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
     vec2 hitUV = vec2(0.0);
     bool hit = false;
 
-    for (int i = 1; i < uMaxRaySteps; i++)
+    for (int i = 1; i < uSsr.maxRaySteps; i++)
     {
         if (rayDistanceSq > maxDistanceSq) break;
         vec2 uv = V_ViewToScreen(currentPos);
@@ -59,7 +53,7 @@ vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
         float sampleZ = -textureLod(uDepthTex, uv, 0).r;
         float depthDiff = sampleZ - currentPos.z;
 
-        if (depthDiff > 0.0 && depthDiff < uThickness) {
+        if (depthDiff > 0.0 && depthDiff < uSsr.thickness) {
             hitUV = uv;
             hit = true;
             break;
@@ -75,7 +69,7 @@ vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
     vec3 start = prevPos;
     vec3 end = currentPos;
 
-    for (int i = 0; i < uBinarySteps; i++)
+    for (int i = 0; i < uSsr.binarySteps; i++)
     {
         vec3 mid = mix(start, end, 0.5);
         vec2 uv = V_ViewToScreen(mid);
@@ -84,7 +78,7 @@ vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
         float sampleZ = -textureLod(uDepthTex, uv, 0).r;
         float depthDiff = sampleZ - mid.z;
 
-        if (depthDiff > 0.0 && depthDiff < uThickness) {
+        if (depthDiff > 0.0 && depthDiff < uSsr.thickness) {
             hitUV = uv;
             end = mid;
         }
@@ -101,8 +95,8 @@ vec4 TraceRay(vec3 startViewPos, vec3 reflectionDir)
     vec3 hitSpec = textureLod(uSpecularTex, hitUV, 0).rgb;
 
     vec2 distToBorder = min(hitUV, 1.0 - hitUV);
-    float edgeFade = smoothstep(0.0, uEdgeFade, min(distToBorder.x, distToBorder.y));
-    float distFade = 1.0 - smoothstep(0.0, uMaxDistance, sqrt(rayDistanceSq));
+    float edgeFade = smoothstep(0.0, uSsr.edgeFade, min(distToBorder.x, distToBorder.y));
+    float distFade = 1.0 - smoothstep(0.0, uSsr.maxDistance, sqrt(rayDistanceSq));
 
     return vec4(hitDiff + hitSpec, edgeFade * distFade);
 }

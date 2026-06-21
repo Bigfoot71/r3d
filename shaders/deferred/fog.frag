@@ -8,8 +8,8 @@
 
 #version 330 core
 
-#include "../include/blocks/view.glsl"
-#include "../include/blocks/fog.glsl"
+#include <ubo/view.glsl>
+#include <wrap/fog.glsl>
 
 noperspective in vec2 vTexCoord;
 uniform sampler2D uDepthTex;

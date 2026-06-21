@@ -14,7 +14,8 @@
 
 /* === Includes === */
 
-#include "../include/math.glsl"
+#include <lib/math.glsl>
+#include <ubo/fx.glsl>
 
 /* === Varyings === */
 
@@ -28,19 +29,10 @@ uniform sampler2DArrayShadow uShadowDirTex;
 uniform sampler2DArrayShadow uShadowSpotTex;
 uniform samplerCubeArrayShadow uShadowOmniTex;
 
-uniform float uStepSize;
-uniform float uLength;
-uniform float uScatteringDensity;
-uniform float uAbsortionDensity;
-uniform vec3  uScatteringColor;
-uniform float uAnisotropy;
-uniform float uSkyAffect;
-
 /* === Blocks === */
 
-#define L_SHADOW_IMPL
-#include "../include/blocks/light.glsl"
-#include "../include/blocks/view.glsl"
+#include <wrap/light.glsl>
+#include <wrap/view.glsl>
 
 /* === Fragments === */
 
@@ -52,8 +44,8 @@ float PhaseFunction_Schlick(vec3 w0, vec3 w1)
 {
     // Both vectors assumed normalized; skip length division
     float cosTheta = dot(w0, w1);
-    float nom = 1.0 - uAnisotropy * uAnisotropy;
-    float denom = 4.0 * M_PI * (1.0 + uAnisotropy * cosTheta) * (1.0 + uAnisotropy * cosTheta);
+    float nom = 1.0 - uVFog.anisotropy * uVFog.anisotropy;
+    float denom = 4.0 * M_PI * (1.0 + uVFog.anisotropy * cosTheta) * (1.0 + uVFog.anisotropy * cosTheta);
     return nom / denom;
 }
 
@@ -67,30 +59,30 @@ void main()
     vec3 P = V_GetWorldPosition(vTexCoord, depth);
 
     vec3 rayDir = normalize(P - uView.position);
-    float rayDist = min(length(P - uView.position), uLength);
+    float rayDist = min(length(P - uView.position), uVFog.length);
 
     vec3 marchPos = uView.position;
-    vec3 deltaStep = rayDir * uStepSize;
+    vec3 deltaStep = rayDir * uVFog.stepSize;
     vec3 fragToCameraNorm = -rayDir; // view direction along the ray
 
     // Jitter starting position to break up banding, adjust ray length to avoid overshooting
     float jitter = M_HashIGN(gl_FragCoord.xy);
     marchPos += deltaStep * jitter;
-    rayDist -= uStepSize * jitter;
+    rayDist -= uVFog.stepSize * jitter;
 
     vec3 radiance = vec3(0.0);
     float transmittance = 1.0;
 
     // Extinction coefficient and per-step transmittance factor (constant along the ray)
-    float sigmaT = uScatteringDensity + uAbsortionDensity;
-    float transmittanceStep = exp(-sigmaT * uStepSize);
+    float sigmaT = uVFog.scatteringDensity + uVFog.absortionDensity;
+    float transmittanceStep = exp(-sigmaT * uVFog.stepSize);
 
     // Precalculate constant terms
     vec3 lightColor = uLight.color * uLight.energy;
     mat2 diskRot = L_ShadowDebandingMatrix(gl_FragCoord.xy);
     bool hasShadow = uLight.shadowLayer >= 0 && uLight.shadowOpacity != 0.0;
 
-    for (float l = 0; l < rayDist; l += uStepSize)
+    for (float l = 0; l < rayDist; l += uVFog.stepSize)
     {
         // Compute light direction and distance at each march step
         vec3 Ldelta = uLight.position - marchPos;
@@ -122,15 +114,15 @@ void main()
 
         // In-scattering: phase function * scattering coefficient * incident radiance
         float phase = PhaseFunction_Schlick(L, fragToCameraNorm);
-        vec3 Li = uScatteringDensity * uScatteringColor * phase * lightColor * visibility;
+        vec3 Li = uVFog.scatteringDensity * uVFog.scatteringColor.rgb * phase * lightColor * visibility;
 
         // Accumulate transmittance then integrate radiance (order matters)
         transmittance *= transmittanceStep;
-        radiance += Li * transmittance * uStepSize;
+        radiance += Li * transmittance * uVFog.stepSize;
 
         marchPos += deltaStep;
     }
 
     // Attenuate contribution on sky pixels
-    FragRadiance = (depth >= uView.far) ? radiance * uSkyAffect : radiance;
+    FragRadiance = (depth >= uView.far) ? radiance * uVFog.skyAffect : radiance;
 }

@@ -10,7 +10,7 @@
 
 /* === Inlcudes === */
 
-#include "../include/math.glsl"
+#include <lib/math.glsl>
 
 /* === Varyings === */
 

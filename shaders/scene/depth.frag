@@ -10,7 +10,7 @@
 
 /* === Includes === */
 
-#include "../include/blocks/frame.glsl"
+#include <ubo/frame.glsl>
 
 /* === Varyings === */
 
@@ -25,7 +25,7 @@ uniform float uAlphaCutoff;
 
 /* === User override === */
 
-#include "../include/user/scene.frag"
+#include <user/scene.frag>
 
 /* === Main function === */
 

@@ -3,7 +3,7 @@
  * Composes the final scene by combining the outputs from
  * the deferred rendering pipeline.
  *
- * Copyright (c) 2025 Victor Le Juez
+ * Copyright (c) 2025-2026 Victor Le Juez
  *
  * This software is distributed under the terms of the accompanying LICENSE file.
  * It is provided "as-is", without any express or implied warranty.
@@ -13,7 +13,7 @@
 
 /* === Includes === */
 
-#include "../include/pbr.glsl"
+#include <lib/pbr.glsl>
 
 /* === Varyings === */
 

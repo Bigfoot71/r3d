@@ -11,7 +11,7 @@
 #define SMAA_INCLUDE_VS 1
 #define SMAA_INCLUDE_PS 0
 
-#include "../include/smaa.glsl"
+#include <wrap/smaa.glsl>
 
 const vec2 positions[3] = vec2[]
 (

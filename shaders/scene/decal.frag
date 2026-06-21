@@ -11,9 +11,9 @@
 
 /* === Includes === */
 
-#include "../include/blocks/frame.glsl"
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
+#include <ubo/frame.glsl>
+#include <wrap/view.glsl>
+#include <lib/math.glsl>
 
 /* === Varyings === */
 
@@ -71,7 +71,7 @@ mat3 BuildDecalTBN(vec3 worldNormal)
 
 /* === User override === */
 
-#include "../include/user/scene.frag"
+#include <user/scene.frag>
 
 /* === Main function === */
 

@@ -10,9 +10,8 @@
 
 /* === Includes === */
 
-#include "../include/blocks/frame.glsl"
-#include "../include/blocks/view.glsl"
-#include "../include/math.glsl"
+#include <ubo/frame.glsl>
+#include <lib/math.glsl>
 
 /* === Varyings === */
 
@@ -49,7 +48,7 @@ layout(location = 5) out float FragDepth;
 
 /* === User override === */
 
-#include "../include/user/scene.frag"
+#include <user/scene.frag>
 
 /* === Main function === */
 
