@@ -59,7 +59,8 @@ void main()
     vec3 P = V_GetWorldPosition(vTexCoord, depth);
 
     vec3 rayDir = normalize(P - uView.position);
-    float rayDist = min(length(P - uView.position), uVFog.length);
+    float rayLen = (uLight.type != LIGHT_DIR) ? min(uVFog.length, uLight.range) : uVFog.length;
+    float rayDist = min(length(P - uView.position), rayLen);
 
     vec3 marchPos = uView.position;
     vec3 deltaStep = rayDir * uVFog.stepSize;
