@@ -78,7 +78,7 @@ void main()
     float transmittanceStep = exp(-sigmaT * uVFog.stepSize);
 
     // Precalculate constant terms
-    vec3 lightColor = uLight.color * uLight.energy;
+    vec3 lightColor = uLight.color * uLight.energy * uLight.fogEnergy;
     mat2 diskRot = L_ShadowDebandingMatrix(gl_FragCoord.xy);
     bool hasShadow = uLight.shadowLayer >= 0 && uLight.shadowOpacity != 0.0;
 
@@ -107,9 +107,9 @@ void main()
 
         // Angular attenuation (spot only)
         if (uLight.type == LIGHT_SPOT) {
-            float theta   = dot(L, -uLight.direction);
+            float theta = dot(L, -uLight.direction);
             float epsilon = uLight.innerCutOff - uLight.outerCutOff;
-            visibility   *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);
+            visibility *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);
         }
 
         // In-scattering: phase function * scattering coefficient * incident radiance

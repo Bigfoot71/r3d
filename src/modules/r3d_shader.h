@@ -628,14 +628,15 @@ typedef struct {
     alignas(16) Vector3 color;
     alignas(16) Vector3 position;
     alignas(16) Vector3 direction;
-    alignas(4) float specular;
     alignas(4) float energy;
+    alignas(4) float specular;
     alignas(4) float range;
-    alignas(4) float near;
-    alignas(4) float far;
     alignas(4) float falloff;
     alignas(4) float innerCutOff;
     alignas(4) float outerCutOff;
+    alignas(4) float fogEnergy;
+    alignas(4) float near;
+    alignas(4) float far;
     alignas(4) float shadowSoftness;
     alignas(4) float shadowOpacity;
     alignas(4) float shadowDepthBias;

@@ -15,14 +15,15 @@ struct Light {
     vec3 color;
     vec3 position;
     vec3 direction;
-    float specular;
     float energy;
+    float specular;
     float range;
-    float near;
-    float far;
     float falloff;
     float innerCutOff;
     float outerCutOff;
+    float fogEnergy;
+    float near;
+    float far;
     float shadowSoftness;
     float shadowOpacity;
     float shadowDepthBias;

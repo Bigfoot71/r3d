@@ -145,46 +145,55 @@ R3DAPI void R3D_EnableLight(R3D_Light id);
 R3DAPI void R3D_DisableLight(R3D_Light id);
 
 /**
- * @brief Gets the color of a light.
+ * @brief Gets the color of a light in sRGB space.
  *
- * This function retrieves the color of the specified light as a `Color` structure.
+ * The internal linear color is converted to sRGB before being returned.
  *
  * @param id The ID of the light.
- * @return The color of the light as a `Color` structure.
+ * @return The color of the light as an sRGB @ref Color.
  */
 R3DAPI Color R3D_GetLightColor(R3D_Light id);
 
 /**
- * @brief Gets the color of a light as a `Vector3`.
+ * @brief Sets the color of a light from an sRGB color.
  *
- * This function retrieves the color of the specified light as a `Vector3`, where each
- * component (x, y, z) represents the RGB values of the light.
- *
- * @param id The ID of the light.
- * @return The color of the light as a `Vector3`.
- */
-R3DAPI Vector3 R3D_GetLightColorV(R3D_Light id);
-
-/**
- * @brief Sets the color of a light.
- *
- * This function sets the color of the specified light using a `Color` structure.
+ * The provided sRGB color is converted to linear space before being stored internally.
  *
  * @param id The ID of the light.
- * @param color The new color to set for the light.
+ * @param color The new color to set for the light, in sRGB space.
  */
 R3DAPI void R3D_SetLightColor(R3D_Light id, Color color);
 
 /**
- * @brief Sets the color of a light using a `Vector3`.
+ * @brief Gets the color of a light in linear space.
  *
- * This function sets the color of the specified light using a `Vector3`, where each
- * component (x, y, z) represents the RGB values of the light.
+ * Returns the raw internal color without any color space conversion.
  *
  * @param id The ID of the light.
- * @param color The new color to set for the light as a `Vector3`.
+ * @return The color of the light as a linear RGB @ref Vector3.
  */
-R3DAPI void R3D_SetLightColorV(R3D_Light id, Vector3 color);
+R3DAPI Vector3 R3D_GetLightColorLinear(R3D_Light id);
+
+/**
+ * @brief Sets the color of a light from a linear RGB color.
+ *
+ * The provided value is stored as-is, without any color space conversion.
+ *
+ * @param id The ID of the light.
+ * @param color The new color to set for the light, in linear space.
+ */
+R3DAPI void R3D_SetLightColorLinear(R3D_Light id, Vector3 color);
+
+/**
+ * @brief Sets the color of a light from a color temperature.
+ *
+ * Converts the given temperature to an sRGB color using the Tanner Helland approximation,
+ * then applies the appropriate sRGB-to-linear conversion before storing it internally.
+ *
+ * @param id The ID of the light.
+ * @param kelvin The color temperature in Kelvin. Valid range is 1000K to 40000K.
+ */
+R3DAPI void R3D_SetLightTemperature(R3D_Light id, float kelvin);
 
 /**
  * @brief Gets the position of a light.
@@ -203,9 +212,9 @@ R3DAPI Vector3 R3D_GetLightPosition(R3D_Light id);
  * This function sets the position of the specified light.
  * Only applicable to spot lights or omni-lights.
  *
- * @note Has no effect for directional lights.
- *       If called on a directional light, 
- *       a warning will be logged.
+ * @note For directional lights, the position is stored internally but has no effect
+ *       on lighting calculations. It can still be retrieved via @ref R3D_GetLightPosition
+ *       and may be used for debug visualization with @ref R3D_DrawLightDebug.
  *
  * @param id The ID of the light.
  * @param position The new position to set for the light.
@@ -245,10 +254,11 @@ R3DAPI void R3D_SetLightDirection(R3D_Light id, Vector3 direction);
  * This function sets both the position and the direction of the specified light,
  * causing it to "look at" a given target point.
  *
- * @note - For directional lights, only the direction is updated (position is ignored).
+ * @note - For directional lights, only the direction is updated. The position is stored
+ *         internally but has no effect on lighting calculations; it may still be used
+ *         for debug visualization with @ref R3D_DrawLightDebug.
  *       - For omni-directional lights, only the position is updated (direction is not calculated).
  *       - For spot lights, both position and direction are set accordingly.
- *       - This function does **not** emit any warning or log message.
  *
  * @param id The ID of the light.
  * @param position The position to set for the light.
@@ -258,9 +268,6 @@ R3DAPI void R3D_SetLightTarget(R3D_Light id, Vector3 position, Vector3 target);
 
 /**
  * @brief Gets the energy level of a light.
- *
- * This function retrieves the energy level (intensity) of the specified light.
- * Energy typically affects the brightness of the light.
  *
  * @param id The ID of the light.
  * @return The energy level of the light.
@@ -277,6 +284,30 @@ R3DAPI float R3D_GetLightEnergy(R3D_Light id);
  * @param energy The new energy value to set for the light.
  */
 R3DAPI void R3D_SetLightEnergy(R3D_Light id, float energy);
+
+/**
+ * @brief Gets the energy level of a light as a luminous flux.
+ *
+ * Converts the light's current energy factor to lumens using a reference distance of 1 unit,
+ * assuming 1 unit = 1 meter. For a custom reference distance, use @ref R3D_EnergyToLumens
+ * with @ref R3D_GetLightEnergy directly.
+ *
+ * @param id The ID of the light.
+ * @return The luminous flux in lumens.
+ */
+R3DAPI float R3D_GetLightLumen(R3D_Light id);
+
+/**
+ * @brief Sets the energy of a light from a luminous flux value.
+ *
+ * Converts the given flux to an energy factor using a reference distance of 1 unit,
+ * assuming 1 unit = 1 meter. For a custom reference distance, use @ref R3D_LumensToEnergy
+ * and pass the result to @ref R3D_SetLightEnergy directly.
+ *
+ * @param id The ID of the light.
+ * @param lumens The luminous flux in lumens.
+ */
+R3DAPI void R3D_SetLightLumen(R3D_Light id, float lumens);
 
 /**
  * @brief Gets the specular intensity of a light.
@@ -377,6 +408,26 @@ R3DAPI void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer);
  * @param outer The outer cone half-angle, in degrees.
  */
 R3DAPI void R3D_SetLightAngle(R3D_Light id, float inner, float outer);
+
+/**
+ * @brief Gets the volumetric fog energy multiplier of a light.
+ *
+ * @param id The ID of the light.
+ * @return The volumetric fog energy multiplier of the light.
+ */
+R3DAPI float R3D_GetLightFogEnergy(R3D_Light id);
+
+/**
+ * @brief Sets the volumetric fog energy multiplier of a light.
+ *
+ * The final fog contribution is the light's energy multiplied by this factor,
+ * allowing fine-grained control over its volumetric fog intensity independently
+ * of its regular lighting contribution.
+ *
+ * @param id The ID of the light.
+ * @param energy The new volumetric fog energy multiplier to set for the light.
+ */
+R3DAPI void R3D_SetLightFogEnergy(R3D_Light id, float energy);
 
 // ----------------------------------------
 // LIGHTING: Shadow Config Functions
@@ -616,6 +667,33 @@ R3DAPI BoundingBox R3D_GetLightBoundingBox(R3D_Light light);
  * @param id The ID of the light.
  */
 R3DAPI void R3D_DrawLightDebug(R3D_Light id);
+
+// ----------------------------------------
+// LIGHTING: Math Helper Functions
+// ----------------------------------------
+
+/**
+ * @brief Converts a luminous flux to an energy factor.
+ *
+ * Computes the illuminance in lux at the given reference distance from an isotropic
+ * point source: `energy = lumens / (4 * pi * distance * distance)`
+ *
+ * @param lumens The luminous flux in lumens.
+ * @param referenceDistance The reference distance in scene units (1 unit = 1 meter).
+ * @return The corresponding energy factor.
+ */
+R3DAPI float R3D_LumensToEnergy(float lumens, float referenceDistance);
+
+/**
+ * @brief Converts an energy factor back to a luminous flux.
+ *
+ * Inverse of @ref R3D_LumensToEnergy: `lumens = energy * 4 * pi * distance * distance`
+ *
+ * @param energy The energy factor.
+ * @param referenceDistance The reference distance in scene units (1 unit = 1 meter).
+ * @return The corresponding luminous flux in lumens.
+ */
+R3DAPI float R3D_EnergyToLumens(float energy, float referenceDistance);
 
 #ifdef __cplusplus
 } // extern "C"

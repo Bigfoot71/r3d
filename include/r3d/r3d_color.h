@@ -65,6 +65,17 @@ R3DAPI Vector4 R3D_ColorFromCurrentSpace(Color color);
  */
 R3DAPI Vector3 R3D_ColorFromCurrentSpaceVector3(Color color);
 
+/**
+ * @brief Converts a color temperature to an sRGB color.
+ *
+ * Uses the Tanner Helland approximation, valid between 1000K and 40000K.
+ * Results outside the valid range are undefined.
+ *
+ * @param kelvin The color temperature in Kelvin.
+ * @return The corresponding color as an sRGB Color.
+ */
+R3DAPI Color R3D_ColorFromTemperature(float kelvin);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
