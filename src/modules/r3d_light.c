@@ -24,6 +24,14 @@
 #define SHADOW_OMNI_LAYER_GROWTH    4
 
 // ========================================
+// HELPER MACROS
+// ========================================
+
+#define LIGHT_TO_INDEX(id)  (id - 1)
+#define LIGHT_TO_ID(index)  (index + 1)
+#define LIGHT_NULL          0
+
+// ========================================
 // MODULE STATE
 // ========================================
 
@@ -487,7 +495,8 @@ R3D_Light r3d_light_new(R3D_LightType type)
     r3d_light_array_t* freeLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_FREE];
 
     // Get index (from free list or new)
-    R3D_Light index = (freeLights->count > 0) 
+    bool tookFromFree = (freeLights->count > 0);
+    R3D_Light index = tookFromFree
         ? freeLights->lights[--freeLights->count]
         : validLights->count;
 
@@ -505,20 +514,21 @@ R3D_Light r3d_light_new(R3D_LightType type)
 
     // Add to valid array
     validLights->lights[validLights->count++] = index;
-    return index;
+    return LIGHT_TO_ID(index);
 
 error_restore_free:
     // Restore free list if we took from it
-    if (index < validLights->count) {
+    if (tookFromFree) {
         freeLights->lights[freeLights->count++] = index;
     }
-    return -1;
+    return LIGHT_NULL;
 }
 
-void r3d_light_delete(R3D_Light index)
+void r3d_light_delete(R3D_Light id)
 {
-    if (index < 0) return;
+    if (id == LIGHT_NULL) return;
 
+    R3D_Light index = LIGHT_TO_INDEX(id);
     r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
 
     for (int i = 0; i < validLights->count; i++) {
@@ -546,10 +556,10 @@ void r3d_light_delete(R3D_Light index)
     }
 }
 
-bool r3d_light_is_valid(R3D_Light index)
+bool r3d_light_is_valid(R3D_Light id)
 {
-    if (index < 0) return false;
-
+    if (id == LIGHT_NULL) return false;
+    R3D_Light index = LIGHT_TO_INDEX(id);
     const r3d_light_array_t* validLights = &R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VALID];
     for (int i = 0; i < validLights->count; i++) {
         if (index == validLights->lights[i]) return true;
@@ -557,9 +567,10 @@ bool r3d_light_is_valid(R3D_Light index)
     return false;
 }
 
-r3d_light_t* r3d_light_get(R3D_Light index)
+r3d_light_t* r3d_light_get(R3D_Light id)
 {
-    return r3d_light_is_valid(index) ? &R3D_MOD_LIGHT.lights[index] : NULL;
+    uint32_t index = LIGHT_TO_INDEX(id);
+    return r3d_light_is_valid(id) ? &R3D_MOD_LIGHT.lights[index] : NULL;
 }
 
 r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h)
