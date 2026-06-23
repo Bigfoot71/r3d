@@ -86,12 +86,13 @@ void main()
     float depth = texelFetch(uDepthTex, pixCoord, 0).r;
     vec3 P = V_GetWorldPosition(vTexCoord, depth);
 
-    vec3 rayDir = normalize(P - uView.position);
+    vec3 toFrag = P - uView.position;
+    float fragDist = length(toFrag);
+    vec3 rayDir = toFrag / max(fragDist, 1e-6);
 
     float tEnter, tExit;
     VFog_GetMarchRange(uView.position, rayDir, uVFog.length, tEnter, tExit);
 
-    float fragDist = length(P - uView.position);
     tExit = min(fragDist, tExit);
     float rayDist = tExit - tEnter;
 
@@ -122,12 +123,17 @@ void main()
     mat2 diskRot = L_ShadowDebandingMatrix(gl_FragCoord.xy);
     bool hasShadow = uLight.shadowLayer >= 0 && uLight.shadowOpacity != 0.0;
 
+    // Precompute inverses used inside the loop
+    float invRange = 1.0 / max(uLight.range, 1e-4);
+    float invEpsilon = 1.0 / max(uLight.innerCutOff - uLight.outerCutOff, 1e-4);
+
     for (float l = 0; l < rayDist; l += uVFog.stepSize)
     {
         // Compute light direction and distance at each march step
         vec3 Ldelta = uLight.position - marchPos;
         float Ldist = length(Ldelta);
-        vec3 L = (uLight.type == LIGHT_DIR) ? -uLight.direction : Ldelta / max(Ldist, 1e-4);
+        float invLdist = 1.0 / max(Ldist, 1e-4);
+        vec3 L = (uLight.type == LIGHT_DIR) ? -uLight.direction : Ldelta * invLdist;
 
         // Shadow visibility at current march position
         float visibility = 1.0;
@@ -141,15 +147,14 @@ void main()
 
         // Range attenuation (omni and spot only)
         if (uLight.type != LIGHT_DIR) {
-            float atten = pow(1.0 - clamp(Ldist / uLight.range, 0.0, 1.0), uLight.falloff);
+            float atten = pow(1.0 - clamp(Ldist * invRange, 0.0, 1.0), uLight.falloff);
             visibility *= atten;
         }
 
         // Angular attenuation (spot only)
         if (uLight.type == LIGHT_SPOT) {
             float theta = dot(L, -uLight.direction);
-            float epsilon = uLight.innerCutOff - uLight.outerCutOff;
-            visibility *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) / epsilon);
+            visibility *= smoothstep(0.0, 1.0, (theta - uLight.outerCutOff) * invEpsilon);
         }
 
         // In-scattering: phase function * scattering coefficient * incident radiance
