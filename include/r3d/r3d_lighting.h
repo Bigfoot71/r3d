@@ -159,6 +159,8 @@ R3DAPI Color R3D_GetLightColor(R3D_Light id);
  *
  * The provided sRGB color is converted to linear space before being stored internally.
  *
+ * Default: (Color) {255, 255, 255, 255}
+ *
  * @param id The ID of the light.
  * @param color The new color to set for the light, in sRGB space.
  */
@@ -178,6 +180,8 @@ R3DAPI Vector3 R3D_GetLightColorLinear(R3D_Light id);
  * @brief Sets the color of a light from a linear RGB color.
  *
  * The provided value is stored as-is, without any color space conversion.
+ *
+ * Default: (Vector3) {1.0f, 1.0f, 1.0f}
  *
  * @param id The ID of the light.
  * @param color The new color to set for the light, in linear space.
@@ -212,6 +216,8 @@ R3DAPI Vector3 R3D_GetLightPosition(R3D_Light id);
  * This function sets the position of the specified light.
  * Only applicable to spot lights or omni-lights.
  *
+ * Default: (Vector3) {0.0f, 0.0f, 0.0f}
+ *
  * @note For directional lights, the position is stored internally but has no effect
  *       on lighting calculations. It can still be retrieved via @ref R3D_GetLightPosition
  *       and may be used for debug visualization with @ref R3D_DrawLightDebug.
@@ -237,6 +243,8 @@ R3DAPI Vector3 R3D_GetLightDirection(R3D_Light id);
  *
  * This function sets the direction of the specified light.
  * Only applicable to directional lights or spot lights.
+ *
+ * Default: (Vector3) {0.0f, 0.0f, -1.0f}
  *
  * @note Has no effect for omni-directional lights.
  *       If called on an omni-directional light,
@@ -280,6 +288,8 @@ R3DAPI float R3D_GetLightEnergy(R3D_Light id);
  * This function sets the energy (intensity) of the specified light.
  * A higher energy value will result in a brighter light.
  *
+ * Default: 1.0f
+ *
  * @param id The ID of the light.
  * @param energy The new energy value to set for the light.
  */
@@ -312,9 +322,6 @@ R3DAPI void R3D_SetLightLumen(R3D_Light id, float lumens);
 /**
  * @brief Gets the specular intensity of a light.
  *
- * This function retrieves the current specular intensity of the specified light.
- * Specular intensity affects how shiny surfaces appear when reflecting the light.
- *
  * @param id The ID of the light.
  * @return The current specular intensity of the light.
  */
@@ -324,7 +331,10 @@ R3DAPI float R3D_GetLightSpecular(R3D_Light id);
  * @brief Sets the specular intensity of a light.
  *
  * This function sets the specular intensity of the specified light.
+ * Specular intensity affects how shiny surfaces appear when reflecting the light.
  * Higher specular values result in stronger and sharper highlights on reflective surfaces.
+ *
+ * Default: 0.5f
  *
  * @param id The ID of the light.
  * @param specular The new specular intensity value to set for the light.
@@ -333,9 +343,6 @@ R3DAPI void R3D_SetLightSpecular(R3D_Light id, float specular);
 
 /**
  * @brief Gets the range of a light.
- *
- * This function retrieves the range of the specified light, which determines how far the light can affect.
- * Only applicable to spot lights or omni-lights.
  *
  * @param id The ID of the light.
  * @return The range of the light.
@@ -348,6 +355,8 @@ R3DAPI float R3D_GetLightRange(R3D_Light id);
  * For spot and omni lights, this defines the maximum illumination distance.
  * For directional lights, this defines the shadow rendering radius around the camera.
  *
+ * Default: 50.0f
+ *
  * @param id The ID of the light.
  * @param range The range value to apply.
  */
@@ -355,11 +364,6 @@ R3DAPI void R3D_SetLightRange(R3D_Light id, float range);
 
 /**
  * @brief Gets the falloff exponent of a light.
- *
- * Controls the shape of the attenuation curve over the light's range.
- * A value of 1.0 produces a linear falloff, 2.0 a quadratic (more physically
- * plausible) falloff, and higher values concentrate the light closer to the source.
- * Only applicable to spot lights and omni-lights.
  *
  * @param id The ID of the light.
  * @return The falloff exponent of the light.
@@ -375,6 +379,8 @@ R3DAPI float R3D_GetLightFalloff(R3D_Light id);
  * Values of 0.0 or below are clamped to 1.0.
  * Only applicable to spot lights and omni-lights.
  *
+ * Default: 1.0f
+ *
  * @param id The ID of the light.
  * @param falloff The falloff exponent to set. Typical range is [0.5, 4.0].
  */
@@ -382,11 +388,6 @@ R3DAPI void R3D_SetLightFalloff(R3D_Light id, float falloff);
 
 /**
  * @brief Gets the inner and outer cone angles of a spot light.
- *
- * The inner angle defines the region of full intensity, and the outer angle
- * defines where the light fully fades out. The transition between the two
- * produces a soft edge. Both angles are in degrees.
- * Only applicable to spot lights.
  *
  * @param id The ID of the light.
  * @param inner Pointer to receive the inner cone angle, in degrees. May be NULL.
@@ -402,6 +403,8 @@ R3DAPI void R3D_GetLightAngle(R3D_Light id, float* inner, float* outer);
  * produces a soft edge. Both angles are in degrees. If inner exceeds outer,
  * the two values are swapped automatically.
  * Only applicable to spot lights.
+ *
+ * Default: 22.5f, 45.0f
  *
  * @param id The ID of the light.
  * @param inner The inner cone half-angle, in degrees.
@@ -424,6 +427,8 @@ R3DAPI float R3D_GetLightFogEnergy(R3D_Light id);
  * allowing fine-grained control over its volumetric fog intensity independently
  * of its regular lighting contribution.
  *
+ * Default: 1.0f
+ *
  * @param id The ID of the light.
  * @param energy The new volumetric fog energy multiplier to set for the light.
  */
@@ -439,8 +444,9 @@ R3DAPI void R3D_SetLightFogEnergy(R3D_Light id, float energy);
  * Turns on shadow rendering for the light. The engine will allocate a shadow
  * map if needed, or reuse one previously allocated for another light.
  *
- * Shadow map resolutions are fixed: 2048x2048 for spot and point lights,
- * and 4096x4096 for directional lights.
+ * Shadow map resolutions are by default:
+ *   - 2048x2048 for spot and point lights
+ *   - 4096x4096 for directional lights
  *
  * @param id The ID of the light.
  *
@@ -489,6 +495,8 @@ R3DAPI R3D_ShadowUpdateMode R3D_GetShadowUpdateMode(R3D_Light id);
  * This function sets the mode for updating the shadow map of the specified light.
  * The update mode controls when and how often the shadow map is refreshed.
  *
+ * Default: R3D_SHADOW_UPDATE_INTERVAL
+ *
  * @param id The ID of the light.
  * @param mode The update mode to set for the shadow map (Interval, Continuous, or Manual).
  */
@@ -508,6 +516,8 @@ R3DAPI float R3D_GetShadowUpdateInterval(R3D_Light id);
  * @brief Sets the interval between shadow map updates in interval update mode.
  *
  * Only relevant when the shadow update mode is set to @ref R3D_SHADOW_UPDATE_INTERVAL.
+ *
+ * Default: 0.016f
  *
  * @param id The ID of the light.
  * @param seconds The interval in seconds between shadow map updates.
@@ -542,6 +552,8 @@ R3DAPI float R3D_GetShadowSoftness(R3D_Light id);
  * of its resolution. Larger values increase the blur radius, resulting in softer,
  * more diffuse shadows, while smaller values yield sharper shadows.
  *
+ * Default: 4.0f
+ *
  * @param id The ID of the light.
  * @param softness The softness radius in texels to apply (must be >= 0).
  *
@@ -568,6 +580,8 @@ R3DAPI float R3D_GetShadowOpacity(R3D_Light id);
  * When the opacity is exactly 0, the light still owns its shadow map, but shadow
  * map rendering and shadow application are entirely skipped.
  *
+ * Default: 1.0f
+ *
  * @param id The ID of the light.
  * @param opacity The shadow opacity to apply.
  */
@@ -585,6 +599,11 @@ R3DAPI float R3D_GetShadowDepthBias(R3D_Light id);
  * (shadows flickering or appearing misaligned on surfaces).
  * Be careful: too large values may cause shadows to look detached
  * or floating away from objects.
+ *
+ * Default per light type:
+ *   - Directional: 0.0009765625
+ *   - Spot:        0.0001220703
+ *   - Omni:        0.025
  */
 R3DAPI void R3D_SetShadowDepthBias(R3D_Light id, float value);
 
@@ -599,6 +618,11 @@ R3DAPI float R3D_GetShadowSlopeBias(R3D_Light id);
  * This bias mainly compensates artifacts on surfaces angled
  * relative to the light. It helps prevent shadows from
  * incorrectly appearing or disappearing along object edges.
+ *
+ * Default per light type:
+ *   - Directional: 0.0014648438
+ *   - Spot:        0.0004882813
+ *   - Omni:        0.1
  */
 R3DAPI void R3D_SetShadowSlopeBias(R3D_Light id, float value);
 
