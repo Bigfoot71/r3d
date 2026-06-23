@@ -16,6 +16,7 @@
 #include <raylib.h>
 #include <glad.h>
 
+#include "../common/r3d_pool.h"
 #include "../common/r3d_math.h"
 
 // ========================================
@@ -32,9 +33,12 @@ static const int R3D_LIGHT_SHADOW_SIZE[] = {
 // HELPER MACROS
 // ========================================
 
-#define R3D_LIGHT_FOR_EACH_VISIBLE(light) \
-    for (r3d_light_t* light = NULL; \
-         r3d_light_iter(&light, R3D_LIGHT_ARRAY_VISIBLE); )
+#define R3D_LIGHT_FOR_EACH_VISIBLE(varname)                         \
+    for (uint32_t _i = 0; _i < R3D_MOD_LIGHT.visibleCount; _i++)    \
+        for (r3d_light_t* varname = r3d_pool_get(                   \
+                 R3D_MOD_LIGHT.pool,                                \
+                 R3D_MOD_LIGHT.visible[_i]);                        \
+             varname; varname = NULL)
 
 // ========================================
 // TYPES
@@ -81,18 +85,6 @@ typedef struct {
 
 } r3d_light_t;
 
-typedef enum {
-    R3D_LIGHT_ARRAY_VISIBLE,
-    R3D_LIGHT_ARRAY_VALID,
-    R3D_LIGHT_ARRAY_FREE,
-    R3D_LIGHT_ARRAY_COUNT
-} r3d_light_array_enum_t;
-
-typedef struct {
-    R3D_Light* lights;
-    int count;
-} r3d_light_array_t;
-
 // Shadow layer pool
 typedef struct {
     int* freeLayers;
@@ -115,9 +107,10 @@ extern struct r3d_light {
     r3d_light_shadow_pool_t shadowPools[R3D_LIGHT_TYPE_COUNT];
 
     // Light management
-    r3d_light_array_t arrays[R3D_LIGHT_ARRAY_COUNT];
-    r3d_light_t* lights;
-    int capacityLights;
+    r3d_pool_t* pool;           // Owns all r3d_light_t objects
+    R3D_Light* visible;         // Handles of lights visible this frame
+    uint32_t visibleCount;
+    uint32_t visibleCapacity;
 
 } R3D_MOD_LIGHT;
 
@@ -146,9 +139,6 @@ r3d_light_t* r3d_light_get(R3D_Light id);
 /* Returns the screen-space rectangle covered by the light's influence */
 r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h);
 
-/* Iterator for lights by category (stateful, not thread-safe) */
-bool r3d_light_iter(r3d_light_t** light, r3d_light_array_enum_t array);
-
 /* Enable shadows for a light */
 bool r3d_light_enable_shadows(r3d_light_t* light);
 
@@ -173,7 +163,12 @@ GLuint r3d_light_shadow_get(R3D_LightType type);
 
 static inline bool r3d_light_has_visible(void)
 {
-    return R3D_MOD_LIGHT.arrays[R3D_LIGHT_ARRAY_VISIBLE].count > 0;
+    return R3D_MOD_LIGHT.visibleCount > 0;
+}
+
+static inline bool r3d_light_has_any(void)
+{
+    return R3D_MOD_LIGHT.pool->count > 0;
 }
 
 #endif // R3D_MODULE_LIGHT_H

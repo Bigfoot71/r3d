@@ -16,14 +16,12 @@
 #include <assert.h>
 
 #include "../common/r3d_helper.h"
-#include "../common/r3d_math.h"
 
 // ========================================
 // CONSTANTS
 // ========================================
 
-#define PROBE_INITIAL_CAPACITY  16
-#define LAYER_GROWTH            4
+#define LAYER_GROWTH    4
 
 // ========================================
 // MODULE STATE
@@ -215,25 +213,6 @@ static bool expand_cubemap_capacity(GLuint* texture, r3d_env_layer_pool_t* pool,
 // PROBE FUNCTIONS
 // ========================================
 
-static bool growth_probe_arrays(void)
-{
-    int newCapacity = 2 * R3D_MOD_ENV.capacityProbes;
-
-    r3d_env_probe_t* newProbes = RL_REALLOC(R3D_MOD_ENV.probes, newCapacity * sizeof(*R3D_MOD_ENV.probes));
-    if (!newProbes) return false;
-
-    R3D_MOD_ENV.capacityProbes = newCapacity;
-    R3D_MOD_ENV.probes = newProbes;
-
-    for (int i = 0; i < R3D_ENV_PROBE_ARRAY_COUNT; i++) {
-        R3D_Probe* newPtr = RL_REALLOC(R3D_MOD_ENV.arrays[i].probes, newCapacity * sizeof(R3D_Probe));
-        if (!newPtr) return false;
-        R3D_MOD_ENV.arrays[i].probes = newPtr;
-    }
-
-    return true;
-}
-
 static bool init_probe(r3d_env_probe_t* probe, R3D_ProbeFlags flags)
 {
     probe->flags = flags;
@@ -338,22 +317,20 @@ bool r3d_env_init(void)
     }
 
     // Allocate probe arrays
-    R3D_MOD_ENV.probes = RL_MALLOC(PROBE_INITIAL_CAPACITY * sizeof(*R3D_MOD_ENV.probes));
-    R3D_MOD_ENV.capacityProbes = PROBE_INITIAL_CAPACITY;
-
-    if (!R3D_MOD_ENV.probes) {
-        R3D_TRACELOG(LOG_FATAL, "Failed to allocate probe array");
+    R3D_MOD_ENV.pool = r3d_pool_create(sizeof(r3d_env_probe_t), 16);
+    if (!R3D_MOD_ENV.pool) {
+        R3D_TRACELOG(LOG_FATAL, "Failed to create probe pool");
         r3d_env_quit();
         return false;
     }
 
-    for (int i = 0; i < R3D_ENV_PROBE_ARRAY_COUNT; i++) {
-        R3D_MOD_ENV.arrays[i].probes = RL_MALLOC(PROBE_INITIAL_CAPACITY * sizeof(R3D_Probe));
-        if (!R3D_MOD_ENV.arrays[i].probes) {
-            R3D_TRACELOG(LOG_FATAL, "Failed to allocate probe list array %i", i);
-            r3d_env_quit();
-            return false;
-        }
+    R3D_MOD_ENV.visible = RL_MALLOC(16 * sizeof(R3D_Probe));
+    R3D_MOD_ENV.visibleCapacity = 16;
+    R3D_MOD_ENV.visibleCount = 0;
+    if (!R3D_MOD_ENV.visible) {
+        R3D_TRACELOG(LOG_FATAL, "Failed to allocate visible probe array");
+        r3d_env_quit();
+        return false;
     }
 
     return true;
@@ -373,112 +350,61 @@ void r3d_env_quit(void)
     layer_pool_quit(&R3D_MOD_ENV.irradiancePool);
     layer_pool_quit(&R3D_MOD_ENV.prefilterPool);
 
-    for (int i = 0; i < R3D_ENV_PROBE_ARRAY_COUNT; i++) {
-        RL_FREE(R3D_MOD_ENV.arrays[i].probes);
-    }
-
-    RL_FREE(R3D_MOD_ENV.probes);
+    r3d_pool_destroy(R3D_MOD_ENV.pool);
+    RL_FREE(R3D_MOD_ENV.visible);
 }
 
 R3D_Probe r3d_env_probe_new(R3D_ProbeFlags flags)
 {
     if (!BIT_TEST_ANY(flags, R3D_PROBE_ILLUMINATION | R3D_PROBE_REFLECTION)) {
         R3D_TRACELOG(LOG_FATAL, "Failed to create probe; Invalid flags");
-        return -1;
+        return R3D_POOL_ID_NULL;
     }
 
-    r3d_env_probe_array_t* validProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VALID];
-    r3d_env_probe_array_t* freeProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_FREE];
-
-    R3D_Probe index;
-    if (freeProbes->count == 0) index = validProbes->count;
-    else index = freeProbes->probes[--freeProbes->count];
-
-    if (index >= R3D_MOD_ENV.capacityProbes) {
-        if (!growth_probe_arrays()) {
-            R3D_TRACELOG(LOG_FATAL, "Failed to grow probe arrays");
-            return -1;
-        }
+    R3D_Probe id = r3d_pool_insert(&R3D_MOD_ENV.pool);
+    if (id == R3D_POOL_ID_NULL) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to insert probe into pool");
+        return R3D_POOL_ID_NULL;
     }
 
-    if (!init_probe(&R3D_MOD_ENV.probes[index], flags)) {
-        R3D_TRACELOG(LOG_FATAL, "Failed to initialize probe");
-        return -1;
+    r3d_env_probe_t* probe = r3d_pool_get(R3D_MOD_ENV.pool, id);
+    if (!init_probe(probe, flags)) {
+        r3d_pool_remove(R3D_MOD_ENV.pool, id);
+        R3D_TRACELOG(LOG_ERROR, "Failed to initialize probe");
+        return R3D_POOL_ID_NULL;
     }
 
-    validProbes->probes[validProbes->count++] = index;
+    R3D_TRACELOG(LOG_INFO, "[ID %d] Probe created successfully", id);
 
-    return index;
+    return id;
 }
 
-void r3d_env_probe_delete(R3D_Probe index)
+void r3d_env_probe_delete(R3D_Probe id)
 {
-    if (index < 0) return;
+    r3d_env_probe_t* probe = r3d_pool_get(R3D_MOD_ENV.pool, id);
+    if (!probe) return;
 
-    r3d_env_probe_array_t* validProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VALID];
+    deinit_probe(probe);
+    r3d_pool_remove(R3D_MOD_ENV.pool, id);
 
-    // Find and remove from valid list
-    for (int i = 0; i < validProbes->count; i++) {
-        if (index == validProbes->probes[i]) {
-            int numToMove = validProbes->count - i - 1;
-            if (numToMove > 0) {
-                memmove(&validProbes->probes[i], &validProbes->probes[i + 1],
-                       numToMove * sizeof(validProbes->probes[0]));
-            }
-            validProbes->count--;
-
-            // Add to free list and cleanup
-            r3d_env_probe_array_t* freeProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_FREE];
-            freeProbes->probes[freeProbes->count++] = index;
-            deinit_probe(&R3D_MOD_ENV.probes[index]);
-            return;
-        }
-    }
+    R3D_TRACELOG(LOG_INFO, "[ID %d] Probe destroyed", id);
 }
 
-bool r3d_env_probe_is_valid(R3D_Probe index)
+bool r3d_env_probe_is_valid(R3D_Probe id)
 {
-    if (index < 0) return false;
-
-    const r3d_env_probe_array_t* validProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VALID];
-    for (int i = 0; i < validProbes->count; i++) {
-        if (index == validProbes->probes[i]) return true;
-    }
-    return false;
+    return r3d_pool_valid(R3D_MOD_ENV.pool, id);
 }
 
-r3d_env_probe_t* r3d_env_probe_get(R3D_Probe index)
+r3d_env_probe_t* r3d_env_probe_get(R3D_Probe id)
 {
-    return r3d_env_probe_is_valid(index) ? &R3D_MOD_ENV.probes[index] : NULL;
-}
-
-bool r3d_env_probe_has(r3d_env_probe_array_enum_t array)
-{
-    return (R3D_MOD_ENV.arrays[array].count > 0);
-}
-
-bool r3d_env_probe_iter(r3d_env_probe_t** probe, r3d_env_probe_array_enum_t array)
-{
-    static int index = 0;
-    index = (*probe == NULL) ? 0 : index + 1;
-
-    if (index >= R3D_MOD_ENV.arrays[array].count) return false;
-
-    *probe = &R3D_MOD_ENV.probes[R3D_MOD_ENV.arrays[array].probes[index]];
-    return true;
+    return r3d_pool_get(R3D_MOD_ENV.pool, id);
 }
 
 void r3d_env_probe_update_and_cull(const R3D_Frustum* viewFrustum, bool* hasVisibleProbes)
 {
-    r3d_env_probe_array_t* visibleProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VISIBLE];
-    r3d_env_probe_array_t* validProbes = &R3D_MOD_ENV.arrays[R3D_ENV_PROBE_ARRAY_VALID];
+    R3D_MOD_ENV.visibleCount = 0;
 
-    visibleProbes->count = 0;
-
-    for (int i = 0; i < validProbes->count; i++) {
-        R3D_Probe index = validProbes->probes[i];
-        r3d_env_probe_t* probe = &R3D_MOD_ENV.probes[index];
-
+    R3D_POOL_FOR_EACH(R3D_MOD_ENV.pool, r3d_env_probe_t, probe, idx) {
         if (probe->state.matrixShouldBeUpdated) {
             probe->state.matrixShouldBeUpdated = false;
             update_probe_matrix_frustum(probe);
@@ -499,11 +425,21 @@ void r3d_env_probe_update_and_cull(const R3D_Frustum* viewFrustum, bool* hasVisi
             }
         };
 
-        if (R3D_FrustumIntersectsBoundingBox(viewFrustum, aabb)) {
-            visibleProbes->probes[visibleProbes->count++] = index;
-            if (hasVisibleProbes) *hasVisibleProbes = true;
+        if (!R3D_FrustumIntersectsBoundingBox(viewFrustum, aabb)) continue;
+
+        // Grow visible array if needed
+        if (R3D_MOD_ENV.visibleCount >= R3D_MOD_ENV.visibleCapacity) {
+            uint32_t newCap = R3D_MOD_ENV.visibleCapacity * 2;
+            R3D_Probe* newPtr = RL_REALLOC(R3D_MOD_ENV.visible, newCap * sizeof(R3D_Probe));
+            if (!newPtr) continue; // Skip rather than crash
+            R3D_MOD_ENV.visible = newPtr;
+            R3D_MOD_ENV.visibleCapacity = newCap;
         }
+
+        R3D_MOD_ENV.visible[R3D_MOD_ENV.visibleCount++] = R3D_POOL_ID_MAKE(idx);
     }
+
+    if (hasVisibleProbes) *hasVisibleProbes = (R3D_MOD_ENV.visibleCount > 0);
 }
 
 bool r3d_env_probe_should_be_updated(r3d_env_probe_t* probe, bool willBeUpdated)
