@@ -2232,6 +2232,8 @@ void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
 
     R3D_LIGHT_FOR_EACH_VISIBLE(light)
     {
+        if (light->fogEnergy == 0.0f) continue;
+
         r3d_rect_t dst = {0, 0, R3D_TARGET_SIZE_W/2, R3D_TARGET_SIZE_H/2};
         if (light->type != R3D_LIGHT_DIR) {
             dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, R3D.viewState.camera.position, dst.w, dst.h);
