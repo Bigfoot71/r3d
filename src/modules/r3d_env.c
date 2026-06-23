@@ -405,12 +405,12 @@ void r3d_env_probe_update_and_cull(const R3D_Frustum* viewFrustum, bool* hasVisi
     R3D_MOD_ENV.visibleCount = 0;
 
     R3D_POOL_FOR_EACH(R3D_MOD_ENV.pool, r3d_env_probe_t, probe, idx) {
+        if (!probe->enabled) continue;
+
         if (probe->state.matrixShouldBeUpdated) {
             probe->state.matrixShouldBeUpdated = false;
             probe_update_matrix_frustum(probe);
         }
-
-        if (!probe->enabled) continue;
 
         BoundingBox aabb = {
             .min = {
