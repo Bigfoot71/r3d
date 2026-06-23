@@ -215,16 +215,16 @@ static bool light_init(r3d_light_t* light, R3D_LightType type)
     light->outerCutOff = cosf(45.0f * DEG2RAD);
     light->fogEnergy = 1.0f;
 
-    light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
+    light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[type];
     light->shadowOpacity = 1.0f;
     switch (type) {
     case R3D_LIGHT_DIR:
-        light->shadowDepthBias = 4.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
-        light->shadowSlopeBias = 6.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
+        light->shadowDepthBias = 4.0f / R3D_LIGHT_SHADOW_SIZE[type];
+        light->shadowSlopeBias = 6.0f / R3D_LIGHT_SHADOW_SIZE[type];
         break;
     case R3D_LIGHT_SPOT:
-        light->shadowDepthBias = 0.25f / R3D_LIGHT_SHADOW_SIZE[light->type];
-        light->shadowSlopeBias = 1.0f / R3D_LIGHT_SHADOW_SIZE[light->type];
+        light->shadowDepthBias = 0.25f / R3D_LIGHT_SHADOW_SIZE[type];
+        light->shadowSlopeBias = 1.0f / R3D_LIGHT_SHADOW_SIZE[type];
         break;
     case R3D_LIGHT_OMNI:
         light->shadowDepthBias = 0.025f;
