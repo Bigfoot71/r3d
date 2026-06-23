@@ -49,6 +49,30 @@ float PhaseFunction_Schlick(vec3 w0, vec3 w1)
     return nom / denom;
 }
 
+// Returns how far along rayDir (from rayOrigin) the fog march should extend,
+// clamped to uVFog.length and to the light's range sphere when applicable
+// Returns 0.0 when the ray never enters the light's range (nothing to march)
+float VFog_GetMarchDistance(vec3 rayOrigin, vec3 rayDir, float maxDist)
+{
+    if (uLight.type == LIGHT_DIR) {
+        return maxDist;
+    }
+
+    vec3 toLight = uLight.position - rayOrigin;
+    float tCenter = dot(toLight, rayDir);
+    float distToRaySq = dot(toLight, toLight) - tCenter * tCenter;
+    float rangeSq = uLight.range * uLight.range;
+
+    if (distToRaySq >= rangeSq) {
+        return 0.0;
+    }
+
+    float halfChord = sqrt(rangeSq - distToRaySq);
+    float tExit = tCenter + halfChord;
+
+    return min(maxDist, max(tExit, 0.0));
+}
+
 /* === Main Function === */
 
 void main()
@@ -59,8 +83,14 @@ void main()
     vec3 P = V_GetWorldPosition(vTexCoord, depth);
 
     vec3 rayDir = normalize(P - uView.position);
-    float rayLen = (uLight.type != LIGHT_DIR) ? min(uVFog.length, uLight.range) : uVFog.length;
+    float rayLen = VFog_GetMarchDistance(uView.position, rayDir, uVFog.length);
     float rayDist = min(length(P - uView.position), rayLen);
+
+    // Early-out: this light's range sphere doesn't intersect the view ray
+    if (rayDist <= 0.0) {
+        FragRadiance = vec3(0.0);
+        return;
+    }
 
     vec3 marchPos = uView.position;
     vec3 deltaStep = rayDir * uVFog.stepSize;
