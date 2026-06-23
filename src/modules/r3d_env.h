@@ -14,17 +14,21 @@
 #include <raylib.h>
 #include <glad.h>
 
+#include "../common/r3d_pool.h"
+
 // ========================================
 // HELPER MACROS
 // ========================================
 
-#define R3D_ENV_PROBE_FOR_EACH_VALID(probe) \
-    for (r3d_env_probe_t* probe = NULL; \
-         r3d_env_probe_iter(&probe, R3D_ENV_PROBE_ARRAY_VALID); )
+#define R3D_ENV_PROBE_FOR_EACH(varname) \
+    R3D_POOL_FOR_EACH(R3D_MOD_ENV.pool, r3d_env_probe_t, varname)
 
-#define R3D_ENV_PROBE_FOR_EACH_VISIBLE(probe) \
-    for (r3d_env_probe_t* probe = NULL; \
-         r3d_env_probe_iter(&probe, R3D_ENV_PROBE_ARRAY_VISIBLE); )
+#define R3D_ENV_PROBE_FOR_EACH_VISIBLE(varname)                 \
+    for (uint32_t _i = 0; _i < R3D_MOD_ENV.visibleCount; _i++)  \
+        for (r3d_env_probe_t* varname = r3d_pool_get(           \
+                 R3D_MOD_ENV.pool,                              \
+                 R3D_MOD_ENV.visible[_i]);                      \
+             varname; varname = NULL)
 
 // ========================================
 // TYPES
@@ -57,18 +61,6 @@ typedef struct {
     bool enabled;
 } r3d_env_probe_t;
 
-typedef enum {
-    R3D_ENV_PROBE_ARRAY_VISIBLE,
-    R3D_ENV_PROBE_ARRAY_VALID,
-    R3D_ENV_PROBE_ARRAY_FREE,
-    R3D_ENV_PROBE_ARRAY_COUNT
-} r3d_env_probe_array_enum_t;
-
-typedef struct {
-    R3D_Probe* probes;
-    int count;
-} r3d_env_probe_array_t;
-
 // Cubemap layer pool (manages reusable texture layers)
 typedef struct {
     int* freeLayers;        // Stack of available layer indices
@@ -95,9 +87,10 @@ extern struct r3d_env {
 
     bool captureCubeAllocated;
 
-    r3d_env_probe_array_t arrays[R3D_ENV_PROBE_ARRAY_COUNT];
-    r3d_env_probe_t* probes;
-    int capacityProbes;
+    r3d_pool_t* pool;           // Owns all r3d_env_probe_t objects
+    R3D_Probe* visible;         // Handles of probes visible this frame
+    uint32_t visibleCount;
+    uint32_t visibleCapacity;
 } R3D_MOD_ENV;
 
 // ========================================
@@ -121,12 +114,6 @@ bool r3d_env_probe_is_valid(R3D_Probe index);
 
 /* Get internal probe structure (returns NULL if invalid) */
 r3d_env_probe_t* r3d_env_probe_get(R3D_Probe index);
-
-/* Check if the specified probe array is not empty */
-bool r3d_env_probe_has(r3d_env_probe_array_enum_t array);
-
-/* Iterator for probes by category (stateful, not thread-safe) */
-bool r3d_env_probe_iter(r3d_env_probe_t** probe, r3d_env_probe_array_enum_t array);
 
 /* Update probe states and collect visible ones (can indicate if probes influcences are visible) */
 void r3d_env_probe_update_and_cull(const R3D_Frustum* viewFrustum, bool* hasVisibleProbes);
@@ -166,5 +153,19 @@ void r3d_env_capture_gen_mipmaps(void);
 
 /* Get capture cubemap texture ID */
 GLuint r3d_env_capture_get(void);
+
+// ========================================
+// INLINE QUERIES
+// ========================================
+
+static inline bool r3d_env_probe_has_visible(void)
+{
+    return R3D_MOD_ENV.visibleCount > 0;
+}
+
+static inline bool r3d_env_probe_has_any(void)
+{
+    return R3D_MOD_ENV.pool->count > 0;
+}
 
 #endif // R3D_MODULE_ENV_H

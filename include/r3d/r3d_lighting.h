@@ -54,9 +54,9 @@ typedef enum R3D_ShadowUpdateMode {
  * @brief Unique identifier for an R3D light.
  *
  * ID type used to reference a light.
- * A negative value indicates an invalid light.
+ * A zero value indicates an invalid light.
  */
-typedef int32_t R3D_Light;
+typedef uint32_t R3D_Light;
 
 // ========================================
 // PUBLIC API

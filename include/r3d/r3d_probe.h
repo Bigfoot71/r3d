@@ -50,9 +50,10 @@ typedef enum R3D_ProbeUpdateMode {
 /**
  * @brief Unique identifier for an R3D probe.
  *
- * Negative values indicate an invalid probe.
+ * ID type used to reference a probe.
+ * A zero value indicates an invalid probe.
  */
-typedef int32_t R3D_Probe;
+typedef uint32_t R3D_Probe;
 
 // ========================================
 // PUBLIC API
