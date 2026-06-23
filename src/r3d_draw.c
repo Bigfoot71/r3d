@@ -2126,6 +2126,7 @@ void pass_deferred_lights(void)
 
     /* --- Reset undesired states --- */
 
+    r3d_driver_set_scissor(0, 0, R3D_TARGET_SIZE_W, R3D_TARGET_SIZE_H);
     r3d_driver_disable(GL_SCISSOR_TEST);
 }
 
@@ -2264,6 +2265,7 @@ void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
         R3D_RENDER_SCREEN();
     }
 
+    r3d_driver_set_scissor(0, 0, R3D_TARGET_SIZE_W, R3D_TARGET_SIZE_H);
     r3d_driver_disable(GL_SCISSOR_TEST);
 
     /* --- Compose radiance to the scene --- */
