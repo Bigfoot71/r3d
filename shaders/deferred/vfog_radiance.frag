@@ -49,13 +49,15 @@ float PhaseFunction_Schlick(vec3 w0, vec3 w1)
     return nom / denom;
 }
 
-// Returns how far along rayDir (from rayOrigin) the fog march should extend,
-// clamped to uVFog.length and to the light's range sphere when applicable
-// Returns 0.0 when the ray never enters the light's range (nothing to march)
-float VFog_GetMarchDistance(vec3 rayOrigin, vec3 rayDir, float maxDist)
+// Computes the march range [tEnter, tExit] along rayDir (from rayOrigin),
+// clamped to uVFog.length and to the light's range sphere when applicable.
+// tEnter/tExit are both 0.0 when the ray never enters the light's range
+void VFog_GetMarchRange(vec3 rayOrigin, vec3 rayDir, float maxDist, out float tEnter, out float tExit)
 {
     if (uLight.type == LIGHT_DIR) {
-        return maxDist;
+        tEnter = 0.0;
+        tExit = maxDist;
+        return;
     }
 
     vec3 toLight = uLight.position - rayOrigin;
@@ -64,13 +66,15 @@ float VFog_GetMarchDistance(vec3 rayOrigin, vec3 rayDir, float maxDist)
     float rangeSq = uLight.range * uLight.range;
 
     if (distToRaySq >= rangeSq) {
-        return 0.0;
+        tEnter = 0.0;
+        tExit = 0.0;
+        return;
     }
 
     float halfChord = sqrt(rangeSq - distToRaySq);
-    float tExit = tCenter + halfChord;
 
-    return min(maxDist, max(tExit, 0.0));
+    tEnter = max(tCenter - halfChord, 0.0);
+    tExit = min(tCenter + halfChord, maxDist);
 }
 
 /* === Main Function === */
@@ -83,8 +87,13 @@ void main()
     vec3 P = V_GetWorldPosition(vTexCoord, depth);
 
     vec3 rayDir = normalize(P - uView.position);
-    float rayLen = VFog_GetMarchDistance(uView.position, rayDir, uVFog.length);
-    float rayDist = min(length(P - uView.position), rayLen);
+
+    float tEnter, tExit;
+    VFog_GetMarchRange(uView.position, rayDir, uVFog.length, tEnter, tExit);
+
+    float fragDist = length(P - uView.position);
+    tExit = min(fragDist, tExit);
+    float rayDist = tExit - tEnter;
 
     // Early-out: this light's range sphere doesn't intersect the view ray
     if (rayDist <= 0.0) {
@@ -92,7 +101,7 @@ void main()
         return;
     }
 
-    vec3 marchPos = uView.position;
+    vec3 marchPos = uView.position + rayDir * tEnter;
     vec3 deltaStep = rayDir * uVFog.stepSize;
     vec3 fragToCameraNorm = -rayDir; // view direction along the ray
 
