@@ -7,6 +7,7 @@
  */
 
 #include "./r3d_light.h"
+#include "raylib.h"
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
@@ -505,12 +506,21 @@ r3d_light_t* r3d_light_get(R3D_Light id)
     return r3d_pool_get(R3D_MOD_LIGHT.pool, id);
 }
 
-r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h)
+r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, Vector3 camPos, int w, int h)
 {
     assert(light->type != R3D_LIGHT_DIR);
 
     Vector3 min = light->aabb.min;
     Vector3 max = light->aabb.max;
+
+    bool cameraInside =
+        (camPos.x >= min.x && camPos.x <= max.x) &&
+        (camPos.y >= min.y && camPos.y <= max.y) &&
+        (camPos.z >= min.z && camPos.z <= max.z);
+
+    if (cameraInside) {
+        return (r3d_rect_t){0, 0, w, h};
+    }
 
     Vector2 minNDC = {+FLT_MAX, +FLT_MAX};
     Vector2 maxNDC = {-FLT_MAX, -FLT_MAX};
@@ -524,12 +534,12 @@ r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* vie
         };
         Vector4 clip = r3d_vector4_transform(corner, viewProj);
 
-        // If the AABB crosses the near plane: fullscreen
-        if (clip.w <= 0.0f) {
-            return (r3d_rect_t){0, 0, w, h};
+        float w = clip.w;
+        if (fabsf(w) < 1e-4f) {
+            w = (w < 0.0f) ? -1e-4f : 1e-4f;
         }
 
-        Vector2 ndc = Vector2Scale((Vector2){clip.x, clip.y}, 1.0f / clip.w);
+        Vector2 ndc = Vector2Scale((Vector2){clip.x, clip.y}, 1.0f / w);
         minNDC = Vector2Min(minNDC, ndc);
         maxNDC = Vector2Max(maxNDC, ndc);
     }

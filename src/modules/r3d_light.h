@@ -137,7 +137,7 @@ bool r3d_light_is_valid(R3D_Light id);
 r3d_light_t* r3d_light_get(R3D_Light id);
 
 /* Returns the screen-space rectangle covered by the light's influence */
-r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, int w, int h);
+r3d_rect_t r3d_light_get_screen_rect(const r3d_light_t* light, const Matrix* viewProj, Vector3 camPos, int w, int h);
 
 /* Enable shadows for a light */
 bool r3d_light_enable_shadows(r3d_light_t* light);
