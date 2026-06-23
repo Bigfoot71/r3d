@@ -48,28 +48,11 @@ void main()
 {
     ivec2 pixCoord = ivec2(gl_FragCoord.xy);
 
-    /* Sample albedo and ORM texture and extract values */
-
-    vec3 albedo = texelFetch(uAlbedoTex, pixCoord, 0).rgb;
-    vec4 orm = texelFetch(uOrmTex, pixCoord, 0);
-    float roughness = orm.g;
-    float metalness = orm.b;
-
-    /* Compute F0 (reflectance at normal incidence) based on the metallic factor */
-
-    vec3 F0 = PBR_ComputeF0(metalness, orm.w, albedo);
-
     /* Get position and normal in world space */
 
     float depth = texelFetch(uDepthTex, pixCoord, 0).r;
-
-    vec3 P = V_GetWorldPosition(vTexCoord, depth);
     vec3 N = V_GetWorldNormal(uNormalTex, pixCoord);
-
-    /* Compute view direction and the dot product of the normal and view direction */
-
-    vec3 V = normalize(uView.position - P);
-    float NdotV = max(dot(N, V), 1e-4);
+    vec3 P = V_GetWorldPosition(vTexCoord, depth);
 
     /* Compute light direction and the dot product of the normal and light direction */
 
@@ -85,6 +68,16 @@ void main()
         return;
     }
 
+    /* Sample albedo and ORM buffers */
+
+    vec3 albedo = texelFetch(uAlbedoTex, pixCoord, 0).rgb;
+    vec4 orm = texelFetch(uOrmTex, pixCoord, 0);
+
+    /* Compute view direction and the dot product of the normal and view direction */
+
+    vec3 V = normalize(uView.position - P);
+    float NdotV = max(dot(N, V), 1e-4);
+
     /* Compute the halfway vector between the view and light directions */
 
     vec3 H = normalize(V + L);
@@ -98,12 +91,13 @@ void main()
 
     /* Compute diffuse lighting */
 
-    vec3 diff = L_Diffuse(LdotH, NdotV, NdotL, roughness);
-    diff *= albedo * lightColE * (1.0 - metalness);
+    vec3 diff = L_Diffuse(LdotH, NdotV, NdotL, orm.g);
+    diff *= albedo * lightColE * (1.0 - orm.b);
 
     /* Compute specular lighting */
 
-    vec3 spec = L_Specular(F0, LdotH, NdotH, NdotV, NdotL, roughness);
+    vec3 F0 = PBR_ComputeF0(orm.b, orm.w, albedo);
+    vec3 spec = L_Specular(F0, LdotH, NdotH, NdotV, NdotL, orm.g);
     spec *= lightColE * uLight.specular;
 
     /* Compute shadow factor */
