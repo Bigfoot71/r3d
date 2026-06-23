@@ -107,7 +107,7 @@ static bool shadow_pool_expand(r3d_light_shadow_pool_t* pool, int addCount)
 // SHADOW MAP TEXTURE FUNCTIONS
 // ========================================
 
-static bool allocate_shadow_array(GLuint texture, GLenum target, int size, int layers)
+static bool shadow_array_allocate(GLuint texture, GLenum target, int size, int layers)
 {
     int actualLayers = (target == GL_TEXTURE_CUBE_MAP_ARRAY) ? layers * 6 : layers;
 
@@ -133,12 +133,12 @@ static bool allocate_shadow_array(GLuint texture, GLenum target, int size, int l
     return true;
 }
 
-static bool resize_shadow_array(GLuint* texture, GLenum target, int size, int oldLayers, int newLayers)
+static bool shadow_array_resize(GLuint* texture, GLenum target, int size, int oldLayers, int newLayers)
 {
     GLuint newTexture;
     glGenTextures(1, &newTexture);
 
-    if (!allocate_shadow_array(newTexture, target, size, newLayers)) {
+    if (!shadow_array_allocate(newTexture, target, size, newLayers)) {
         glDeleteTextures(1, &newTexture);
         return false;
     }
@@ -163,7 +163,7 @@ static bool resize_shadow_array(GLuint* texture, GLenum target, int size, int ol
     return true;
 }
 
-static bool expand_shadow_array_capacity(R3D_LightType type)
+static bool shadow_array_expand_capacity(R3D_LightType type)
 {
     r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.shadowPools[type];
     GLuint* shadowArray = &R3D_MOD_LIGHT.shadowArrays[type];
@@ -171,7 +171,7 @@ static bool expand_shadow_array_capacity(R3D_LightType type)
     int shadowSize = R3D_LIGHT_SHADOW_SIZE[type];
     int growth = SHADOW_LAYER_GROWTH[type];
 
-    if (!resize_shadow_array(shadowArray, shadowTarget, shadowSize, pool->totalLayers, pool->totalLayers + growth)) {
+    if (!shadow_array_resize(shadowArray, shadowTarget, shadowSize, pool->totalLayers, pool->totalLayers + growth)) {
         return false;
     }
 
@@ -554,7 +554,7 @@ bool r3d_light_enable_shadows(r3d_light_t* light)
 
     int layer = shadow_pool_reserve(&R3D_MOD_LIGHT.shadowPools[light->type]);
     if (layer < 0) {
-        if (!expand_shadow_array_capacity(light->type)) {
+        if (!shadow_array_expand_capacity(light->type)) {
             return false;
         }
         layer = shadow_pool_reserve(&R3D_MOD_LIGHT.shadowPools[light->type]);
