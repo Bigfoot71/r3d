@@ -79,7 +79,8 @@ typedef struct {
 
 typedef struct {
     union {
-        float vfloat;
+        GLint vint;
+        GLfloat vfloat;
         GLenum venum;
         uint8_t vbyte;
         GLboolean vbool;
@@ -107,6 +108,7 @@ typedef struct {
     pipeline_entry_t blendDstFactor;
     pipeline_entry_t blendSrcAlpha;
     pipeline_entry_t blendDstAlpha;
+    pipeline_entry_t scissor[4];
     GLint viewport[4];
 } pipeline_cache_t;
 
@@ -529,6 +531,19 @@ void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode c
     default:
         assert(false && "This shouldn't happen");
         break;
+    }
+}
+
+void r3d_driver_set_scissor(int x, int y, int w, int h)
+{
+    if (CHECK_PIPE(scissor[0], int, x) || CHECK_PIPE(scissor[1], int, y)
+    ||  CHECK_PIPE(scissor[2], int, w) || CHECK_PIPE(scissor[3], int, h))
+    {
+        SET_PIPE(scissor[0], int, x);
+        SET_PIPE(scissor[1], int, y);
+        SET_PIPE(scissor[2], int, w);
+        SET_PIPE(scissor[3], int, h);
+        glScissor(x, y, w, h);
     }
 }
 

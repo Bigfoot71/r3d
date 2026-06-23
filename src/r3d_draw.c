@@ -2094,7 +2094,7 @@ void pass_deferred_lights(void)
             dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, R3D.viewState.camera.position, dst.w, dst.h);
             if (memcmp(&dst, &(r3d_rect_t){0}, sizeof(r3d_rect_t)) == 0) continue;
         }
-        glScissor(dst.x, dst.y, dst.w, dst.h);
+        r3d_driver_set_scissor(dst.x, dst.y, dst.w, dst.h);
 
         // Send light data to the GPU
         r3d_shader_block_light_t data = {
@@ -2236,7 +2236,7 @@ void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
             dst = r3d_light_get_screen_rect(light, &R3D.viewState.viewProj, R3D.viewState.camera.position, dst.w, dst.h);
             if (memcmp(&dst, &(r3d_rect_t){0}, sizeof(r3d_rect_t)) == 0) continue;
         }
-        glScissor(dst.x, dst.y, dst.w, dst.h);
+        r3d_driver_set_scissor(dst.x, dst.y, dst.w, dst.h);
 
         r3d_shader_block_light_t data = {
             .viewProj = MatrixTranspose(light->viewProj[0]),

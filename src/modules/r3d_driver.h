@@ -144,6 +144,12 @@ void r3d_driver_set_cull_mode(R3D_CullMode mode);
 void r3d_driver_set_shadow_cast_mode(R3D_ShadowCastMode castMode, R3D_CullMode cullMode);
 
 /*
+ * Sets the scissor rectangle.
+ * Cached to avoid redundant state changes.
+ */
+void r3d_driver_set_scissor(int x, int y, int w, int h);
+
+/*
  * Starts a GPU timer to measure the elapsed time of a code section.
  * Uses a GL_TIME_ELAPSED query and stores the label for optional logging.
  * DEBUG ONLY: may stall the CPU if the GPU has not finished.
