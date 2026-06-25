@@ -153,6 +153,8 @@ R3DAPI R3D_ProbeUpdateMode R3D_GetProbeUpdateMode(R3D_Probe id);
  *
  * Controls when the probe capture is refreshed.
  *
+ * Default: R3D_PROBE_UPDATE_ONCE
+ *
  * @param id Probe ID.
  * @param mode Update mode to apply.
  */
@@ -171,6 +173,8 @@ R3DAPI bool R3D_GetProbeInterior(R3D_Probe id);
 
 /**
  * @brief Enables or disables indoor mode for the probe.
+ *
+ * Default: false
  */
 R3DAPI void R3D_SetProbeInterior(R3D_Probe id, bool active);
 
@@ -184,6 +188,8 @@ R3DAPI bool R3D_GetProbeShadows(R3D_Probe id);
 
 /**
  * @brief Enables or disables shadow rendering during probe capture.
+ *
+ * Default: false
  */
 R3DAPI void R3D_SetProbeShadows(R3D_Probe id, bool active);
 
@@ -194,6 +200,8 @@ R3DAPI Vector3 R3D_GetProbePosition(R3D_Probe id);
 
 /**
  * @brief Sets the world position of the probe.
+ *
+ * Default: (Vector3) {0.0f, 0.0f, 0.0f}
  */
 R3DAPI void R3D_SetProbePosition(R3D_Probe id, Vector3 position);
 
@@ -209,6 +217,8 @@ R3DAPI float R3D_GetProbeRange(R3D_Probe id);
  * @brief Sets the effective range of the probe.
  *
  * @param range Radius in world units. Must be > 0.
+ *
+ * Default: 16.0f
  */
 R3DAPI void R3D_SetProbeRange(R3D_Probe id, float range);
 
@@ -231,6 +241,8 @@ R3DAPI float R3D_GetProbeFalloff(R3D_Probe id);
  * @brief Sets the falloff factor used for distance attenuation.
  *
  * Larger values make the probe feel more localized.
+ *
+ * Default: 1.0f
  */
 R3DAPI void R3D_SetProbeFalloff(R3D_Probe id, float falloff);
 
