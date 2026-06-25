@@ -2221,11 +2221,12 @@ void pass_deferred_volumetric_fog(r3d_target_t sceneTarget)
 
     /* --- Accumulate radiance in half resolution --- */
 
+    R3D_TARGET_CLEAR(false, R3D_TARGET_VFOG_RAD);
+
     r3d_driver_enable(GL_SCISSOR_TEST);
     r3d_driver_enable(GL_BLEND);
-    r3d_driver_set_blend_func(GL_FUNC_ADD, GL_ONE, GL_ONE);
 
-    R3D_TARGET_CLEAR(false, R3D_TARGET_VFOG_RAD);
+    r3d_driver_set_blend_func(GL_FUNC_ADD, GL_ONE, GL_ONE);
 
     R3D_SHADER_USE(deferred.vfogRadiance);
     R3D_SHADER_BIND_SAMPLER(deferred.vfogRadiance, uDepthTex, r3d_target_get_level(R3D_TARGET_DEPTH, 1));
