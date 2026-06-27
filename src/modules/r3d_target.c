@@ -135,11 +135,17 @@ static void alloc_target_texture(r3d_target_t target)
     R3D_MOD_TARGET.targetLoaded[target] = true;
 }
 
-static void alloc_depth_stencil_renderbuffer(int resW, int resH)
+static void alloc_depth_stencil_texture(int resW, int resH)
 {
-    glBindRenderbuffer(GL_RENDERBUFFER, R3D_MOD_TARGET.depthRenderbuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, resW, resH);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, R3D_MOD_TARGET.depthTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, resW, resH, 0,
+                 GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 /*
@@ -191,9 +197,10 @@ static int get_or_create_fbo(const r3d_target_t* targets, int count, bool depth)
     }
 
     if (depth) {
-        glFramebufferRenderbuffer(
+        glFramebufferTexture2D(
             GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT,
-            GL_RENDERBUFFER, R3D_MOD_TARGET.depthRenderbuffer
+            GL_TEXTURE_2D, R3D_MOD_TARGET.depthTexture,
+            0
         );
     }
 
@@ -225,8 +232,8 @@ bool r3d_target_init(int resW, int resH)
     memset(&R3D_MOD_TARGET, 0, sizeof(R3D_MOD_TARGET));
 
     glGenTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targetTextures);
-    glGenRenderbuffers(1, &R3D_MOD_TARGET.depthRenderbuffer);
-    alloc_depth_stencil_renderbuffer(resW, resH);
+    glGenTextures(1, &R3D_MOD_TARGET.depthTexture);
+    alloc_depth_stencil_texture(resW, resH);
 
     R3D_MOD_TARGET.currentFbo = -1;
 
@@ -241,7 +248,7 @@ bool r3d_target_init(int resW, int resH)
 void r3d_target_quit(void)
 {
     glDeleteTextures(R3D_TARGET_COUNT, R3D_MOD_TARGET.targetTextures);
-    glDeleteRenderbuffers(1, &R3D_MOD_TARGET.depthRenderbuffer);
+    glDeleteTextures(1, &R3D_MOD_TARGET.depthTexture);
 
     for (int i = 0; i < R3D_MOD_TARGET.fboCount; i++) {
         if (R3D_MOD_TARGET.fbo[i].id != 0) {
@@ -263,7 +270,7 @@ void r3d_target_resize(int resW, int resH)
     R3D_MOD_TARGET.txlW = 1.0f / resW;
     R3D_MOD_TARGET.txlH = 1.0f / resH;
 
-    alloc_depth_stencil_renderbuffer(resW, resH);
+    alloc_depth_stencil_texture(resW, resH);
 
     for (int i = 0; i < R3D_TARGET_COUNT; i++) {
         if (R3D_MOD_TARGET.targetLoaded[i]) {

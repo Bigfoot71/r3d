@@ -182,7 +182,7 @@ extern struct r3d_mod_target {
     GLuint targetTextures[R3D_TARGET_COUNT];            //< Array of target IDs (textures)
     bool targetLoaded[R3D_TARGET_COUNT];                //< Indicates whether the targets have been allocated
 
-    GLuint depthRenderbuffer;   //< Internal depth buffer
+    GLuint depthTexture;        //< Internal HW depth buffer
     uint32_t resW, resH;        //< Full internal resolution
     float txlW, txlH;           //< Size of a texel for full resolution
 
