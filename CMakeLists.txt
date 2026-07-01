@@ -368,6 +368,9 @@ embed_shaders(${PROJECT_NAME}
     "${R3D_ROOT_PATH}/shaders/post/smaa.frag"
     "${R3D_ROOT_PATH}/shaders/post/visualizer.frag"
     # Blit
+    "${R3D_ROOT_PATH}/shaders/blit/common_copy.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/common_nearest.frag"
+    "${R3D_ROOT_PATH}/shaders/blit/common_linear.frag"
     "${R3D_ROOT_PATH}/shaders/blit/up_bicubic.frag"
     "${R3D_ROOT_PATH}/shaders/blit/up_lanczos.frag"
     "${R3D_ROOT_PATH}/shaders/blit/down_rgss.frag"

@@ -2714,73 +2714,82 @@ void blit_to_screen(r3d_target_t source)
         return;
     }
 
-    bool sameDim = (dstW == srcW) && (dstH == srcH);
-    bool upscale = (dstW >= srcW) && (dstH >= srcH) && !sameDim;
-    bool downscale = (dstW <= srcW) && (dstH <= srcH) && !sameDim;
-    bool mixedScale = !sameDim && !upscale && !downscale;
+    int dstSq = dstW * dstH;
+    int srcSq = srcW * srcH;
+    int sign = (dstSq > srcSq) - (dstSq < srcSq);
 
-    if (sameDim || (upscale && R3D.upscaleMode == R3D_UPSCALE_NEAREST) || (downscale && R3D.downscaleMode == R3D_DOWNSCALE_NEAREST)) {
-        r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, false);
-        return;
-    }
+    glBindFramebuffer(GL_FRAMEBUFFER, dstId);
+    glViewport(dstX, glDstY, dstW, dstH);
 
-    if (mixedScale || (upscale && R3D.upscaleMode == R3D_UPSCALE_LINEAR) || (downscale && R3D.downscaleMode == R3D_DOWNSCALE_LINEAR)) {
-        r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, true);
-        return;
-    }
+    r3d_driver_enable(GL_DEPTH_TEST);
+    r3d_driver_set_depth_mask(GL_TRUE);
+    r3d_driver_set_depth_func(GL_ALWAYS);
 
-    if (upscale) {
-        glBindFramebuffer(GL_FRAMEBUFFER, dstId);
-        glViewport(dstX, glDstY, dstW, dstH);
-
+    if (sign > 0) {
         switch (R3D.upscaleMode) {
+        case R3D_UPSCALE_NEAREST:
+            R3D_SHADER_USE(blit.commonNearest);
+            R3D_SHADER_BIND_SAMPLER(blit.commonNearest, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_BIND_SAMPLER(blit.commonNearest, uDepthTex, r3d_target_get_depth_buffer());
+            R3D_RENDER_SCREEN();
+            break;
+        case R3D_UPSCALE_LINEAR:
+            R3D_SHADER_USE(blit.commonLinear);
+            R3D_SHADER_BIND_SAMPLER(blit.commonLinear, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_BIND_SAMPLER(blit.commonLinear, uDepthTex, r3d_target_get_depth_buffer());
+            R3D_RENDER_SCREEN();
+            break;
         case R3D_UPSCALE_BICUBIC:
             R3D_SHADER_USE(blit.upBicubic);
-            R3D_SHADER_SET_VEC2(blit.upBicubic, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H});
             R3D_SHADER_BIND_SAMPLER(blit.upBicubic, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_BIND_SAMPLER(blit.upBicubic, uDepthTex, r3d_target_get_depth_buffer());
+            R3D_RENDER_SCREEN();
             break;
-
         case R3D_UPSCALE_LANCZOS:
             R3D_SHADER_USE(blit.upLanczos);
-            R3D_SHADER_SET_VEC2(blit.upLanczos, uSourceTexel, (Vector2) {R3D_TARGET_TEXEL_W, R3D_TARGET_TEXEL_H});
             R3D_SHADER_BIND_SAMPLER(blit.upLanczos, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_BIND_SAMPLER(blit.upLanczos, uDepthTex, r3d_target_get_depth_buffer());
+            R3D_RENDER_SCREEN();
             break;
-
         default:
-            r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, true);
-            return;
+            break;
         }
-
-        R3D_RENDER_SCREEN();
-        r3d_target_blit(-1, true, dstId, dstX, glDstY, dstW, dstH, false);
-        return;
     }
-
-    if (downscale) {
-        glBindFramebuffer(GL_FRAMEBUFFER, dstId);
-        glViewport(dstX, glDstY, dstW, dstH);
-
+    else if (sign < 0) {
         switch (R3D.downscaleMode) {
+        case R3D_DOWNSCALE_NEAREST:
+            R3D_SHADER_USE(blit.commonNearest);
+            R3D_SHADER_BIND_SAMPLER(blit.commonNearest, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_BIND_SAMPLER(blit.commonNearest, uDepthTex, r3d_target_get_depth_buffer());
+            R3D_RENDER_SCREEN();
+            break;
+        case R3D_DOWNSCALE_LINEAR:
+            R3D_SHADER_USE(blit.commonLinear);
+            R3D_SHADER_BIND_SAMPLER(blit.commonLinear, uSourceTex, r3d_target_get(source));
+            R3D_SHADER_BIND_SAMPLER(blit.commonLinear, uDepthTex, r3d_target_get_depth_buffer());
+            R3D_RENDER_SCREEN();
+            break;
         case R3D_DOWNSCALE_RGSS:
             R3D_SHADER_USE(blit.downRgss);
             R3D_SHADER_SET_VEC2(blit.downRgss, uDestTexel, (Vector2) {1.0f / dstW, 1.0f / dstH});
             R3D_SHADER_BIND_SAMPLER(blit.downRgss, uSourceTex, r3d_target_get(source));
+            R3D_RENDER_SCREEN();
             break;
-
         case R3D_DOWNSCALE_PDSS:
             R3D_SHADER_USE(blit.downPdss);
             R3D_SHADER_SET_VEC2(blit.downPdss, uDestTexel, (Vector2) {1.0f / dstW, 1.0f / dstH});
             R3D_SHADER_BIND_SAMPLER(blit.downPdss, uSourceTex, r3d_target_get(source));
+            R3D_RENDER_SCREEN();
             break;
-
         default:
-            r3d_target_blit(source, true, dstId, dstX, glDstY, dstW, dstH, true);
-            return;
+            break;
         }
-
+    }
+    else {
+        R3D_SHADER_USE(blit.commonCopy);
+        R3D_SHADER_BIND_SAMPLER(blit.commonCopy, uSourceTex, r3d_target_get(source));
+        R3D_SHADER_BIND_SAMPLER(blit.commonCopy, uDepthTex, r3d_target_get_depth_buffer());
         R3D_RENDER_SCREEN();
-        r3d_target_blit(-1, true, dstId, dstX, glDstY, dstW, dstH, false);
-        return;
     }
 }
 

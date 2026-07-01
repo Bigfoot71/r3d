@@ -1189,24 +1189,44 @@ typedef struct {
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
-    r3d_shader_uniform_vec2_t uSourceTexel;
+    r3d_shader_uniform_sampler_t uDepthTex;
+} r3d_shader_blit_common_copy_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+} r3d_shader_blit_common_nearest_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
+} r3d_shader_blit_common_linear_t;
+
+typedef struct {
+    GLuint id;
+    r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_blit_up_bicubic_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
-    r3d_shader_uniform_vec2_t uSourceTexel;
+    r3d_shader_uniform_sampler_t uDepthTex;
 } r3d_shader_blit_up_lanczos_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_vec2_t uDestTexel;
 } r3d_shader_blit_down_rgss_t;
 
 typedef struct {
     GLuint id;
     r3d_shader_uniform_sampler_t uSourceTex;
+    r3d_shader_uniform_sampler_t uDepthTex;
     r3d_shader_uniform_vec2_t uDestTexel;
 } r3d_shader_blit_down_pdss_t;
 
@@ -1335,6 +1355,9 @@ extern struct r3d_mod_shader {
 
     // Blit shaders
     struct {
+        r3d_shader_blit_common_copy_t commonCopy;
+        r3d_shader_blit_common_nearest_t commonNearest;
+        r3d_shader_blit_common_linear_t commonLinear;
         r3d_shader_blit_up_bicubic_t upBicubic;
         r3d_shader_blit_up_lanczos_t upLanczos;
         r3d_shader_blit_down_rgss_t downRgss;
@@ -1413,6 +1436,9 @@ bool r3d_shader_load_post_smaa_medium(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_smaa_high(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_smaa_ultra(r3d_shader_custom_t* custom);
 bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_common_copy(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_common_nearest(r3d_shader_custom_t* custom);
+bool r3d_shader_load_blit_common_linear(r3d_shader_custom_t* custom);
 bool r3d_shader_load_blit_up_bicubic(r3d_shader_custom_t* custom);
 bool r3d_shader_load_blit_up_lanczos(r3d_shader_custom_t* custom);
 bool r3d_shader_load_blit_down_rgss(r3d_shader_custom_t* custom);
@@ -1491,6 +1517,9 @@ static const struct r3d_shader_loader {
 
     // Blit shaders
     struct {
+        r3d_shader_loader_func commonCopy;
+        r3d_shader_loader_func commonNearest;
+        r3d_shader_loader_func commonLinear;
         r3d_shader_loader_func upBicubic;
         r3d_shader_loader_func upLanczos;
         r3d_shader_loader_func downRgss;
@@ -1576,6 +1605,9 @@ static const struct r3d_shader_loader {
     },
 
     .blit = {
+        .commonCopy = r3d_shader_load_blit_common_copy,
+        .commonNearest = r3d_shader_load_blit_common_nearest,
+        .commonLinear = r3d_shader_load_blit_common_linear,
         .upBicubic = r3d_shader_load_blit_up_bicubic,
         .upLanczos = r3d_shader_load_blit_up_lanczos,
         .downRgss = r3d_shader_load_blit_down_rgss,

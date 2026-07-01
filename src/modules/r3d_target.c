@@ -500,6 +500,11 @@ GLuint r3d_target_get_all_levels(r3d_target_t target)
     return R3D_MOD_TARGET.targetTextures[target];
 }
 
+GLuint r3d_target_get_depth_buffer(void)
+{
+    return R3D_MOD_TARGET.depthTexture;
+}
+
 void r3d_target_blit(r3d_target_t target, bool depth, GLuint dstFbo, int dstX, int dstY, int dstW, int dstH, bool linear)
 {
     assert(target > R3D_TARGET_INVALID || depth);

@@ -8,22 +8,15 @@
 
 #version 330 core
 
-/* === Varyings === */
-
 noperspective in vec2 vTexCoord;
 
-/* === Uniforms === */
-
 uniform sampler2D uSourceTex;
+uniform sampler2D uDepthTex;
 uniform vec2 uDestTexel;
-
-/* === Fragments === */
 
 out vec4 FragColor;
 
-/* === Main program === */
-
-void main()
+vec4 SampleColor(sampler2D tex, vec2 texCoord, vec2 dstTexel)
 {
     const vec2 o00 = vec2( 0.176777,  0.000000) * 0.5;
     const vec2 o01 = vec2(-0.225772,  0.206826) * 0.5;
@@ -42,22 +35,28 @@ void main()
     const vec2 o14 = vec2(-0.547507,  0.778772) * 0.5;
     const vec2 o15 = vec2(-0.126487, -0.976090) * 0.5;
 
-    vec4 c  = texture(uSourceTex, vTexCoord + o00 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o01 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o02 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o03 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o04 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o05 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o06 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o07 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o08 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o09 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o10 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o11 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o12 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o13 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o14 * uDestTexel);
-         c += texture(uSourceTex, vTexCoord + o15 * uDestTexel);
+    vec4 c  = texture(tex, texCoord + o00 * dstTexel);
+         c += texture(tex, texCoord + o01 * dstTexel);
+         c += texture(tex, texCoord + o02 * dstTexel);
+         c += texture(tex, texCoord + o03 * dstTexel);
+         c += texture(tex, texCoord + o04 * dstTexel);
+         c += texture(tex, texCoord + o05 * dstTexel);
+         c += texture(tex, texCoord + o06 * dstTexel);
+         c += texture(tex, texCoord + o07 * dstTexel);
+         c += texture(tex, texCoord + o08 * dstTexel);
+         c += texture(tex, texCoord + o09 * dstTexel);
+         c += texture(tex, texCoord + o10 * dstTexel);
+         c += texture(tex, texCoord + o11 * dstTexel);
+         c += texture(tex, texCoord + o12 * dstTexel);
+         c += texture(tex, texCoord + o13 * dstTexel);
+         c += texture(tex, texCoord + o14 * dstTexel);
+         c += texture(tex, texCoord + o15 * dstTexel);
 
-    FragColor = c * (1.0 / 16.0);
+    return c * (1.0 / 16.0);
+}
+
+void main()
+{
+    FragColor = SampleColor(uSourceTex, vTexCoord, uDestTexel);
+    gl_FragDepth = texture(uDepthTex, vTexCoord).r;
 }

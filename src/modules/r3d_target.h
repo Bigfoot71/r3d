@@ -340,6 +340,12 @@ GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel);
 GLuint r3d_target_get_all_levels(r3d_target_t target);
 
 /*
+ * Returns the ID of the internal HW depth texture,
+ * not the linear depth texture accessible via `r3d_target_get`.
+ */
+GLuint r3d_target_get_depth_buffer(void);
+
+/*
  * Blits the provided targets to the specified FBO.
  * Supports blitting with only a depth target.
  */
