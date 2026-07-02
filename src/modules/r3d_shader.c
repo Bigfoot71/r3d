@@ -77,6 +77,9 @@
 #include <shaders/smaa.vert.h>
 #include <shaders/smaa.frag.h>
 #include <shaders/visualizer.frag.h>
+#include <shaders/common_copy.frag.h>
+#include <shaders/common_nearest.frag.h>
+#include <shaders/common_linear.frag.h>
 #include <shaders/up_bicubic.frag.h>
 #include <shaders/up_lanczos.frag.h>
 #include <shaders/down_rgss.frag.h>
@@ -1557,15 +1560,50 @@ bool r3d_shader_load_post_visualizer(r3d_shader_custom_t* custom)
     return true;
 }
 
+bool r3d_shader_load_blit_common_copy(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_common_copy_t, blit, commonCopy);
+    LOAD_SHADER(commonCopy, SCREEN_VERT, COMMON_COPY_FRAG);
+
+    USE_SHADER(commonCopy);
+    SET_SAMPLER(commonCopy, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(commonCopy, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_blit_common_nearest(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_common_nearest_t, blit, commonNearest);
+    LOAD_SHADER(commonNearest, SCREEN_VERT, COMMON_NEAREST_FRAG);
+
+    USE_SHADER(commonNearest);
+    SET_SAMPLER(commonNearest, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(commonNearest, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
+bool r3d_shader_load_blit_common_linear(r3d_shader_custom_t* custom)
+{
+    DECL_SHADER(r3d_shader_blit_common_linear_t, blit, commonLinear);
+    LOAD_SHADER(commonLinear, SCREEN_VERT, COMMON_LINEAR_FRAG);
+
+    USE_SHADER(commonLinear);
+    SET_SAMPLER(commonLinear, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(commonLinear, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
+
+    return true;
+}
+
 bool r3d_shader_load_blit_up_bicubic(r3d_shader_custom_t* custom)
 {
     DECL_SHADER(r3d_shader_blit_up_bicubic_t, blit, upBicubic);
     LOAD_SHADER(upBicubic, SCREEN_VERT, UP_BICUBIC_FRAG);
 
-    GET_LOCATION(upBicubic, uSourceTexel);
-
     USE_SHADER(upBicubic);
     SET_SAMPLER(upBicubic, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(upBicubic, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
 }
@@ -1575,10 +1613,9 @@ bool r3d_shader_load_blit_up_lanczos(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_blit_up_lanczos_t, blit, upLanczos);
     LOAD_SHADER(upLanczos, SCREEN_VERT, UP_LANCZOS_FRAG);
 
-    GET_LOCATION(upLanczos, uSourceTexel);
-
     USE_SHADER(upLanczos);
     SET_SAMPLER(upLanczos, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(upLanczos, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
 }
@@ -1592,6 +1629,7 @@ bool r3d_shader_load_blit_down_rgss(r3d_shader_custom_t* custom)
 
     USE_SHADER(downRgss);
     SET_SAMPLER(downRgss, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(downRgss, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
 }
@@ -1605,6 +1643,7 @@ bool r3d_shader_load_blit_down_pdss(r3d_shader_custom_t* custom)
 
     USE_SHADER(downPdss);
     SET_SAMPLER(downPdss, uSourceTex, R3D_SHADER_SAMPLER_SOURCE_2D_0);
+    SET_SAMPLER(downPdss, uDepthTex, R3D_SHADER_SAMPLER_BUFFER_DEPTH);
 
     return true;
 }
@@ -1690,6 +1729,9 @@ void r3d_shader_quit()
     UNLOAD_SHADERS(post.smaa);
     UNLOAD_SHADER(post.visualizer);
 
+    UNLOAD_SHADER(blit.commonCopy);
+    UNLOAD_SHADER(blit.commonNearest);
+    UNLOAD_SHADER(blit.commonLinear);
     UNLOAD_SHADER(blit.upBicubic);
     UNLOAD_SHADER(blit.upLanczos);
     UNLOAD_SHADER(blit.downRgss);

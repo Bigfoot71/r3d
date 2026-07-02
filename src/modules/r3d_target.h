@@ -182,7 +182,7 @@ extern struct r3d_mod_target {
     GLuint targetTextures[R3D_TARGET_COUNT];            //< Array of target IDs (textures)
     bool targetLoaded[R3D_TARGET_COUNT];                //< Indicates whether the targets have been allocated
 
-    GLuint depthRenderbuffer;   //< Internal depth buffer
+    GLuint depthTexture;        //< Internal HW depth buffer
     uint32_t resW, resH;        //< Full internal resolution
     float txlW, txlH;           //< Size of a texel for full resolution
 
@@ -338,6 +338,12 @@ GLuint r3d_target_get_levels(r3d_target_t target, int baseLevel, int maxLevel);
  * If not created yet, it means we never bound this target, so it would be empty.
  */
 GLuint r3d_target_get_all_levels(r3d_target_t target);
+
+/*
+ * Returns the ID of the internal HW depth texture,
+ * not the linear depth texture accessible via `r3d_target_get`.
+ */
+GLuint r3d_target_get_depth_buffer(void);
 
 /*
  * Blits the provided targets to the specified FBO.
