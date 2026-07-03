@@ -28,7 +28,7 @@
  * Hints must be set via R3D_SetHint() before calling R3D_Init().
  * Any hint not explicitly set falls back to its default value.
  *
- * @note Some hints may be clamped internally.
+ * @note Some hints may be clamped internally, accordingly to hardware limits.
  */
 typedef enum R3D_Hint {
     R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY,   ///< Initial vertex capacity of the global VBO. Default: 65'536
