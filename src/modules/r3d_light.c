@@ -7,13 +7,15 @@
  */
 
 #include "./r3d_light.h"
-#include "raylib.h"
+
 #include <r3d_config.h>
 #include <raymath.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <float.h>
+
+#include "../r3d_core_state.h"
 
 // ========================================
 // CONSTANTS
@@ -169,7 +171,7 @@ static bool shadow_array_expand_capacity(R3D_LightType type)
     r3d_light_shadow_pool_t* pool = &R3D_MOD_LIGHT.shadowPools[type];
     GLuint* shadowArray = &R3D_MOD_LIGHT.shadowArrays[type];
     GLenum shadowTarget = SHADOW_TEXTURE_TARGET[type];
-    int shadowSize = R3D_LIGHT_SHADOW_SIZE[type];
+    int shadowSize = r3d_light_shadow_get_size(type);
     int growth = SHADOW_LAYER_GROWTH[type];
 
     if (!shadow_array_resize(shadowArray, shadowTarget, shadowSize, pool->totalLayers, pool->totalLayers + growth)) {
@@ -216,16 +218,18 @@ static bool light_init(r3d_light_t* light, R3D_LightType type)
     light->outerCutOff = cosf(45.0f * DEG2RAD);
     light->fogEnergy = 1.0f;
 
-    light->shadowSoftness = 4.0f / R3D_LIGHT_SHADOW_SIZE[type];
+    int shadowMapSize = r3d_light_shadow_get_size(type);
+
+    light->shadowSoftness = 4.0f / shadowMapSize;
     light->shadowOpacity = 1.0f;
     switch (type) {
     case R3D_LIGHT_DIR:
-        light->shadowDepthBias = 4.0f / R3D_LIGHT_SHADOW_SIZE[type];
-        light->shadowSlopeBias = 6.0f / R3D_LIGHT_SHADOW_SIZE[type];
+        light->shadowDepthBias = 4.0f / shadowMapSize;
+        light->shadowSlopeBias = 6.0f / shadowMapSize;
         break;
     case R3D_LIGHT_SPOT:
-        light->shadowDepthBias = 0.25f / R3D_LIGHT_SHADOW_SIZE[type];
-        light->shadowSlopeBias = 1.0f / R3D_LIGHT_SHADOW_SIZE[type];
+        light->shadowDepthBias = 0.25f / shadowMapSize;
+        light->shadowSlopeBias = 1.0f / shadowMapSize;
         break;
     case R3D_LIGHT_OMNI:
         light->shadowDepthBias = 0.025f;
@@ -284,7 +288,7 @@ static void light_update_dir_matrix(r3d_light_t* light, R3D_Camera camera, doubl
     Vector3 lightRight = Vector3Normalize(Vector3CrossProduct(up, lightDir));
     Vector3 lightUp = Vector3CrossProduct(lightDir, lightRight);
 
-    float texelSize = (radius * 2.0f) / R3D_SHADOW_MAP_DIRECTIONAL_SIZE;
+    float texelSize = (radius * 2.0f) / (float)R3D_HINT(R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE);
     float cx = floorf(Vector3DotProduct(frustumCenter, lightRight) / texelSize) * texelSize;
     float cy = floorf(Vector3DotProduct(frustumCenter, lightUp) / texelSize) * texelSize;
     float cz = Vector3DotProduct(frustumCenter, lightDir);
@@ -653,12 +657,31 @@ void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face)
     assert((type == R3D_LIGHT_OMNI && face >= 0 && face < 6) || (type != R3D_LIGHT_OMNI && face == 0));
 
     GLuint shadowArray = R3D_MOD_LIGHT.shadowArrays[type];
-    int shadowSize = R3D_LIGHT_SHADOW_SIZE[type];
+    int shadowSize = r3d_light_shadow_get_size(type);
     int stride = (type == R3D_LIGHT_OMNI) ? 6 : 1;
 
     glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_LIGHT.workFramebuffer);
     glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, shadowArray, 0, layer * stride + face);
     glViewport(0, 0, shadowSize, shadowSize);
+}
+
+int r3d_light_shadow_get_size(R3D_LightType type)
+{
+    int size = 0;
+    switch (type) {
+    case R3D_LIGHT_DIR:
+        size = R3D_HINT(R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE);
+        break;
+    case R3D_LIGHT_SPOT:
+        size = R3D_HINT(R3D_HINT_SHADOW_MAP_SPOT_SIZE);
+        break;
+    case R3D_LIGHT_OMNI:
+        size = R3D_HINT(R3D_HINT_SHADOW_MAP_OMNI_SIZE);
+        break;
+    case R3D_LIGHT_TYPE_COUNT:
+        break;
+    }
+    return size;
 }
 
 GLuint r3d_light_shadow_get(R3D_LightType type)

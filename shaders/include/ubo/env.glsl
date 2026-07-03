@@ -23,7 +23,7 @@ struct E_Probe {
 };
 
 layout(std140) uniform EnvBlock {
-    E_Probe uProbes[NUM_PROBES];
+    E_Probe uProbes[MAX_PROBES];
     E_Ambient uAmbient;
     int uNumPrefilterLevels;
     int uNumProbes;

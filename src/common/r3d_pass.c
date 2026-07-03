@@ -60,7 +60,7 @@ void r3d_pass_prepare_prefilter(int layerMap, GLuint srcCubemap, int srcSize)
     R3D_SHADER_SET_FLOAT(prepare.cubemapPrefilter, uSourceFaceSize, (float)srcSize);
     R3D_SHADER_SET_MAT4(prepare.cubemapPrefilter, uMatProj, matProj);
 
-    int numLevels = r3d_get_mip_levels_1d(R3D_CUBEMAP_PREFILTER_SIZE);
+    int numLevels = r3d_get_mip_levels_1d(R3D_HINT(R3D_HINT_CUBEMAP_PREFILTER_SIZE));
 
     for (int mip = 0; mip < numLevels; mip++) {
         float roughness = (float)mip / (float)(numLevels - 1);

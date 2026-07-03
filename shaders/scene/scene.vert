@@ -79,7 +79,7 @@ smooth out float vLinearDepth;
 #endif // GEOMETRY || FORWARD || UNLIT || PROBE
 
 #if defined(FORWARD) || defined(PROBE_FORWARD)
-smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
+smooth out vec4 vPosLightSpace[MAX_LIGHTS_FORWARD];
 #endif // FORWARD || PROBE_FORWARD
 
 #if defined(DECAL)

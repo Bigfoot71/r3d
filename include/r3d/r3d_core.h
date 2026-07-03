@@ -23,6 +23,26 @@
 // ========================================
 
 /**
+ * @brief Configuration hints used to customize R3D before initialization.
+ *
+ * Hints must be set via R3D_SetHint() before calling R3D_Init().
+ * Any hint not explicitly set falls back to its default value.
+ *
+ * @note Some hints may be clamped internally.
+ */
+typedef enum R3D_Hint {
+    R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH,    ///< Max lights per mesh in forward pass. Default: 8
+    R3D_HINT_MAX_PROBE_ON_SCREEN,           ///< Max probes rendered simultaneously. Default: 8
+    R3D_HINT_PROBE_CAPTURE_SIZE,            ///< Probe capture cubemap face size (px). Default: 256
+    R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE,   ///< Directional light shadow map size (px). Default: 4096
+    R3D_HINT_SHADOW_MAP_SPOT_SIZE,          ///< Spot light shadow map size (px). Default: 2048
+    R3D_HINT_SHADOW_MAP_OMNI_SIZE,          ///< Omni light shadow map size (px). Default: 2048
+    R3D_HINT_CUBEMAP_IRRADIANCE_SIZE,       ///< Irradiance cubemap face size (px). Default: 32
+    R3D_HINT_CUBEMAP_PREFILTER_SIZE,        ///< Prefiltered cubemap face size (px). Default: 128
+    R3D_HINT_COUNT,                         ///< Sentinel, not a valid hint
+} R3D_Hint;
+
+/**
  * @brief Anti-aliasing modes used during rendering.
  *
  * Anti-aliasing reduces visible jagged edges (aliasing artifacts)
@@ -124,6 +144,18 @@ typedef enum R3D_ColorSpace {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Sets a configuration hint.
+ * 
+ * Must be called before R3D_Init().
+ */
+R3DAPI void R3D_SetHint(R3D_Hint hint, int value);
+
+/**
+ * @brief Returns the effective value of a hint.
+ */
+R3DAPI int R3D_GetHint(R3D_Hint hint);
 
 /**
  * @brief Initializes the rendering engine.

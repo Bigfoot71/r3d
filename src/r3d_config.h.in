@@ -18,66 +18,6 @@
 #cmakedefine R3D_SUPPORT_ASSIMP
 
 // ========================================
-// Forward rendering limits
-// ========================================
-
-/**
- * Maximum number of lights affecting a single mesh in the forward rendering path.
- * This applies to transparent objects and/or non-mixed blending modes,
- * and any rendering performed during probe capture.
- */
-#define R3D_MAX_LIGHT_FORWARD_PER_MESH @R3D_MAX_LIGHT_FORWARD_PER_MESH@
-
-// ========================================
-// Probe system
-// ========================================
-
-/**
- * Maximum number of probes whose maps can be rendered simultaneously on screen.
- */
-#define R3D_MAX_PROBE_ON_SCREEN @R3D_MAX_PROBE_ON_SCREEN@
-
-/**
- * Resolution of each face of the probe capture cubemap.
- */
-#define R3D_PROBE_CAPTURE_SIZE @R3D_PROBE_CAPTURE_SIZE@
-
-// ========================================
-// Shadow mapping
-// ========================================
-
-/**
- * Resolution of directional light shadow maps.
- */
-#define R3D_SHADOW_MAP_DIRECTIONAL_SIZE @R3D_SHADOW_MAP_DIRECTIONAL_SIZE@
-
-/**
- * Resolution of spot light shadow maps.
- */
-#define R3D_SHADOW_MAP_SPOT_SIZE @R3D_SHADOW_MAP_SPOT_SIZE@
-
-/**
- * Resolution of omni (point) light shadow maps.
- */
-#define R3D_SHADOW_MAP_OMNI_SIZE @R3D_SHADOW_MAP_OMNI_SIZE@
-
-// ========================================
-// IBL / Probes
-// ========================================
-
-/**
- * Resolution of each face of irradiance cubemaps
- * used for ambient lighting and probes.
- */
-#define R3D_CUBEMAP_IRRADIANCE_SIZE @R3D_CUBEMAP_IRRADIANCE_SIZE@
-
-/**
- * Resolution of each face of prefiltered cubemaps
- * used for ambient lighting and probes.
- */
-#define R3D_CUBEMAP_PREFILTER_SIZE @R3D_CUBEMAP_PREFILTER_SIZE@
-
-// ========================================
 // Material Shaders
 // ========================================
 
@@ -106,6 +46,22 @@
  * Defines the maximum possible number in the screen shader chain.
  */
 #define R3D_MAX_SCREEN_SHADERS @R3D_MAX_SCREEN_SHADERS@
+
+// ========================================
+// Shader Module
+// ========================================
+
+/*
+ * Defines the maximum number of lights stored in the forward rendering UBO.
+ * Matches the maximum value allowed for `R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH`.
+ */
+#define R3D_SHADER_LIGHT_FORWARD_UBO_CAP @R3D_SHADER_LIGHT_FORWARD_UBO_CAP@
+
+/*
+ * Defines the maximum number of probes stored in the UBO.
+ * Matches the maximum value allowed for `R3D_HINT_MAX_PROBE_ON_SCREEN`.
+ */
+#define R3D_SHADER_PROBE_UBO_CAP @R3D_SHADER_PROBE_UBO_CAP@
 
 // ========================================
 // Render Module

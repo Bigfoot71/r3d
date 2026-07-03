@@ -507,7 +507,7 @@ typedef struct {
         alignas(4) int32_t irradiance;
         alignas(4) int32_t prefilter;
     }
-    uProbes[R3D_MAX_PROBE_ON_SCREEN];
+    uProbes[R3D_SHADER_PROBE_UBO_CAP];
 
     struct r3d_shader_block_env_ambient
     {
@@ -646,7 +646,7 @@ typedef struct {
 } r3d_shader_block_light_t;
 
 typedef struct {
-    alignas(16) r3d_shader_block_light_t uLights[R3D_MAX_LIGHT_FORWARD_PER_MESH];
+    alignas(16) r3d_shader_block_light_t uLights[R3D_SHADER_LIGHT_FORWARD_UBO_CAP];
     alignas(4) int32_t uNumLights;
 } r3d_shader_block_light_array_t;
 

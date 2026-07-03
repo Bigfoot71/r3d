@@ -50,7 +50,7 @@ const vec2 VOGEL_DISK[8] = vec2[8](
     vec2(-0.446271, -0.859268)
 );
 
-#if defined(NUM_FORWARD_LIGHTS)
+#if defined(MAX_LIGHTS_FORWARD)
 #   define DECL_SHADOW_DIR(name)  float name(int lightIndex, vec4 Pls, float Zvs, float NdotL, mat2 diskRot)
 #   define DECL_SHADOW_SPOT(name) float name(int lightIndex, vec4 Pls, float NdotL, mat2 diskRot)
 #   define DECL_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float NdotL, mat2 diskRot)
@@ -71,7 +71,7 @@ mat2 L_ShadowDebandingMatrix(vec2 fragCoord)
 
 DECL_SHADOW_DIR(L_SampleShadowDir)
 {
-#if !defined(NUM_FORWARD_LIGHTS)
+#if !defined(MAX_LIGHTS_FORWARD)
     vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
 #endif
 
@@ -95,7 +95,7 @@ DECL_SHADOW_DIR(L_SampleShadowDir)
 
 DECL_SHADOW_SPOT(L_SampleShadowSpot)
 {
-#if !defined(NUM_FORWARD_LIGHTS)
+#if !defined(MAX_LIGHTS_FORWARD)
     vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
 #endif
 

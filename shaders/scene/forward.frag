@@ -26,7 +26,7 @@ smooth in vec4 vColor;
 smooth in mat3 vTBN;
 
 smooth in float vLinearDepth;
-smooth in vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
+smooth in vec4 vPosLightSpace[MAX_LIGHTS_FORWARD];
 
 /* === Uniforms === */
 
