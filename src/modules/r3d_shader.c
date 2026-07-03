@@ -806,14 +806,14 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_SELECT(r3d_shader_scene_forward_t, scene, forward, custom);
 
-    char defNumForwardLights[32] = {0};
+    char defNumLightsForward[32] = {0};
     char defNumProbes[32] = {0};
 
-    r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_MAX_LIGHT_FORWARD_PER_MESH);
-    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
+    r3d_string_format(defNumLightsForward, sizeof(defNumLightsForward), "MAX_LIGHTS_FORWARD %i", R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
+    r3d_string_format(defNumProbes, sizeof(defNumProbes), "MAX_PROBES %i", R3D_SHADER_PROBE_UBO_CAP);
 
-    const char* VS_DEFINES[] = {"STAGE_VERT", "FORWARD", defNumForwardLights};
-    const char* FS_DEFINES[] = {"STAGE_FRAG", "FORWARD", defNumForwardLights, defNumProbes};
+    const char* VS_DEFINES[] = {"STAGE_VERT", "FORWARD", defNumLightsForward};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "FORWARD", defNumLightsForward, defNumProbes};
 
     char* vsCode = inject_defines(SCENE_VERT,   VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
     char* fsCode = inject_defines(FORWARD_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
@@ -1061,14 +1061,14 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
 {
     DECL_SHADER_SELECT(r3d_shader_scene_probe_forward_t, scene, probeForward, custom);
 
-    char defNumForwardLights[32] = {0};
+    char defNumLightsForward[32] = {0};
     char defNumProbes[32] = {0};
 
-    r3d_string_format(defNumForwardLights, sizeof(defNumForwardLights), "NUM_FORWARD_LIGHTS %i", R3D_MAX_LIGHT_FORWARD_PER_MESH);
-    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
+    r3d_string_format(defNumLightsForward, sizeof(defNumLightsForward), "MAX_LIGHTS_FORWARD %i", R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
+    r3d_string_format(defNumProbes, sizeof(defNumProbes), "MAX_PROBES %i", R3D_SHADER_PROBE_UBO_CAP);
 
-    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_FORWARD", defNumForwardLights};
-    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_FORWARD", defNumForwardLights, defNumProbes};
+    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_FORWARD", defNumLightsForward};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_FORWARD", defNumLightsForward, defNumProbes};
 
     char* vsCode = inject_defines(SCENE_VERT,   VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
     char* fsCode = inject_defines(FORWARD_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
@@ -1256,7 +1256,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     DECL_SHADER(r3d_shader_deferred_ambient_t, deferred, ambient);
 
     char defNumProbes[32] = {0};
-    r3d_string_format(defNumProbes, sizeof(defNumProbes), "NUM_PROBES %i", R3D_MAX_PROBE_ON_SCREEN);
+    r3d_string_format(defNumProbes, sizeof(defNumProbes), "MAX_PROBES %i", R3D_SHADER_PROBE_UBO_CAP);
 
     const char* FS_DEFINES[] = {defNumProbes};
     char* fsCode = inject_defines(AMBIENT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));

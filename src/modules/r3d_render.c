@@ -19,6 +19,7 @@
 
 #include "../common/r3d_math.h"
 #include "../common/r3d_hash.h"
+#include "../r3d_core_state.h"
 
 // ========================================
 // MODULE CONSTANTS
@@ -880,7 +881,7 @@ bool r3d_render_init(void)
     /* --- CPU array allocation (draw calls, groups, etc) --- */
 
     #define ALLOC_AND_ASSIGN(field, logfmt, ...) do { \
-        void* _p = RL_CALLOC(R3D_RENDER_INITIAL_DRAW_CALL_RESERVE, sizeof(*R3D_MOD_RENDER.field)); \
+        void* _p = RL_CALLOC(R3D_HINT(R3D_HINT_DRAW_CALL_CAPACITY), sizeof(*R3D_MOD_RENDER.field)); \
         if (_p == NULL) { \
             R3D_TRACELOG(LOG_FATAL, "Failed to init render module; " logfmt, ##__VA_ARGS__); \
             goto fail; \
@@ -903,18 +904,18 @@ bool r3d_render_init(void)
 
     #undef ALLOC_AND_ASSIGN
 
-    R3D_MOD_RENDER.capacity = R3D_RENDER_INITIAL_DRAW_CALL_RESERVE;
+    R3D_MOD_RENDER.capacity = R3D_HINT(R3D_HINT_DRAW_CALL_CAPACITY);
     R3D_MOD_RENDER.activeCluster = -1;
 
     /* --- CPU free list allocation --- */
 
     #define ALLOC_FREELIST(field, cap_field, logmsg) do { \
-        R3D_MOD_RENDER.field = RL_MALLOC(R3D_RENDER_INITIAL_FREE_LIST_RESERVE * sizeof(*R3D_MOD_RENDER.field)); \
+        R3D_MOD_RENDER.field = RL_MALLOC(R3D_HINT(R3D_HINT_MESH_STREAMING_CAPACITY) * sizeof(*R3D_MOD_RENDER.field)); \
         if (!R3D_MOD_RENDER.field) { \
             R3D_TRACELOG(LOG_FATAL, "Failed to init render module; " logmsg); \
             goto fail; \
         } \
-        R3D_MOD_RENDER.cap_field = R3D_RENDER_INITIAL_FREE_LIST_RESERVE; \
+        R3D_MOD_RENDER.cap_field = R3D_HINT(R3D_HINT_MESH_STREAMING_CAPACITY); \
     } while (0)
 
     ALLOC_FREELIST(freeVertices, freeVertexCapacity, "Free vertex list allocation failed");
@@ -930,17 +931,17 @@ bool r3d_render_init(void)
     glGenBuffers(1, &R3D_MOD_RENDER.globalVbo);
     glBindBuffer(GL_ARRAY_BUFFER, R3D_MOD_RENDER.globalVbo);
     glBufferData(GL_ARRAY_BUFFER,
-        R3D_RENDER_INITIAL_VERTICES_RESERVE * sizeof(R3D_Vertex),
+        R3D_HINT(R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY) * sizeof(R3D_Vertex),
         NULL, GL_DYNAMIC_DRAW);
 
     glGenBuffers(1, &R3D_MOD_RENDER.globalEbo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, R3D_MOD_RENDER.globalEbo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-        R3D_RENDER_INITIAL_ELEMENTS_RESERVE * sizeof(GLuint),
+        R3D_HINT(R3D_HINT_MESH_INDEX_BUFFER_CAPACITY) * sizeof(GLuint),
         NULL, GL_DYNAMIC_DRAW);
 
-    R3D_MOD_RENDER.globalVertexCapacity  = R3D_RENDER_INITIAL_VERTICES_RESERVE;
-    R3D_MOD_RENDER.globalElementCapacity = R3D_RENDER_INITIAL_ELEMENTS_RESERVE;
+    R3D_MOD_RENDER.globalVertexCapacity  = R3D_HINT(R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY);
+    R3D_MOD_RENDER.globalElementCapacity = R3D_HINT(R3D_HINT_MESH_INDEX_BUFFER_CAPACITY);
 
     /* --- Configuring vertex attributes --- */
 

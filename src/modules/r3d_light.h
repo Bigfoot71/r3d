@@ -20,16 +20,6 @@
 #include "../common/r3d_math.h"
 
 // ========================================
-// MODULE CONSTANTS
-// ========================================
-
-static const int R3D_LIGHT_SHADOW_SIZE[] = {
-    [R3D_LIGHT_DIR]  = R3D_SHADOW_MAP_DIRECTIONAL_SIZE,
-    [R3D_LIGHT_SPOT] = R3D_SHADOW_MAP_SPOT_SIZE,
-    [R3D_LIGHT_OMNI] = R3D_SHADOW_MAP_OMNI_SIZE,
-};
-
-// ========================================
 // HELPER MACROS
 // ========================================
 
@@ -153,6 +143,9 @@ bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated);
 
 /* Bind shadow framebuffer for a light type */
 void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face);
+
+/* Get the shadow map dimensions */
+int r3d_light_shadow_get_size(R3D_LightType type);
 
 /* Get a shadow map array texture ID */
 GLuint r3d_light_shadow_get(R3D_LightType type);

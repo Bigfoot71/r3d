@@ -601,8 +601,8 @@ R3DAPI float R3D_GetShadowDepthBias(R3D_Light id);
  * or floating away from objects.
  *
  * Default per light type:
- *   - Directional: 0.0009765625
- *   - Spot:        0.0001220703
+ *   - Directional: 0.001
+ *   - Spot:        0.0001
  *   - Omni:        0.025
  */
 R3DAPI void R3D_SetShadowDepthBias(R3D_Light id, float value);
@@ -620,8 +620,8 @@ R3DAPI float R3D_GetShadowSlopeBias(R3D_Light id);
  * incorrectly appearing or disappearing along object edges.
  *
  * Default per light type:
- *   - Directional: 0.0014648438
- *   - Spot:        0.0004882813
+ *   - Directional: 0.0015
+ *   - Spot:        0.0005
  *   - Omni:        0.1
  */
 R3DAPI void R3D_SetShadowSlopeBias(R3D_Light id, float value);

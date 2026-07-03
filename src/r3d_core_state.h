@@ -19,8 +19,22 @@
 #include <raylib.h>
 
 // ========================================
+// HELPER MACROS
+// ========================================
+
+#define R3D_HINT(hint) (R3D.hints[hint].value)
+
+// ========================================
 // CORE STATE
 // ========================================
+
+/*
+ * Storage for a single hint value.
+ */
+typedef struct {
+    int value;      //< Effective value (user-provided if overridden, default otherwise)
+    bool override;  //< True if explicitly set by the user via R3D_SetHint()
+} r3d_hint_t;
 
 /*
  * Current view state including view frustum and transforms.
@@ -56,6 +70,8 @@ extern struct r3d_core_state {
     TextureWrap textureWrap;            //< Default texture wrap for material map loading
     R3D_ColorSpace colorSpace;          //< Color space that must be considered for supplied colors or surface colors
     Matrix matCubeViews[6];             //< Pre-computed view matrices for cubemap faces
+    r3d_hint_t hints[R3D_HINT_COUNT];   //< User-configurable hints, resolved at R3D_Init()
+    bool initialized;                   //< Indicates if R3D has been initialized successfully
 } R3D;
 
 #endif // R3D_CORE_STATE_H

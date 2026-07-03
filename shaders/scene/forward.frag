@@ -26,7 +26,6 @@ smooth in vec4 vColor;
 smooth in mat3 vTBN;
 
 smooth in float vLinearDepth;
-smooth in vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
 
 /* === Uniforms === */
 
@@ -156,9 +155,9 @@ void main()
 
         if (light.shadowLayer >= 0 && light.shadowOpacity != 0.0 && shadow > 1e-4) {
             switch (light.type) {
-            case LIGHT_DIR:  shadow *= L_SampleShadowDir(i, vPosLightSpace[i], vLinearDepth, NdotL, diskRot); break;
-            case LIGHT_SPOT: shadow *= L_SampleShadowSpot(i, vPosLightSpace[i], NdotL, diskRot); break;
-            case LIGHT_OMNI: shadow *= L_SampleShadowOmni(i, vPosition, NdotL, diskRot); break;
+            case LIGHT_DIR:  shadow *= L_SampleShadowDir(light, vPosition, vLinearDepth, NdotL, diskRot); break;
+            case LIGHT_SPOT: shadow *= L_SampleShadowSpot(light, vPosition, NdotL, diskRot); break;
+            case LIGHT_OMNI: shadow *= L_SampleShadowOmni(light, vPosition, NdotL, diskRot); break;
             }
         }
 

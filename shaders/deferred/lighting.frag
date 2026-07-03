@@ -118,9 +118,9 @@ void main()
     if (uLight.shadowLayer >= 0 && uLight.shadowOpacity != 0.0 && shadow > 1e-4) {
         mat2 diskRot = L_ShadowDebandingMatrix(gl_FragCoord.xy);
         switch (uLight.type) {
-        case LIGHT_DIR:  shadow *= L_SampleShadowDir(P, depth, NdotL, diskRot); break;
-        case LIGHT_SPOT: shadow *= L_SampleShadowSpot(P, NdotL, diskRot); break;
-        case LIGHT_OMNI: shadow *= L_SampleShadowOmni(P, NdotL, diskRot); break;
+        case LIGHT_DIR:  shadow *= L_SampleShadowDir(uLight, P, depth, NdotL, diskRot); break;
+        case LIGHT_SPOT: shadow *= L_SampleShadowSpot(uLight, P, NdotL, diskRot); break;
+        case LIGHT_OMNI: shadow *= L_SampleShadowOmni(uLight, P, NdotL, diskRot); break;
         }
     }
 

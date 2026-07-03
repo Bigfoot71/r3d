@@ -21,19 +21,110 @@
 #include "./r3d_core_state.h"
 
 // ========================================
+// CONSTANTS
+// ========================================
+
+static const int R3D_HINT_DEFAULTS[R3D_HINT_COUNT] = {
+    [R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY] = 65536,
+    [R3D_HINT_MESH_INDEX_BUFFER_CAPACITY]  = 131072,
+    [R3D_HINT_MESH_STREAMING_CAPACITY]     = 128,
+    [R3D_HINT_DRAW_CALL_CAPACITY]          = 1024,
+    [R3D_HINT_FORWARD_LIGHT_PER_MESH]      = 16,
+    [R3D_HINT_PROBE_MAX_ACTIVE]            = 8,
+    [R3D_HINT_PROBE_CAPTURE_SIZE]          = 256,
+    [R3D_HINT_SHADOW_DIR_SIZE]             = 4096,
+    [R3D_HINT_SHADOW_SPOT_SIZE]            = 2048,
+    [R3D_HINT_SHADOW_OMNI_SIZE]            = 2048,
+    [R3D_HINT_IBL_IRRADIANCE_SIZE]         = 32,
+    [R3D_HINT_IBL_PREFILTER_SIZE]          = 128,
+};
+
+// ========================================
 // SHARED CORE STATE
 // ========================================
 
-struct r3d_core_state R3D;
+struct r3d_core_state R3D = {0};
 
 // ========================================
 // PUBLIC API
 // ========================================
 
+void R3D_SetHint(R3D_Hint hint, int value)
+{
+    if (R3D.initialized || hint < 0 || hint > R3D_HINT_COUNT) return;
+
+    const int MIN_BUFFER_SZ   = 8;
+    const int MIN_DRAW_CALLS  = 1;
+    const int MIN_FREE_SLOTS  = 1;
+    const int MIN_TEXMAP_SIZE = 2;
+
+    static bool maxTexSizeFetched = false;
+    static GLint maxTexSize = 1024;
+
+    if (!maxTexSizeFetched) {
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
+        maxTexSizeFetched = true;
+    }
+
+    switch (hint) {
+    case R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY:
+        value = MAX(value, MIN_BUFFER_SZ);
+        break;
+    case R3D_HINT_MESH_INDEX_BUFFER_CAPACITY:
+        value = MAX(value, MIN_BUFFER_SZ);
+        break;
+    case R3D_HINT_MESH_STREAMING_CAPACITY:
+        value = MAX(value, MIN_FREE_SLOTS);
+        break;
+    case R3D_HINT_DRAW_CALL_CAPACITY:
+        value = MAX(value, MIN_DRAW_CALLS);
+        break;
+    case R3D_HINT_FORWARD_LIGHT_PER_MESH:
+        value = CLAMP(value, 1, R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
+        break;
+    case R3D_HINT_PROBE_MAX_ACTIVE:
+        value = CLAMP(value, 1, R3D_SHADER_PROBE_UBO_CAP);
+        break;
+    case R3D_HINT_PROBE_CAPTURE_SIZE:
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        break;
+    case R3D_HINT_SHADOW_DIR_SIZE:
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        break;
+    case R3D_HINT_SHADOW_SPOT_SIZE:
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        break;
+    case R3D_HINT_SHADOW_OMNI_SIZE:
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        break;
+    case R3D_HINT_IBL_IRRADIANCE_SIZE:
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        break;
+    case R3D_HINT_IBL_PREFILTER_SIZE:
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        break;
+    case R3D_HINT_COUNT:
+        break;
+    }
+
+    R3D.hints[hint] = (r3d_hint_t) {
+        .value = value, .override = true,
+    };
+}
+
+int R3D_GetHint(R3D_Hint hint)
+{
+    if (hint < 0 || hint > R3D_HINT_COUNT) return 0;
+    r3d_hint_t h = R3D.hints[hint];
+
+    if (!R3D.initialized && !h.override) {
+        return R3D_HINT_DEFAULTS[hint];
+    }
+    return h.value;
+}
+
 bool R3D_Init(int resWidth, int resHeight)
 {
-    memset(&R3D, 0, sizeof(R3D));
-
     R3D.matCubeViews[0] = MatrixLookAt((Vector3) {0}, (Vector3) { 1.0f,  0.0f,  0.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
     R3D.matCubeViews[1] = MatrixLookAt((Vector3) {0}, (Vector3) {-1.0f,  0.0f,  0.0f}, (Vector3) {0.0f, -1.0f,  0.0f});
     R3D.matCubeViews[2] = MatrixLookAt((Vector3) {0}, (Vector3) { 0.0f,  1.0f,  0.0f}, (Vector3) {0.0f,  0.0f,  1.0f});
@@ -63,6 +154,12 @@ bool R3D_Init(int resWidth, int resHeight)
     R3D.textureWrap = TEXTURE_WRAP_CLAMP;
     R3D.colorSpace = R3D_COLORSPACE_SRGB;
 
+    for (int i = 0; i < R3D_HINT_COUNT; i++) {
+        if (!R3D.hints[i].override) {
+            R3D.hints[i].value = R3D_HINT_DEFAULTS[i];
+        }
+    }
+
     if (!r3d_texture_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init texture module"); return false; }
     if (!r3d_target_init(resWidth, resHeight)) { R3D_TRACELOG(LOG_ERROR, "Failed to init target module"); return false; }
     if (!r3d_shader_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init shader module"); return false; }
@@ -70,6 +167,8 @@ bool R3D_Init(int resWidth, int resHeight)
     if (!r3d_render_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init render module"); return false; }
     if (!r3d_light_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init light module"); return false; }
     if (!r3d_env_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init env module"); return false; }
+
+    R3D.initialized = true;
 
     R3D_TRACELOG(LOG_INFO, "Initialized successfully (%dx%d)", resWidth, resHeight);
 
@@ -85,6 +184,8 @@ void R3D_Close(void)
     r3d_render_quit();
     r3d_light_quit();
     r3d_env_quit();
+
+    memset(&R3D, 0, sizeof(R3D));
 }
 
 void R3D_GetResolution(int* width, int* height)

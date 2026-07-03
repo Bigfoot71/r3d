@@ -22,7 +22,7 @@ vec3 L_Diffuse(float LdotH, float NdotV, float NdotL, float roughness)
 
 vec3 L_Specular(vec3 F0, float LdotH, float cNdotH, float NdotV, float NdotL, float roughness)
 {
-    roughness = max(roughness, 0.02); // >0.01 to avoid FP16 overflow after GGX distribution
+    roughness = max(roughness, 0.02); // 'roughness > 0.01' to avoid FP16 overflow after GGX distribution
 
     float alphaGGX = roughness * roughness;
     float D = PBR_DistributionGGX(cNdotH, alphaGGX);
@@ -50,18 +50,6 @@ const vec2 VOGEL_DISK[8] = vec2[8](
     vec2(-0.446271, -0.859268)
 );
 
-#if defined(NUM_FORWARD_LIGHTS)
-#   define DECL_SHADOW_DIR(name)  float name(int lightIndex, vec4 Pls, float Zvs, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_SPOT(name) float name(int lightIndex, vec4 Pls, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_OMNI(name) float name(int lightIndex, vec3 Pws, float NdotL, mat2 diskRot)
-#   define LIGHT uLights[lightIndex]
-#else
-#   define DECL_SHADOW_DIR(name)  float name(vec3 Pws, float Zvs, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_SPOT(name) float name(vec3 Pws, float NdotL, mat2 diskRot)
-#   define DECL_SHADOW_OMNI(name) float name(vec3 Pws, float NdotL, mat2 diskRot)
-#   define LIGHT uLight
-#endif
-
 mat2 L_ShadowDebandingMatrix(vec2 fragCoord)
 {
     float r = M_TAU * M_HashIGN(fragCoord);
@@ -69,70 +57,60 @@ mat2 L_ShadowDebandingMatrix(vec2 fragCoord)
     return mat2(vec2(cr, -sr), vec2(sr, cr));
 }
 
-DECL_SHADOW_DIR(L_SampleShadowDir)
+float L_SampleShadowDir(Light light, vec3 Pws, float Zvs, float NdotL, mat2 diskRot)
 {
-#if !defined(NUM_FORWARD_LIGHTS)
-    vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
-#endif
-
+    vec4 Pls = light.viewProj * vec4(Pws, 1.0);
     vec3 projCoords = Pls.xyz / Pls.w * 0.5 + 0.5;
-    float bias = LIGHT.shadowDepthBias + LIGHT.shadowSlopeBias * (1.0 - NdotL);
+    float bias = light.shadowDepthBias + light.shadowSlopeBias * (1.0 - NdotL);
     float compareDepth = projCoords.z - bias;
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
-        vec2 offset = diskRot * VOGEL_DISK[i] * LIGHT.shadowSoftness;
-        shadow += texture(uShadowDirTex, vec4(projCoords.xy + offset, LIGHT.shadowLayer, compareDepth));
+        vec2 offset = diskRot * VOGEL_DISK[i] * light.shadowSoftness;
+        shadow += texture(uShadowDirTex, vec4(projCoords.xy + offset, light.shadowLayer, compareDepth));
     }
     shadow /= float(SHADOW_SAMPLES);
 
     vec3 distToBorder = min(projCoords, 1.0 - projCoords);
     float edgeFade = smoothstep(0.0, 0.05, min(distToBorder.x, min(distToBorder.y, distToBorder.z)));
-    float distFade = smoothstep(LIGHT.range, LIGHT.range * 0.75, Zvs);
+    float distFade = smoothstep(light.range, light.range * 0.75, Zvs);
 
-    return mix(1.0, shadow, edgeFade * distFade * LIGHT.shadowOpacity);
+    return mix(1.0, shadow, edgeFade * distFade * light.shadowOpacity);
 }
 
-DECL_SHADOW_SPOT(L_SampleShadowSpot)
+float L_SampleShadowSpot(Light light, vec3 Pws, float NdotL, mat2 diskRot)
 {
-#if !defined(NUM_FORWARD_LIGHTS)
-    vec4 Pls = LIGHT.viewProj * vec4(Pws, 1.0);
-#endif
-
+    vec4 Pls = light.viewProj * vec4(Pws, 1.0);
     vec3 projCoords = Pls.xyz / Pls.w * 0.5 + 0.5;
-    float bias = LIGHT.shadowDepthBias + LIGHT.shadowSlopeBias * (1.0 - NdotL);
+    float bias = light.shadowDepthBias + light.shadowSlopeBias * (1.0 - NdotL);
     float compareDepth = projCoords.z - bias;
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
-        vec2 offset = diskRot * VOGEL_DISK[i] * LIGHT.shadowSoftness;
-        shadow += texture(uShadowSpotTex, vec4(projCoords.xy + offset, LIGHT.shadowLayer, compareDepth));
+        vec2 offset = diskRot * VOGEL_DISK[i] * light.shadowSoftness;
+        shadow += texture(uShadowSpotTex, vec4(projCoords.xy + offset, light.shadowLayer, compareDepth));
     }
     shadow /= float(SHADOW_SAMPLES);
 
-    return mix(1.0, shadow, LIGHT.shadowOpacity);
+    return mix(1.0, shadow, light.shadowOpacity);
 }
 
-DECL_SHADOW_OMNI(L_SampleShadowOmni)
+float L_SampleShadowOmni(Light light, vec3 Pws, float NdotL, mat2 diskRot)
 {
-    vec3 lightToFrag = Pws - LIGHT.position;
+    vec3 lightToFrag = Pws - light.position;
     float currentDepth = length(lightToFrag);
 
-    float bias = LIGHT.shadowDepthBias + LIGHT.shadowSlopeBias * (1.0 - NdotL);
-    float compareDepth = (currentDepth - bias) / LIGHT.far;
+    float bias = light.shadowDepthBias + light.shadowSlopeBias * (1.0 - NdotL);
+    float compareDepth = (currentDepth - bias) / light.far;
 
     mat3 OBN = M_OrthonormalBasis(lightToFrag / currentDepth);
 
     float shadow = 0.0;
     for (int i = 0; i < SHADOW_SAMPLES; ++i) {
-        vec2 diskOffset = diskRot * VOGEL_DISK[i] * LIGHT.shadowSoftness;
-        shadow += texture(uShadowOmniTex, vec4(OBN * vec3(diskOffset.xy, 1.0), LIGHT.shadowLayer), compareDepth);
+        vec2 diskOffset = diskRot * VOGEL_DISK[i] * light.shadowSoftness;
+        shadow += texture(uShadowOmniTex, vec4(OBN * vec3(diskOffset.xy, 1.0), light.shadowLayer), compareDepth);
     }
     shadow /= float(SHADOW_SAMPLES);
 
-    return mix(1.0, shadow, LIGHT.shadowOpacity);
+    return mix(1.0, shadow, light.shadowOpacity);
 }
-
-#undef SAMPLE_SHADOW_PROJ
-#undef SAMPLE_SHADOW_OMNI
-#undef LIGHT

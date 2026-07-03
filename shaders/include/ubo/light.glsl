@@ -32,9 +32,9 @@ struct Light {
     int type;
 };
 
-#ifdef NUM_FORWARD_LIGHTS
+#ifdef MAX_LIGHTS_FORWARD
 layout(std140) uniform LightArrayBlock {
-    Light uLights[NUM_FORWARD_LIGHTS];
+    Light uLights[MAX_LIGHTS_FORWARD];
     int uNumLights;
 };
 #else

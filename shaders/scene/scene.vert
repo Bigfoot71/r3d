@@ -17,7 +17,6 @@
 /* === Includes === */
 
 #include <ubo/frame.glsl>
-#include <ubo/light.glsl>
 #include <ubo/view.glsl>
 #include <lib/math.glsl>
 
@@ -77,10 +76,6 @@ smooth out mat3 vTBN;
 #if defined(GEOMETRY) || defined(FORWARD) || defined(UNLIT) || defined(PROBE)
 smooth out float vLinearDepth;
 #endif // GEOMETRY || FORWARD || UNLIT || PROBE
-
-#if defined(FORWARD) || defined(PROBE_FORWARD)
-smooth out vec4 vPosLightSpace[NUM_FORWARD_LIGHTS];
-#endif // FORWARD || PROBE_FORWARD
 
 #if defined(DECAL)
 smooth out mat4 vDecalProjection;
@@ -237,12 +232,6 @@ void main()
 #elif defined(PROBE)
     vLinearDepth = -(uMatView * vec4(vPosition, 1.0)).z;
 #endif // GEOMETRY || FORWARD || UNLIT || PROBE
-
-#if defined(FORWARD) || defined(PROBE_FORWARD)
-    for (int i = 0; i < uNumLights; i++) {
-        vPosLightSpace[i] = uLights[i].viewProj * vec4(vPosition, 1.0);
-    }
-#endif // FORWARD || PROBE_FORWARD
 
     gl_Position = MATRIX_VIEW_PROJECTION * vec4(vPosition, 1.0);
 
