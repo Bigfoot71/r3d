@@ -24,8 +24,8 @@
 // CONSTANTS
 // ========================================
 
-static int R3D_HINT_DEFAULTS[R3D_HINT_COUNT] = {
-    [R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH]  = 8,
+static const int R3D_HINT_DEFAULTS[R3D_HINT_COUNT] = {
+    [R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH]  = 16,
     [R3D_HINT_MAX_PROBE_ON_SCREEN]         = 8,
     [R3D_HINT_PROBE_CAPTURE_SIZE]          = 256,
     [R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE] = 4096,

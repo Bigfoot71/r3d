@@ -31,7 +31,7 @@
  * @note Some hints may be clamped internally.
  */
 typedef enum R3D_Hint {
-    R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH,    ///< Max lights per mesh in forward pass. Default: 8
+    R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH,    ///< Max lights per mesh in forward pass. Default: 16
     R3D_HINT_MAX_PROBE_ON_SCREEN,           ///< Max probes rendered simultaneously. Default: 8
     R3D_HINT_PROBE_CAPTURE_SIZE,            ///< Probe capture cubemap face size (px). Default: 256
     R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE,   ///< Directional light shadow map size (px). Default: 4096
