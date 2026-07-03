@@ -25,14 +25,18 @@
 // ========================================
 
 static const int R3D_HINT_DEFAULTS[R3D_HINT_COUNT] = {
-    [R3D_HINT_FORWARD_LIGHT_PER_MESH]  = 16,
-    [R3D_HINT_PROBE_MAX_ACTIVE]         = 8,
+    [R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY] = 65536,
+    [R3D_HINT_MESH_INDEX_BUFFER_CAPACITY]  = 131072,
+    [R3D_HINT_MESH_STREAMING_CAPACITY]     = 128,
+    [R3D_HINT_DRAW_CALL_CAPACITY]          = 1024,
+    [R3D_HINT_FORWARD_LIGHT_PER_MESH]      = 16,
+    [R3D_HINT_PROBE_MAX_ACTIVE]            = 8,
     [R3D_HINT_PROBE_CAPTURE_SIZE]          = 256,
-    [R3D_HINT_SHADOW_DIR_SIZE] = 4096,
-    [R3D_HINT_SHADOW_SPOT_SIZE]        = 2048,
-    [R3D_HINT_SHADOW_OMNI_SIZE]        = 2048,
-    [R3D_HINT_IBL_IRRADIANCE_SIZE]     = 32,
-    [R3D_HINT_IBL_PREFILTER_SIZE]      = 128,
+    [R3D_HINT_SHADOW_DIR_SIZE]             = 4096,
+    [R3D_HINT_SHADOW_SPOT_SIZE]            = 2048,
+    [R3D_HINT_SHADOW_OMNI_SIZE]            = 2048,
+    [R3D_HINT_IBL_IRRADIANCE_SIZE]         = 32,
+    [R3D_HINT_IBL_PREFILTER_SIZE]          = 128,
 };
 
 // ========================================

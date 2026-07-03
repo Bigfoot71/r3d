@@ -31,15 +31,19 @@
  * @note Some hints may be clamped internally.
  */
 typedef enum R3D_Hint {
-    R3D_HINT_FORWARD_LIGHT_PER_MESH,    ///< Max lights per mesh in forward pass. Default: 16
-    R3D_HINT_PROBE_MAX_ACTIVE,          ///< Max probes rendered simultaneously. Default: 8
-    R3D_HINT_PROBE_CAPTURE_SIZE,        ///< Probe capture cubemap face size (px). Default: 256
-    R3D_HINT_SHADOW_DIR_SIZE,           ///< Directional light shadow map size (px). Default: 4096
-    R3D_HINT_SHADOW_SPOT_SIZE,          ///< Spot light shadow map size (px). Default: 2048
-    R3D_HINT_SHADOW_OMNI_SIZE,          ///< Omni light shadow map size (px). Default: 2048
-    R3D_HINT_IBL_IRRADIANCE_SIZE,       ///< Irradiance cubemap face size, shared by ambient IBL and probes (px). Default: 32
-    R3D_HINT_IBL_PREFILTER_SIZE,        ///< Prefiltered cubemap face size, shared by ambient IBL and probes (px). Default: 128
-    R3D_HINT_COUNT,                     ///< Sentinel, not a valid hint
+    R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY,   ///< Initial vertex capacity of the global VBO. Default: 65'536
+    R3D_HINT_MESH_INDEX_BUFFER_CAPACITY,    ///< Initial index capacity of the global EBO. Default: 131'072
+    R3D_HINT_MESH_STREAMING_CAPACITY,       ///< Initial capacity for tracking freed mesh slots, relevant only for meshes loaded/unloaded at runtime. Default: 128
+    R3D_HINT_DRAW_CALL_CAPACITY,            ///< Initial capacity of the CPU-side draw call list. Default: 1024
+    R3D_HINT_FORWARD_LIGHT_PER_MESH,        ///< Max lights per mesh in forward pass. Default: 16
+    R3D_HINT_PROBE_MAX_ACTIVE,              ///< Max probes rendered simultaneously. Default: 8
+    R3D_HINT_PROBE_CAPTURE_SIZE,            ///< Probe capture cubemap face size (px). Default: 256
+    R3D_HINT_SHADOW_DIR_SIZE,               ///< Directional light shadow map size (px). Default: 4096
+    R3D_HINT_SHADOW_SPOT_SIZE,              ///< Spot light shadow map size (px). Default: 2048
+    R3D_HINT_SHADOW_OMNI_SIZE,              ///< Omni light shadow map size (px). Default: 2048
+    R3D_HINT_IBL_IRRADIANCE_SIZE,           ///< Irradiance cubemap face size, shared by ambient IBL and probes (px). Default: 32
+    R3D_HINT_IBL_PREFILTER_SIZE,            ///< Prefiltered cubemap face size, shared by ambient IBL and probes (px). Default: 128
+    R3D_HINT_COUNT,                         ///< Sentinel, not a valid hint
 } R3D_Hint;
 
 /**
