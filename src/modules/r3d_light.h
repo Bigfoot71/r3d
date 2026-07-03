@@ -144,7 +144,7 @@ bool r3d_light_shadow_should_be_updated(r3d_light_t* light, bool willBeUpdated);
 /* Bind shadow framebuffer for a light type */
 void r3d_light_shadow_bind_fbo(R3D_LightType type, int layer, int face);
 
-/* Get a shadow map layer dimensions */
+/* Get the shadow map dimensions */
 int r3d_light_shadow_get_size(R3D_LightType type);
 
 /* Get a shadow map array texture ID */
