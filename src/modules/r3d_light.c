@@ -288,7 +288,7 @@ static void light_update_dir_matrix(r3d_light_t* light, R3D_Camera camera, doubl
     Vector3 lightRight = Vector3Normalize(Vector3CrossProduct(up, lightDir));
     Vector3 lightUp = Vector3CrossProduct(lightDir, lightRight);
 
-    float texelSize = (radius * 2.0f) / (float)R3D_HINT(R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE);
+    float texelSize = (radius * 2.0f) / (float)R3D_HINT(R3D_HINT_SHADOW_DIR_SIZE);
     float cx = floorf(Vector3DotProduct(frustumCenter, lightRight) / texelSize) * texelSize;
     float cy = floorf(Vector3DotProduct(frustumCenter, lightUp) / texelSize) * texelSize;
     float cz = Vector3DotProduct(frustumCenter, lightDir);
@@ -670,13 +670,13 @@ int r3d_light_shadow_get_size(R3D_LightType type)
     int size = 0;
     switch (type) {
     case R3D_LIGHT_DIR:
-        size = R3D_HINT(R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE);
+        size = R3D_HINT(R3D_HINT_SHADOW_DIR_SIZE);
         break;
     case R3D_LIGHT_SPOT:
-        size = R3D_HINT(R3D_HINT_SHADOW_MAP_SPOT_SIZE);
+        size = R3D_HINT(R3D_HINT_SHADOW_SPOT_SIZE);
         break;
     case R3D_LIGHT_OMNI:
-        size = R3D_HINT(R3D_HINT_SHADOW_MAP_OMNI_SIZE);
+        size = R3D_HINT(R3D_HINT_SHADOW_OMNI_SIZE);
         break;
     case R3D_LIGHT_TYPE_COUNT:
         break;

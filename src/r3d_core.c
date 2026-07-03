@@ -25,14 +25,14 @@
 // ========================================
 
 static const int R3D_HINT_DEFAULTS[R3D_HINT_COUNT] = {
-    [R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH]  = 16,
-    [R3D_HINT_MAX_PROBE_ON_SCREEN]         = 8,
+    [R3D_HINT_FORWARD_LIGHT_PER_MESH]  = 16,
+    [R3D_HINT_PROBE_MAX_ACTIVE]         = 8,
     [R3D_HINT_PROBE_CAPTURE_SIZE]          = 256,
-    [R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE] = 4096,
-    [R3D_HINT_SHADOW_MAP_SPOT_SIZE]        = 2048,
-    [R3D_HINT_SHADOW_MAP_OMNI_SIZE]        = 2048,
-    [R3D_HINT_CUBEMAP_IRRADIANCE_SIZE]     = 32,
-    [R3D_HINT_CUBEMAP_PREFILTER_SIZE]      = 128,
+    [R3D_HINT_SHADOW_DIR_SIZE] = 4096,
+    [R3D_HINT_SHADOW_SPOT_SIZE]        = 2048,
+    [R3D_HINT_SHADOW_OMNI_SIZE]        = 2048,
+    [R3D_HINT_IBL_IRRADIANCE_SIZE]     = 32,
+    [R3D_HINT_IBL_PREFILTER_SIZE]      = 128,
 };
 
 // ========================================
@@ -53,28 +53,28 @@ void R3D_SetHint(R3D_Hint hint, int value)
     const int MAX_TEXMAP_SIZE = 4096;
 
     switch (hint) {
-    case R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH:
+    case R3D_HINT_FORWARD_LIGHT_PER_MESH:
         value = CLAMP(value, 1, R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
         break;
-    case R3D_HINT_MAX_PROBE_ON_SCREEN:
+    case R3D_HINT_PROBE_MAX_ACTIVE:
         value = CLAMP(value, 1, R3D_SHADER_PROBE_UBO_CAP);
         break;
     case R3D_HINT_PROBE_CAPTURE_SIZE:
         value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
         break;
-    case R3D_HINT_SHADOW_MAP_DIRECTIONAL_SIZE:
+    case R3D_HINT_SHADOW_DIR_SIZE:
         value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
         break;
-    case R3D_HINT_SHADOW_MAP_SPOT_SIZE:
+    case R3D_HINT_SHADOW_SPOT_SIZE:
         value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
         break;
-    case R3D_HINT_SHADOW_MAP_OMNI_SIZE:
+    case R3D_HINT_SHADOW_OMNI_SIZE:
         value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
         break;
-    case R3D_HINT_CUBEMAP_IRRADIANCE_SIZE:
+    case R3D_HINT_IBL_IRRADIANCE_SIZE:
         value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
         break;
-    case R3D_HINT_CUBEMAP_PREFILTER_SIZE:
+    case R3D_HINT_IBL_PREFILTER_SIZE:
         value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
         break;
     case R3D_HINT_COUNT:

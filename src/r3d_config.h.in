@@ -53,13 +53,13 @@
 
 /*
  * Defines the maximum number of lights stored in the forward rendering UBO.
- * Matches the maximum value allowed for `R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH`.
+ * Matches the maximum value allowed for `R3D_HINT_FORWARD_LIGHT_PER_MESH`.
  */
 #define R3D_SHADER_LIGHT_FORWARD_UBO_CAP @R3D_SHADER_LIGHT_FORWARD_UBO_CAP@
 
 /*
  * Defines the maximum number of probes stored in the UBO.
- * Matches the maximum value allowed for `R3D_HINT_MAX_PROBE_ON_SCREEN`.
+ * Matches the maximum value allowed for `R3D_HINT_PROBE_MAX_ACTIVE`.
  */
 #define R3D_SHADER_PROBE_UBO_CAP @R3D_SHADER_PROBE_UBO_CAP@
 

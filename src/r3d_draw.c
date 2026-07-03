@@ -743,7 +743,7 @@ void upload_light_array_block_for_mesh(const r3d_render_call_t* call, bool shado
         data->shadowLayer = shadow ? light->shadowLayer : -1;
         data->type = light->type;
 
-        if (++lights.uNumLights == R3D_HINT(R3D_HINT_MAX_LIGHT_FORWARD_PER_MESH)) {
+        if (++lights.uNumLights == R3D_HINT(R3D_HINT_FORWARD_LIGHT_PER_MESH)) {
             break;
         }
     }
@@ -799,7 +799,7 @@ void upload_env_block(void)
             .irradiance = probe->irradiance,
             .prefilter = probe->prefilter
         };
-        if (++iProbe >= R3D_HINT(R3D_HINT_MAX_PROBE_ON_SCREEN)) {
+        if (++iProbe >= R3D_HINT(R3D_HINT_PROBE_MAX_ACTIVE)) {
             break;
         }
     }
@@ -810,7 +810,7 @@ void upload_env_block(void)
     env.uAmbient.irradiance = (int)ambient->map.irradiance - 1;
     env.uAmbient.prefilter = (int)ambient->map.prefilter - 1;
 
-    env.uNumPrefilterLevels = r3d_get_mip_levels_1d(R3D_HINT(R3D_HINT_CUBEMAP_PREFILTER_SIZE));
+    env.uNumPrefilterLevels = r3d_get_mip_levels_1d(R3D_HINT(R3D_HINT_IBL_PREFILTER_SIZE));
     env.uNumProbes = iProbe;
 
     r3d_shader_set_uniform_block(R3D_SHADER_BLOCK_ENV, &env, false);

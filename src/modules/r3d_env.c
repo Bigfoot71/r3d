@@ -459,7 +459,7 @@ int r3d_env_irradiance_reserve_layer(void)
     int layer = layer_pool_reserve(&R3D_MOD_ENV.irradiancePool);
 
     if (layer < 0) {
-        if (!cubemap_array_expand_capacity(&R3D_MOD_ENV.irradianceArray, &R3D_MOD_ENV.irradiancePool, R3D_HINT(R3D_HINT_CUBEMAP_IRRADIANCE_SIZE), false)) {
+        if (!cubemap_array_expand_capacity(&R3D_MOD_ENV.irradianceArray, &R3D_MOD_ENV.irradiancePool, R3D_HINT(R3D_HINT_IBL_IRRADIANCE_SIZE), false)) {
             return -1;
         }
         layer = layer_pool_reserve(&R3D_MOD_ENV.irradiancePool);
@@ -481,7 +481,7 @@ void r3d_env_irradiance_bind_fbo(int layer, int face)
         R3D_MOD_ENV.irradianceArray, 0, layer * 6 + face
     );
 
-    glViewport(0, 0, R3D_HINT(R3D_HINT_CUBEMAP_IRRADIANCE_SIZE), R3D_HINT(R3D_HINT_CUBEMAP_IRRADIANCE_SIZE));
+    glViewport(0, 0, R3D_HINT(R3D_HINT_IBL_IRRADIANCE_SIZE), R3D_HINT(R3D_HINT_IBL_IRRADIANCE_SIZE));
 }
 
 GLuint r3d_env_irradiance_get(void)
@@ -494,7 +494,7 @@ int r3d_env_prefilter_reserve_layer(void)
     int layer = layer_pool_reserve(&R3D_MOD_ENV.prefilterPool);
 
     if (layer < 0) {
-        if (!cubemap_array_expand_capacity(&R3D_MOD_ENV.prefilterArray, &R3D_MOD_ENV.prefilterPool, R3D_HINT(R3D_HINT_CUBEMAP_PREFILTER_SIZE), true)) {
+        if (!cubemap_array_expand_capacity(&R3D_MOD_ENV.prefilterArray, &R3D_MOD_ENV.prefilterPool, R3D_HINT(R3D_HINT_IBL_PREFILTER_SIZE), true)) {
             return -1;
         }
         layer = layer_pool_reserve(&R3D_MOD_ENV.prefilterPool);
@@ -510,7 +510,7 @@ void r3d_env_prefilter_release_layer(int layer)
 
 void r3d_env_prefilter_bind_fbo(int layer, int face, int mipLevel)
 {
-    assert(mipLevel < r3d_get_mip_levels_1d(R3D_HINT(R3D_HINT_CUBEMAP_PREFILTER_SIZE)));
+    assert(mipLevel < r3d_get_mip_levels_1d(R3D_HINT(R3D_HINT_IBL_PREFILTER_SIZE)));
 
     glBindFramebuffer(GL_FRAMEBUFFER, R3D_MOD_ENV.workFramebuffer);
     glFramebufferTextureLayer(
@@ -518,7 +518,7 @@ void r3d_env_prefilter_bind_fbo(int layer, int face, int mipLevel)
         R3D_MOD_ENV.prefilterArray, mipLevel, layer * 6 + face
     );
 
-    int mipSize = R3D_HINT(R3D_HINT_CUBEMAP_PREFILTER_SIZE) >> mipLevel;
+    int mipSize = R3D_HINT(R3D_HINT_IBL_PREFILTER_SIZE) >> mipLevel;
     glViewport(0, 0, mipSize, mipSize);
 }
 
