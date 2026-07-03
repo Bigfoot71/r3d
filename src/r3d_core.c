@@ -53,10 +53,32 @@ void R3D_SetHint(R3D_Hint hint, int value)
 {
     if (R3D.initialized || hint < 0 || hint > R3D_HINT_COUNT) return;
 
-    const int MIN_TEXMAP_SIZE = 16;
-    const int MAX_TEXMAP_SIZE = 4096;
+    const int MIN_BUFFER_SZ   = 8;
+    const int MIN_DRAW_CALLS  = 1;
+    const int MIN_FREE_SLOTS  = 1;
+    const int MIN_TEXMAP_SIZE = 2;
+
+    static bool maxTexSizeFetched = false;
+    static GLint maxTexSize = 1024;
+
+    if (!maxTexSizeFetched) {
+        glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTexSize);
+        maxTexSizeFetched = true;
+    }
 
     switch (hint) {
+    case R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY:
+        value = MAX(value, MIN_BUFFER_SZ);
+        break;
+    case R3D_HINT_MESH_INDEX_BUFFER_CAPACITY:
+        value = MAX(value, MIN_BUFFER_SZ);
+        break;
+    case R3D_HINT_MESH_STREAMING_CAPACITY:
+        value = MAX(value, MIN_FREE_SLOTS);
+        break;
+    case R3D_HINT_DRAW_CALL_CAPACITY:
+        value = MAX(value, MIN_DRAW_CALLS);
+        break;
     case R3D_HINT_FORWARD_LIGHT_PER_MESH:
         value = CLAMP(value, 1, R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
         break;
@@ -64,22 +86,22 @@ void R3D_SetHint(R3D_Hint hint, int value)
         value = CLAMP(value, 1, R3D_SHADER_PROBE_UBO_CAP);
         break;
     case R3D_HINT_PROBE_CAPTURE_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_SHADOW_DIR_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_SHADOW_SPOT_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_SHADOW_OMNI_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_IBL_IRRADIANCE_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_IBL_PREFILTER_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, MAX_TEXMAP_SIZE);
+        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_COUNT:
         break;
