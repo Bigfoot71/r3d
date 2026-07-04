@@ -139,9 +139,9 @@ void main()
         float visibility = 1.0;
         if (hasShadow) {
             switch (uLight.type) {
-            case LIGHT_DIR:  visibility *= L_SampleShadowDir(marchPos, depth, 1.0, diskRot); break;
-            case LIGHT_SPOT: visibility *= L_SampleShadowSpot(marchPos, 1.0, diskRot); break;
-            case LIGHT_OMNI: visibility *= L_SampleShadowOmni(marchPos, 1.0, diskRot); break;
+            case LIGHT_DIR:  visibility *= L_SampleShadowDir(uLight, marchPos, depth, 1.0, diskRot); break;
+            case LIGHT_SPOT: visibility *= L_SampleShadowSpot(uLight, marchPos, 1.0, diskRot); break;
+            case LIGHT_OMNI: visibility *= L_SampleShadowOmni(uLight, marchPos, 1.0, diskRot); break;
             }
         }
 
