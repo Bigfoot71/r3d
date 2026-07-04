@@ -25,7 +25,7 @@
 /**
  * @brief Configuration hints used to customize R3D before initialization.
  *
- * Hints must be set via R3D_SetHint() before calling R3D_Init().
+ * Hints must be set via @ref R3D_SetHint() before calling @ref R3D_Init().
  * Any hint not explicitly set falls back to its default value.
  *
  * @note Some hints may be clamped internally, accordingly to hardware limits.
@@ -152,7 +152,7 @@ extern "C" {
 /**
  * @brief Sets a configuration hint.
  * 
- * Must be called before R3D_Init().
+ * Must be called before @ref R3D_Init().
  */
 R3DAPI void R3D_SetHint(R3D_Hint hint, int value);
 
