@@ -443,6 +443,7 @@ R3DAPI void R3D_GenMeshDataUVsCylindrical(R3D_MeshData* meshData);
  * @param meshData Mesh data to modify.
  * @param type Primitive type of the mesh. Points and line primitives are not
  *             supported and will default to a front-facing normal (0, 0, 1).
+ * @warning Not thread-safe: uses the shared global scratch stack
  */
 R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type);
 
@@ -451,6 +452,7 @@ R3DAPI void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType typ
  * @param meshData Mesh data to modify.
  * @param type Primitive type of the mesh. Points and line primitives are not
  *             supported and will default to a front-facing tangent (1, 0, 0, 1).
+ * @warning Not thread-safe: uses the shared global scratch stack
  */
 R3DAPI void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type);
 
