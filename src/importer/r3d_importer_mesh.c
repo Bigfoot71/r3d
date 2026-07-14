@@ -388,10 +388,10 @@ bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model)
 
     // Allocate space for meshes
     model->meshCount = scene->mNumMeshes;
-    model->meshes = RL_CALLOC(model->meshCount, sizeof(*model->meshes));
-    model->meshMaterials = RL_CALLOC(model->meshCount, sizeof(*model->meshMaterials));
-    if (keepMeshData) model->meshData = RL_CALLOC(model->meshCount, sizeof(*model->meshData));
-    if (keepMeshNames) model->meshNames = RL_CALLOC(model->meshCount, sizeof(*model->meshNames));
+    model->meshes = MemAlloc(model->meshCount * sizeof(*model->meshes));
+    model->meshMaterials = MemAlloc(model->meshCount * sizeof(*model->meshMaterials));
+    if (keepMeshData) model->meshData = MemAlloc(model->meshCount * sizeof(*model->meshData));
+    if (keepMeshNames) model->meshNames = MemAlloc(model->meshCount * sizeof(*model->meshNames));
     if (!model->meshes || !model->meshMaterials || (keepMeshData && !model->meshData) || (keepMeshNames && !model->meshNames)) {
         R3D_TRACELOG(LOG_ERROR, "Unable to allocate memory for meshes");
         goto cleanup_and_fail;
@@ -434,9 +434,9 @@ cleanup_and_fail:
         }
     }
 
-    RL_FREE(model->meshMaterials);
-    RL_FREE(model->meshData);
-    RL_FREE(model->meshes);
+    MemFree(model->meshMaterials);
+    MemFree(model->meshData);
+    MemFree(model->meshes);
 
     model->meshMaterials = NULL;
     model->meshData = NULL;

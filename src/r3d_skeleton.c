@@ -8,7 +8,6 @@
 
 #include <r3d/r3d_skeleton.h>
 #include <r3d_config.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <glad.h>
@@ -95,10 +94,10 @@ void R3D_UnloadSkeleton(R3D_Skeleton skeleton)
         glDeleteTextures(1, &skeleton.skinTexture);
     }
 
-    RL_FREE(skeleton.bones);
-    RL_FREE(skeleton.invBind);
-    RL_FREE(skeleton.modelBind);
-    RL_FREE(skeleton.localBind);
+    MemFree(skeleton.bones);
+    MemFree(skeleton.invBind);
+    MemFree(skeleton.modelBind);
+    MemFree(skeleton.localBind);
 }
 
 bool R3D_IsSkeletonValid(R3D_Skeleton skeleton)

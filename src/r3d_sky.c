@@ -9,7 +9,6 @@
 #include <r3d/r3d_cubemap.h>
 #include <r3d/r3d_sky.h>
 #include <raymath.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <glad.h>
 

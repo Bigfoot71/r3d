@@ -10,7 +10,6 @@
 #include <r3d/r3d_vertex.h>
 #include <r3d_config.h>
 #include <raymath.h>
-#include <stdlib.h>
 #include <string.h>
 #include <float.h>
 
@@ -40,7 +39,7 @@ R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount)
         return meshData;
     }
 
-    meshData.vertices = RL_CALLOC(vertexCount, sizeof(*meshData.vertices));
+    meshData.vertices = MemAlloc(vertexCount * sizeof(*meshData.vertices));
     if (meshData.vertices == NULL) {
         R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for mesh vertices");
         return meshData;
@@ -48,10 +47,10 @@ R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount)
     meshData.vertexCapacity = vertexCount;
 
     if (indexCount > 0) {
-        meshData.indices = RL_CALLOC(indexCount, sizeof(*meshData.indices));
+        meshData.indices = MemAlloc(indexCount * sizeof(*meshData.indices));
         if (meshData.indices == NULL) {
             R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for mesh indices");
-            RL_FREE(meshData.vertices);
+            MemFree(meshData.vertices);
             meshData.vertexCapacity = 0;
             meshData.vertices = NULL;
             return meshData;
@@ -64,8 +63,8 @@ R3D_MeshData R3D_LoadMeshData(int vertexCount, int indexCount)
 
 void R3D_UnloadMeshData(R3D_MeshData meshData)
 {
-    RL_FREE(meshData.vertices);
-    RL_FREE(meshData.indices);
+    MemFree(meshData.vertices);
+    MemFree(meshData.indices);
 }
 
 bool R3D_IsMeshDataValid(R3D_MeshData meshData)
@@ -1570,7 +1569,7 @@ R3D_MeshData R3D_GenMeshDataCubicmap(Image cubicmap, Vector3 cubeSize)
 void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount)
 {
     if (vertexCount > meshData->vertexCapacity) {
-        void* vertices = RL_REALLOC(meshData->vertices, vertexCount * sizeof(*meshData->vertices));
+        void* vertices = MemRealloc(meshData->vertices, vertexCount * sizeof(*meshData->vertices));
         if (vertices == NULL) {
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve vertices memory");
             return;
@@ -1580,7 +1579,7 @@ void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount
     }
 
     if (indexCount > meshData->indexCapacity) {
-        void* indices = RL_REALLOC(meshData->indices, indexCount * sizeof(*meshData->indices));
+        void* indices = MemRealloc(meshData->indices, indexCount * sizeof(*meshData->indices));
         if (indices == NULL) {
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve indices memory");
             return;
@@ -1593,7 +1592,7 @@ void R3D_ReserveMeshData(R3D_MeshData* meshData, int vertexCount, int indexCount
 void R3D_ShrinkMeshData(R3D_MeshData* meshData)
 {
     if (meshData->vertexCount > 0 && meshData->vertexCount != meshData->vertexCapacity) {
-        void* vertices = RL_REALLOC(meshData->vertices, meshData->vertexCount * sizeof(*meshData->vertices));
+        void* vertices = MemRealloc(meshData->vertices, meshData->vertexCount * sizeof(*meshData->vertices));
         if (vertices == NULL) {
             R3D_TRACELOG(LOG_WARNING, "Failed to shrink vertices memory");
             return;
@@ -1603,7 +1602,7 @@ void R3D_ShrinkMeshData(R3D_MeshData* meshData)
     }
 
     if (meshData->indexCount > 0 && meshData->indexCount != meshData->indexCapacity) {
-        void* indices = RL_REALLOC(meshData->indices, meshData->indexCount * sizeof(*meshData->indices));
+        void* indices = MemRealloc(meshData->indices, meshData->indexCount * sizeof(*meshData->indices));
         if (indices == NULL) {
             R3D_TRACELOG(LOG_WARNING, "Failed to shrink indices memory");
             return;
@@ -1844,7 +1843,7 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
     }
 
     // Accumulate in float to avoid precision loss
-    Vector3* normals = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
+    Vector3* normals = MemAlloc(meshData->vertexCount * sizeof(Vector3));
     if (normals == NULL) return;
 
     int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
@@ -1885,7 +1884,7 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
         R3D_PackNormal((int8_t*)meshData->vertices[i].normal, Vector3Normalize(normals[i]));
     }
 
-    RL_FREE(normals);
+    MemFree(normals);
 }
 
 static void process_triangle_tangents(Vector3* tangents, Vector3* bitangents, R3D_MeshData* meshData, uint32_t i0, uint32_t i1, uint32_t i2)
@@ -1943,12 +1942,12 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
         return;
     }
 
-    Vector3* tangents = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
-    Vector3* bitangents = RL_CALLOC(meshData->vertexCount, sizeof(Vector3));
+    Vector3* tangents = MemAlloc(meshData->vertexCount * sizeof(Vector3));
+    Vector3* bitangents = MemAlloc(meshData->vertexCount * sizeof(Vector3));
     if (tangents == NULL || bitangents == NULL) {
         R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for tangent calculation");
-        RL_FREE(tangents);
-        RL_FREE(bitangents);
+        MemFree(tangents);
+        MemFree(bitangents);
         return;
     }
 
@@ -2007,8 +2006,8 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
         R3D_PackTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){t.x, t.y, t.z, handedness});
     }
 
-    RL_FREE(tangents);
-    RL_FREE(bitangents);
+    MemFree(tangents);
+    MemFree(bitangents);
 }
 
 BoundingBox R3D_CalculateMeshDataBoundingBox(R3D_MeshData meshData)
@@ -2037,12 +2036,12 @@ BoundingBox R3D_CalculateMeshDataBoundingBox(R3D_MeshData meshData)
 
 bool alloc_mesh(R3D_MeshData* meshData, int vertexCount, int indexCount)
 {
-    meshData->vertices = RL_CALLOC(vertexCount, sizeof(*meshData->vertices));
-    meshData->indices = RL_CALLOC(indexCount, sizeof(*meshData->indices));
+    meshData->vertices = MemAlloc(vertexCount * sizeof(*meshData->vertices));
+    meshData->indices = MemAlloc(indexCount * sizeof(*meshData->indices));
 
     if (!meshData->vertices || !meshData->indices) {
-        if (meshData->vertices) RL_FREE(meshData->vertices);
-        if (meshData->indices) RL_FREE(meshData->indices);
+        if (meshData->vertices) MemFree(meshData->vertices);
+        if (meshData->indices) MemFree(meshData->indices);
         return false;
     }
 

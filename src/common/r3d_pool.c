@@ -7,8 +7,7 @@
  */
 
 #include "./r3d_pool.h"
-
-#include <stdlib.h>
+#include <raylib.h>
 #include <string.h>
 
 #define POOL_MAX_GEN 0xFFFFu // 65535; gen wraps 65535 -> 1, never 0
@@ -45,7 +44,7 @@ r3d_pool_t* r3d_pool_create(uint32_t objSize, uint32_t capacity)
         return NULL;
     }
 
-    uint8_t* mem = RL_MALLOC(pool_total_size(capacity, objSize));
+    uint8_t* mem = MemAlloc(pool_total_size(capacity, objSize));
     if (!mem) return NULL;
 
     r3d_pool_t* pool = (r3d_pool_t*)mem;
@@ -64,7 +63,7 @@ r3d_pool_t* r3d_pool_create(uint32_t objSize, uint32_t capacity)
 
 void r3d_pool_destroy(r3d_pool_t* pool)
 {
-    RL_FREE(pool);
+    MemFree(pool);
 }
 
 r3d_pool_t* r3d_pool_grow(r3d_pool_t* pool)
@@ -73,7 +72,7 @@ r3d_pool_t* r3d_pool_grow(r3d_pool_t* pool)
     uint32_t newCap = oldCap * 2;
     if (newCap <= oldCap) return NULL; // Overflow or already at limit
 
-    uint8_t* newMem = RL_MALLOC(pool_total_size(newCap, pool->objSize));
+    uint8_t* newMem = MemAlloc(pool_total_size(newCap, pool->objSize));
     if (!newMem) return NULL;
 
     r3d_pool_t* newPool = (r3d_pool_t*)newMem;
@@ -92,7 +91,7 @@ r3d_pool_t* r3d_pool_grow(r3d_pool_t* pool)
     memset(newPool->gens + oldCap, 0, (newCap - oldCap) * sizeof(uint16_t));
     memset(newPool->gensRef + oldCap, 0, (newCap - oldCap) * sizeof(uint16_t));
 
-    RL_FREE(pool);
+    MemFree(pool);
     return newPool;
 }
 

@@ -9,7 +9,6 @@
 #include <r3d/r3d_animation_player.h>
 #include <r3d_config.h>
 #include <raymath.h>
-#include <stdlib.h>
 #include <assert.h>
 #include <glad.h>
 
@@ -36,10 +35,10 @@ R3D_AnimationPlayer R3D_LoadAnimationPlayer(R3D_Skeleton skeleton, R3D_Animation
     player.animLib = animLib;
 
     // Allocate the required memory
-    player.states = RL_MALLOC(animLib.count * sizeof(*player.states));
-    player.localPose = RL_MALLOC(skeleton.boneCount * sizeof(*player.localPose));
-    player.modelPose = RL_MALLOC(skeleton.boneCount * sizeof(*player.modelPose));
-    player.skinBuffer = RL_MALLOC(skeleton.boneCount * sizeof(*player.skinBuffer));
+    player.states = MemAlloc(animLib.count * sizeof(*player.states));
+    player.localPose = MemAlloc(skeleton.boneCount * sizeof(*player.localPose));
+    player.modelPose = MemAlloc(skeleton.boneCount * sizeof(*player.modelPose));
+    player.skinBuffer = MemAlloc(skeleton.boneCount * sizeof(*player.skinBuffer));
 
     // Initialize animation states
     for (int i = 0; i < animLib.count; i++) {
@@ -77,10 +76,10 @@ void R3D_UnloadAnimationPlayer(R3D_AnimationPlayer player)
         glDeleteTextures(1, &player.skinTexture);
     }
 
-    RL_FREE(player.skinBuffer);
-    RL_FREE(player.modelPose);
-    RL_FREE(player.localPose);
-    RL_FREE(player.states);
+    MemFree(player.skinBuffer);
+    MemFree(player.modelPose);
+    MemFree(player.localPose);
+    MemFree(player.states);
 }
 
 bool R3D_IsAnimationPlayerValid(R3D_AnimationPlayer player)

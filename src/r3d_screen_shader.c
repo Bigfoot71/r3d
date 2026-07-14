@@ -10,7 +10,6 @@
 #include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
-#include <stdlib.h>
 #include <glad.h>
 
 #include "./modules/r3d_shader.h"
@@ -124,7 +123,7 @@ R3D_ScreenShader* R3D_LoadScreenShaderFromMemory(const char* code)
 
     if (writer.overflow) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load screen shader; Transformed code too long");
-        RL_FREE(shader);
+        MemFree(shader);
         return NULL;
     }
 

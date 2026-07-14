@@ -11,7 +11,6 @@
 #include <r3d/r3d_frustum.h>
 #include <r3d_config.h>
 #include <raymath.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -37,7 +36,7 @@ struct r3d_env R3D_MOD_ENV;
 static bool layer_pool_init(r3d_env_layer_pool_t* pool, int initialCapacity)
 {
     pool->freeCapacity = initialCapacity * 2;
-    pool->freeLayers = RL_MALLOC(pool->freeCapacity * sizeof(int));
+    pool->freeLayers = MemAlloc(pool->freeCapacity * sizeof(int));
     pool->freeCount = 0;
     pool->totalLayers = 0;
     return (pool->freeLayers != NULL);
@@ -45,7 +44,7 @@ static bool layer_pool_init(r3d_env_layer_pool_t* pool, int initialCapacity)
 
 static void layer_pool_quit(r3d_env_layer_pool_t* pool)
 {
-    RL_FREE(pool->freeLayers);
+    MemFree(pool->freeLayers);
     memset(pool, 0, sizeof(*pool));
 }
 
@@ -73,7 +72,7 @@ static bool layer_pool_expand(r3d_env_layer_pool_t* pool, int addCount)
     // Reallocate free layers array if needed
     if (pool->freeCount + addCount > pool->freeCapacity) {
         pool->freeCapacity = newTotal;
-        int* newFree = RL_REALLOC(pool->freeLayers, pool->freeCapacity * sizeof(int));
+        int* newFree = MemRealloc(pool->freeLayers, pool->freeCapacity * sizeof(int));
         if (!newFree) return false;
         pool->freeLayers = newFree;
     }
@@ -325,7 +324,7 @@ bool r3d_env_init(void)
         return false;
     }
 
-    R3D_MOD_ENV.visible = RL_MALLOC(16 * sizeof(R3D_Probe));
+    R3D_MOD_ENV.visible = MemAlloc(16 * sizeof(R3D_Probe));
     R3D_MOD_ENV.visibleCapacity = 16;
     R3D_MOD_ENV.visibleCount = 0;
     if (!R3D_MOD_ENV.visible) {
@@ -352,7 +351,7 @@ void r3d_env_quit(void)
     layer_pool_quit(&R3D_MOD_ENV.prefilterPool);
 
     r3d_pool_destroy(R3D_MOD_ENV.pool);
-    RL_FREE(R3D_MOD_ENV.visible);
+    MemFree(R3D_MOD_ENV.visible);
 }
 
 R3D_Probe r3d_env_probe_new(R3D_ProbeFlags flags)
@@ -431,7 +430,7 @@ void r3d_env_probe_update_and_cull(const R3D_Frustum* viewFrustum, bool* hasVisi
         // Grow visible array if needed
         if (R3D_MOD_ENV.visibleCount >= R3D_MOD_ENV.visibleCapacity) {
             uint32_t newCap = R3D_MOD_ENV.visibleCapacity * 2;
-            R3D_Probe* newPtr = RL_REALLOC(R3D_MOD_ENV.visible, newCap * sizeof(R3D_Probe));
+            R3D_Probe* newPtr = MemRealloc(R3D_MOD_ENV.visible, newCap * sizeof(R3D_Probe));
             if (!newPtr) continue; // Skip rather than crash
             R3D_MOD_ENV.visible = newPtr;
             R3D_MOD_ENV.visibleCapacity = newCap;

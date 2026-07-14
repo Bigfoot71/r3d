@@ -9,7 +9,6 @@
 #include "./r3d_driver.h"
 #include <r3d_config.h>
 #include <string.h>
-#include <stdlib.h>
 #include <uthash.h>
 #include <assert.h>
 #include <glad.h>

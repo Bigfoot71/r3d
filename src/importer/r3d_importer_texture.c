@@ -29,7 +29,6 @@
 #endif
 
 #include <stdatomic.h>
-#include <stdlib.h>
 #include <string.h>
 #include <uthash.h>
 #include <assert.h>
@@ -428,7 +427,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
         sizeof(atomic_int) * maxSlots +         // Ready slots queue
         1024;                                   // Padding for alignment
 
-    void* arenaMemory = RL_CALLOC(arenaSize, 1);
+    void* arenaMemory = MemAlloc(arenaSize);
     memory_arena_t arena = {.base = arenaMemory, .used = 0, .capacity = arenaSize};
 
     /* --- Phase 1: Collect unique textures --- */
@@ -540,13 +539,13 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
 
     /* --- Phase 4: Build final cache --- */
 
-    Texture2D* finalTextures = RL_CALLOC(materialCount * R3D_MAP_COUNT, sizeof(Texture2D));
+    Texture2D* finalTextures = MemAlloc(materialCount * R3D_MAP_COUNT * sizeof(Texture2D));
     for (int i = 0; i < maxSlots; i++) {
         int slotIdx = materialToSlot[i];
         if (slotIdx >= 0) finalTextures[i] = slots[slotIdx].texture;
     }
 
-    r3d_importer_texture_cache_t* cache = RL_MALLOC(sizeof(*cache));
+    r3d_importer_texture_cache_t* cache = MemAlloc(sizeof(*cache));
     cache->materialCount = materialCount;
     cache->textures = finalTextures;
 
@@ -556,7 +555,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
     HASH_ITER(hh, hashTable, entry, tmp) {
         HASH_DEL(hashTable, entry);
     }
-    RL_FREE(arenaMemory);
+    MemFree(arenaMemory);
 
     if (uploadedCount == processedCount) {
         R3D_TRACELOG(LOG_INFO, "Model textures cached: %d/%d textures loaded successfully", 
@@ -585,8 +584,8 @@ void r3d_importer_unload_texture_cache(r3d_importer_texture_cache_t* cache, bool
         }
     }
 
-    RL_FREE(cache->textures);
-    RL_FREE(cache);
+    MemFree(cache->textures);
+    MemFree(cache);
 }
 
 Texture2D* r3d_importer_get_loaded_texture(r3d_importer_texture_cache_t* cache, int materialIndex, r3d_importer_texture_map_t map)

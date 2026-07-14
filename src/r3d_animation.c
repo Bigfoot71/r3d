@@ -10,7 +10,6 @@
 #include <r3d_config.h>
 #include <raymath.h>
 #include <string.h>
-#include <stdlib.h>
 #include <glad.h>
 
 #ifdef R3D_SUPPORT_ASSIMP
@@ -99,20 +98,20 @@ void R3D_UnloadAnimationLib(R3D_AnimationLib animLib)
         for (int j = 0; j < anim->channelCount; ++j) {
             R3D_AnimationChannel* channel = &anim->channels[j];
 
-            RL_FREE((void*)channel->translation.times);
-            RL_FREE((void*)channel->translation.values);
+            MemFree((void*)channel->translation.times);
+            MemFree((void*)channel->translation.values);
 
-            RL_FREE((void*)channel->rotation.times);
-            RL_FREE((void*)channel->rotation.values);
+            MemFree((void*)channel->rotation.times);
+            MemFree((void*)channel->rotation.values);
 
-            RL_FREE((void*)channel->scale.times);
-            RL_FREE((void*)channel->scale.values);
+            MemFree((void*)channel->scale.times);
+            MemFree((void*)channel->scale.values);
         }
 
-        RL_FREE(anim->channels);
+        MemFree(anim->channels);
     }
 
-    RL_FREE(animLib.animations);
+    MemFree(animLib.animations);
 }
 
 int R3D_GetAnimationIndex(R3D_AnimationLib animLib, const char* name)

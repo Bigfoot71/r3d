@@ -8,7 +8,6 @@
 
 #include <r3d/r3d_animation_tree.h>
 #include <r3d_config.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "./common/r3d_anim.h"
@@ -384,14 +383,14 @@ static bool stm_find_path(r3d_animtree_stm_t* node, R3D_AnimationStmIndex target
 // TREE NODE CREATE FUNCTION
 // ========================================
 
-static R3D_AnimationTreeNode* anode_create(R3D_AnimationTree* atree, r3d_animtree_type_t type, size_t node_size)
+static R3D_AnimationTreeNode* anode_create(R3D_AnimationTree* atree, r3d_animtree_type_t type, size_t nodeSize)
 {
     R3D_AnimationTreeNode* node;
 
     int poolSize = atree->nodePoolSize;
     if (poolSize < atree->nodePoolMaxSize) {
         node = &atree->nodePool[poolSize];
-        node->base = RL_CALLOC(1, node_size);
+        node->base = MemAlloc(nodeSize);
         node->base->type = type;
     }
     else {
@@ -1028,8 +1027,8 @@ static R3D_AnimationTreeNode* atree_switch_create(R3D_AnimationTree* atree, int 
     if (!anode) return NULL;
 
     r3d_animtree_switch_t* swch = anode->swch;
-    swch->inList = RL_MALLOC(inCount * sizeof(*swch->inList));
-    swch->inWeights = RL_CALLOC(inCount, sizeof(*swch->inWeights));
+    swch->inList = MemAlloc(inCount * sizeof(*swch->inList));
+    swch->inWeights = MemAlloc(inCount * sizeof(*swch->inWeights));
     swch->inCount = inCount;
     swch->params = params;
 
@@ -1043,17 +1042,17 @@ static R3D_AnimationTreeNode* atree_stm_create(R3D_AnimationTree* atree, int sta
     if (!anode) return NULL;
 
     r3d_animtree_stm_t* stm = anode->stm;
-    stm->nodeList = RL_MALLOC(statesCount * sizeof(*stm->nodeList));
-    stm->edgeList = RL_MALLOC(edgesCount * sizeof(*stm->edgeList));
-    stm->stateList = RL_MALLOC(statesCount * sizeof(*stm->stateList));
-    stm->visitList = RL_MALLOC(statesCount * sizeof(*stm->visitList));
+    stm->nodeList = MemAlloc(statesCount * sizeof(*stm->nodeList));
+    stm->edgeList = MemAlloc(edgesCount * sizeof(*stm->edgeList));
+    stm->stateList = MemAlloc(statesCount * sizeof(*stm->stateList));
+    stm->visitList = MemAlloc(statesCount * sizeof(*stm->visitList));
     stm->maxStates = statesCount;
     stm->maxEdges = edgesCount;
     if (travel) {
-        stm->path.edges = RL_MALLOC(statesCount * sizeof(*stm->path.edges));
-        stm->path.open = RL_MALLOC(edgesCount * statesCount * sizeof(*stm->path.open));
-        stm->path.next = RL_MALLOC(edgesCount * statesCount * sizeof(*stm->path.next));
-        stm->path.mark = RL_MALLOC(statesCount * sizeof(*stm->path.mark));
+        stm->path.edges = MemAlloc(statesCount * sizeof(*stm->path.edges));
+        stm->path.open = MemAlloc(edgesCount * statesCount * sizeof(*stm->path.open));
+        stm->path.next = MemAlloc(edgesCount * statesCount * sizeof(*stm->path.next));
+        stm->path.mark = MemAlloc(statesCount * sizeof(*stm->path.mark));
     }
     return anode;
 }
@@ -1074,7 +1073,7 @@ static R3D_AnimationStmIndex atree_state_create(r3d_animtree_stm_t* node, R3D_An
 
     r3d_stmstate_t* state = &node->stateList[nextIdx];
     *state = (r3d_stmstate_t){
-        .outList = (edgesCount > 0 ? RL_MALLOC(edgesCount * sizeof(*state->outList)) : NULL),
+        .outList = (edgesCount > 0 ? MemAlloc(edgesCount * sizeof(*state->outList)) : NULL),
         .outCount = 0,
         .maxOut = edgesCount,
         .activeIn = NULL
@@ -1119,23 +1118,23 @@ static void atree_delete(R3D_AnimationTreeNode anode)
     case R3D_ANIMTREE_STM_X:
         return;
     case R3D_ANIMTREE_SWITCH:
-        RL_FREE(anode.swch->inList);
-        RL_FREE(anode.swch->inWeights);
+        MemFree(anode.swch->inList);
+        MemFree(anode.swch->inWeights);
         return;
     case R3D_ANIMTREE_STM:
         for (int i = 0; i < anode.stm->statesCount; i++) {
             if (anode.stm->stateList[i].outList) {
-                RL_FREE(anode.stm->stateList[i].outList);
+                MemFree(anode.stm->stateList[i].outList);
             }
         }
-        RL_FREE(anode.stm->nodeList);
-        RL_FREE(anode.stm->edgeList);
-        RL_FREE(anode.stm->stateList);
-        RL_FREE(anode.stm->visitList);
-        if (anode.stm->path.edges) RL_FREE(anode.stm->path.edges);
-        if (anode.stm->path.open) RL_FREE(anode.stm->path.open);
-        if (anode.stm->path.next) RL_FREE(anode.stm->path.next);
-        if (anode.stm->path.mark) RL_FREE(anode.stm->path.mark);
+        MemFree(anode.stm->nodeList);
+        MemFree(anode.stm->edgeList);
+        MemFree(anode.stm->stateList);
+        MemFree(anode.stm->visitList);
+        if (anode.stm->path.edges) MemFree(anode.stm->path.edges);
+        if (anode.stm->path.open) MemFree(anode.stm->path.open);
+        if (anode.stm->path.next) MemFree(anode.stm->path.next);
+        if (anode.stm->path.mark) MemFree(anode.stm->path.mark);
         return;
     default:
         R3D_TRACELOG(LOG_WARNING, "Failed to delete node: invalid type %d", anode.base->type);
@@ -1222,7 +1221,7 @@ R3D_AnimationTree R3D_LoadAnimationTreePro(R3D_AnimationPlayer player, int maxSi
 {
     R3D_AnimationTree tree = {0};
     tree.player = player;
-    tree.nodePool = RL_MALLOC(maxSize * sizeof(*tree.nodePool));
+    tree.nodePool = MemAlloc(maxSize * sizeof(*tree.nodePool));
     tree.nodePoolMaxSize = maxSize;
     tree.rootBone = rootBone;
     tree.updateCallback = updateCallback;
@@ -1236,9 +1235,9 @@ void R3D_UnloadAnimationTree(R3D_AnimationTree tree)
     for (int i = 0; i < poolSize; i++) {
         R3D_AnimationTreeNode node = tree.nodePool[i];
         atree_delete(node);
-        RL_FREE(node.base);
+        MemFree(node.base);
     }
-    RL_FREE(tree.nodePool);
+    MemFree(tree.nodePool);
 }
 
 void R3D_UpdateAnimationTree(R3D_AnimationTree* tree, float dt)

@@ -10,7 +10,6 @@
 #include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <glad.h>
 
@@ -179,7 +178,7 @@ R3D_SurfaceShader* R3D_LoadSurfaceShaderFromMemory(const char* code)
 
     if (writer.overflow) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load surface shader; Transformed code too long");
-        RL_FREE(shader);
+        MemFree(shader);
         return NULL;
     }
 

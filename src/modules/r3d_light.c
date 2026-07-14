@@ -10,7 +10,6 @@
 
 #include <r3d_config.h>
 #include <raymath.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <float.h>
@@ -53,7 +52,7 @@ static const int SHADOW_LAYER_GROWTH[] = {
 
 static bool shadow_pool_init(r3d_light_shadow_pool_t* pool, int initialCapacity)
 {
-    pool->freeLayers = RL_MALLOC(initialCapacity * sizeof(int));
+    pool->freeLayers = MemAlloc(initialCapacity * sizeof(int));
     if (!pool->freeLayers) return false;
 
     pool->freeCapacity = initialCapacity;
@@ -65,7 +64,7 @@ static bool shadow_pool_init(r3d_light_shadow_pool_t* pool, int initialCapacity)
 
 static void shadow_pool_quit(r3d_light_shadow_pool_t* pool)
 {
-    RL_FREE(pool->freeLayers);
+    MemFree(pool->freeLayers);
 }
 
 static int shadow_pool_reserve(r3d_light_shadow_pool_t* pool)
@@ -92,7 +91,7 @@ static bool shadow_pool_expand(r3d_light_shadow_pool_t* pool, int addCount)
     // Reallocate free layers array if needed
     if (pool->freeCount + addCount > pool->freeCapacity) {
         pool->freeCapacity = newTotal;
-        int* newFree = RL_REALLOC(pool->freeLayers, pool->freeCapacity * sizeof(int));
+        int* newFree = MemRealloc(pool->freeLayers, pool->freeCapacity * sizeof(int));
         if (!newFree) return false;
         pool->freeLayers = newFree;
     }
@@ -443,7 +442,7 @@ bool r3d_light_init(void)
         return false;
     }
 
-    R3D_MOD_LIGHT.visible = RL_MALLOC(32 * sizeof(R3D_Light));
+    R3D_MOD_LIGHT.visible = MemAlloc(32 * sizeof(R3D_Light));
     R3D_MOD_LIGHT.visibleCapacity = 32;
     R3D_MOD_LIGHT.visibleCount = 0;
 
@@ -464,7 +463,7 @@ void r3d_light_quit(void)
     }
 
     r3d_pool_destroy(R3D_MOD_LIGHT.pool);
-    RL_FREE(R3D_MOD_LIGHT.visible);
+    MemFree(R3D_MOD_LIGHT.visible);
 }
 
 R3D_Light r3d_light_new(R3D_LightType type)
@@ -618,7 +617,7 @@ void r3d_light_update_and_cull(const R3D_Frustum* viewFrustum, R3D_Camera camera
         // Grow visible array if needed
         if (R3D_MOD_LIGHT.visibleCount >= R3D_MOD_LIGHT.visibleCapacity) {
             uint32_t newCap = R3D_MOD_LIGHT.visibleCapacity * 2;
-            R3D_Light* newPtr = RL_REALLOC(R3D_MOD_LIGHT.visible, newCap * sizeof(R3D_Light));
+            R3D_Light* newPtr = MemRealloc(R3D_MOD_LIGHT.visible, newCap * sizeof(R3D_Light));
             if (!newPtr) continue; // Skip rather than crash
             R3D_MOD_LIGHT.visible = newPtr;
             R3D_MOD_LIGHT.visibleCapacity = newCap;

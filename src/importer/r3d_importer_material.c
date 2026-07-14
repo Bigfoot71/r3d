@@ -239,7 +239,7 @@ bool r3d_importer_load_materials(const R3D_Importer* importer, R3D_Material** ma
     }
 
     *materialCount = r3d_importer_get_material_count(importer);
-    *materials = RL_CALLOC(*materialCount, sizeof(R3D_Material));
+    *materials = MemAlloc(*materialCount * sizeof(R3D_Material));
 
     if (*materials == NULL) {
         R3D_TRACELOG(LOG_ERROR, "Unable to allocate memory for materials");

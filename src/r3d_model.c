@@ -11,7 +11,6 @@
 #include <r3d/r3d_model.h>
 #include <r3d/r3d_mesh.h>
 #include <r3d_config.h>
-#include <stdlib.h>
 
 #ifdef R3D_SUPPORT_ASSIMP
 #   include "./importer/r3d_importer_internal.h"
@@ -165,10 +164,10 @@ void R3D_UnloadModel(R3D_Model model, bool unloadMaterials)
         }
     }
 
-    RL_FREE(model.meshMaterials);
-    RL_FREE(model.materials);
-    RL_FREE(model.meshData);
-    RL_FREE(model.meshes);
+    MemFree(model.meshMaterials);
+    MemFree(model.materials);
+    MemFree(model.meshData);
+    MemFree(model.meshes);
 }
 
 int R3D_GetModelMeshIndex(R3D_Model model, const char* meshName)

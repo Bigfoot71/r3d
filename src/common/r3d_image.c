@@ -9,7 +9,6 @@
 #include "./r3d_image.h"
 
 #include <r3d_config.h>
-#include <stdlib.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <math.h>
@@ -42,7 +41,7 @@ Image r3d_image_compose_rgb(const Image* sources[3], Color defaultColor)
 
     /* --- Allocation --- */
 
-    uint8_t* pixels = RL_MALLOC(3 * w * h);
+    uint8_t* pixels = MemAlloc(3 * w * h);
     if (pixels == NULL) {
         return image;
     }

@@ -10,7 +10,6 @@
 #include <r3d_config.h>
 #include <raylib.h>
 #include <string.h>
-#include <stdlib.h>
 #include <glad.h>
 
 #include "./modules/r3d_shader.h"
@@ -122,7 +121,7 @@ R3D_SkyShader* R3D_LoadSkyShaderFromMemory(const char* code)
 
     if (writer.overflow) {
         R3D_TRACELOG(LOG_ERROR, "Failed to load sky shader; Transformed code too long");
-        RL_FREE(shader);
+        MemFree(shader);
         return NULL;
     }
 

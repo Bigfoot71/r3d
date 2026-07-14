@@ -9,7 +9,6 @@
 #include "./r3d_shader.h"
 #include <r3d_config.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -569,8 +568,8 @@ static bool load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom, int in
     DECL_SHADER_INDEXED(r3d_shader_prepare_smaa_edge_detection_t, prepare, smaaEdgeDetection, index);
     LOAD_SHADER(smaaEdgeDetection, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(smaaEdgeDetection, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -614,8 +613,8 @@ static bool load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom, int 
     DECL_SHADER_INDEXED(r3d_shader_prepare_smaa_blending_weights_t, prepare, smaaBlendingWeights, index);
     LOAD_SHADER(smaaBlendingWeights, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(smaaBlendingWeights, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -725,7 +724,7 @@ bool r3d_shader_load_prepare_cubemap_custom_sky(r3d_shader_custom_t* custom)
     r3d_shader_prepare_cubemap_custom_sky_t* cubemapCustomSky = &custom->program->prepare.cubemapCustomSky;
     char* fragCode = inject_content(CUBEMAP_CUSTOM_SKY_FRAG, custom->program->userCode, "#define fragment()", 0);
     LOAD_SHADER(cubemapCustomSky, CUBEMAP_VERT, fragCode);
-    RL_FREE(fragCode);
+    MemFree(fragCode);
 
     SET_UNIFORM_BUFFER(cubemapCustomSky, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -760,8 +759,8 @@ bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
 
     LOAD_SHADER(geometry, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(geometry, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(geometry, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -826,8 +825,8 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 
     LOAD_SHADER(forward, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(forward, LightArrayBlock, R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY);
     SET_UNIFORM_BUFFER(forward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
@@ -895,8 +894,8 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
 
     LOAD_SHADER(unlit, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(unlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(unlit, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -973,8 +972,8 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 
     LOAD_SHADER(depth, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(depth, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1023,8 +1022,8 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 
     LOAD_SHADER(depthCube, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(depthCube, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1081,8 +1080,8 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
 
     LOAD_SHADER(probeForward, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(probeForward, LightArrayBlock, R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY);
     SET_UNIFORM_BUFFER(probeForward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
@@ -1154,8 +1153,8 @@ bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
 
     LOAD_SHADER(probeUnlit, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(probeUnlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(probeUnlit, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
@@ -1207,8 +1206,8 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
 
     LOAD_SHADER(decal, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(decal, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(decal, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -1261,7 +1260,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
     const char* FS_DEFINES[] = {defNumProbes};
     char* fsCode = inject_defines(AMBIENT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
     LOAD_SHADER(ambient, SCREEN_VERT, fsCode);
-    RL_FREE(fsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(ambient, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(ambient, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
@@ -1428,7 +1427,7 @@ bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom)
     r3d_shader_post_screen_t* screen = &custom->program->post.screen;
     char* fragCode = inject_content(SCREEN_FRAG, custom->program->userCode, "#define fragment()", 0);
     LOAD_SHADER(screen, SCREEN_VERT, fragCode);
-    RL_FREE(fragCode);
+    MemFree(fragCode);
 
     SET_UNIFORM_BUFFER(screen, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(screen, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -1471,7 +1470,7 @@ static bool load_post_fxaa(r3d_shader_custom_t* custom, int index)
     DECL_SHADER_INDEXED(r3d_shader_post_fxaa_t, post, fxaa, index);
     LOAD_SHADER(fxaa, SCREEN_VERT, fsCode);
 
-    RL_FREE(fsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(fxaa, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1515,8 +1514,8 @@ static bool load_post_smaa(r3d_shader_custom_t* custom, int index)
     DECL_SHADER_INDEXED(r3d_shader_post_smaa_t, post, smaa, index);
     LOAD_SHADER(smaa, vsCode, fsCode);
 
-    RL_FREE(vsCode);
-    RL_FREE(fsCode);
+    MemFree(vsCode);
+    MemFree(fsCode);
 
     SET_UNIFORM_BUFFER(smaa, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1788,7 +1787,7 @@ r3d_shader_custom_t* r3d_shader_custom_alloc(void)
     size_t programOffset = (sizeof(r3d_shader_custom_t) + alignof(r3d_shader_custom_program_t) - 1) & ~(alignof(r3d_shader_custom_program_t) - 1);
     size_t size = programOffset + sizeof(r3d_shader_custom_program_t);
 
-    r3d_shader_custom_t* shader = RL_CALLOC(1, size);
+    r3d_shader_custom_t* shader = MemAlloc(size);
     if (shader == NULL) return NULL;
 
     shader->program = (r3d_shader_custom_program_t*)((uint8_t*)shader + programOffset);
@@ -1799,7 +1798,7 @@ r3d_shader_custom_t* r3d_shader_custom_alloc(void)
 
 r3d_shader_custom_t* r3d_shader_custom_clone(r3d_shader_custom_t* custom)
 {
-    r3d_shader_custom_t* clone = RL_CALLOC(1, sizeof(r3d_shader_custom_t));
+    r3d_shader_custom_t* clone = MemAlloc(sizeof(r3d_shader_custom_t));
     if (clone == NULL) return NULL;
 
     clone->program = custom->program;
@@ -1847,7 +1846,7 @@ void r3d_shader_custom_free(r3d_shader_custom_t* custom)
         DELETE_PROGRAM(custom->program->post.screen.id);
     }
 
-    RL_FREE(custom);
+    MemFree(custom);
 
 #undef DELETE_PROGRAM
 }
@@ -1995,7 +1994,7 @@ char* inject_content(const char* source, const char* content, const char* marker
     }
 
     // Allocate new string
-    char* result = RL_MALLOC(newLen + 1);
+    char* result = MemAlloc(newLen + 1);
     if (!result) return NULL;
 
     char* ptr = result;
@@ -2067,7 +2066,7 @@ char* inject_defines(const char* code, const char* defines[], int count)
     size_t suffixLen = strlen(versionEnd);
     
     // Allocate and build the new shader
-    char* newShader = (char*)RL_MALLOC(prefixLen + definesLen + suffixLen + 1);
+    char* newShader = (char*)MemAlloc(prefixLen + definesLen + suffixLen + 1);
     if (!newShader) return NULL;
 
     char* dest = newShader;
@@ -2101,13 +2100,13 @@ void inject_user_code(char** vsCode, char** fsCode, const char* userCode)
 {
     if (strstr(userCode, "void vertex()") != NULL) {
         char* vsUser = inject_content(*vsCode, userCode, "#define vertex()", 0);
-        RL_FREE(*vsCode);
+        MemFree(*vsCode);
         *vsCode = vsUser;
     }
 
     if (strstr(userCode, "void fragment()")) {
         char* fsUser = inject_content(*fsCode, userCode, "#define fragment()", 0);
-        RL_FREE(*fsCode);
+        MemFree(*fsCode);
         *fsCode = fsUser;
     }
 }
