@@ -86,6 +86,9 @@
     )
 #endif
 
+#define R3D_CONCAT_(a, b) a##b
+#define R3D_CONCAT(a, b)  R3D_CONCAT_(a, b)
+
 // ========================================
 // HELPER FUNCTIONS
 // ========================================

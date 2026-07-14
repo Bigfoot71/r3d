@@ -18,6 +18,7 @@
 #include "./r3d_core_state.h"
 
 #include "./common/r3d_helper.h"
+#include "./common/r3d_stack.h"
 #include "./common/r3d_pass.h"
 #include "./common/r3d_math.h"
 
@@ -303,8 +304,9 @@ void R3D_End(void)
     case R3D_OUTPUT_DOF: visualize_to_screen(R3D_TARGET_DOF_COC); break;
     }
 
-    /* --- Reset states changed by R3D --- */
+    /* --- Reset internal stuff and states changed by R3D --- */
 
+    r3d_stack_reset(R3D.stack);
     cleanup_after_render();
 }
 
