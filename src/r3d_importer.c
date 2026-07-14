@@ -21,35 +21,39 @@
 // INTERNAL CONSTANTS
 // ========================================
 
-#define POST_PROCESS_PRESET_FAST        \
+#define POST_PROCESS_BASELINE           \
     aiProcess_CalcTangentSpace      |   \
-    aiProcess_GenNormals            |   \
     aiProcess_JoinIdenticalVertices |   \
     aiProcess_Triangulate           |   \
     aiProcess_GenUVCoords           |   \
     aiProcess_SortByPType           |   \
-    aiProcess_FlipUVs
-
-#define POST_PROCESS_PRESET_QUALITY        \
-    aiProcess_CalcTangentSpace          |  \
-    aiProcess_GenSmoothNormals          |  \
-    aiProcess_JoinIdenticalVertices     |  \
-    aiProcess_ImproveCacheLocality      |  \
-    aiProcess_LimitBoneWeights          |  \
-    aiProcess_RemoveRedundantMaterials  |  \
-    aiProcess_SplitLargeMeshes          |  \
-    aiProcess_Triangulate               |  \
-    aiProcess_GenUVCoords               |  \
-    aiProcess_SortByPType               |  \
-    aiProcess_FindDegenerates           |  \
-    aiProcess_FindInvalidData           |  \
-    aiProcess_FlipUVs
+    aiProcess_FlipUVs               |   \
+    aiProcess_RemoveRedundantMaterials
 
 // ========================================
 // PRIVATE FUNCTIONS
 // ========================================
 
 #ifdef R3D_SUPPORT_ASSIMP
+
+static enum aiPostProcessSteps build_flags(R3D_ImportFlags flags)
+{
+    enum aiPostProcessSteps aiFlags = POST_PROCESS_BASELINE;
+
+    aiFlags |= BIT_TEST(flags, R3D_IMPORT_SMOOTH_NORMALS)
+        ? aiProcess_GenSmoothNormals
+        : aiProcess_GenNormals;
+
+    if (BIT_TEST(flags, R3D_IMPORT_OPTIMIZE_MESH)) {
+        aiFlags |= aiProcess_ImproveCacheLocality | aiProcess_SplitLargeMeshes;
+    }
+
+    if (BIT_TEST(flags, R3D_IMPORT_VALIDATE_DATA)) {
+        aiFlags |= aiProcess_FindDegenerates | aiProcess_FindInvalidData;
+    }
+
+    return aiFlags;
+}
 
 static void determine_importer_name(char* outName, size_t outSize, const struct aiScene* scene, const char* hint)
 {
@@ -140,11 +144,7 @@ static void build_bone_mapping(R3D_Importer* importer)
 R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
 {
 #ifdef R3D_SUPPORT_ASSIMP
-    enum aiPostProcessSteps aiFlags = POST_PROCESS_PRESET_FAST;
-    if (BIT_TEST(flags, R3D_IMPORT_QUALITY)) {
-        aiFlags = POST_PROCESS_PRESET_QUALITY;
-    }
-
+    enum aiPostProcessSteps aiFlags = build_flags(flags);
     const struct aiScene* scene = aiImportFile(filePath, aiFlags);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
         R3D_TRACELOG(LOG_ERROR, "Assimp failed to load '%s': %s", filePath, aiGetErrorString());
@@ -174,11 +174,7 @@ R3D_Importer* R3D_LoadImporter(const char* filePath, R3D_ImportFlags flags)
 R3D_Importer* R3D_LoadImporterFromMemory(const void* data, unsigned int size, const char* hint, R3D_ImportFlags flags)
 {
 #ifdef R3D_SUPPORT_ASSIMP
-    enum aiPostProcessSteps aiFlags = POST_PROCESS_PRESET_FAST;
-    if (BIT_TEST(flags, R3D_IMPORT_QUALITY)) {
-        aiFlags = POST_PROCESS_PRESET_QUALITY;
-    }
-
+    enum aiPostProcessSteps aiFlags = build_flags(flags);
     const struct aiScene* scene = aiImportFileFromMemory(data, size, aiFlags, hint);
     if (!scene || !scene->mRootNode || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)) {
         if (hint && hint[0] != '\0') {

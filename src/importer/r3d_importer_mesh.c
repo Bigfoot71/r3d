@@ -381,8 +381,8 @@ bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model)
         return false;
     }
 
-    bool keepMeshData = BIT_TEST(importer->flags, R3D_IMPORT_MESH_DATA);
-    bool keepMeshNames = BIT_TEST(importer->flags, R3D_IMPORT_MESH_NAMES);
+    bool keepMeshData = BIT_TEST(importer->flags, R3D_IMPORT_RETAIN_MESH_DATA);
+    bool keepMeshNames = BIT_TEST(importer->flags, R3D_IMPORT_RETAIN_MESH_NAMES);
 
     const struct aiScene* scene = r3d_importer_get_scene(importer);
 
