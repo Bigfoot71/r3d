@@ -14,6 +14,7 @@
 #include <stdio.h>
 
 #include "../common/r3d_helper.h"
+#include "../r3d_core_state.h"
 
 // ========================================
 // SHADER CODE INCLUDES
@@ -106,11 +107,29 @@ struct r3d_mod_shader R3D_MOD_SHADER;
         : &(custom)->program->category.shader_name
 
 #define LOAD_SHADER(shader_name, vsCode, fsCode) do {                           \
-    shader_name->id = load_shader(vsCode, fsCode);                              \
+    shader_name->id = load_shader((vsCode), (fsCode));                          \
     if (shader_name->id == 0) {                                                 \
         R3D_TRACELOG(LOG_ERROR, "Failed to load shader '" #shader_name "'");    \
         return false;                                                           \
     }                                                                           \
+} while(0)
+
+#define LOAD_SHADER_EX(shader_name, desc) do {                                  \
+    bool ok = false;                                                            \
+    R3D_STACK_SCOPE(&R3D.stack, shader_source_reserve(&(desc))) {               \
+        const char *vsCode = NULL, *fsCode = NULL;                              \
+        if (!shader_source_build(&vsCode, &fsCode, &R3D.stack, &(desc))) {      \
+            R3D_TRACELOG(LOG_ERROR, "Failed to build '" #shader_name "' shader sources"); \
+            R3D_STACK_SCOPE_EXIT(R3D.stack);                                    \
+        }                                                                       \
+        shader_name->id = load_shader(vsCode, fsCode);                          \
+        if (shader_name->id == 0) {                                             \
+            R3D_TRACELOG(LOG_ERROR, "Failed to load shader '" #shader_name "'");\
+            R3D_STACK_SCOPE_EXIT(R3D.stack);                                    \
+        }                                                                       \
+        ok = true;                                                              \
+    }                                                                           \
+    if (!ok) return false;                                                      \
 } while(0)
 
 #define USE_SHADER(shader_name) do {                                            \
@@ -149,31 +168,35 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 } while(0)
 
 // ========================================
+// INTERNAL STRUCTURES
+// ========================================
+
+typedef struct {
+    const char* vsTemplate; // Vertex shader template source (mandatory, must not be NULL)
+    const char** vsDefines; // Vertex shader defines (may be NULL)
+    int vsDefineCount;      // Number of vertex defines (ignored if vsDefines is NULL)
+
+    const char* fsTemplate; // Fragment shader template source (mandatory, must not be NULL)
+    const char** fsDefines; // Fragment shader defines (may be NULL)
+    int fsDefineCount;      // Number of fragment defines (ignored if fsDefines is NULL)
+
+    const char* userCode;   // Optional user code to inject (NULL if none)
+} shader_source_desc_t;
+
+// ========================================
 // INTERNAL FUNCTIONS
 // ========================================
 
-/**
- * Inject content into a string at a marker position
- * Returns newly allocated string with injected content
- * Or NULL on failure (caller must free the returned string)
- * source: Source string to modify
- * content: Content to inject
- * marker: String marker to find in source
- * mode: Injection mode: <0 = before marker, 0 = replace marker, >0 = after marker
+/*
+ * Returns the total allocation size required to build the vertex and fragment shader sources.
  */
-static char* inject_content(const char* source, const char* content, const char* marker, int mode);
-
-/**
- * Inject the provided list of definitions into the code
- * Returns newly allocated string with injected content
- * Or NULL on failure (caller must free the returned string)
- */
-static char* inject_defines(const char* code, const char* defines[], int count);
+static size_t shader_source_reserve(const shader_source_desc_t* desc);
 
 /*
- * Modifies each input stage by injecting user code if it contains the corresponding stages.
+ * Builds the vertex and fragment shader sources.
+ * May return the original template if no changes are needed, or NULL on failure.
  */
-static void inject_user_code(char** vsCode, char** fsCode, const char* userCode);
+static bool shader_source_build(const char** vsOut, const char** fsOut, r3d_stack_t** stack, const shader_source_desc_t* desc);
 
 /**
  * Initializes the sampler locations for the given shader program.
@@ -562,14 +585,18 @@ static bool load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom, int in
     const char* VS_DEFINES[] = {defQualityPreset};
     const char* FS_DEFINES[] = {defQualityPreset};
 
-    char* vsCode = inject_defines(SMAA_EDGE_DETECTION_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(SMAA_EDGE_DETECTION_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+    shader_source_desc_t desc = {
+        .vsTemplate = SMAA_EDGE_DETECTION_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = SMAA_EDGE_DETECTION_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = NULL,
+    };
 
     DECL_SHADER_INDEXED(r3d_shader_prepare_smaa_edge_detection_t, prepare, smaaEdgeDetection, index);
-    LOAD_SHADER(smaaEdgeDetection, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    LOAD_SHADER_EX(smaaEdgeDetection, desc);
 
     SET_UNIFORM_BUFFER(smaaEdgeDetection, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -607,14 +634,18 @@ static bool load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom, int 
     const char* VS_DEFINES[] = {defQualityPreset};
     const char* FS_DEFINES[] = {defQualityPreset};
 
-    char* vsCode = inject_defines(SMAA_BLENDING_WEIGTHS_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(SMAA_BLENDING_WEIGTHS_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+    shader_source_desc_t desc = {
+        .vsTemplate = SMAA_BLENDING_WEIGTHS_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = SMAA_BLENDING_WEIGTHS_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = NULL,
+    };
 
     DECL_SHADER_INDEXED(r3d_shader_prepare_smaa_blending_weights_t, prepare, smaaBlendingWeights, index);
-    LOAD_SHADER(smaaBlendingWeights, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    LOAD_SHADER_EX(smaaBlendingWeights, desc);
 
     SET_UNIFORM_BUFFER(smaaBlendingWeights, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -721,13 +752,21 @@ bool r3d_shader_load_prepare_cubemap_custom_sky(r3d_shader_custom_t* custom)
 {
     assert(custom != NULL);
 
+    if (strstr(custom->program->userCode, "void fragment()") == NULL) {
+        R3D_TRACELOG(LOG_WARNING, "Compiling a sky shader without 'fragment()' entry point");
+        return false;
+    }
+
+    shader_source_desc_t desc = {
+        .vsTemplate = CUBEMAP_VERT,
+        .fsTemplate = CUBEMAP_CUSTOM_SKY_FRAG,
+        .userCode = custom->program->userCode,
+    };
+
     r3d_shader_prepare_cubemap_custom_sky_t* cubemapCustomSky = &custom->program->prepare.cubemapCustomSky;
-    char* fragCode = inject_content(CUBEMAP_CUSTOM_SKY_FRAG, custom->program->userCode, "#define fragment()", 0);
-    LOAD_SHADER(cubemapCustomSky, CUBEMAP_VERT, fragCode);
-    MemFree(fragCode);
+    LOAD_SHADER_EX(cubemapCustomSky, desc);
 
     SET_UNIFORM_BUFFER(cubemapCustomSky, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
-
     if (strstr(custom->program->userCode, "UserBlock") != NULL) {
         SET_UNIFORM_BUFFER(cubemapCustomSky, UserBlock, R3D_SHADER_BLOCK_SLOT_USER);
     }
@@ -743,24 +782,23 @@ bool r3d_shader_load_prepare_cubemap_custom_sky(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_geometry_t, scene, geometry, custom);
-
     const char* VS_DEFINES[] = {"STAGE_VERT", "GEOMETRY"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "GEOMETRY"};
 
-    char* vsCode = inject_defines(SCENE_VERT,    VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(GEOMETRY_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = GEOMETRY_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(geometry, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_geometry_t, scene, geometry, custom);
+    LOAD_SHADER_EX(geometry, desc);
 
     SET_UNIFORM_BUFFER(geometry, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(geometry, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -803,30 +841,29 @@ bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_forward_t, scene, forward, custom);
-
-    char defNumLightsForward[32] = {0};
+    char defNumLights[32] = {0};
     char defNumProbes[32] = {0};
 
-    r3d_string_format(defNumLightsForward, sizeof(defNumLightsForward), "MAX_LIGHTS_FORWARD %i", R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
+    r3d_string_format(defNumLights, sizeof(defNumLights), "MAX_LIGHTS_FORWARD %i", R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
     r3d_string_format(defNumProbes, sizeof(defNumProbes), "MAX_PROBES %i", R3D_SHADER_PROBE_UBO_CAP);
 
-    const char* VS_DEFINES[] = {"STAGE_VERT", "FORWARD", defNumLightsForward};
-    const char* FS_DEFINES[] = {"STAGE_FRAG", "FORWARD", defNumLightsForward, defNumProbes};
-
-    char* vsCode = inject_defines(SCENE_VERT,   VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(FORWARD_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+    const char* VS_DEFINES[] = {"STAGE_VERT", "FORWARD", defNumLights};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "FORWARD", defNumLights, defNumProbes};
 
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = FORWARD_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(forward, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_forward_t, scene, forward, custom);
+    LOAD_SHADER_EX(forward, desc);
 
     SET_UNIFORM_BUFFER(forward, LightArrayBlock, R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY);
     SET_UNIFORM_BUFFER(forward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
@@ -878,24 +915,23 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_unlit_t, scene, unlit, custom);
-
     const char* VS_DEFINES[] = {"STAGE_VERT", "UNLIT"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "UNLIT"};
 
-    char* vsCode = inject_defines(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(UNLIT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = UNLIT_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(unlit, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_unlit_t, scene, unlit, custom);
+    LOAD_SHADER_EX(unlit, desc);
 
     SET_UNIFORM_BUFFER(unlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(unlit, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -956,24 +992,23 @@ bool r3d_shader_load_scene_skybox(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_depth_t, scene, depth, custom);
-
     const char* VS_DEFINES[] = {"STAGE_VERT", "DEPTH"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DEPTH"};
 
-    char* vsCode = inject_defines(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(DEPTH_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = DEPTH_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(depth, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_depth_t, scene, depth, custom);
+    LOAD_SHADER_EX(depth, desc);
 
     SET_UNIFORM_BUFFER(depth, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1006,24 +1041,23 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_depth_cube_t, scene, depthCube, custom);
-
     const char* VS_DEFINES[] = {"STAGE_VERT", "DEPTH_CUBE"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DEPTH_CUBE"};
 
-    char* vsCode = inject_defines(SCENE_VERT,      VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(DEPTH_CUBE_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = DEPTH_CUBE_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(depthCube, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_depth_cube_t, scene, depthCube, custom);
+    LOAD_SHADER_EX(depthCube, desc);
 
     SET_UNIFORM_BUFFER(depthCube, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1058,30 +1092,29 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_probe_forward_t, scene, probeForward, custom);
-
-    char defNumLightsForward[32] = {0};
+    char defNumLights[32] = {0};
     char defNumProbes[32] = {0};
 
-    r3d_string_format(defNumLightsForward, sizeof(defNumLightsForward), "MAX_LIGHTS_FORWARD %i", R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
+    r3d_string_format(defNumLights, sizeof(defNumLights), "MAX_LIGHTS_FORWARD %i", R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
     r3d_string_format(defNumProbes, sizeof(defNumProbes), "MAX_PROBES %i", R3D_SHADER_PROBE_UBO_CAP);
 
-    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_FORWARD", defNumLightsForward};
-    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_FORWARD", defNumLightsForward, defNumProbes};
-
-    char* vsCode = inject_defines(SCENE_VERT,   VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(FORWARD_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+    const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_FORWARD", defNumLights};
+    const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_FORWARD", defNumLights, defNumProbes};
 
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = FORWARD_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(probeForward, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_probe_forward_t, scene, probeForward, custom);
+    LOAD_SHADER_EX(probeForward, desc);
 
     SET_UNIFORM_BUFFER(probeForward, LightArrayBlock, R3D_SHADER_BLOCK_SLOT_LIGHT_ARRAY);
     SET_UNIFORM_BUFFER(probeForward, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
@@ -1137,24 +1170,23 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_probe_unlit_t, scene, probeUnlit, custom);
-
     const char* VS_DEFINES[] = {"STAGE_VERT", "PROBE", "PROBE_UNLIT"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "PROBE", "PROBE_UNLIT"};
 
-    char* vsCode = inject_defines(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(UNLIT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = UNLIT_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(probeUnlit, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_probe_unlit_t, scene, probeUnlit, custom);
+    LOAD_SHADER_EX(probeUnlit, desc);
 
     SET_UNIFORM_BUFFER(probeUnlit, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(probeUnlit, FxBlock, R3D_SHADER_BLOCK_SLOT_FX);
@@ -1190,24 +1222,23 @@ bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
 
 bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER_SELECT(r3d_shader_scene_decal_t, scene, decal, custom);
-
     const char* VS_DEFINES[] = {"STAGE_VERT", "DECAL"};
     const char* FS_DEFINES[] = {"STAGE_FRAG", "DECAL"};
 
-    char* vsCode = inject_defines(SCENE_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(DECAL_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-
     const char* userCode = custom ? custom->program->userCode : NULL;
 
-    if (userCode != NULL) {
-        inject_user_code(&vsCode, &fsCode, userCode);
-    }
+    shader_source_desc_t desc = {
+        .vsTemplate = SCENE_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = DECAL_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .userCode = userCode,
+    };
 
-    LOAD_SHADER(decal, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    DECL_SHADER_SELECT(r3d_shader_scene_decal_t, scene, decal, custom);
+    LOAD_SHADER_EX(decal, desc);
 
     SET_UNIFORM_BUFFER(decal, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(decal, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -1252,15 +1283,20 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
 
 bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
 {
-    DECL_SHADER(r3d_shader_deferred_ambient_t, deferred, ambient);
-
     char defNumProbes[32] = {0};
     r3d_string_format(defNumProbes, sizeof(defNumProbes), "MAX_PROBES %i", R3D_SHADER_PROBE_UBO_CAP);
 
     const char* FS_DEFINES[] = {defNumProbes};
-    char* fsCode = inject_defines(AMBIENT_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
-    LOAD_SHADER(ambient, SCREEN_VERT, fsCode);
-    MemFree(fsCode);
+
+    shader_source_desc_t desc = {
+        .vsTemplate = SCREEN_VERT,
+        .fsTemplate = AMBIENT_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+    };
+
+    DECL_SHADER(r3d_shader_deferred_ambient_t, deferred, ambient);
+    LOAD_SHADER_EX(ambient, desc);
 
     SET_UNIFORM_BUFFER(ambient, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
     SET_UNIFORM_BUFFER(ambient, EnvBlock, R3D_SHADER_BLOCK_SLOT_ENV);
@@ -1424,10 +1460,18 @@ bool r3d_shader_load_post_screen(r3d_shader_custom_t* custom)
 {
     assert(custom != NULL);
 
+    if (strstr(custom->program->userCode, "void fragment()") == NULL) {
+        R3D_TRACELOG(LOG_WARNING, "Compiling a screen shader without 'fragment()' entry point");
+    }
+
+    shader_source_desc_t desc = {
+        .vsTemplate = SCREEN_VERT,
+        .fsTemplate = SCREEN_FRAG,
+        .userCode = custom->program->userCode,
+    };
+
     r3d_shader_post_screen_t* screen = &custom->program->post.screen;
-    char* fragCode = inject_content(SCREEN_FRAG, custom->program->userCode, "#define fragment()", 0);
-    LOAD_SHADER(screen, SCREEN_VERT, fragCode);
-    MemFree(fragCode);
+    LOAD_SHADER_EX(screen, desc);
 
     SET_UNIFORM_BUFFER(screen, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
     SET_UNIFORM_BUFFER(screen, ViewBlock, R3D_SHADER_BLOCK_SLOT_VIEW);
@@ -1465,12 +1509,16 @@ static bool load_post_fxaa(r3d_shader_custom_t* custom, int index)
     r3d_string_format(defQualityPreset, sizeof(defQualityPreset), "QUALITY_PRESET %i", index);
 
     const char* FS_DEFINES[] = {defQualityPreset};
-    char* fsCode = inject_defines(FXAA_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+
+    shader_source_desc_t desc = {
+        .vsTemplate = SCREEN_VERT,
+        .fsTemplate = FXAA_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+    };
 
     DECL_SHADER_INDEXED(r3d_shader_post_fxaa_t, post, fxaa, index);
-    LOAD_SHADER(fxaa, SCREEN_VERT, fsCode);
-
-    MemFree(fsCode);
+    LOAD_SHADER_EX(fxaa, desc);
 
     SET_UNIFORM_BUFFER(fxaa, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1508,14 +1556,17 @@ static bool load_post_smaa(r3d_shader_custom_t* custom, int index)
     const char* VS_DEFINES[] = {defQualityPreset};
     const char* FS_DEFINES[] = {defQualityPreset};
 
-    char* vsCode = inject_defines(SMAA_VERT, VS_DEFINES, ARRAY_SIZE(VS_DEFINES));
-    char* fsCode = inject_defines(SMAA_FRAG, FS_DEFINES, ARRAY_SIZE(FS_DEFINES));
+    shader_source_desc_t desc = {
+        .vsTemplate = SMAA_VERT,
+        .vsDefines = VS_DEFINES,
+        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .fsTemplate = SMAA_FRAG,
+        .fsDefines = FS_DEFINES,
+        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+    };
 
     DECL_SHADER_INDEXED(r3d_shader_post_smaa_t, post, smaa, index);
-    LOAD_SHADER(smaa, vsCode, fsCode);
-
-    MemFree(vsCode);
-    MemFree(fsCode);
+    LOAD_SHADER_EX(smaa, desc);
 
     SET_UNIFORM_BUFFER(smaa, FrameBlock, R3D_SHADER_BLOCK_SLOT_FRAME);
 
@@ -1969,146 +2020,163 @@ void r3d_shader_invalidate_cache(void)
 // INTERNAL FUNCTIONS
 // ========================================
 
-char* inject_content(const char* source, const char* content, const char* marker, int mode)
+static size_t shader_inject_defines(char* dest, size_t destCap, const char* code, const char* defines[], int count)
 {
-    if (!source || !content || !marker) return NULL;
+    if (!code || count < 0) return 0;
 
-    // Find marker position
-    const char* markerPos = strstr(source, marker);
-    if (!markerPos) return NULL;
-
-    size_t markerLen = strlen(marker);
-    size_t contentLen = strlen(content);
-    size_t sourceLen = strlen(source);
-
-    // Calculate new string length
-    size_t prefixLen = markerPos - source;
-    size_t newLen;
-
-    if (mode == 0) {
-        // Replace mode: remove marker
-        newLen = sourceLen - markerLen + contentLen;
-    } else {
-        // Before/after mode: keep marker
-        newLen = sourceLen + contentLen;
-    }
-
-    // Allocate new string
-    char* result = MemAlloc(newLen + 1);
-    if (!result) return NULL;
-
-    char* ptr = result;
-
-    if (mode < 0) {
-        // Insert BEFORE marker: [prefix][content][marker][suffix]
-        memcpy(ptr, source, prefixLen);
-        ptr += prefixLen;
-
-        memcpy(ptr, content, contentLen);
-        ptr += contentLen;
-        
-        memcpy(ptr, markerPos, sourceLen - prefixLen);
-        ptr += sourceLen - prefixLen;
-    }
-    else if (mode == 0) {
-        // REPLACE marker: [prefix][content][suffix]
-        memcpy(ptr, source, prefixLen);
-        ptr += prefixLen;
-        
-        memcpy(ptr, content, contentLen);
-        ptr += contentLen;
-        
-        size_t suffixLen = sourceLen - prefixLen - markerLen;
-        memcpy(ptr, markerPos + markerLen, suffixLen);
-        ptr += suffixLen;
-    }
-    else {
-        // Insert AFTER marker: [prefix][marker][content][suffix]
-        size_t upToMarkerEnd = prefixLen + markerLen;
-        memcpy(ptr, source, upToMarkerEnd);
-        ptr += upToMarkerEnd;
-        
-        memcpy(ptr, content, contentLen);
-        ptr += contentLen;
-        
-        size_t suffixLen = sourceLen - upToMarkerEnd;
-        memcpy(ptr, markerPos + markerLen, suffixLen);
-        ptr += suffixLen;
-    }
-    
-    *ptr = '\0';
-    return result;
-}
-
-char* inject_defines(const char* code, const char* defines[], int count)
-{
-    if (!code || count < 0) return NULL;
-
-    // Find the end of the #version line
     const char* versionStart = strstr(code, "#version");
     assert(versionStart && "Shader must have version");
 
     const char* versionEnd = strchr(versionStart, '\n');
     if (!versionEnd) versionEnd = versionStart + strlen(versionStart);
-    else versionEnd++; // Include the \n
+    else versionEnd++;
 
-    // Calculate sizes
     static const char DEFINE_PREFIX[] = "#define ";
-    static const size_t DEFINE_PREFIX_LEN = sizeof(DEFINE_PREFIX) - 1; // -1 to exclude '\0'
-    
+    static const size_t DEFINE_PREFIX_LEN = sizeof(DEFINE_PREFIX) - 1;
+
     size_t prefixLen = versionEnd - code;
     size_t definesLen = 0;
     for (int i = 0; i < count; i++) {
-        if (defines[i]) {
-            definesLen += DEFINE_PREFIX_LEN + strlen(defines[i]) + 1; // +1 for \n
-        }
+        if (defines[i]) definesLen += DEFINE_PREFIX_LEN + strlen(defines[i]) + 1;
     }
     size_t suffixLen = strlen(versionEnd);
-    
-    // Allocate and build the new shader
-    char* newShader = (char*)MemAlloc(prefixLen + definesLen + suffixLen + 1);
-    if (!newShader) return NULL;
+    size_t newLen = prefixLen + definesLen + suffixLen;
 
-    char* dest = newShader;
-    
-    // Copy the part before defines (up to after #version)
-    memcpy(dest, code, prefixLen);
-    dest += prefixLen;
+    if (!dest) return newLen;
+    assert(destCap > newLen && "shader_inject_defines: destination buffer too small");
 
-    // Add the defines
+    char* d = dest;
+    memcpy(d, code, prefixLen); d += prefixLen;
+
     for (int i = 0; i < count; i++) {
         if (defines[i]) {
-            memcpy(dest, DEFINE_PREFIX, DEFINE_PREFIX_LEN);
-            dest += DEFINE_PREFIX_LEN;
-            
+            memcpy(d, DEFINE_PREFIX, DEFINE_PREFIX_LEN); d += DEFINE_PREFIX_LEN;
             size_t defineLen = strlen(defines[i]);
-            memcpy(dest, defines[i], defineLen);
-            dest += defineLen;
-            
-            *dest++ = '\n';
+            memcpy(d, defines[i], defineLen); d += defineLen;
+            *d++ = '\n';
         }
     }
 
-    // Copy the rest of the shader
-    memcpy(dest, versionEnd, suffixLen);
-    dest[suffixLen] = '\0';
+    memcpy(d, versionEnd, suffixLen); d += suffixLen;
+    *d = '\0';
 
-    return newShader;
+    return newLen;
 }
 
-void inject_user_code(char** vsCode, char** fsCode, const char* userCode)
+static size_t shader_inject_content(char* dest, size_t destCap, const char* source, const char* content, const char* marker, int mode)
 {
-    if (strstr(userCode, "void vertex()") != NULL) {
-        char* vsUser = inject_content(*vsCode, userCode, "#define vertex()", 0);
-        MemFree(*vsCode);
-        *vsCode = vsUser;
+    if (!source || !content || !marker) return 0;
+
+    const char* markerPos = strstr(source, marker);
+    if (!markerPos) return 0;
+
+    size_t markerLen = strlen(marker);
+    size_t contentLen = strlen(content);
+    size_t sourceLen = strlen(source);
+    size_t prefixLen = markerPos - source;
+
+    size_t newLen = (mode == 0)
+        ? sourceLen - markerLen + contentLen
+        : sourceLen + contentLen;
+
+    if (!dest) return newLen;
+    assert(destCap > newLen && "shader_inject_content: destination buffer too small");
+
+    char* ptr = dest;
+
+    if (mode < 0) {
+        // [prefix][content][marker][suffix]
+        memcpy(ptr, source, prefixLen); ptr += prefixLen;
+        memcpy(ptr, content, contentLen); ptr += contentLen;
+        memcpy(ptr, markerPos, sourceLen - prefixLen); ptr += sourceLen - prefixLen;
+    }
+    else if (mode == 0) {
+        // [prefix][content][suffix]
+        memcpy(ptr, source, prefixLen); ptr += prefixLen;
+        memcpy(ptr, content, contentLen); ptr += contentLen;
+        size_t suffixLen = sourceLen - prefixLen - markerLen;
+        memcpy(ptr, markerPos + markerLen, suffixLen); ptr += suffixLen;
+    }
+    else {
+        // [prefix][marker][content][suffix]
+        size_t upToMarkerEnd = prefixLen + markerLen;
+        memcpy(ptr, source, upToMarkerEnd); ptr += upToMarkerEnd;
+        memcpy(ptr, content, contentLen); ptr += contentLen;
+        size_t suffixLen = sourceLen - upToMarkerEnd;
+        memcpy(ptr, markerPos + markerLen, suffixLen); ptr += suffixLen;
     }
 
-    if (strstr(userCode, "void fragment()")) {
-        char* fsUser = inject_content(*fsCode, userCode, "#define fragment()", 0);
-        MemFree(*fsCode);
-        *fsCode = fsUser;
+    *ptr = '\0';
+    return newLen;
+}
+
+static inline bool shader_stage_needs_processing(const char* tmpl, const char** defines, int defineCount, const char* userCode, const char* funcSig)
+{
+    assert(tmpl && "shader stage template must not be NULL");
+    bool hasDefines = (defines && defineCount > 0);
+    bool hasUserFunc = (userCode && strstr(userCode, funcSig) != NULL);
+    return hasDefines || hasUserFunc;
+}
+
+static size_t shader_stage_reserve(const char* tmpl, const char** defines, int defineCount, const char* userCode, const char* funcSig)
+{
+    if (!shader_stage_needs_processing(tmpl, defines, defineCount, userCode, funcSig)) return 0;
+
+    size_t len = shader_inject_defines(NULL, 0, tmpl, defines, defines ? defineCount : 0);
+    size_t reserve = len + 1;
+
+    if (userCode && strstr(userCode, funcSig)) {
+        reserve += len + strlen(userCode) + 1; // worst case for replace-mode injection
     }
+
+    return reserve;
+}
+
+static const char* shader_stage_build(r3d_stack_t** stack, const char* tmpl, const char** defines, int defineCount, const char* userCode, const char* funcSig, const char* marker)
+{
+    if (!shader_stage_needs_processing(tmpl, defines, defineCount, userCode, funcSig)) return tmpl;
+
+    size_t len = shader_inject_defines(NULL, 0, tmpl, defines, defines ? defineCount : 0);
+    char* code = r3d_stack_alloc(stack, len + 1);
+    if (!code) return NULL;
+    shader_inject_defines(code, len + 1, tmpl, defines, defines ? defineCount : 0);
+
+    if (userCode && strstr(userCode, funcSig)) {
+        size_t userLen = shader_inject_content(NULL, 0, code, userCode, marker, 0);
+        if (userLen > 0) { // marker actually present in 'code'
+            char* buf = r3d_stack_alloc(stack, userLen + 1);
+            if (!buf) return NULL;
+            shader_inject_content(buf, userLen + 1, code, userCode, marker, 0);
+            code = buf;
+        }
+    }
+
+    return code;
+}
+
+size_t shader_source_reserve(const shader_source_desc_t* desc)
+{
+    return shader_stage_reserve(desc->vsTemplate, desc->vsDefines, desc->vsDefineCount, desc->userCode, "void vertex()")
+         + shader_stage_reserve(desc->fsTemplate, desc->fsDefines, desc->fsDefineCount, desc->userCode, "void fragment()");
+}
+
+bool shader_source_build(const char** vsOut, const char** fsOut, r3d_stack_t** stack, const shader_source_desc_t* desc)
+{
+    *vsOut = shader_stage_build(
+        stack, desc->vsTemplate,
+        desc->vsDefines, desc->vsDefineCount,
+        desc->userCode, "void vertex()", "#define vertex()"
+    );
+    if (*vsOut == NULL) return false;
+
+    *fsOut = shader_stage_build(
+        stack, desc->fsTemplate,
+        desc->fsDefines, desc->fsDefineCount,
+        desc->userCode, "void fragment()", "#define fragment()"
+    );
+    if (*fsOut == NULL) return false;
+
+    return true;
 }
 
 void set_custom_samplers(GLuint id, r3d_shader_custom_t* custom)
