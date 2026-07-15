@@ -161,7 +161,7 @@ bool R3D_Init(int resWidth, int resHeight)
         }
     }
 
-    R3D.stack = r3d_stack_create(4096);
+    R3D.stack = r3d_stack_create(1024 * 1024);
     if (R3D.stack == NULL) {
         R3D_TRACELOG(LOG_ERROR, "Failed to create internal stack allocator");
         return false;
