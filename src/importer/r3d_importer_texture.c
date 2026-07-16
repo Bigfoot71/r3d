@@ -37,7 +37,9 @@
 
 #include "../common/r3d_helper.h"
 #include "../common/r3d_image.h"
+#include "../common/r3d_stack.h"
 #include "../common/r3d_hash.h"
+#include "../r3d_core_state.h"
 
 // ========================================
 // CONSTANTS
@@ -92,30 +94,6 @@ typedef struct {
     atomic_int writePos;
     atomic_int readPos;
 } loader_context_t;
-
-// ========================================
-// MEMORY ARENA ALLOCATOR
-// ========================================
-
-typedef struct {
-    void* base;
-    size_t used;
-    size_t capacity;
-} memory_arena_t;
-
-static inline void* arena_alloc(memory_arena_t* arena, size_t size, size_t align)
-{
-    size_t padding = (align - (arena->used % align)) % align;
-    size_t required = arena->used + padding + size;
-    if (required > arena->capacity) return NULL;
-
-    void* ptr = (char*)arena->base + arena->used + padding;
-    arena->used = required;
-    return ptr;
-}
-
-#define ARENA_ALLOC(arena, type, count) \
-    arena_alloc(arena, sizeof(type) * (count), _Alignof(type))
 
 // ========================================
 // HELPER FUNCTIONS
@@ -398,10 +376,8 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
         return NULL;
     }
 
-    /* --- Early exit: check if any material has textures before allocating --- */
-
+    // Skip allocating anything if no material has textures
     int materialCount = r3d_importer_get_material_count(importer);
-
     bool hasAnyTexture = false;
     for (int matIdx = 0; matIdx < materialCount && !hasAnyTexture; matIdx++) {
         const struct aiMaterial* mat = r3d_importer_get_material(importer, matIdx);
@@ -414,148 +390,161 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
     }
     if (!hasAnyTexture) return NULL;
 
-    /* --- Phase 0: Allocate a large block of memory for work --- */
-
+    // Persistent output buffer (outlives the scratch scope below)
     int maxSlots = materialCount * R3D_MAP_COUNT;
+    Texture2D* finalTextures = MemAlloc(maxSlots * sizeof(Texture2D));
+    if (!finalTextures) {
+        R3D_TRACELOG(LOG_WARNING, "Failed to allocate texture cache: out of memory");
+        return NULL;
+    }
 
-    size_t arenaSize = 
-        sizeof(texture_job_t) * maxSlots +      // Jobs
-        sizeof(texture_slot_t) * maxSlots +     // Slots
-        sizeof(texture_entry_t) * maxSlots +    // Entries
-        sizeof(int) * maxSlots +                // Material mapping
-        sizeof(thrd_t) * r3d_get_cpu_count() +  // Thread handles
-        sizeof(atomic_int) * maxSlots +         // Ready slots queue
-        1024;                                   // Padding for alignment
+    int uniqueCount = 0, uploadedCount = 0, processedCount = 0;
+    bool ok;
 
-    void* arenaMemory = MemAlloc(arenaSize);
-    memory_arena_t arena = {.base = arenaMemory, .used = 0, .capacity = arenaSize};
+    // Worst-case scratch size for the whole scope below
+    size_t reserve =
+        (size_t)maxSlots * sizeof(texture_job_t) +
+        (size_t)maxSlots * sizeof(texture_slot_t) +
+        (size_t)maxSlots * sizeof(texture_entry_t) +
+        (size_t)maxSlots * sizeof(int) +
+        (size_t)maxSlots * sizeof(atomic_int) +       // readySlots, worst case uniqueCount == maxSlots
+        (size_t)r3d_get_cpu_count() * sizeof(thrd_t); // threads, worst case numThreads == cpu count
 
-    /* --- Phase 1: Collect unique textures --- */
-
-    texture_job_t* jobs = ARENA_ALLOC(&arena, texture_job_t, maxSlots);
-    texture_slot_t* slots = ARENA_ALLOC(&arena, texture_slot_t, maxSlots);
-    texture_entry_t* entries = ARENA_ALLOC(&arena, texture_entry_t, maxSlots);
-
-    int* materialToSlot = ARENA_ALLOC(&arena, int, maxSlots);
-    for (int i = 0; i < maxSlots; i++) materialToSlot[i] = -1;
-
-    texture_entry_t* hashTable = NULL;
-    int entryPoolUsed = 0;
-    int uniqueCount = 0;
-
-    for (int matIdx = 0; matIdx < materialCount; matIdx++)
+    // Collect, load, upload, build
+    R3D_STACK_SCOPE(&R3D.stack, reserve, ok)
     {
-        const struct aiMaterial* material = r3d_importer_get_material(importer, matIdx);
+        // Pre-alloacte temp memory
+        texture_job_t* jobs = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(texture_job_t));
+        texture_slot_t* slots = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(texture_slot_t));
+        texture_entry_t* entries = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(texture_entry_t));
+        int* materialToSlot = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(int));
+        for (int i = 0; i < maxSlots; i++) materialToSlot[i] = -1;
 
-        for (int mapIdx = 0; mapIdx < R3D_MAP_COUNT; mapIdx++)
+        // Collect all unique textures
+        texture_entry_t* hashTable = NULL;
+        int entryPoolUsed = 0;
+
+        for (int matIdx = 0; matIdx < materialCount; matIdx++)
         {
-            texture_job_t job = {0};
-            if (!texture_job_init(&job, material, mapIdx)) continue;
+            const struct aiMaterial* material = r3d_importer_get_material(importer, matIdx);
 
-            texture_entry_t* entry = NULL;
-            texture_key_t key = make_key_texture_job(&job);
-            HASH_FIND(hh, hashTable, &key, sizeof(key), entry);
+            for (int mapIdx = 0; mapIdx < R3D_MAP_COUNT; mapIdx++)
+            {
+                texture_job_t job = {0};
+                if (!texture_job_init(&job, material, mapIdx)) continue;
 
-            if (entry) {
-                // Reuse existing slot
-                materialToSlot[matIdx * R3D_MAP_COUNT + mapIdx] = entry->slotIndex;
+                texture_entry_t* entry = NULL;
+                texture_key_t key = make_key_texture_job(&job);
+                HASH_FIND(hh, hashTable, &key, sizeof(key), entry);
+
+                if (entry) {
+                    // Reuse existing slot
+                    materialToSlot[matIdx * R3D_MAP_COUNT + mapIdx] = entry->slotIndex;
+                    continue;
+                }
+
+                // New unique texture
+                entry = &entries[entryPoolUsed++];
+                entry->key = key;
+                entry->slotIndex = uniqueCount;
+                HASH_ADD(hh, hashTable, key, sizeof(key), entry);
+
+                jobs[uniqueCount] = job;
+                slots[uniqueCount].map = mapIdx;
+
+                materialToSlot[matIdx * R3D_MAP_COUNT + mapIdx] = uniqueCount;
+                uniqueCount++;
+            }
+        }
+
+        // Parallel texture loading to RAM
+        loader_context_t ctx = {
+            .importer = importer,
+            .jobs = jobs,
+            .slots = slots,
+            .slotCount = uniqueCount,
+            .readySlots = r3d_stack_alloc(&R3D.stack, uniqueCount * sizeof(atomic_int))
+        };
+
+        int numThreads = r3d_get_cpu_count();
+        if (numThreads > uniqueCount) numThreads = uniqueCount;
+
+        thrd_t* threads = r3d_stack_alloc(&R3D.stack, numThreads * sizeof(thrd_t));
+
+        atomic_init(&ctx.nextJob, 0);
+        atomic_init(&ctx.writePos, 0);
+        atomic_init(&ctx.readPos, 0);
+
+        for (int i = 0; i < numThreads; i++) {
+            thrd_create(&threads[i], worker_thread, &ctx);
+        }
+
+        // In the meantime, progressive upload to VRAM
+        while (processedCount < uniqueCount)
+        {
+            int readPos = atomic_load_explicit(&ctx.readPos, memory_order_acquire);
+            int writePos = atomic_load_explicit(&ctx.writePos, memory_order_acquire);
+
+            if (writePos == readPos) {
+                struct timespec ts = {.tv_sec = 0, .tv_nsec = 1000000}; // 1ms
+                thrd_sleep(&ts, NULL);
                 continue;
             }
 
-            // New unique texture
-            entry = &entries[entryPoolUsed++];
-            entry->key = key;
-            entry->slotIndex = uniqueCount;
-            HASH_ADD(hh, hashTable, key, sizeof(key), entry);
+            atomic_thread_fence(memory_order_acquire);
 
-            jobs[uniqueCount] = job;
-            slots[uniqueCount].map = mapIdx;
-
-            materialToSlot[matIdx * R3D_MAP_COUNT + mapIdx] = uniqueCount;
-            uniqueCount++;
-        }
-    }
-
-    /* --- Phase 2: Parallel loading to RAM --- */
-
-    loader_context_t ctx = {
-        .importer = importer,
-        .jobs = jobs,
-        .slots = slots,
-        .slotCount = uniqueCount,
-        .readySlots = ARENA_ALLOC(&arena, atomic_int, uniqueCount)
-    };
-
-    atomic_init(&ctx.nextJob, 0);
-    atomic_init(&ctx.writePos, 0);
-    atomic_init(&ctx.readPos, 0);
-
-    int numThreads = r3d_get_cpu_count();
-    if (numThreads > uniqueCount) numThreads = uniqueCount;
-
-    thrd_t* threads = ARENA_ALLOC(&arena, thrd_t, numThreads);
-    for (int i = 0; i < numThreads; i++) {
-        thrd_create(&threads[i], worker_thread, &ctx);
-    }
-
-    /* --- Phase 3: Progressive upload to VRAM --- */
-
-    int processedCount = 0;
-    int uploadedCount = 0;
-
-    while (processedCount < uniqueCount)
-    {
-        int readPos = atomic_load_explicit(&ctx.readPos, memory_order_acquire);
-        int writePos = atomic_load_explicit(&ctx.writePos, memory_order_acquire);
-
-        if (writePos == readPos) {
-            struct timespec ts = {.tv_sec = 0, .tv_nsec = 1000000}; // 1ms
-            thrd_sleep(&ts, NULL);
-            continue;
-        }
-
-        atomic_thread_fence(memory_order_acquire);
-
-        for (int i = readPos; i < writePos; i++) {
-            int slotIdx = ctx.readySlots[i];
-            texture_slot_t* slot = &slots[slotIdx];
-            if (slot->image.data) {
-                slot->texture = r3d_image_upload(&slot->image, slot->wrapMode, filter, is_srgb(slot->map, colorSpace));
-                if (slot->ownsImageData) {
-                    UnloadImage(slot->image);
-                    slot->image.data = NULL;
+            for (int i = readPos; i < writePos; i++) {
+                int slotIdx = ctx.readySlots[i];
+                texture_slot_t* slot = &slots[slotIdx];
+                if (slot->image.data) {
+                    slot->texture = r3d_image_upload(&slot->image, slot->wrapMode, filter, is_srgb(slot->map, colorSpace));
+                    if (slot->ownsImageData) {
+                        UnloadImage(slot->image);
+                        slot->image.data = NULL;
+                    }
+                    uploadedCount++;
                 }
-                uploadedCount++;
+                processedCount++;
             }
-            processedCount++;
+
+            atomic_store_explicit(&ctx.readPos, writePos, memory_order_release);
         }
 
-        atomic_store_explicit(&ctx.readPos, writePos, memory_order_release);
+        for (int i = 0; i < numThreads; i++) {
+            thrd_join(threads[i], NULL);
+        }
+
+        // Once done, build final cache
+        for (int i = 0; i < maxSlots; i++) {
+            int slotIdx = materialToSlot[i];
+            if (slotIdx >= 0) finalTextures[i] = slots[slotIdx].texture;
+        }
     }
 
-    for (int i = 0; i < numThreads; i++) {
-        thrd_join(threads[i], NULL);
-    }
-
-    /* --- Phase 4: Build final cache --- */
-
-    Texture2D* finalTextures = MemAlloc(materialCount * R3D_MAP_COUNT * sizeof(Texture2D));
-    for (int i = 0; i < maxSlots; i++) {
-        int slotIdx = materialToSlot[i];
-        if (slotIdx >= 0) finalTextures[i] = slots[slotIdx].texture;
+    if (!ok) {
+        // Loading was aborted mid-way: any textures already uploaded
+        // to VRAM in this run are still referenced by finalTextures,
+        // free them before bailing out to avoid leaking GPU handles
+        for (int i = 0; i < maxSlots; i++) {
+            if (finalTextures[i].id != 0) UnloadTexture(finalTextures[i]);
+        }
+        MemFree(finalTextures);
+        R3D_TRACELOG(LOG_WARNING, "Failed to load texture cache: out of memory");
+        return NULL;
     }
 
     r3d_importer_texture_cache_t* cache = MemAlloc(sizeof(*cache));
+    if (!cache) {
+        for (int i = 0; i < maxSlots; i++) {
+            if (finalTextures[i].id != 0) UnloadTexture(finalTextures[i]);
+        }
+        MemFree(finalTextures);
+        R3D_TRACELOG(LOG_WARNING, "Failed to allocate texture cache handle: out of memory");
+        return NULL;
+    }
+
     cache->materialCount = materialCount;
     cache->textures = finalTextures;
-
-    /* --- Cleanup --- */
-
-    texture_entry_t* entry, *tmp;
-    HASH_ITER(hh, hashTable, entry, tmp) {
-        HASH_DEL(hashTable, entry);
-    }
-    MemFree(arenaMemory);
 
     if (uploadedCount == processedCount) {
         R3D_TRACELOG(LOG_INFO, "Model textures cached: %d/%d textures loaded successfully", 

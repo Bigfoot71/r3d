@@ -160,6 +160,12 @@ bool R3D_Init(int resWidth, int resHeight)
         }
     }
 
+    R3D.stack = r3d_stack_create(1024 * 1024);
+    if (R3D.stack == NULL) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to create internal stack allocator");
+        return false;
+    }
+
     if (!r3d_texture_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init texture module"); return false; }
     if (!r3d_target_init(resWidth, resHeight)) { R3D_TRACELOG(LOG_ERROR, "Failed to init target module"); return false; }
     if (!r3d_shader_init()) { R3D_TRACELOG(LOG_ERROR, "Failed to init shader module"); return false; }
@@ -177,6 +183,7 @@ bool R3D_Init(int resWidth, int resHeight)
 
 void R3D_Close(void)
 {
+    r3d_stack_destroy(R3D.stack);
     r3d_texture_quit();
     r3d_target_quit();
     r3d_shader_quit();

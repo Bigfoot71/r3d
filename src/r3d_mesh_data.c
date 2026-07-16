@@ -14,6 +14,7 @@
 #include <float.h>
 
 #include "./common/r3d_math.h"
+#include "./r3d_core_state.h"
 
 // ========================================
 // INTERNAL FUNCTIONS
@@ -1842,49 +1843,57 @@ void R3D_GenMeshDataNormals(R3D_MeshData* meshData, R3D_PrimitiveType type)
         return;
     }
 
-    // Accumulate in float to avoid precision loss
-    Vector3* normals = MemAlloc(meshData->vertexCount * sizeof(Vector3));
-    if (normals == NULL) return;
+    size_t bufferSize = meshData->vertexCount * sizeof(Vector3);
+    bool ok;
 
-    int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
+    R3D_STACK_SCOPE(&R3D.stack, bufferSize, ok)
+    {
+        // Accumulate in float to avoid precision loss
+        Vector3* normals = r3d_stack_alloc(&R3D.stack, bufferSize);
+        memset(normals, 0, bufferSize);
 
-    switch (type) {
-    case R3D_PRIMITIVE_TRIANGLES:
-        for (int i = 0; i + 2 < count; i += 3) {
-            accumulate_face_normal(normals, meshData,
-                get_index(meshData, i),
-                get_index(meshData, i + 1),
-                get_index(meshData, i + 2)
-            );
+        int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
+
+        switch (type) {
+        case R3D_PRIMITIVE_TRIANGLES:
+            for (int i = 0; i + 2 < count; i += 3) {
+                accumulate_face_normal(normals, meshData,
+                    get_index(meshData, i),
+                    get_index(meshData, i + 1),
+                    get_index(meshData, i + 2)
+                );
+            }
+            break;
+        case R3D_PRIMITIVE_TRIANGLE_STRIP:
+            for (int i = 0; i + 2 < count; i++) {
+                uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
+                uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
+                uint32_t i2 = get_index(meshData, i + 2);
+                accumulate_face_normal(normals, meshData, i0, i1, i2);
+            }
+            break;
+        case R3D_PRIMITIVE_TRIANGLE_FAN: {
+            uint32_t center = get_index(meshData, 0);
+            for (int i = 1; i + 1 < count; i++) {
+                accumulate_face_normal(normals, meshData,
+                    center,
+                    get_index(meshData, i),
+                    get_index(meshData, i + 1)
+                );
+            }
+        } break;
+        default:
+            break;
         }
-        break;
-    case R3D_PRIMITIVE_TRIANGLE_STRIP:
-        for (int i = 0; i + 2 < count; i++) {
-            uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
-            uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
-            uint32_t i2 = get_index(meshData, i + 2);
-            accumulate_face_normal(normals, meshData, i0, i1, i2);
+
+        for (int i = 0; i < meshData->vertexCount; i++) {
+            R3D_PackNormal((int8_t*)meshData->vertices[i].normal, Vector3Normalize(normals[i]));
         }
-        break;
-    case R3D_PRIMITIVE_TRIANGLE_FAN: {
-        uint32_t center = get_index(meshData, 0);
-        for (int i = 1; i + 1 < count; i++) {
-            accumulate_face_normal(normals, meshData,
-                center,
-                get_index(meshData, i),
-                get_index(meshData, i + 1)
-            );
-        }
-    } break;
-    default:
-        break;
     }
 
-    for (int i = 0; i < meshData->vertexCount; i++) {
-        R3D_PackNormal((int8_t*)meshData->vertices[i].normal, Vector3Normalize(normals[i]));
+    if (!ok) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to allocate temporary vertex buffer to generate normals");
     }
-
-    MemFree(normals);
 }
 
 static void process_triangle_tangents(Vector3* tangents, Vector3* bitangents, R3D_MeshData* meshData, uint32_t i0, uint32_t i1, uint32_t i2)
@@ -1942,72 +1951,77 @@ void R3D_GenMeshDataTangents(R3D_MeshData* meshData, R3D_PrimitiveType type)
         return;
     }
 
-    Vector3* tangents = MemAlloc(meshData->vertexCount * sizeof(Vector3));
-    Vector3* bitangents = MemAlloc(meshData->vertexCount * sizeof(Vector3));
-    if (tangents == NULL || bitangents == NULL) {
-        R3D_TRACELOG(LOG_ERROR, "Failed to allocate memory for tangent calculation");
-        MemFree(tangents);
-        MemFree(bitangents);
-        return;
-    }
+    size_t bufferSize = meshData->vertexCount * sizeof(Vector3);
+    bool ok;
 
-    int count = meshData->indexCount > 0 ? meshData->indexCount : meshData->vertexCount;
-
-    switch (type) {
-    case R3D_PRIMITIVE_TRIANGLES:
-        for (int i = 0; i + 2 < count; i += 3) {
-            process_triangle_tangents(tangents, bitangents, meshData,
-                get_index(meshData, i),
-                get_index(meshData, i + 1),
-                get_index(meshData, i + 2)
-            );
-        }
-        break;
-    case R3D_PRIMITIVE_TRIANGLE_STRIP:
-        for (int i = 0; i + 2 < count; i++) {
-            uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
-            uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
-            uint32_t i2 = get_index(meshData, i + 2);
-            process_triangle_tangents(tangents, bitangents, meshData, i0, i1, i2);
-        }
-        break;
-    case R3D_PRIMITIVE_TRIANGLE_FAN: {
-        uint32_t center = get_index(meshData, 0);
-        for (int i = 1; i + 1 < count; i++) {
-            process_triangle_tangents(tangents, bitangents, meshData,
-                center,
-                get_index(meshData, i),
-                get_index(meshData, i + 1)
-            );
-        }
-    } break;
-    default:
-        break;
-    }
-
-    // Orthogonalization (Gram-Schmidt) and handedness calculation
-    for (int i = 0; i < meshData->vertexCount; i++)
+    R3D_STACK_SCOPE(&R3D.stack, 2 * bufferSize, ok)
     {
-        Vector3 n = R3D_UnpackNormal((int8_t*)meshData->vertices[i].normal);
-        Vector3 t = tangents[i];
+        Vector3* tangents = r3d_stack_alloc(&R3D.stack, bufferSize);
+        memset(tangents, 0, bufferSize);
 
-        // Gram-Schmidt orthogonalization
-        t = Vector3Subtract(t, Vector3Scale(n, Vector3DotProduct(n, t)));
-        float tLength = Vector3Length(t);
-        if (tLength > 1e-6f) {
-            t = Vector3Scale(t, 1.0f / tLength);
-        } else {
-            // Fallback: generate an arbitrary tangent perpendicular to the normal
-            t = fabsf(n.x) < 0.9f ? (Vector3){1.0f, 0.0f, 0.0f} : (Vector3){0.0f, 1.0f, 0.0f};
-            t = Vector3Normalize(Vector3Subtract(t, Vector3Scale(n, Vector3DotProduct(n, t))));
+        Vector3* bitangents = r3d_stack_alloc(&R3D.stack, bufferSize);
+        memset(bitangents, 0, bufferSize);
+
+        int count = meshData->indexCount > 0
+            ? meshData->indexCount : meshData->vertexCount;
+
+        switch (type) {
+        case R3D_PRIMITIVE_TRIANGLES:
+            for (int i = 0; i + 2 < count; i += 3) {
+                process_triangle_tangents(tangents, bitangents, meshData,
+                    get_index(meshData, i),
+                    get_index(meshData, i + 1),
+                    get_index(meshData, i + 2)
+                );
+            }
+            break;
+        case R3D_PRIMITIVE_TRIANGLE_STRIP:
+            for (int i = 0; i + 2 < count; i++) {
+                uint32_t i0 = get_index(meshData, i % 2 == 0 ? i     : i + 1);
+                uint32_t i1 = get_index(meshData, i % 2 == 0 ? i + 1 : i    );
+                uint32_t i2 = get_index(meshData, i + 2);
+                process_triangle_tangents(tangents, bitangents, meshData, i0, i1, i2);
+            }
+            break;
+        case R3D_PRIMITIVE_TRIANGLE_FAN: {
+            uint32_t center = get_index(meshData, 0);
+            for (int i = 1; i + 1 < count; i++) {
+                process_triangle_tangents(tangents, bitangents, meshData,
+                    center,
+                    get_index(meshData, i),
+                    get_index(meshData, i + 1)
+                );
+            }
+        } break;
+        default:
+            break;
         }
 
-        float handedness = Vector3DotProduct(Vector3CrossProduct(n, t), bitangents[i]) < 0.0f ? -1.0f : 1.0f;
-        R3D_PackTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){t.x, t.y, t.z, handedness});
+        // Orthogonalization (Gram-Schmidt) and handedness calculation
+        for (int i = 0; i < meshData->vertexCount; i++)
+        {
+            Vector3 n = R3D_UnpackNormal((int8_t*)meshData->vertices[i].normal);
+            Vector3 t = tangents[i];
+
+            // Gram-Schmidt orthogonalization
+            t = Vector3Subtract(t, Vector3Scale(n, Vector3DotProduct(n, t)));
+            float tLength = Vector3Length(t);
+            if (tLength > 1e-6f) {
+                t = Vector3Scale(t, 1.0f / tLength);
+            } else {
+                // Fallback: generate an arbitrary tangent perpendicular to the normal
+                t = fabsf(n.x) < 0.9f ? (Vector3){1.0f, 0.0f, 0.0f} : (Vector3){0.0f, 1.0f, 0.0f};
+                t = Vector3Normalize(Vector3Subtract(t, Vector3Scale(n, Vector3DotProduct(n, t))));
+            }
+
+            float handedness = Vector3DotProduct(Vector3CrossProduct(n, t), bitangents[i]) < 0.0f ? -1.0f : 1.0f;
+            R3D_PackTangent((int8_t*)meshData->vertices[i].tangent, (Vector4){t.x, t.y, t.z, handedness});
+        }
     }
 
-    MemFree(tangents);
-    MemFree(bitangents);
+    if (!ok) {
+        R3D_TRACELOG(LOG_ERROR, "Failed to allocate temporary vertex buffer to generate tangents");
+    }
 }
 
 BoundingBox R3D_CalculateMeshDataBoundingBox(R3D_MeshData meshData)
