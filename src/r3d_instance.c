@@ -122,7 +122,7 @@ R3D_InstanceBuffer R3D_LoadInstanceBufferEx(int capacity, R3D_InstanceLayout lay
     glGenBuffers(R3D_INSTANCE_ATTRIBUTE_COUNT, buffer.buffers);
 
     for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
-        if (!BIT_TEST(layout.flags, 1u << i)) continue;
+        if (!R3D_BIT_ANY(layout.flags, 1u << i)) continue;
 
         size_t size = 0;
         if (!get_buffer_size(capacity, i, layout.formats[i], &size)) {
@@ -178,7 +178,7 @@ void R3D_ResizeInstanceBuffer(R3D_InstanceBuffer* buffer, int newCapacity, bool 
     if (!keepData) {
         // Orphan path: reallocate existing buffers in-place, avoids GPU stall and new IDs
         for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
-            if (!BIT_TEST(buffer->layout.flags, 1u << i)) continue;
+            if (!R3D_BIT_ANY(buffer->layout.flags, 1u << i)) continue;
 
             size_t newSize = 0;
             if (!get_buffer_size(newCapacity, i, buffer->layout.formats[i], &newSize)) {
@@ -210,7 +210,7 @@ void R3D_ResizeInstanceBuffer(R3D_InstanceBuffer* buffer, int newCapacity, bool 
         GLuint newBuffers[R3D_INSTANCE_ATTRIBUTE_COUNT] = {0};
 
         for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
-            if (!BIT_TEST(buffer->layout.flags, 1u << i)) continue;
+            if (!R3D_BIT_ANY(buffer->layout.flags, 1u << i)) continue;
 
             size_t newSize = 0;
             if (!get_buffer_size(newCapacity, i, buffer->layout.formats[i], &newSize)) {
@@ -277,7 +277,7 @@ void R3D_UploadInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag,
         return;
     }
 
-    if (!BIT_TEST(buffer.layout.flags, flag)) {
+    if (!R3D_BIT_ANY(buffer.layout.flags, flag)) {
         R3D_TRACELOG(LOG_WARNING, "UploadInstances -> attribute not allocated (flag=0x%04x)", flag);
         return;
     }
@@ -338,7 +338,7 @@ void* R3D_MapInstancesEx(R3D_InstanceBuffer buffer, R3D_InstanceFlags flag,
         return NULL;
     }
 
-    if (!BIT_TEST(buffer.layout.flags, flag)) {
+    if (!R3D_BIT_ANY(buffer.layout.flags, flag)) {
         R3D_TRACELOG(LOG_WARNING, "MapInstancesEx -> attribute not allocated (flag=0x%04x)", flag);
         return NULL;
     }
@@ -390,7 +390,7 @@ void R3D_UnmapInstances(R3D_InstanceBuffer buffer, R3D_InstanceFlags flags)
     for (int i = 0; i < R3D_INSTANCE_ATTRIBUTE_COUNT; i++) {
         R3D_InstanceFlags flag = 1u << i;
 
-        if (!BIT_TEST(flags, flag) || !BIT_TEST(buffer.layout.flags, flag)) {
+        if (!R3D_BIT_ANY(flags, flag) || !R3D_BIT_ANY(buffer.layout.flags, flag)) {
             continue;
         }
 

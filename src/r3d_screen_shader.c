@@ -192,7 +192,7 @@ void R3D_SetScreenShaderChain(R3D_ScreenShaderStage stage, R3D_ScreenShader** sh
         R3D_TRACELOG(LOG_WARNING, "Invalid screen shader stage: %d", stage);
     }
 
-    size_t maxChain = ARRAY_SIZE(R3D.screenShaders[stage]);
+    size_t maxChain = R3D_ARRAY_SIZE(R3D.screenShaders[stage]);
 
     if (count > (int)maxChain) {
         R3D_TRACELOG(

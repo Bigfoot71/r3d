@@ -68,40 +68,40 @@ void R3D_SetHint(R3D_Hint hint, int value)
 
     switch (hint) {
     case R3D_HINT_MESH_VERTEX_BUFFER_CAPACITY:
-        value = MAX(value, MIN_BUFFER_SZ);
+        value = R3D_MAX(value, MIN_BUFFER_SZ);
         break;
     case R3D_HINT_MESH_INDEX_BUFFER_CAPACITY:
-        value = MAX(value, MIN_BUFFER_SZ);
+        value = R3D_MAX(value, MIN_BUFFER_SZ);
         break;
     case R3D_HINT_MESH_STREAMING_CAPACITY:
-        value = MAX(value, MIN_FREE_SLOTS);
+        value = R3D_MAX(value, MIN_FREE_SLOTS);
         break;
     case R3D_HINT_DRAW_CALL_CAPACITY:
-        value = MAX(value, MIN_DRAW_CALLS);
+        value = R3D_MAX(value, MIN_DRAW_CALLS);
         break;
     case R3D_HINT_FORWARD_LIGHT_PER_MESH:
-        value = CLAMP(value, 1, R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
+        value = R3D_CLAMP(value, 1, R3D_SHADER_LIGHT_FORWARD_UBO_CAP);
         break;
     case R3D_HINT_PROBE_MAX_ACTIVE:
-        value = CLAMP(value, 1, R3D_SHADER_PROBE_UBO_CAP);
+        value = R3D_CLAMP(value, 1, R3D_SHADER_PROBE_UBO_CAP);
         break;
     case R3D_HINT_PROBE_CAPTURE_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        value = R3D_CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_SHADOW_DIR_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        value = R3D_CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_SHADOW_SPOT_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        value = R3D_CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_SHADOW_OMNI_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        value = R3D_CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_IBL_IRRADIANCE_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        value = R3D_CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_IBL_PREFILTER_SIZE:
-        value = CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
+        value = R3D_CLAMP(value, MIN_TEXMAP_SIZE, maxTexSize);
         break;
     case R3D_HINT_COUNT:
         break;
@@ -228,7 +228,7 @@ R3D_AntiAliasingPreset R3D_GetAntiAliasingPreset(void)
 
 void R3D_SetAntiAliasingPreset(R3D_AntiAliasingPreset preset)
 {
-    R3D.aaPreset = CLAMP(preset, 0, R3D_ANTI_ALIASING_PRESET_COUNT - 1);
+    R3D.aaPreset = R3D_CLAMP(preset, 0, R3D_ANTI_ALIASING_PRESET_COUNT - 1);
 }
 
 R3D_AspectMode R3D_GetAspectMode(void)

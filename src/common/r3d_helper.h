@@ -22,69 +22,39 @@
 // HELPER MACROS
 // ========================================
 
-#ifndef MIN
-#   define MIN(x, y) ((x) < (y) ? (x) : (y))
-#endif
+#define R3D_MIN(x, y) ((x) < (y) ? (x) : (y))
+#define R3D_MAX(x, y) ((x) > (y) ? (x) : (y))
 
-#ifndef MAX
-#   define MAX(x, y) ((x) > (y) ? (x) : (y))
-#endif
+#define R3D_CLAMP(v, min, max) ((v) < (min) ? (min) : ((v) > (max) ? (max) : (v)))
+#define R3D_SATURATE(x) (R3D_CLAMP(x, 0.0f, 1.0f))
 
-#ifndef CLAMP
-#   define CLAMP(v, min, max) ((v) < (min) ? (min) : ((v) > (max) ? (max) : (v)))
-#endif
+#define R3D_ARRAY_SIZE(arr) (sizeof((arr)) / sizeof((arr)[0]))
 
-#ifndef SATURATE
-#   define SATURATE(x) (CLAMP(x, 0.0f, 1.0f))
-#endif
+#define R3D_SWAP(type, a, b) do { type _tmp = (a); (a) = (b); (b) = _tmp; } while (0)
 
-#ifndef ARRAY_SIZE
-#   define ARRAY_SIZE(arr) (sizeof((arr)) / sizeof((arr)[0]))
-#endif
+#define R3D_BIT_SET(v, m) ((v) |= (m))
 
-#ifndef SWAP
-#   define SWAP(type, a, b) do { type _tmp = (a); (a) = (b); (b) = _tmp; } while (0)
-#endif
+#define R3D_BIT_CLEAR(v, m) ((v) &= ~(m))
 
-#ifndef BIT_SET
-#   define BIT_SET(v, m) ((v) |= (m))
-#endif
+#define R3D_BIT_TOGGLE(v, m) ((v) ^= (m))
 
-#ifndef BIT_CLEAR
-#   define BIT_CLEAR(v, m) ((v) &= ~(m))
-#endif
+#define R3D_BIT_ALL(v, m) (((v) & (m)) == (m))
 
-#ifndef BIT_TOGGLE
-#   define BIT_TOGGLE(v, m) ((v) ^= (m))
-#endif
+#define R3D_BIT_ANY(v, m) (((v) & (m)) != 0)
 
-#ifndef BIT_TEST_ALL
-#   define BIT_TEST_ALL(v, m) (((v) & (m)) == (m))
-#endif
-
-#ifndef BIT_TEST_ANY
-#   define BIT_TEST_ANY(v, m) (((v) & (m)) != 0)
-#endif
-
-#ifndef BIT_TEST
-#   define BIT_TEST(v, b) BIT_TEST_ANY(v, b)
-#endif
-
-#ifndef MAX_OF
-#   define MAX_OF(x) _Generic((x), \
-        char: CHAR_MAX, \
-        signed char: SCHAR_MAX, \
-        unsigned char: UCHAR_MAX, \
-        short: SHRT_MAX, \
-        unsigned short: USHRT_MAX, \
-        int: INT_MAX, \
-        unsigned int: UINT_MAX, \
-        long: LONG_MAX, \
-        unsigned long: ULONG_MAX, \
-        long long: LLONG_MAX, \
-        unsigned long long: ULLONG_MAX \
-    )
-#endif
+#define R3D_MAXOF(x) _Generic((x), \
+    char: CHAR_MAX, \
+    signed char: SCHAR_MAX, \
+    unsigned char: UCHAR_MAX, \
+    short: SHRT_MAX, \
+    unsigned short: USHRT_MAX, \
+    int: INT_MAX, \
+    unsigned int: UINT_MAX, \
+    long: LONG_MAX, \
+    unsigned long: ULONG_MAX, \
+    long long: LLONG_MAX, \
+    unsigned long long: ULLONG_MAX \
+)
 
 #define R3D_CONCAT_(a, b) a##b
 #define R3D_CONCAT(a, b)  R3D_CONCAT_(a, b)

@@ -222,7 +222,7 @@ static bool stm_update_edge(const R3D_AnimationTree* atree, r3d_animtree_stm_t* 
         float wInc = Remap(elapsedTime, 0.0f, xFade, 0.0f, 1.0f);
         edge->endWeight += wInc;
 
-        float wClamp = CLAMP(edge->endWeight, 0.0f, 1.0f);
+        float wClamp = R3D_CLAMP(edge->endWeight, 0.0f, 1.0f);
         float wDelta = edge->endWeight - wClamp;
         edge->endWeight = wClamp;
         *consumedTime = (wInc > 0.0f ? elapsedTime * (1.0f - wDelta/wInc) : elapsedTime);
@@ -296,7 +296,7 @@ static bool stm_update_state(const R3D_AnimationTree* atree, r3d_animtree_stm_t*
 
     *stmDone = (edgeDone && (nodeList[*activeIdx].base->type == R3D_ANIMTREE_STM_X));
     *doNext = nodeDone && isNext && !*stmDone;
-    *consumedTime = MAX(edgeTime, nodeInfo.consumedTime);
+    *consumedTime = R3D_MAX(edgeTime, nodeInfo.consumedTime);
 
     return true;
 }
@@ -517,7 +517,7 @@ static bool anode_update_anim(r3d_animtree_anim_t* node, float elapsedTime, upin
             s->currentTime -= copysignf(duration, speed);
         }
         else {
-            float tClamp = CLAMP(s->currentTime, 0.0f, duration);
+            float tClamp = R3D_CLAMP(s->currentTime, 0.0f, duration);
             float tDelta = s->currentTime - tClamp;
             elapsedTime = (!FloatEquals(tInc, 0.0f) ? elapsedTime * (1.0f - tDelta/tInc) : 0.0f);
             s->currentTime = tClamp;
@@ -530,7 +530,7 @@ static bool anode_update_anim(r3d_animtree_anim_t* node, float elapsedTime, upin
 
     if (info) {
         float xFade = info->xFade;
-        float durXFade = CLAMP(duration - xFade, 0.0f, duration);
+        float durXFade = R3D_CLAMP(duration - xFade, 0.0f, duration);
         bool crossXFade = ((speed < 0.0f && tCur <= xFade) || (speed > 0.0f && tCur >= durXFade));
         *info = (upinfo_t) {
             .anodeDone = crossXFade ? node->params.looper : false,
@@ -591,7 +591,7 @@ static bool anode_update_switch(const R3D_AnimationTree* atree, r3d_animtree_swi
         float wFade = Remap(elapsedTime, 0.0f, xFade, 0.0f, 1.0f);
         for (int i = 0; i < inCount; i++) {
             float wSign = (i == activeIn) ? 1.0f : -1.0f;
-            node->inWeights[i] = CLAMP(node->inWeights[i] + wSign*wFade, 0.0f, 1.0f);
+            node->inWeights[i] = R3D_CLAMP(node->inWeights[i] + wSign*wFade, 0.0f, 1.0f);
         }
     }
 
@@ -761,7 +761,7 @@ static bool anode_eval_blend2(const R3D_AnimationTree* atree, r3d_animtree_blend
         }
     }
 
-    const float w = CLAMP(node->params.blend, 0.0f, 1.0f);
+    const float w = R3D_CLAMP(node->params.blend, 0.0f, 1.0f);
     *out = doBlend ? r3d_anim_transform_lerp(in[0], in[1], w) : in[0];
 
     if (isRm) {
@@ -798,7 +798,7 @@ static bool anode_eval_add2(const R3D_AnimationTree* atree, r3d_animtree_add2_t*
         }
     }
 
-    const float w = CLAMP(node->params.weight, 0.0f, 1.0f);
+    const float w = R3D_CLAMP(node->params.weight, 0.0f, 1.0f);
     *out = doAdd ? r3d_anim_transform_add_v(in[0], in[1], w) : in[0];
 
     if (isRm) {
@@ -880,7 +880,7 @@ static bool anode_eval_stm(const R3D_AnimationTree* atree, r3d_animtree_stm_t* n
         return false;
     }
 
-    const float endWeight = CLAMP(edge->endWeight, 0.0f, 1.0f);
+    const float endWeight = R3D_CLAMP(edge->endWeight, 0.0f, 1.0f);
     *out = r3d_anim_transform_lerp(edgeTr, activeTr, endWeight);
 
     if (isRm) {

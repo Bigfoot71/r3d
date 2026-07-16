@@ -236,7 +236,7 @@ R3D_Mesh R3D_GenMeshCylinderEx(float bottomRadius, float topRadius, float height
     R3D_MeshData data = R3D_GenMeshDataCylinderEx(bottomRadius, topRadius, height, slices, stacks, bottomCap, topCap);
     if (!R3D_IsMeshDataValid(data)) return mesh;
 
-    float radius = MAX(bottomRadius, topRadius);
+    float radius = R3D_MAX(bottomRadius, topRadius);
 
     BoundingBox aabb = {
         {-radius, -height * 0.5f, -radius},

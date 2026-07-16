@@ -187,9 +187,9 @@ static bool process_bones(const struct aiMesh* aiMesh, R3D_MeshData* data, int v
     }
 
     // Check if the mesh has too many bones
-    if (aiMesh->mNumBones > MAX_OF(*data->vertices->boneIndices) + 1) {
+    if (aiMesh->mNumBones > R3D_MAXOF(*data->vertices->boneIndices) + 1) {
         R3D_TRACELOG(LOG_WARNING, "Mesh has %u bones, max %d supported",
-            aiMesh->mNumBones, MAX_OF(*data->vertices->boneIndices) + 1);
+            aiMesh->mNumBones, R3D_MAXOF(*data->vertices->boneIndices) + 1);
         return false;
     }
 
@@ -235,24 +235,24 @@ static R3D_PrimitiveType get_primitive_type(unsigned int aiPrimitiveTypes)
     // but we use `aiProcess_SortByPType` during import, which resolves this issue,
     // so we can assume there is only one primitive type per mesh.
 
-    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_POINT)) {
+    if (R3D_BIT_ANY(aiPrimitiveTypes, aiPrimitiveType_POINT)) {
         return R3D_PRIMITIVE_POINTS;
     }
 
-    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_LINE)) {
+    if (R3D_BIT_ANY(aiPrimitiveTypes, aiPrimitiveType_LINE)) {
         return R3D_PRIMITIVE_LINES;
     }
 
-    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_TRIANGLE)) {
+    if (R3D_BIT_ANY(aiPrimitiveTypes, aiPrimitiveType_TRIANGLE)) {
         return R3D_PRIMITIVE_TRIANGLES;
     }
 
     // NOTE: This should never happen if the mesh has been triangulated.
-    //if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_POLYGON)) {
+    //if (R3D_BIT_ANY(aiPrimitiveTypes, aiPrimitiveType_POLYGON)) {
     //    return 0;
     //}
 
-    if (BIT_TEST(aiPrimitiveTypes, aiPrimitiveType_NGONEncodingFlag)) {
+    if (R3D_BIT_ANY(aiPrimitiveTypes, aiPrimitiveType_NGONEncodingFlag)) {
         R3D_TRACELOG(LOG_WARNING, "NGON primitive encoding not supported");
         return R3D_PRIMITIVE_TRIANGLE_FAN;
     }
@@ -381,8 +381,8 @@ bool r3d_importer_load_meshes(const R3D_Importer* importer, R3D_Model* model)
         return false;
     }
 
-    bool keepMeshData = BIT_TEST(importer->flags, R3D_IMPORT_RETAIN_MESH_DATA);
-    bool keepMeshNames = BIT_TEST(importer->flags, R3D_IMPORT_RETAIN_MESH_NAMES);
+    bool keepMeshData = R3D_BIT_ANY(importer->flags, R3D_IMPORT_RETAIN_MESH_DATA);
+    bool keepMeshNames = R3D_BIT_ANY(importer->flags, R3D_IMPORT_RETAIN_MESH_NAMES);
 
     const struct aiScene* scene = r3d_importer_get_scene(importer);
 

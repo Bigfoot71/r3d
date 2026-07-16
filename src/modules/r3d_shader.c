@@ -159,7 +159,7 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 } while(0)
 
 #define UNLOAD_SHADERS(shader_name) do {                                        \
-    for (int i = 0; i < ARRAY_SIZE(R3D_MOD_SHADER.shader_name); i++) {          \
+    for (int i = 0; i < R3D_ARRAY_SIZE(R3D_MOD_SHADER.shader_name); i++) {          \
         if (R3D_MOD_SHADER.shader_name[i].id != 0) {                            \
             glDeleteProgram(R3D_MOD_SHADER.shader_name[i].id);                  \
         }                                                                       \
@@ -587,10 +587,10 @@ static bool load_prepare_smaa_edge_detection(r3d_shader_custom_t* custom, int in
     shader_source_desc_t desc = {
         .vsTemplate = SMAA_EDGE_DETECTION_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = SMAA_EDGE_DETECTION_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = NULL,
     };
 
@@ -636,10 +636,10 @@ static bool load_prepare_smaa_blending_weights(r3d_shader_custom_t* custom, int 
     shader_source_desc_t desc = {
         .vsTemplate = SMAA_BLENDING_WEIGTHS_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = SMAA_BLENDING_WEIGTHS_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = NULL,
     };
 
@@ -789,10 +789,10 @@ bool r3d_shader_load_scene_geometry(r3d_shader_custom_t* custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = GEOMETRY_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -854,10 +854,10 @@ bool r3d_shader_load_scene_forward(r3d_shader_custom_t* custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = FORWARD_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -922,10 +922,10 @@ bool r3d_shader_load_scene_unlit(r3d_shader_custom_t *custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = UNLIT_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -999,10 +999,10 @@ bool r3d_shader_load_scene_depth(r3d_shader_custom_t* custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = DEPTH_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -1048,10 +1048,10 @@ bool r3d_shader_load_scene_depth_cube(r3d_shader_custom_t* custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = DEPTH_CUBE_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -1105,10 +1105,10 @@ bool r3d_shader_load_scene_probe_forward(r3d_shader_custom_t* custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = FORWARD_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -1177,10 +1177,10 @@ bool r3d_shader_load_scene_probe_unlit(r3d_shader_custom_t *custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = UNLIT_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -1229,10 +1229,10 @@ bool r3d_shader_load_scene_decal(r3d_shader_custom_t* custom)
     shader_source_desc_t desc = {
         .vsTemplate = SCENE_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = DECAL_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
         .userCode = userCode,
     };
 
@@ -1291,7 +1291,7 @@ bool r3d_shader_load_deferred_ambient(r3d_shader_custom_t* custom)
         .vsTemplate = SCREEN_VERT,
         .fsTemplate = AMBIENT_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
     };
 
     DECL_SHADER(r3d_shader_deferred_ambient_t, deferred, ambient);
@@ -1513,7 +1513,7 @@ static bool load_post_fxaa(r3d_shader_custom_t* custom, int index)
         .vsTemplate = SCREEN_VERT,
         .fsTemplate = FXAA_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
     };
 
     DECL_SHADER_INDEXED(r3d_shader_post_fxaa_t, post, fxaa, index);
@@ -1558,10 +1558,10 @@ static bool load_post_smaa(r3d_shader_custom_t* custom, int index)
     shader_source_desc_t desc = {
         .vsTemplate = SMAA_VERT,
         .vsDefines = VS_DEFINES,
-        .vsDefineCount = ARRAY_SIZE(VS_DEFINES),
+        .vsDefineCount = R3D_ARRAY_SIZE(VS_DEFINES),
         .fsTemplate = SMAA_FRAG,
         .fsDefines = FS_DEFINES,
-        .fsDefineCount = ARRAY_SIZE(FS_DEFINES),
+        .fsDefineCount = R3D_ARRAY_SIZE(FS_DEFINES),
     };
 
     DECL_SHADER_INDEXED(r3d_shader_post_smaa_t, post, smaa, index);

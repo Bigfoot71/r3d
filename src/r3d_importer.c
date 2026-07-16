@@ -40,15 +40,15 @@ static enum aiPostProcessSteps build_flags(R3D_ImportFlags flags)
 {
     enum aiPostProcessSteps aiFlags = POST_PROCESS_BASELINE;
 
-    aiFlags |= BIT_TEST(flags, R3D_IMPORT_SMOOTH_NORMALS)
+    aiFlags |= R3D_BIT_ANY(flags, R3D_IMPORT_SMOOTH_NORMALS)
         ? aiProcess_GenSmoothNormals
         : aiProcess_GenNormals;
 
-    if (BIT_TEST(flags, R3D_IMPORT_OPTIMIZE_MESH)) {
+    if (R3D_BIT_ANY(flags, R3D_IMPORT_OPTIMIZE_MESH)) {
         aiFlags |= aiProcess_ImproveCacheLocality | aiProcess_SplitLargeMeshes;
     }
 
-    if (BIT_TEST(flags, R3D_IMPORT_VALIDATE_DATA)) {
+    if (R3D_BIT_ANY(flags, R3D_IMPORT_VALIDATE_DATA)) {
         aiFlags |= aiProcess_FindDegenerates | aiProcess_FindInvalidData;
     }
 

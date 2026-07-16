@@ -219,12 +219,12 @@ static bool probe_init(r3d_env_probe_t* probe, R3D_ProbeFlags flags)
     probe->irradiance = -1;
     probe->prefilter = -1;
 
-    if (BIT_TEST(flags, R3D_PROBE_ILLUMINATION)) {
+    if (R3D_BIT_ANY(flags, R3D_PROBE_ILLUMINATION)) {
         probe->irradiance = r3d_env_irradiance_reserve_layer();
         if (probe->irradiance == -1) return false;
     }
 
-    if (BIT_TEST(flags, R3D_PROBE_REFLECTION)) {
+    if (R3D_BIT_ANY(flags, R3D_PROBE_REFLECTION)) {
         probe->prefilter = r3d_env_prefilter_reserve_layer();
         if (probe->prefilter == -1) {
             if (probe->irradiance >= 0) {
@@ -356,7 +356,7 @@ void r3d_env_quit(void)
 
 R3D_Probe r3d_env_probe_new(R3D_ProbeFlags flags)
 {
-    if (!BIT_TEST_ANY(flags, R3D_PROBE_ILLUMINATION | R3D_PROBE_REFLECTION)) {
+    if (!R3D_BIT_ANY(flags, R3D_PROBE_ILLUMINATION | R3D_PROBE_REFLECTION)) {
         R3D_TRACELOG(LOG_FATAL, "Failed to create probe; Invalid flags");
         return R3D_POOL_ID_NULL;
     }

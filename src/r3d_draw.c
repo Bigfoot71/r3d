@@ -38,7 +38,7 @@
     (((mesh).vertexCount > 0) && ((mesh).layerMask != 0))
 
 #define IS_MESH_VISIBLE(mesh, cullMask) \
-    (BIT_TEST_ANY((cullMask), (mesh).layerMask))
+    (R3D_BIT_ANY((cullMask), (mesh).layerMask))
 
 #define IS_MESH_VISIBLE_CAMERA(mesh) \
     (IS_MESH_VISIBLE((mesh), R3D.viewState.camera.cullMask))
@@ -372,8 +372,8 @@ void R3D_DrawMeshInstancedPro(R3D_Mesh mesh, R3D_Material material, R3D_Instance
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
-    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
+    drawGroup.instanceOffset = R3D_CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = R3D_CLAMP(count, 0, instances.capacity - offset);
 
     r3d_render_group_push(&drawGroup);
 
@@ -438,8 +438,8 @@ void R3D_DrawModelInstancedPro(R3D_Model model, R3D_InstanceBuffer instances, in
     drawGroup.transform = transform;
     drawGroup.skinTexture = model.skeleton.skinTexture;
     drawGroup.instances = instances;
-    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
+    drawGroup.instanceOffset = R3D_CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = R3D_CLAMP(count, 0, instances.capacity - offset);
 
     r3d_render_group_push(&drawGroup);
 
@@ -511,8 +511,8 @@ void R3D_DrawAnimatedModelInstancedPro(R3D_Model model, R3D_AnimationPlayer play
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
-    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
+    drawGroup.instanceOffset = R3D_CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = R3D_CLAMP(count, 0, instances.capacity - offset);
 
     drawGroup.skinTexture = (player.skinTexture > 0)
         ? player.skinTexture : model.skeleton.skinTexture;
@@ -583,8 +583,8 @@ void R3D_DrawDecalInstancedPro(R3D_Decal decal, R3D_InstanceBuffer instances, in
     r3d_render_group_t drawGroup = {0};
     drawGroup.transform = transform;
     drawGroup.instances = instances;
-    drawGroup.instanceOffset = CLAMP(offset, 0, instances.capacity);
-    drawGroup.instanceCount = CLAMP(count, 0, instances.capacity - offset);
+    drawGroup.instanceOffset = R3D_CLAMP(offset, 0, instances.capacity);
+    drawGroup.instanceCount = R3D_CLAMP(count, 0, instances.capacity - offset);
 
     r3d_render_group_push(&drawGroup);
 
@@ -830,7 +830,7 @@ void upload_fx_block(void)
         block.uSsao.sampleCount = env->ssao.sampleCount;
         block.uSsao.intensity = env->ssao.intensity;
         block.uSsao.power = env->ssao.power;
-        block.uSsao.ssMaxRadius = env->ssao.maxRadius * (float)MIN(wSsao, hSsao);
+        block.uSsao.ssMaxRadius = env->ssao.maxRadius * (float)R3D_MIN(wSsao, hSsao);
         block.uSsao.radius = env->ssao.radius;
         block.uSsao.bias = env->ssao.bias;
         block.uSsao.enabled = env->ssao.enabled;
@@ -843,7 +843,7 @@ void upload_fx_block(void)
         block.uSsil.giIntensity = env->ssil.giIntensity;
         block.uSsil.aoIntensity = env->ssil.aoIntensity;
         block.uSsil.aoPower = env->ssil.aoPower;
-        block.uSsil.ssMaxRadius = env->ssil.maxRadius * (float)MIN(wSsil, hSsil);
+        block.uSsil.ssMaxRadius = env->ssil.maxRadius * (float)R3D_MIN(wSsil, hSsil);
         block.uSsil.radius = env->ssil.radius;
         block.uSsil.bias = env->ssil.bias;
         block.uSsil.enabled = env->ssil.enabled;
@@ -1900,7 +1900,7 @@ r3d_target_t pass_prepare_ssil(void)
         R3D_SHADER_BIND_SAMPLER(prepare.denoiserSparse, uSourceTex, r3d_target_get(src));
         R3D_RENDER_SCREEN();
 
-        SWAP(r3d_target_t, src, dst);
+        R3D_SWAP(r3d_target_t, src, dst);
     }
 
     return src;
@@ -1977,7 +1977,7 @@ r3d_target_t pass_prepare_ssgi(void)
         R3D_SHADER_SET_FLOAT(prepare.denoiserAtrous, uDepthSharpness, 100.0f);
 
         int stepWidth[] = {16, 8, 4, 2, 1};
-        steps = MIN(steps, ARRAY_SIZE(stepWidth));
+        steps = R3D_MIN(steps, R3D_ARRAY_SIZE(stepWidth));
 
         for (int i = 0; i < steps; i++)
         {
@@ -1989,7 +1989,7 @@ r3d_target_t pass_prepare_ssgi(void)
             R3D_SHADER_SET_INT(prepare.denoiserAtrous, uStepWidth, stepWidth[i]);
             R3D_RENDER_SCREEN();
 
-            SWAP(r3d_target_t, src, dst);
+            R3D_SWAP(r3d_target_t, src, dst);
         }
     }
 
@@ -2567,7 +2567,7 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
 
     R3D_RENDER_SCREEN();
 
-    SWAP(r3d_target_t, EXPOSURE_DST, EXPOSURE_SRC);
+    R3D_SWAP(r3d_target_t, EXPOSURE_DST, EXPOSURE_SRC);
 
     /* --- Apply exposure --- */
 
@@ -2583,7 +2583,7 @@ r3d_target_t pass_post_auto_exposure(r3d_target_t sceneTarget)
 
 r3d_target_t pass_post_screen(R3D_ScreenShaderStage stage, r3d_target_t sceneTarget)
 {
-    for (int i = 0; i < ARRAY_SIZE(R3D.screenShaders[stage]); i++)
+    for (int i = 0; i < R3D_ARRAY_SIZE(R3D.screenShaders[stage]); i++)
     {
         R3D_ScreenShader* shader = R3D.screenShaders[stage][i];
         if (shader == NULL) continue;

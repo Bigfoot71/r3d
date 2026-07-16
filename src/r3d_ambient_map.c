@@ -69,7 +69,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
     r3d_render_prepare_drawing();
 
     int irradiance = -1;
-    if (BIT_TEST(flags, R3D_AMBIENT_ILLUMINATION)) {
+    if (R3D_BIT_ANY(flags, R3D_AMBIENT_ILLUMINATION)) {
         irradiance = r3d_env_irradiance_reserve_layer();
         if (irradiance < 0) {
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
@@ -79,7 +79,7 @@ R3D_AmbientMap R3D_GenAmbientMap(R3D_Cubemap cubemap, R3D_AmbientFlags flags)
     }
 
     int prefilter = -1;
-    if (BIT_TEST(flags, R3D_AMBIENT_REFLECTION)) {
+    if (R3D_BIT_ANY(flags, R3D_AMBIENT_REFLECTION)) {
         prefilter = r3d_env_prefilter_reserve_layer();
         if (prefilter < 0) {
             R3D_TRACELOG(LOG_WARNING, "Failed to reserve irradiance cubemap for ambient map");
@@ -116,11 +116,11 @@ void R3D_UpdateAmbientMap(R3D_AmbientMap ambientMap, R3D_Cubemap cubemap)
     r3d_driver_store_viewport();
     r3d_render_prepare_drawing();
 
-    if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
+    if (R3D_BIT_ANY(ambientMap.flags, R3D_AMBIENT_ILLUMINATION) && ambientMap.irradiance > 0) {
         r3d_pass_prepare_irradiance((int)ambientMap.irradiance - 1, cubemap.texture, cubemap.size);
     }
 
-    if (BIT_TEST(ambientMap.flags, R3D_AMBIENT_REFLECTION) && ambientMap.prefilter > 0) {
+    if (R3D_BIT_ANY(ambientMap.flags, R3D_AMBIENT_REFLECTION) && ambientMap.prefilter > 0) {
         r3d_pass_prepare_prefilter((int)ambientMap.prefilter - 1, cubemap.texture, cubemap.size);
     }
 

@@ -100,7 +100,7 @@ static inline uint8_t r3d_linear_to_srgb8(float linear)
         ? 12.92f * linear
         : (1.0f + R3D_SRGB_ALPHA) * powf(linear, R3D_SRGB_INV_GAMMA) - R3D_SRGB_ALPHA;
     
-    return (uint8_t)(SATURATE(srgb) * 255.0f + 0.5f);
+    return (uint8_t)(R3D_SATURATE(srgb) * 255.0f + 0.5f);
 }
 
 static inline Vector3 r3d_color_srgb_to_linear_vec3(Color color)
@@ -138,7 +138,7 @@ static inline Color r3d_color_linear_to_srgb_vec4(Vector4 linear)
         r3d_linear_to_srgb8(linear.x),
         r3d_linear_to_srgb8(linear.y),
         r3d_linear_to_srgb8(linear.z),
-        (uint8_t)(SATURATE(linear.w) * 255.0f + 0.5f)
+        (uint8_t)(R3D_SATURATE(linear.w) * 255.0f + 0.5f)
     };
 }
 

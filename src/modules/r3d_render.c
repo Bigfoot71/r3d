@@ -380,14 +380,14 @@ void shape_load_quad(r3d_render_shape_t* shape)
         1, 3, 2
     };
 
-    r3d_render_alloc_vertices(ARRAY_SIZE(vertices), &shape->vertices.offset);
-    r3d_render_alloc_elements(ARRAY_SIZE(INDICES), &shape->elements.offset);
+    r3d_render_alloc_vertices(R3D_ARRAY_SIZE(vertices), &shape->vertices.offset);
+    r3d_render_alloc_elements(R3D_ARRAY_SIZE(INDICES), &shape->elements.offset);
 
-    r3d_render_upload_vertices(shape->vertices.offset, vertices, ARRAY_SIZE(vertices));
-    r3d_render_upload_elements(shape->elements.offset, INDICES, ARRAY_SIZE(INDICES));
+    r3d_render_upload_vertices(shape->vertices.offset, vertices, R3D_ARRAY_SIZE(vertices));
+    r3d_render_upload_elements(shape->elements.offset, INDICES, R3D_ARRAY_SIZE(INDICES));
 
-    shape->vertices.count = ARRAY_SIZE(vertices);
-    shape->elements.count = ARRAY_SIZE(INDICES);
+    shape->vertices.count = R3D_ARRAY_SIZE(vertices);
+    shape->elements.count = R3D_ARRAY_SIZE(INDICES);
 }
 
 void shape_load_cube(r3d_render_shape_t* shape)
@@ -434,14 +434,14 @@ void shape_load_cube(r3d_render_shape_t* shape)
         20,21,22, 22,21,23
     };
 
-    r3d_render_alloc_vertices(ARRAY_SIZE(vertices), &shape->vertices.offset);
-    r3d_render_alloc_elements(ARRAY_SIZE(INDICES), &shape->elements.offset);
+    r3d_render_alloc_vertices(R3D_ARRAY_SIZE(vertices), &shape->vertices.offset);
+    r3d_render_alloc_elements(R3D_ARRAY_SIZE(INDICES), &shape->elements.offset);
 
-    r3d_render_upload_vertices(shape->vertices.offset, vertices, ARRAY_SIZE(vertices));
-    r3d_render_upload_elements(shape->elements.offset, INDICES, ARRAY_SIZE(INDICES));
+    r3d_render_upload_vertices(shape->vertices.offset, vertices, R3D_ARRAY_SIZE(vertices));
+    r3d_render_upload_elements(shape->elements.offset, INDICES, R3D_ARRAY_SIZE(INDICES));
 
-    shape->vertices.count = ARRAY_SIZE(vertices);
-    shape->elements.count = ARRAY_SIZE(INDICES);
+    shape->vertices.count = R3D_ARRAY_SIZE(vertices);
+    shape->elements.count = R3D_ARRAY_SIZE(INDICES);
 }
 
 // ========================================
@@ -466,7 +466,7 @@ static void instances_enable(const GLuint buffers[R3D_INSTANCE_ATTRIBUTE_COUNT],
         GLuint attrib = 10 + i;
         R3D_InstanceFlags flag = 1u << i;
 
-        if (!BIT_TEST(layout.flags, flag)) {
+        if (!R3D_BIT_ANY(layout.flags, flag)) {
             glDisableVertexAttribArray(attrib);
             continue;
         }
@@ -499,23 +499,23 @@ static void instances_disable(R3D_InstanceFlags flags)
 {
     memset(&R3D_MOD_RENDER.instanceState, 0, sizeof(R3D_MOD_RENDER.instanceState));
 
-    if (BIT_TEST(flags, R3D_INSTANCE_POSITION)) {
+    if (R3D_BIT_ANY(flags, R3D_INSTANCE_POSITION)) {
         glDisableVertexAttribArray(10);
     }
 
-    if (BIT_TEST(flags, R3D_INSTANCE_ROTATION)) {
+    if (R3D_BIT_ANY(flags, R3D_INSTANCE_ROTATION)) {
         glDisableVertexAttribArray(11);
     }
 
-    if (BIT_TEST(flags, R3D_INSTANCE_SCALE)) {
+    if (R3D_BIT_ANY(flags, R3D_INSTANCE_SCALE)) {
         glDisableVertexAttribArray(12);
     }
 
-    if (BIT_TEST(flags, R3D_INSTANCE_COLOR)) {
+    if (R3D_BIT_ANY(flags, R3D_INSTANCE_COLOR)) {
         glDisableVertexAttribArray(13);
     }
 
-    if (BIT_TEST(flags, R3D_INSTANCE_CUSTOM)) {
+    if (R3D_BIT_ANY(flags, R3D_INSTANCE_CUSTOM)) {
         glDisableVertexAttribArray(14);
     }
 }

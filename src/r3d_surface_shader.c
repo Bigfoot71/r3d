@@ -366,7 +366,7 @@ bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
     };
 
     for (int i = 0; i < 6; i++) {
-        if (BIT_TEST_ANY(usage, variants[i].condition)) {
+        if (R3D_BIT_ANY(usage, variants[i].condition)) {
             if (!variants[i].func(shader)) {
                 R3D_TRACELOG(LOG_ERROR, "Failed to compile surface shader (variant: '%s')", variants[i].name);
                 return false;
