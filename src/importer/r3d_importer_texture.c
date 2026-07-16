@@ -399,20 +399,25 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
     }
 
     int uniqueCount = 0, uploadedCount = 0, processedCount = 0;
-    bool oom = false;
+    bool ok;
+
+    // Worst-case scratch size for the whole scope below
+    size_t reserve =
+        (size_t)maxSlots * sizeof(texture_job_t) +
+        (size_t)maxSlots * sizeof(texture_slot_t) +
+        (size_t)maxSlots * sizeof(texture_entry_t) +
+        (size_t)maxSlots * sizeof(int) +
+        (size_t)maxSlots * sizeof(atomic_int) +       // readySlots, worst case uniqueCount == maxSlots
+        (size_t)r3d_get_cpu_count() * sizeof(thrd_t); // threads, worst case numThreads == cpu count
 
     // Collect, load, upload, build
-    R3D_STACK_SCOPE(&R3D.stack, 0)
+    R3D_STACK_SCOPE(&R3D.stack, reserve, ok)
     {
         // Pre-alloacte temp memory
         texture_job_t* jobs = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(texture_job_t));
         texture_slot_t* slots = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(texture_slot_t));
         texture_entry_t* entries = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(texture_entry_t));
         int* materialToSlot = r3d_stack_alloc(&R3D.stack, maxSlots * sizeof(int));
-        if (!jobs || !slots || !entries || !materialToSlot) {
-            oom = true;
-            R3D_STACK_SCOPE_EXIT(R3D.stack);
-        }
         for (int i = 0; i < maxSlots; i++) materialToSlot[i] = -1;
 
         // Collect all unique textures
@@ -466,11 +471,6 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
 
         thrd_t* threads = r3d_stack_alloc(&R3D.stack, numThreads * sizeof(thrd_t));
 
-        if (!ctx.readySlots || !threads) {
-            oom = true;
-            R3D_STACK_SCOPE_EXIT(R3D.stack);
-        }
-
         atomic_init(&ctx.nextJob, 0);
         atomic_init(&ctx.writePos, 0);
         atomic_init(&ctx.readPos, 0);
@@ -521,7 +521,7 @@ r3d_importer_texture_cache_t* r3d_importer_load_texture_cache(
         }
     }
 
-    if (oom) {
+    if (!ok) {
         // Loading was aborted mid-way: any textures already uploaded
         // to VRAM in this run are still referenced by finalTextures,
         // free them before bailing out to avoid leaking GPU handles

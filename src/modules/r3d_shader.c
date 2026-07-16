@@ -115,8 +115,8 @@ struct r3d_mod_shader R3D_MOD_SHADER;
 } while(0)
 
 #define LOAD_SHADER_EX(shader_name, desc) do {                                  \
-    bool ok = false;                                                            \
-    R3D_STACK_SCOPE(&R3D.stack, shader_source_reserve(&(desc))) {               \
+    bool ok;                                                                    \
+    R3D_STACK_SCOPE(&R3D.stack, shader_source_reserve(&(desc)), ok) {           \
         const char *vsCode = NULL, *fsCode = NULL;                              \
         if (!shader_source_build(&vsCode, &fsCode, &R3D.stack, &(desc))) {      \
             R3D_TRACELOG(LOG_ERROR, "Failed to build '" #shader_name "' shader sources"); \
@@ -127,7 +127,6 @@ struct r3d_mod_shader R3D_MOD_SHADER;
             R3D_TRACELOG(LOG_ERROR, "Failed to load shader '" #shader_name "'");\
             R3D_STACK_SCOPE_EXIT(R3D.stack);                                    \
         }                                                                       \
-        ok = true;                                                              \
     }                                                                           \
     if (!ok) return false;                                                      \
 } while(0)

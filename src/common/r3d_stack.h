@@ -32,21 +32,26 @@
 // ========================================
 
 /* Push/alloc/pop in one block; pop() runs automatically on block exit.
- * Skips the body entirely if push() fails (max depth or OOM).
+ * 'okVar' (no need to initialize) ends up true only if the body ran
+ * to completion; false if push() failed (max depth or OOM, body
+ * skipped entirely) or if the body exited early.
  *
- *   R3D_STACK_SCOPE(&stack, 1024) {
+ *   bool ok;
+ *   R3D_STACK_SCOPE(&stack, 1024, ok) {
  *       void* tmp = r3d_stack_alloc(&stack, 64);
  *       ...
- *   } // pop() happens here
+ *   } // pop() happens here, ok is now set
+ *   if (!ok) { / * handle failure * / }
  *
  * A plain `break` inside the body exits early without popping.
  * Use R3D_STACK_SCOPE_EXIT for an early safe exit
  */
-#define R3D_STACK_SCOPE(stackPtr, reserve)                      \
-    for (bool R3D_CONCAT(r3d_stack_scope_ok_, __LINE__) =       \
-             r3d_stack_push((stackPtr), (reserve));             \
-         R3D_CONCAT(r3d_stack_scope_ok_, __LINE__);             \
-         r3d_stack_pop(*(stackPtr)),                            \
+#define R3D_STACK_SCOPE(stackPtr, reserve, okVar)                       \
+    for (bool R3D_CONCAT(r3d_stack_scope_ok_, __LINE__) =               \
+             ((okVar) = false, r3d_stack_push((stackPtr), (reserve)));  \
+         R3D_CONCAT(r3d_stack_scope_ok_, __LINE__);                     \
+         r3d_stack_pop(*(stackPtr)),                                    \
+         (okVar) = true,                                                \
          R3D_CONCAT(r3d_stack_scope_ok_, __LINE__) = false)
 
 /* Early, safe exit from a R3D_STACK_SCOPE: pops then breaks out.
