@@ -19,7 +19,6 @@
 #include "./modules/r3d_light.h"
 #include "./modules/r3d_env.h"
 #include "./r3d_core_state.h"
-#include "common/r3d_stack.h"
 
 // ========================================
 // CONSTANTS
