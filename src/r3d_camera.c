@@ -103,7 +103,7 @@ Matrix R3D_GetCameraView(R3D_Camera camera)
     );
 }
 
-Matrix R3D_GetCameraProj(R3D_Camera camera, double aspect)
+Matrix R3D_GetCameraProjection(R3D_Camera camera, double aspect)
 {
     if (aspect <= 0.0) aspect = 1.0;
 
@@ -130,10 +130,10 @@ Matrix R3D_GetCameraProj(R3D_Camera camera, double aspect)
     );
 }
 
-Matrix R3D_GetCameraViewProj(R3D_Camera camera, double aspect)
+Matrix R3D_GetCameraViewProjection(R3D_Camera camera, double aspect)
 {
     Matrix view = R3D_GetCameraView(camera);
-    Matrix proj = R3D_GetCameraProj(camera, aspect);
+    Matrix proj = R3D_GetCameraProjection(camera, aspect);
 
     return MatrixMultiply(view, proj);
 }

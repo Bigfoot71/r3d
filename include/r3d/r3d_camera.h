@@ -163,12 +163,12 @@ R3DAPI Matrix R3D_GetCameraView(R3D_Camera camera);
 /**
  * @brief Returns the camera projection matrix.
  */
-R3DAPI Matrix R3D_GetCameraProj(R3D_Camera camera, double aspect);
+R3DAPI Matrix R3D_GetCameraProjection(R3D_Camera camera, double aspect);
 
 /**
  * @brief Returns the combined view-projection matrix.
  */
-R3DAPI Matrix R3D_GetCameraViewProj(R3D_Camera camera, double aspect);
+R3DAPI Matrix R3D_GetCameraViewProjection(R3D_Camera camera, double aspect);
 
 /**
  * @brief Moves the camera in world space.

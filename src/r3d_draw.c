@@ -731,7 +731,7 @@ void update_view_state(R3D_View view)
     }
 
     Matrix matView = R3D_GetCameraView(view.camera);
-    Matrix matProj = R3D_GetCameraProj(view.camera, aspect);
+    Matrix matProj = R3D_GetCameraProjection(view.camera, aspect);
     Matrix matViewProj = MatrixMultiply(matView, matProj);
 
     R3D.viewState.camera = view.camera;
