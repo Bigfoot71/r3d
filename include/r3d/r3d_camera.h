@@ -173,12 +173,12 @@ R3DAPI Matrix R3D_GetCameraViewProj(R3D_Camera camera, double aspect);
 /**
  * @brief Moves the camera in world space.
  */
-R3DAPI void R3D_MoveCamera(R3D_Camera* camera, Vector3 delta);
+R3DAPI void R3D_CameraMove(R3D_Camera* camera, Vector3 delta);
 
 /**
  * @brief Moves the camera in local space.
  */
-R3DAPI void R3D_MoveCameraLocal(R3D_Camera* camera, Vector3 delta);
+R3DAPI void R3D_CameraMoveLocal(R3D_Camera* camera, Vector3 delta);
 
 /**
  * @brief Rotates the camera using a quaternion.

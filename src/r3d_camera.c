@@ -138,14 +138,14 @@ Matrix R3D_GetCameraViewProj(R3D_Camera camera, double aspect)
     return MatrixMultiply(view, proj);
 }
 
-void R3D_MoveCamera(R3D_Camera* camera, Vector3 delta)
+void R3D_CameraMove(R3D_Camera* camera, Vector3 delta)
 {
     if (camera == NULL) return;
 
     camera->position = Vector3Add(camera->position, delta);
 }
 
-void R3D_MoveCameraLocal(R3D_Camera* camera, Vector3 delta)
+void R3D_CameraMoveLocal(R3D_Camera* camera, Vector3 delta)
 {
     if (camera == NULL) return;
 
