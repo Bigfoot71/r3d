@@ -157,15 +157,26 @@ R3DAPI R3D_InstanceBuffer R3D_LoadInstanceBufferEx(int capacity, R3D_InstanceLay
 R3DAPI void R3D_UnloadInstanceBuffer(R3D_InstanceBuffer buffer);
 
 /**
- * @brief Grow the GPU buffers of an instance buffer to a new capacity.
+ * @brief Grow an instance buffer's capacity if needed.
  *
- * Only expands; if newCapacity <= buffer->capacity the call is a no-op.
- * All attribute buffers present in buffer->flags are reallocated and
- * if keepData is true, their existing content is copied to the new
- * buffers before the old ones are deleted.
+ * No-op if minCapacity <= buffer->capacity. Otherwise calls
+ * R3D_ResizeInstanceBuffer with minCapacity.
+ *
+ * @param buffer      Instance buffer to reserve capacity on (updated in place).
+ * @param minCapacity Minimum capacity in number of instances.
+ * @param keepData    If true, preserves existing instance data.
+ */
+R3DAPI void R3D_ReserveInstanceBuffer(R3D_InstanceBuffer* buffer, int minCapacity, bool keepData);
+
+/**
+ * @brief Resize the GPU buffers of an instance buffer to an exact capacity.
+ *
+ * Grows or shrinks every enabled attribute buffer to newCapacity. No-op if
+ * newCapacity already equals the current capacity. If keepData is true,
+ * existing content is copied over, truncated if newCapacity is smaller.
  *
  * @param buffer      Instance buffer to resize (updated in place).
- * @param newCapacity Desired minimum capacity in number of instances.
+ * @param newCapacity Exact new capacity in number of instances.
  * @param keepData    If true, preserves existing instance data.
  */
 R3DAPI void R3D_ResizeInstanceBuffer(R3D_InstanceBuffer* buffer, int newCapacity, bool keepData);
