@@ -303,8 +303,13 @@ usage_hint_t parse_pragma_usage(const char** ptr)
             {"probe",  5, USAGE_HINT_PROBE}
         };
 
+        // sizeof, not a literal. This read `i < 7` over a six-element table,
+        // so a #pragma usage hint that matched none of the six ran off the end
+        // and strncmp'd whatever followed in .rodata. It only showed as a crash
+        // once a rebuild happened to put a null pointer there - GingleIsland's
+        // grass shader says `usage transparent`, which is not one of the six.
         bool matched = false;
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < (int)(sizeof(hints) / sizeof(hints[0])); i++)
         {
             if (strncmp(*ptr, hints[i].name, hints[i].len) == 0 &&
                 (isspace((*ptr)[hints[i].len]) ||
@@ -387,7 +392,9 @@ bool compile_shader_variants(R3D_SurfaceShader* shader, usage_hint_t usage)
         {"probe-unlit",   USAGE_HINT_PROBE,  R3D_MOD_SHADER_LOADER.scene.probeUnlit},
     };
 
-    for (int i = 0; i < 6; i++)
+    // The mirror image of the same typo: eight variants, six iterated, so
+    // `#pragma usage probe` silently compiled neither probe variant.
+    for (int i = 0; i < (int)(sizeof(variants) / sizeof(variants[0])); i++)
     {
         if (R3D_BIT_ANY(usage, variants[i].condition))
         {
