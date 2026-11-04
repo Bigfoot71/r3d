@@ -2057,9 +2057,15 @@ r3d_target_t pass_prepare_ssr(void)
     int minLevel = r3d_target_get_min_level(R3D_TARGET_SSR);
     int maxLevel = r3d_target_get_max_level(R3D_TARGET_SSR);
 
-    /* --- Calculate SSR --- */
+    /* --- Clear every mip level of the SSR target --- */
 
-    R3D_TARGET_BIND_CLEAR(minLevel, true, R3D_TARGET_SSR);
+    for (int level = maxLevel; level >= minLevel; level--)
+    {
+        R3D_TARGET_BIND_CLEAR(level, true, R3D_TARGET_SSR);
+    }
+    
+    /* --- Calculate SSR --- */
+    
     R3D_SHADER_USE(prepare.ssr);
 
     R3D_SHADER_BIND_SAMPLER(prepare.ssr, uRadianceTex, r3d_target_get_level(R3D_TARGET_RADIANCE, 1));
